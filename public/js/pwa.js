@@ -1,0 +1,173 @@
+// Service Worker Registration
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker
+      .register('/service-worker.js')
+      .then((registration) => {
+        console.log('Service Worker registered successfully:', registration.scope);
+
+        // Check for updates
+        registration.addEventListener('updatefound', () => {
+          const newWorker = registration.installing;
+          console.log('Service Worker update found');
+
+          newWorker.addEventListener('statechange', () => {
+            if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+              // New service worker available, show update notification
+              showUpdateNotification();
+            }
+          });
+        });
+      })
+      .catch((error) => {
+        console.error('Service Worker registration failed:', error);
+      });
+
+    // Handle controller change (new service worker activated)
+    navigator.serviceWorker.addEventListener('controllerchange', () => {
+      console.log('New Service Worker activated');
+      window.location.reload();
+    });
+  });
+}
+
+// Show update notification to user
+function showUpdateNotification() {
+  // You can customize this notification UI
+  if (confirm('A new version is available! Reload to update?')) {
+    window.location.reload();
+  }
+}
+
+// Install prompt for PWA
+window.deferredPrompt = null;
+
+window.addEventListener('beforeinstallprompt', (e) => {
+  console.log('PWA install prompt triggered');
+
+  // Prevent the mini-infobar from appearing on mobile
+  e.preventDefault();
+
+  // Stash the event so it can be triggered later globally
+  window.deferredPrompt = e;
+
+  // Show install button/banner (you can customize this UI)
+  showInstallPromotion();
+});
+
+// Listen for successful app installation
+window.addEventListener('appinstalled', (e) => {
+  console.log('PWA was installed successfully');
+
+  // Clear the deferredPrompt
+  window.deferredPrompt = null;
+
+  // Dispatch custom event for components to listen
+  window.dispatchEvent(new CustomEvent('pwa-installed'));
+
+  // Show success notification
+  if (typeof showToast === 'function') {
+    showToast('App installed successfully!', 'success');
+  }
+});
+
+// Show install promotion
+function showInstallPromotion() {
+  const installBanner = document.getElementById('pwa-install-banner');
+  if (installBanner) {
+    installBanner.style.display = 'block';
+  }
+}
+
+// Install PWA when user clicks install button
+window.installPWA = async () => {
+  if (!window.deferredPrompt) {
+    console.log('No install prompt available');
+    return;
+  }
+
+  // Show the install prompt
+  window.deferredPrompt.prompt();
+
+  // Wait for the user to respond to the prompt
+  const { outcome } = await window.deferredPrompt.userChoice;
+  console.log(`User response to install prompt: ${outcome}`);
+
+  if (outcome === 'accepted') {
+    console.log('User accepted the install prompt');
+  } else {
+    console.log('User dismissed the install prompt');
+  }
+
+  // Clear the deferredPrompt
+  window.deferredPrompt = null;
+
+  // Hide install banner
+  const installBanner = document.getElementById('pwa-install-banner');
+  if (installBanner) {
+    installBanner.style.display = 'none';
+  }
+};
+
+// Detect if app is running as PWA
+function isPWA() {
+  return window.matchMedia('(display-mode: standalone)').matches ||
+         window.navigator.standalone === true;
+}
+
+// Online/Offline detection
+window.addEventListener('online', () => {
+  console.log('App is online');
+  document.body.classList.remove('offline');
+
+  // Show online notification
+  showToast('You are back online!', 'success');
+
+  // Trigger background sync if available
+  if ('serviceWorker' in navigator && 'sync' in ServiceWorkerRegistration.prototype) {
+    navigator.serviceWorker.ready.then((registration) => {
+      return registration.sync.register('sync-forms');
+    });
+  }
+});
+
+window.addEventListener('offline', () => {
+  console.log('App is offline');
+  document.body.classList.add('offline');
+
+  // Show offline notification
+  showToast('You are offline. Some features may be limited.', 'warning');
+});
+
+// Toast notification helper
+function showToast(message, type = 'info') {
+  // Create toast element
+  const toast = document.createElement('div');
+  toast.className = `pwa-toast pwa-toast-${type}`;
+  toast.textContent = message;
+
+  // Add to body
+  document.body.appendChild(toast);
+
+  // Show toast
+  setTimeout(() => {
+    toast.classList.add('show');
+  }, 100);
+
+  // Hide and remove after 3 seconds
+  setTimeout(() => {
+    toast.classList.remove('show');
+    setTimeout(() => {
+      document.body.removeChild(toast);
+    }, 300);
+  }, 3000);
+}
+
+// Check if currently offline on page load
+if (!navigator.onLine) {
+  document.body.classList.add('offline');
+}
+
+// Log PWA status
+console.log('PWA Mode:', isPWA() ? 'Installed' : 'Browser');
+console.log('Online Status:', navigator.onLine ? 'Online' : 'Offline');

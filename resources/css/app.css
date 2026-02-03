@@ -1,0 +1,62 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+[x-cloak] {
+    display: none !important;
+}
+
+.sidebar-scroll {
+    scrollbar-width: thin;
+    scrollbar-color: #cbd5e1 transparent;
+}
+
+.sidebar-scroll:hover {
+    scrollbar-color: #94a3b8 transparent;
+}
+
+.sidebar-scroll::-webkit-scrollbar {
+    width: 8px;
+}
+
+.sidebar-scroll::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.sidebar-scroll::-webkit-scrollbar-thumb {
+    background-color: #cbd5e1;
+    border-radius: 9999px;
+}
+
+.sidebar-scroll:hover::-webkit-scrollbar-thumb {
+    background-color: #94a3b8;
+}
+
+.dark .sidebar-scroll {
+    scrollbar-color: #334155 transparent;
+}
+
+.dark .sidebar-scroll:hover {
+    scrollbar-color: #475569 transparent;
+}
+
+.dark .sidebar-scroll::-webkit-scrollbar-thumb {
+    background-color: #334155;
+}
+
+.dark .sidebar-scroll:hover::-webkit-scrollbar-thumb {
+    background-color: #475569;
+}
+
+/* Myanmar language specific styles - increase font size for better readability */
+html[lang="mm"] label,
+html[lang="mm"] .label,
+html[lang="mm"] th,
+html[lang="mm"] .form-label {
+    font-size: 1rem;
+    line-height: 1.6;
+}
+
+html[lang="mm"] .text-sm {
+    line-height: 1.6;
+}

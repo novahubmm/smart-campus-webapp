@@ -1,0 +1,215 @@
+/* PWA Styles */
+
+/* Offline indicator */
+body.offline::before {
+    content: "You are offline";
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    background: linear-gradient(135deg, #f59e0b 0%, #f97316 100%);
+    color: white;
+    text-align: center;
+    padding: 8px 16px;
+    font-size: 14px;
+    font-weight: 600;
+    z-index: 9999;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    animation: slideDown 0.3s ease-out;
+}
+
+@keyframes slideDown {
+    from {
+        transform: translateY(-100%);
+    }
+    to {
+        transform: translateY(0);
+    }
+}
+
+/* Adjust body when offline banner is shown */
+body.offline {
+    padding-top: 40px;
+}
+
+/* Install Banner */
+#pwa-install-banner {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background: linear-gradient(135deg, #4d46e5 0%, #6366f1 100%);
+    color: white;
+    padding: 16px 20px;
+    display: none;
+    z-index: 9998;
+    box-shadow: 0 -2px 16px rgba(0, 0, 0, 0.1);
+    animation: slideUp 0.3s ease-out;
+}
+
+@keyframes slideUp {
+    from {
+        transform: translateY(100%);
+    }
+    to {
+        transform: translateY(0);
+    }
+}
+
+#pwa-install-banner .install-content {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    max-width: 1200px;
+    margin: 0 auto;
+    gap: 16px;
+}
+
+#pwa-install-banner .install-message {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex: 1;
+}
+
+#pwa-install-banner .install-icon {
+    width: 40px;
+    height: 40px;
+    background: rgba(255, 255, 255, 0.2);
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+#pwa-install-banner .install-text h3 {
+    margin: 0;
+    font-size: 16px;
+    font-weight: 600;
+}
+
+#pwa-install-banner .install-text p {
+    margin: 4px 0 0;
+    font-size: 13px;
+    opacity: 0.9;
+}
+
+#pwa-install-banner .install-actions {
+    display: flex;
+    gap: 12px;
+    flex-shrink: 0;
+}
+
+#pwa-install-banner button {
+    padding: 10px 20px;
+    border: none;
+    border-radius: 6px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+#pwa-install-banner .btn-install {
+    background: white;
+    color: #4d46e5;
+}
+
+#pwa-install-banner .btn-install:hover {
+    background: #f3f4f6;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+#pwa-install-banner .btn-dismiss {
+    background: transparent;
+    color: white;
+    border: 1px solid rgba(255, 255, 255, 0.3);
+}
+
+#pwa-install-banner .btn-dismiss:hover {
+    background: rgba(255, 255, 255, 0.1);
+}
+
+/* Toast notifications */
+.pwa-toast {
+    position: fixed;
+    bottom: 80px;
+    left: 50%;
+    transform: translateX(-50%) translateY(100px);
+    background: #1f2937;
+    color: white;
+    padding: 12px 24px;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: 500;
+    z-index: 9997;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
+    opacity: 0;
+    transition: all 0.3s ease-out;
+    max-width: 90%;
+}
+
+.pwa-toast.show {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+}
+
+.pwa-toast-success {
+    background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+}
+
+.pwa-toast-warning {
+    background: linear-gradient(135deg, #f59e0b 0%, #f97316 100%);
+}
+
+.pwa-toast-error {
+    background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+}
+
+.pwa-toast-info {
+    background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+}
+
+/* iOS specific fixes */
+@supports (-webkit-touch-callout: none) {
+    body.offline {
+        padding-top: calc(40px + env(safe-area-inset-top));
+    }
+
+    #pwa-install-banner {
+        padding-bottom: calc(16px + env(safe-area-inset-bottom));
+    }
+}
+
+/* Mobile responsive */
+@media (max-width: 640px) {
+    #pwa-install-banner .install-content {
+        flex-direction: column;
+        gap: 12px;
+    }
+
+    #pwa-install-banner .install-actions {
+        width: 100%;
+    }
+
+    #pwa-install-banner button {
+        flex: 1;
+    }
+
+    #pwa-install-banner .install-text h3 {
+        font-size: 15px;
+    }
+
+    #pwa-install-banner .install-text p {
+        font-size: 12px;
+    }
+}
+
+/* Dark mode support */
+@media (prefers-color-scheme: dark) {
+    body.offline::before {
+        background: linear-gradient(135deg, #d97706 0%, #ea580c 100%);
+    }
+}

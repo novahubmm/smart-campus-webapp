@@ -1,0 +1,26 @@
+<?php
+
+return [
+    'Brief summary of your feedback' => 'Brief summary of your feedback',
+    'Bug Report' => 'Bug Report',
+    'Cancel' => 'Cancel',
+    'Category' => 'Category',
+    'Feature Request' => 'Feature Request',
+    'Help us improve Smart Campus by sharing your feedback' => 'Help us improve Smart Campus by sharing your feedback',
+    'High' => 'High',
+    'Improvement Suggestion' => 'Improvement Suggestion',
+    'Low' => 'Low',
+    'Message' => 'Message',
+    'Normal' => 'Normal',
+    'Other' => 'Other',
+    'Please provide detailed information about your feedback...' => 'Please provide detailed information about your feedback...',
+    'Priority' => 'Priority',
+    'Question/Help' => 'Question/Help',
+    'Select a category' => 'Select a category',
+    'Select priority level' => 'Select priority level',
+    'Submit Feedback' => 'Submit Feedback',
+    'Title' => 'Title',
+    'Urgent' => 'Urgent',
+    'We review all feedback and will respond if necessary. Thank you for helping us improve Smart Campus!' => 'We review all feedback and will respond if necessary. Thank you for helping us improve Smart Campus!',
+    'Your feedback will be sent directly to our support team' => 'Your feedback will be sent directly to our support team',
+];

@@ -1,0 +1,4806 @@
+{
+	"info": {
+		"_postman_id": "teacher-app-api-collection",
+		"name": "Teacher App API",
+		"description": "API collection for Smart Campus Teacher App",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"variable": [
+		{
+			"key": "base_url",
+			"value": "http://10.180.162.219:8088/api/v1/teacher",
+			"type": "string"
+		},
+		{
+			"key": "token",
+			"value": "",
+			"type": "string"
+		},
+		{
+			"key": "class_id",
+			"value": "",
+			"type": "string"
+		},
+		{
+			"key": "student_id",
+			"value": "",
+			"type": "string"
+		},
+		{
+			"key": "homework_id",
+			"value": "",
+			"type": "string"
+		},
+		{
+			"key": "announcement_id",
+			"value": "",
+			"type": "string"
+		},
+		{
+			"key": "event_id",
+			"value": "",
+			"type": "string"
+		},
+		{
+			"key": "leave_request_id",
+			"value": "",
+			"type": "string"
+		},
+		{
+			"key": "report_id",
+			"value": "",
+			"type": "string"
+		},
+		{
+			"key": "payslip_id",
+			"value": "",
+			"type": "string"
+		},
+		{
+			"key": "record_id",
+			"value": "",
+			"type": "string"
+		},
+		{
+			"key": "subject_id",
+			"value": "",
+			"type": "string"
+		},
+		{
+			"key": "period_id",
+			"value": "",
+			"type": "string"
+		},
+		{
+			"key": "notification_id",
+			"value": "",
+			"type": "string"
+		},
+		{
+			"key": "verification_token",
+			"value": "",
+			"type": "string"
+		},
+		{
+			"key": "otp_token",
+			"value": "",
+			"type": "string"
+		},
+		{
+			"key": "otp_code",
+			"value": "",
+			"type": "string"
+		},
+		{
+			"key": "reset_token",
+			"value": "",
+			"type": "string"
+		},
+		{
+			"key": "exam_id",
+			"value": "",
+			"type": "string"
+		},
+		{
+			"key": "rule_category_id",
+			"value": "",
+			"type": "string"
+		},
+		{
+			"key": "remark_id",
+			"value": "",
+			"type": "string"
+		},
+		{
+			"key": "switch_request_id",
+			"value": "",
+			"type": "string"
+		}
+	],
+	"item": [
+		{
+			"name": "School Info",
+			"item": [
+				{
+					"name": "Get School Info",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json"
+							}
+						],
+						"url": "{{base_url}}/school/info"
+					},
+					"response": [
+						{
+							"name": "Success Response",
+							"originalRequest": {
+								"method": "GET",
+								"header": [
+									{
+										"key": "Accept",
+										"value": "application/json"
+									}
+								],
+								"url": "{{base_url}}/api/school/info"
+							},
+							"status": "OK",
+							"code": 200,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/json"
+								}
+							],
+							"body": "{\n    \"success\": true,\n    \"data\": {\n        \"id\": \"uuid\",\n        \"name\": \"Smart Campus School\",\n        \"tagline\": \"Excellence in Education\",\n        \"logo\": \"http://localhost:8000/storage/school_logo.png\",\n        \"contact\": {\n            \"address\": \"123 Education Street\",\n            \"phone\": \"+95 9 123 456 789\",\n            \"email\": \"info@smartcampus.edu\",\n            \"website\": \"http://localhost:8000\"\n        },\n        \"about_us\": \"Smart Campus is a leading educational institution...\"\n    }\n}"
+						}
+					]
+				}
+			]
+		},
+		{
+			"name": "School Rules",
+			"item": [
+				{
+					"name": "Get All Rules Categories",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json"
+							}
+						],
+						"url": "{{base_url}}/rules"
+					},
+					"response": [
+						{
+							"name": "Success Response",
+							"originalRequest": {
+								"method": "GET",
+								"header": [
+									{
+										"key": "Accept",
+										"value": "application/json"
+									}
+								],
+								"url": "{{base_url}}/api/rules"
+							},
+							"status": "OK",
+							"code": 200,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/json"
+								}
+							],
+							"body": "{\n    \"success\": true,\n    \"data\": {\n        \"categories\": [\n            {\n                \"id\": \"uuid\",\n                \"title\": \"General Conduct\",\n                \"rules_count\": 5,\n                \"icon\": \"fas fa-user-check\",\n                \"icon_color\": \"#2563EB\",\n                \"icon_bg_color\": \"#DBEAFE\",\n                \"preview_rules\": [\"Be respectful to teachers and staff\", \"Maintain proper uniform\"]\n            },\n            {\n                \"id\": \"uuid\",\n                \"title\": \"Attendance\",\n                \"rules_count\": 3,\n                \"icon\": \"fas fa-calendar-check\",\n                \"icon_color\": \"#059669\",\n                \"icon_bg_color\": \"#D1FAE5\",\n                \"preview_rules\": [\"Arrive on time\", \"Notify in advance for absences\"]\n            }\n        ],\n        \"total_categories\": 2,\n        \"total_rules\": 8\n    }\n}"
+						}
+					]
+				},
+				{
+					"name": "Get Rules Category Detail",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json"
+							}
+						],
+						"url": "{{base_url}}/api/rules/{{rule_category_id}}"
+					},
+					"response": [
+						{
+							"name": "Success Response",
+							"originalRequest": {
+								"method": "GET",
+								"header": [
+									{
+										"key": "Accept",
+										"value": "application/json"
+									}
+								],
+								"url": "{{base_url}}/api/rules/{{rule_category_id}}"
+							},
+							"status": "OK",
+							"code": 200,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/json"
+								}
+							],
+							"body": "{\n    \"success\": true,\n    \"data\": {\n        \"id\": \"uuid\",\n        \"title\": \"General Conduct\",\n        \"rules_count\": 5,\n        \"icon\": \"fas fa-user-check\",\n        \"icon_color\": \"#2563EB\",\n        \"icon_bg_color\": \"#DBEAFE\",\n        \"description\": \"Rules for general student conduct\",\n        \"rules\": [\n            {\n                \"id\": \"uuid\",\n                \"order\": 1,\n                \"text\": \"Be respectful to teachers and staff\",\n                \"severity\": \"medium\",\n                \"consequence\": \"Warning\"\n            },\n            {\n                \"id\": \"uuid\",\n                \"order\": 2,\n                \"text\": \"Maintain proper uniform at all times\",\n                \"severity\": \"low\",\n                \"consequence\": \"Verbal reminder\"\n            }\n        ]\n    }\n}"
+						}
+					]
+				}
+			]
+		},
+		{
+			"name": "Auth",
+			"item": [
+				{
+					"name": "Login",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"var jsonData = pm.response.json();",
+									"if (jsonData.success && jsonData.data.token) {",
+									"    pm.collectionVariables.set('token', jsonData.data.token);",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Accept",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"login\": \"teacher1@smartcampusedu.com\",\n    \"password\": \"password\",\n    \"remember_me\": true\n}"
+						},
+						"url": "{{base_url}}/auth/login"
+					}
+				},
+				{
+					"name": "Get Profile",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"url": "{{base_url}}/auth/profile"
+					}
+				},
+				{
+					"name": "Change Password",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Accept",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"current_password\": \"password\",\n    \"new_password\": \"newpassword\",\n    \"confirm_password\": \"newpassword\"\n}"
+						},
+						"url": "{{base_url}}/auth/change-password"
+					}
+				},
+				{
+					"name": "Logout",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"url": "{{base_url}}/auth/logout"
+					}
+				}
+			]
+		},
+		{
+			"name": "Dashboard",
+			"item": [
+				{
+					"name": "Get Quick Stats",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"url": "{{base_url}}/dashboard/stats"
+					},
+					"response": [
+						{
+							"name": "Success Response",
+							"originalRequest": {
+								"method": "GET",
+								"header": [
+									{
+										"key": "Accept",
+										"value": "application/json"
+									},
+									{
+										"key": "Authorization",
+										"value": "Bearer {{token}}"
+									}
+								],
+								"url": "{{base_url}}/dashboard/stats"
+							},
+							"status": "OK",
+							"code": 200,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/json"
+								}
+							],
+							"cookie": [],
+							"body": "{\n    \"success\": true,\n    \"data\": {\n        \"today_classes\": 3,\n        \"weekly_total\": 15,\n        \"free_periods\": 3\n    }\n}"
+						}
+					]
+				},
+				{
+					"name": "Get Today's Classes",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"url": "{{base_url}}/today-classes",
+						"description": "Get all classes scheduled for today with their status and basic info."
+					},
+					"response": [
+						{
+							"name": "Success Response",
+							"originalRequest": {
+								"method": "GET",
+								"header": [
+									{
+										"key": "Accept",
+										"value": "application/json"
+									},
+									{
+										"key": "Authorization",
+										"value": "Bearer {{token}}"
+									}
+								],
+								"url": "{{base_url}}/today-classes"
+							},
+							"status": "OK",
+							"code": 200,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/json"
+								}
+							],
+							"cookie": [],
+							"body": "{\n    \"success\": true,\n    \"data\": {\n        \"date\": \"2025-12-30\",\n        \"total_classes\": 3,\n        \"classes\": [\n            {\n                \"id\": \"019b5a7d-5890-704d-b041-e7fffea08e40\",\n                \"class_id\": \"019b5a7c-3b83-72b8-ad3a-25b4359a996f\",\n                \"grade\": \"Grade 10-A\",\n                \"subject\": \"Mathematics\",\n                \"time\": \"08:00 - 08:45\",\n                \"status\": \"completed\",\n                \"period\": \"P1\",\n                \"room\": \"Room 301\",\n                \"chapter\": \"Chapter 5: Trigonometry\",\n                \"present\": 28,\n                \"absent\": 2,\n                \"leave\": 1,\n                \"total_students\": 31\n            },\n            {\n                \"id\": \"019b5a7d-5891-704d-b041-e7fffea08e41\",\n                \"class_id\": \"019b5a7c-3b83-72b8-ad3a-25b4359a996g\",\n                \"grade\": \"Grade 9-B\",\n                \"subject\": \"Mathematics\",\n                \"time\": \"09:00 - 09:45\",\n                \"status\": \"ongoing\",\n                \"period\": \"P2\",\n                \"room\": \"Room 205\",\n                \"chapter\": \"Chapter 6: Polynomials\",\n                \"present\": 0,\n                \"absent\": 0,\n                \"leave\": 0,\n                \"total_students\": 30\n            },\n            {\n                \"id\": \"019b5a7d-5892-704d-b041-e7fffea08e42\",\n                \"class_id\": \"019b5a7c-3b83-72b8-ad3a-25b4359a996h\",\n                \"grade\": \"Grade 11-A\",\n                \"subject\": \"Mathematics\",\n                \"time\": \"10:00 - 10:45\",\n                \"status\": \"upcoming\",\n                \"period\": \"P3\",\n                \"room\": \"Room 401\",\n                \"chapter\": \"Chapter 3: Calculus Basics\",\n                \"present\": 0,\n                \"absent\": 0,\n                \"leave\": 0,\n                \"total_students\": 28\n            }\n        ]\n    }\n}"
+						}
+					]
+				},
+				{
+					"name": "Get Today's Class Detail",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"url": "{{base_url}}/today-classes/{{period_id}}",
+						"description": "Get detailed information for a today's class. Response varies based on status (ongoing/upcoming/completed)."
+					},
+					"response": [
+						{
+							"name": "Ongoing Class Response",
+							"originalRequest": {
+								"method": "GET",
+								"header": [
+									{
+										"key": "Accept",
+										"value": "application/json"
+									},
+									{
+										"key": "Authorization",
+										"value": "Bearer {{token}}"
+									}
+								],
+								"url": "{{base_url}}/today-classes/{{period_id}}"
+							},
+							"status": "OK",
+							"code": 200,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/json"
+								}
+							],
+							"cookie": [],
+							"body": "{\n    \"success\": true,\n    \"data\": {\n        \"id\": \"019b5a7d-5891-704d-b041-e7fffea08e41\",\n        \"class_id\": \"019b5a7c-3b83-72b8-ad3a-25b4359a996g\",\n        \"grade\": \"Grade 9-B\",\n        \"subject\": \"Mathematics\",\n        \"subject_id\": \"019b5a7c-3ab3-7352-95cc-6952985233f9\",\n        \"time\": \"09:00 - 09:45\",\n        \"date\": \"2025-12-30\",\n        \"status\": \"ongoing\",\n        \"period\": \"P2\",\n        \"room\": \"Room 205\",\n        \"total_students\": 30,\n        \"attendance\": {\n            \"present\": 25,\n            \"absent\": 3,\n            \"leave\": 2,\n            \"late\": 0,\n            \"total\": 30,\n            \"is_taken\": true\n        },\n        \"curriculum\": {\n            \"current_chapter\": \"Chapter 7: Linear Inequalities\",\n            \"total_chapters\": 5,\n            \"completed_chapters\": 2,\n            \"total_topics\": 23,\n            \"completed_topics\": 11,\n            \"progress_percentage\": 48,\n            \"chapters\": [\n                {\n                    \"id\": \"ch-001\",\n                    \"title\": \"Chapter 5: Quadratic Equations\",\n                    \"topics\": 4,\n                    \"completed_topics\": 4,\n                    \"status\": \"completed\",\n                    \"subtopics\": [\n                        { \"id\": \"st-001\", \"title\": \"Introduction to Quadratic Equations\", \"completed\": true },\n                        { \"id\": \"st-002\", \"title\": \"Solving by Factoring\", \"completed\": true }\n                    ]\n                },\n                {\n                    \"id\": \"ch-002\",\n                    \"title\": \"Chapter 7: Linear Inequalities\",\n                    \"topics\": 5,\n                    \"completed_topics\": 2,\n                    \"status\": \"current\",\n                    \"subtopics\": [\n                        { \"id\": \"st-005\", \"title\": \"Introduction to Inequalities\", \"completed\": true },\n                        { \"id\": \"st-006\", \"title\": \"Solving Linear Inequalities\", \"completed\": true },\n                        { \"id\": \"st-007\", \"title\": \"Graphing Inequalities\", \"completed\": false }\n                    ]\n                }\n            ]\n        },\n        \"class_remarks\": [\n            {\n                \"id\": \"cr-001\",\n                \"text\": \"Class was attentive today. Good participation.\",\n                \"type\": \"positive\",\n                \"date\": \"2025-12-30\"\n            }\n        ],\n        \"student_remarks\": [\n            {\n                \"id\": \"sr-001\",\n                \"student_id\": \"stu-001\",\n                \"student_name\": \"Aung Kyaw\",\n                \"student_avatar\": \"A\",\n                \"text\": \"Excellent participation in class discussion.\",\n                \"type\": \"positive\",\n                \"date\": \"2025-12-30\"\n            }\n        ],\n        \"homework\": {\n            \"pending_collection\": [\n                {\n                    \"id\": \"hw-001\",\n                    \"title\": \"Chapter 7 Exercises\",\n                    \"due_date\": \"2025-12-30\",\n                    \"is_due_today\": true,\n                    \"submitted\": 28,\n                    \"total\": 30\n                }\n            ],\n            \"assigned\": [\n                {\n                    \"id\": \"hw-002\",\n                    \"title\": \"Practice Problem Set\",\n                    \"due_date\": \"2026-01-02\",\n                    \"submitted\": 0,\n                    \"total\": 30\n                }\n            ]\n        },\n        \"students\": [\n            {\n                \"id\": \"stu-001\",\n                \"name\": \"Aung Kyaw\",\n                \"roll_no\": \"001\",\n                \"avatar\": \"A\",\n                \"avatar_url\": null,\n                \"attendance_status\": \"present\"\n            },\n            {\n                \"id\": \"stu-002\",\n                \"name\": \"Mya Thida\",\n                \"roll_no\": \"002\",\n                \"avatar\": \"M\",\n                \"avatar_url\": null,\n                \"attendance_status\": \"absent\"\n            }\n        ]\n    }\n}"
+						}
+					]
+				},
+				{
+					"name": "Take Attendance (ONGOING)",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"attendance\": [\n        { \"student_id\": \"{{student_id}}\", \"status\": \"present\" },\n        { \"student_id\": \"{{student_id_2}}\", \"status\": \"absent\" },\n        { \"student_id\": \"{{student_id_3}}\", \"status\": \"leave\" }\n    ]\n}"
+						},
+						"url": "{{base_url}}/today-classes/{{period_id}}/attendance",
+						"description": "Take attendance for an ONGOING class. Status values: present, absent, leave, late"
+					},
+					"response": [
+						{
+							"name": "Success Response",
+							"status": "OK",
+							"code": 200,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/json"
+								}
+							],
+							"body": "{\n    \"success\": true,\n    \"message\": \"Attendance saved successfully\",\n    \"data\": {\n        \"present\": 28,\n        \"absent\": 2,\n        \"leave\": 1,\n        \"late\": 0,\n        \"total\": 31\n    }\n}"
+						}
+					]
+				},
+				{
+					"name": "Update Curriculum Progress (ONGOING)",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"chapter_id\": \"{{chapter_id}}\",\n    \"subtopic_id\": \"{{topic_id}}\",\n    \"completed\": true\n}"
+						},
+						"url": "{{base_url}}/today-classes/{{period_id}}/curriculum",
+						"description": "Update curriculum progress by marking a topic as completed or not completed."
+					},
+					"response": [
+						{
+							"name": "Success Response",
+							"status": "OK",
+							"code": 200,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/json"
+								}
+							],
+							"body": "{\n    \"success\": true,\n    \"message\": \"Curriculum updated successfully\",\n    \"data\": {\n        \"chapter_id\": \"ch-003\",\n        \"completed_topics\": 3,\n        \"total_topics\": 5,\n        \"overall_progress\": 52\n    }\n}"
+						}
+					]
+				},
+				{
+					"name": "Add Class Remark (ONGOING)",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"text\": \"Class was attentive today. Good participation.\",\n    \"type\": \"positive\"\n}"
+						},
+						"url": "{{base_url}}/today-classes/{{period_id}}/class-remarks",
+						"description": "Add a class remark. Type values: positive, concern, note"
+					},
+					"response": [
+						{
+							"name": "Success Response",
+							"status": "OK",
+							"code": 200,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/json"
+								}
+							],
+							"body": "{\n    \"success\": true,\n    \"message\": \"Class remark added successfully\",\n    \"data\": {\n        \"id\": \"cr-003\",\n        \"text\": \"Class was attentive today. Good participation.\",\n        \"type\": \"positive\",\n        \"date\": \"2025-12-30\"\n    }\n}"
+						}
+					]
+				},
+				{
+					"name": "Add Student Remark (ONGOING)",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"student_id\": \"{{student_id}}\",\n    \"text\": \"Excellent participation in class discussion.\",\n    \"type\": \"positive\"\n}"
+						},
+						"url": "{{base_url}}/today-classes/{{period_id}}/student-remarks",
+						"description": "Add a student remark. Type values: positive, concern, note"
+					},
+					"response": [
+						{
+							"name": "Success Response",
+							"status": "OK",
+							"code": 200,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/json"
+								}
+							],
+							"body": "{\n    \"success\": true,\n    \"message\": \"Student remark added successfully\",\n    \"data\": {\n        \"id\": \"sr-004\",\n        \"student_id\": \"stu-001\",\n        \"student_name\": \"Aung Kyaw\",\n        \"student_avatar\": \"A\",\n        \"text\": \"Excellent participation in class discussion.\",\n        \"type\": \"positive\",\n        \"date\": \"2025-12-30\"\n    }\n}"
+						}
+					]
+				},
+				{
+					"name": "Assign Homework (ONGOING)",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"title\": \"Chapter 7 Practice Problems\",\n    \"description\": \"Complete exercises 1-10 from page 145\",\n    \"due_date\": \"2026-01-02\"\n}"
+						},
+						"url": "{{base_url}}/today-classes/{{period_id}}/homework",
+						"description": "Assign homework for the class."
+					},
+					"response": [
+						{
+							"name": "Success Response",
+							"status": "OK",
+							"code": 200,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/json"
+								}
+							],
+							"body": "{\n    \"success\": true,\n    \"message\": \"Homework assigned successfully\",\n    \"data\": {\n        \"id\": \"hw-003\",\n        \"title\": \"Chapter 7 Practice Problems\",\n        \"description\": \"Complete exercises 1-10 from page 145\",\n        \"due_date\": \"2026-01-02\"\n    }\n}"
+						}
+					]
+				},
+				{
+					"name": "Collect Homework (ONGOING)",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"submissions\": [\n        { \"student_id\": \"{{student_id}}\", \"status\": \"submitted\" },\n        { \"student_id\": \"{{student_id_2}}\", \"status\": \"not_submitted\" },\n        { \"student_id\": \"{{student_id_3}}\", \"status\": \"late\" }\n    ]\n}"
+						},
+						"url": "{{base_url}}/today-classes/{{period_id}}/homework/{{homework_id}}/collect",
+						"description": "Collect homework submissions. Status values: submitted, not_submitted, late"
+					},
+					"response": [
+						{
+							"name": "Success Response",
+							"status": "OK",
+							"code": 200,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/json"
+								}
+							],
+							"body": "{\n    \"success\": true,\n    \"message\": \"Homework collection updated\",\n    \"data\": {\n        \"homework_id\": \"hw-001\",\n        \"submitted\": 29,\n        \"not_submitted\": 2,\n        \"late\": 1,\n        \"total\": 32\n    }\n}"
+						}
+					]
+				},
+				{
+					"name": "Get Class Summary (ONGOING)",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"url": "{{base_url}}/today-classes/{{period_id}}/summary",
+						"description": "Get a summary of all data recorded during the ongoing class session. This is used to show the 'Class Summary' modal before the teacher ends the class, allowing them to review what was recorded."
+					},
+					"response": [
+						{
+							"name": "Success Response",
+							"status": "OK",
+							"code": 200,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/json"
+								}
+							],
+							"body": "{\n    \"success\": true,\n    \"data\": {\n        \"attendance\": {\n            \"status\": \"collected\",\n            \"present\": 6,\n            \"absent\": 1,\n            \"leave\": 1,\n            \"total\": 8\n        },\n        \"topics\": {\n            \"completed\": 3,\n            \"total\": 150,\n            \"current_chapter\": \"Chapter 1: Number Systems and Operations\"\n        },\n        \"remarks\": {\n            \"count\": 2,\n            \"latest\": \"Class was attentive today. Good participation.\"\n        },\n        \"homework\": {\n            \"assigned\": 2,\n            \"due_today\": 1\n        }\n    }\n}"
+						}
+					]
+				},
+				{
+					"name": "End Class (ONGOING)",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"notes\": \"Covered basic trigonometric ratios. Students understood well.\"\n}"
+						},
+						"url": "{{base_url}}/today-classes/{{period_id}}/end",
+						"description": "End an ongoing class with optional notes."
+					},
+					"response": [
+						{
+							"name": "Success Response",
+							"status": "OK",
+							"code": 200,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/json"
+								}
+							],
+							"body": "{\n    \"success\": true,\n    \"message\": \"Class ended successfully\",\n    \"data\": {\n        \"id\": \"019b5a7d-5891-704d-b041-e7fffea08e41\",\n        \"status\": \"completed\",\n        \"ended_at\": \"2025-12-30T09:45:00+00:00\",\n        \"notes\": \"Covered basic trigonometric ratios. Students understood well.\"\n    }\n}"
+						}
+					]
+				},
+				{
+					"name": "Get Weekly Schedule",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"url": "{{base_url}}/schedule/weekly"
+					},
+					"response": [
+						{
+							"name": "Success Response",
+							"originalRequest": {
+								"method": "GET",
+								"header": [
+									{
+										"key": "Accept",
+										"value": "application/json"
+									},
+									{
+										"key": "Authorization",
+										"value": "Bearer {{token}}"
+									}
+								],
+								"url": "{{base_url}}/schedule/weekly"
+							},
+							"status": "OK",
+							"code": 200,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/json"
+								}
+							],
+							"cookie": [],
+							"body": "{\n    \"success\": true,\n    \"data\": {\n        \"times\": [\"08:00\", \"09:00\", \"10:00\", \"11:00\", \"13:00\", \"14:00\"],\n        \"days\": [\"Mon\", \"Tue\", \"Wed\", \"Thu\", \"Fri\", \"Sat\"],\n        \"schedule\": {\n            \"Mon\": {\n                \"08:00\": { \"grade\": \"8A\", \"subject\": \"Math\", \"color\": \"#E53935\"},\n                \"09:00\": { \"grade\": \"10A\", \"subject\": \"Adv Math\", \"color\": \"#1976D2\" },\n                \"10:00\": null,\n                \"11:00\": null,\n                \"13:00\": { \"grade\": \"9B\", \"subject\": \"Math\", \"color\": \"#7B1FA2\"},\n                \"14:00\": null\n            },\n            \"Tue\": {\n                \"08:00\": { \"grade\": \"7C\", \"subject\": \"Math\", \"color\": \"#F57C00\" },\n                \"09:00\": { \"grade\": \"9B\", \"subject\": \"Math\", \"color\": \"#7B1FA2\"},\n                \"10:00\": { \"grade\": \"8A\", \"subject\": \"Math\", \"color\": \"#E53935\" },\n                \"11:00\": null,\n                \"13:00\": null,\n                \"14:00\": null\n            }\n        },\n        \"legend\": [\n            { \"key\": \"8A\", \"color\": \"#E53935\" },\n            { \"key\": \"10A\", \"color\": \"#1976D2\" },\n            { \"key\": \"9B\", \"color\": \"#7B1FA2\" },\n            { \"key\": \"7C\", \"color\": \"#F57C00\" }\n        ]\n    }\n}"
+						}
+					]
+				},
+				{
+					"name": "Get Full Schedule",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"url": "{{base_url}}/schedule/full"
+					},
+					"response": [
+						{
+							"name": "Success Response",
+							"originalRequest": {
+								"method": "GET",
+								"header": [
+									{
+										"key": "Accept",
+										"value": "application/json"
+									},
+									{
+										"key": "Authorization",
+										"value": "Bearer {{token}}"
+									}
+								],
+								"url": "{{base_url}}/schedule/full"
+							},
+							"status": "OK",
+							"code": 200,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/json"
+								}
+							],
+							"cookie": [],
+							"body": "{\n    \"success\": true,\n    \"data\": {\n        \"stats\": {\n            \"today_classes\": 3,\n            \"weekly_total\": 15,\n            \"free_periods\": 3\n        },\n        \"days\": [\n            { \"key\": \"monday\", \"label\": \"Mon\" },\n            { \"key\": \"tuesday\", \"label\": \"Tue\" },\n            { \"key\": \"wednesday\", \"label\": \"Wed\" },\n            { \"key\": \"thursday\", \"label\": \"Thu\" },\n            { \"key\": \"friday\", \"label\": \"Fri\" },\n            { \"key\": \"saturday\", \"label\": \"Sat\" }\n        ],\n        \"timetable\": {\n            \"monday\": [\n                {\n                    \"id\": 1,\n                    \"start_time\": \"08:00\",\n                    \"end_time\": \"09:00\",\n                    \"grade\": \"Grade 8A\",\n                    \"subject\": \"Mathematics\",\n                    \"room\": \"Room 101\",\n                    \"status\": \"completed\",\n                    \"colors\": {\n                        \"text\": \"#B91C1C\",\n                        \"border\": \"#F87171\",\n                        \"shadow\": \"#EF4444\"\n                    }\n                },\n                {\n                    \"id\": null,\n                    \"start_time\": \"10:00\",\n                    \"end_time\": \"11:00\",\n                    \"grade\": \"\",\n                    \"subject\": \"\",\n                    \"room\": \"\",\n                    \"status\": \"free\",\n                    \"colors\": null\n                }\n            ],\n            \"tuesday\": [\n                {\n                    \"id\": 5,\n                    \"start_time\": \"08:00\",\n                    \"end_time\": \"09:00\",\n                    \"grade\": \"Grade 7C\",\n                    \"subject\": \"Basic Math\",\n                    \"room\": \"Room 102\",\n                    \"status\": \"upcoming\",\n                    \"colors\": {\n                        \"text\": \"#D97706\",\n                        \"border\": \"#FBBF24\",\n                        \"shadow\": \"#F59E0B\"\n                    }\n                }\n            ]\n        }\n    }\n}"
+						}
+					]
+				}
+			]
+		},
+		{
+			"name": "Classes",
+			"item": [
+				{
+					"name": "Get My Classes",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"url": "{{base_url}}/classes"
+					}
+				},
+				{
+					"name": "Get Class Detail",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"url": "{{base_url}}/classes/{{class_id}}"
+					}
+				},
+				{
+					"name": "Get Class Students",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/classes/{{class_id}}/students?search=&gender=",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"classes",
+								"{{class_id}}",
+								"students"
+							],
+							"query": [
+								{
+									"key": "search",
+									"value": "",
+									"description": "Optional: Search by student name or roll number",
+									"disabled": true
+								},
+								{
+									"key": "gender",
+									"value": "",
+									"description": "Optional: Filter by gender ('Male' | 'Female')",
+									"disabled": true
+								}
+							]
+						},
+						"description": "Get all students in a class with optional search and gender filtering."
+					},
+					"response": [
+						{
+							"name": "Success Response",
+							"originalRequest": {
+								"method": "GET",
+								"header": [
+									{
+										"key": "Accept",
+										"value": "application/json"
+									},
+									{
+										"key": "Authorization",
+										"value": "Bearer {{token}}"
+									}
+								],
+								"url": {
+									"raw": "{{base_url}}/classes/{{class_id}}/students",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"classes",
+										"{{class_id}}",
+										"students"
+									]
+								}
+							},
+							"status": "OK",
+							"code": 200,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/json"
+								}
+							],
+							"body": "{\n    \"success\": true,\n    \"data\": {\n        \"students\": [\n            {\n                \"id\": \"019b6001-xxxx-xxxx-xxxx-xxxxxxxxxxxx\",\n                \"name\": \"Aung Aung\",\n                \"roll_no\": \"001\",\n                \"gender\": \"Male\",\n                \"attendance_percentage\": 90,\n                \"avatar\": \"A\",\n                \"is_class_leader\": true\n            },\n            {\n                \"id\": \"019b6002-xxxx-xxxx-xxxx-xxxxxxxxxxxx\",\n                \"name\": \"Mya Mya\",\n                \"roll_no\": \"002\",\n                \"gender\": \"Female\",\n                \"attendance_percentage\": 92,\n                \"avatar\": \"M\",\n                \"is_class_leader\": false\n            }\n        ],\n        \"total\": 30,\n        \"class_leader_id\": \"019b6001-xxxx-xxxx-xxxx-xxxxxxxxxxxx\"\n    }\n}"
+						}
+					]
+				},
+				{
+					"name": "Get Classes Dropdown",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"url": "{{base_url}}/classes/dropdown"
+					}
+				},
+				{
+					"name": "Get Attendance Dropdown",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"url": "{{base_url}}/classes/attendance-dropdown"
+					},
+					"response": [],
+					"description": "Returns classes with today's first period info for attendance.\n\nResponse includes:\n- id: class UUID\n- label: class name (e.g. 'Grade 7 A')\n- current_period_id: first period of today (null if no period today)\n- start_time: period start time (e.g. '10:00')\n- end_time: period end time (e.g. '10:45')\n- subject: subject name (e.g. 'Myanmar')\n- students_count: number of students"
+				},
+				{
+					"name": "Get Student Profile",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"url": "{{base_url}}/students/{{student_id}}/profile"
+					}
+				},
+				{
+					"name": "Get Class Teachers",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"url": "{{base_url}}/classes/{{class_id}}/teachers"
+					},
+					"response": [
+						{
+							"name": "Success Response",
+							"status": "OK",
+							"code": 200,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/json"
+								}
+							],
+							"body": "{\n    \"success\": true,\n    \"data\": {\n        \"teachers\": [\n            {\n                \"id\": \"019b7001-xxxx-xxxx-xxxx-xxxxxxxxxxxx\",\n                \"name\": \"U Kyaw Zaw\",\n                \"subject\": \"Mathematics\",\n                \"avatar\": \"\\ud83d\\udd22\",\n                \"periods_per_week\": \"6p/w\",\n                \"icon_bg\": \"#FEE2E2\",\n                \"icon_color\": \"#DC2626\"\n            }\n        ],\n        \"total\": 6\n    }\n}"
+						}
+					]
+				},
+				{
+					"name": "Get Class Timetable",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/classes/{{class_id}}/timetable?date=",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"classes",
+								"{{class_id}}",
+								"timetable"
+							],
+							"query": [
+								{
+									"key": "date",
+									"value": "",
+									"description": "Optional: Date (YYYY-MM-DD) to apply accepted switch requests for that day"
+								}
+							]
+						}
+					},
+					"response": [
+						{
+							"name": "Success Response",
+							"status": "OK",
+							"code": 200,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/json"
+								}
+							],
+							"body": "{\n    \"success\": true,\n    \"data\": {\n        \"timetable\": [\n            {\n                \"day\": \"Monday\",\n                \"day_code\": \"Mon\",\n                \"slots\": [\n                    {\n                        \"id\": \"019b5a7d-5890-704d-b041-e7fffea08e40\",\n                        \"period\": \"P1\",\n                        \"subject\": \"Mathematics\",\n                        \"subject_id\": \"019b5a7c-1234-5678-abcd-xxxxxxxxxxxx\",\n                        \"subject_code\": \"Math\",\n                        \"start_time\": \"08:00\",\n                        \"end_time\": \"08:45\",\n                        \"teacher_id\": \"019b7001-xxxx-xxxx-xxxx-xxxxxxxxxxxx\",\n                        \"teacher_name\": \"U Kyaw Zaw\",\n                        \"is_switched\": false\n                    },\n                    {\n                        \"id\": \"019b5a7d-5891-704d-b041-e7fffea08e41\",\n                        \"period\": \"P2\",\n                        \"subject\": \"English\",\n                        \"subject_id\": \"019b5a7c-1234-5678-abcd-xxxxxxxxxxxy\",\n                        \"subject_code\": \"Eng\",\n                        \"start_time\": \"08:45\",\n                        \"end_time\": \"09:30\",\n                        \"teacher_id\": \"019b7002-xxxx-xxxx-xxxx-xxxxxxxxxxxx\",\n                        \"teacher_name\": \"Daw Aye Aye\",\n                        \"is_switched\": true,\n                        \"original_subject\": \"Myanmar\",\n                        \"original_teacher\": \"U Maung Maung\"\n                    }\n                ]\n            }\n        ],\n        \"periods_per_day\": 6,\n        \"date\": \"2025-12-30\"\n    }\n}"
+						}
+					]
+				},
+				{
+					"name": "Get Class Rankings",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/classes/{{class_id}}/rankings?exam_id=&exam_type=",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"classes",
+								"{{class_id}}",
+								"rankings"
+							],
+							"query": [
+								{
+									"key": "exam_id",
+									"value": "",
+									"description": "Optional: Filter by specific exam ID",
+									"disabled": true
+								},
+								{
+									"key": "exam_type",
+									"value": "",
+									"description": "Optional: Filter by exam type ('exam' | 'quiz' | 'test')",
+									"disabled": true
+								}
+							]
+						}
+					},
+					"response": [
+						{
+							"name": "Success Response",
+							"status": "OK",
+							"code": 200,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/json"
+								}
+							],
+							"body": "{\n    \"success\": true,\n    \"data\": {\n        \"exam\": {\n            \"id\": \"019b8001-xxxx-xxxx-xxxx-xxxxxxxxxxxx\",\n            \"name\": \"Mid-Term 2025\",\n            \"type\": \"exam\",\n            \"total_score\": 500\n        },\n        \"rankings\": [\n            {\n                \"id\": \"019b6001-xxxx-xxxx-xxxx-xxxxxxxxxxxx\",\n                \"name\": \"Aung Aung\",\n                \"roll_no\": \"001\",\n                \"score\": 485,\n                \"total_score\": 500,\n                \"percentage\": 97.0,\n                \"rank\": 1,\n                \"avatar\": \"1\"\n            }\n        ],\n        \"total_students\": 30\n    }\n}"
+						}
+					]
+				},
+				{
+					"name": "Get Student Ranking Details",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/classes/{{class_id}}/rankings/{{exam_id}}/{{student_id}}",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"classes",
+								"{{class_id}}",
+								"rankings",
+								"{{exam_id}}",
+								"{{student_id}}"
+							]
+						},
+						"description": "Fetches detailed ranking information for a specific student including subject-wise scores."
+					},
+					"response": [
+						{
+							"name": "Success Response",
+							"status": "OK",
+							"code": 200,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/json"
+								}
+							],
+							"body": "{\n    \"success\": true,\n    \"data\": {\n        \"student\": {\n            \"id\": \"student-001\",\n            \"name\": \"Aung Aung\",\n            \"roll_no\": \"001\",\n            \"avatar\": \"A\",\n            \"rank\": 1,\n            \"total_score\": 485,\n            \"max_score\": 500,\n            \"percentage\": 97.0\n        },\n        \"exam\": {\n            \"id\": \"exam-001\",\n            \"name\": \"Mid-Term 2025\",\n            \"type\": \"exam\",\n            \"subjects_count\": 6,\n            \"total_marks\": 500\n        },\n        \"subject_scores\": [\n            {\n                \"id\": \"subject-001\",\n                \"name\": \"Mathematics\",\n                \"icon\": \"🔢\",\n                \"icon_color\": \"#DC2626\",\n                \"score\": 85,\n                \"total_score\": 100,\n                \"percentage\": 85,\n                \"progress_color\": \"#22C55E\",\n                \"grade\": \"A\"\n            },\n            {\n                \"id\": \"subject-002\",\n                \"name\": \"English\",\n                \"icon\": \"abc\",\n                \"icon_color\": \"#F59E0B\",\n                \"score\": 82,\n                \"total_score\": 100,\n                \"percentage\": 82,\n                \"progress_color\": \"#22C55E\",\n                \"grade\": \"A\"\n            },\n            {\n                \"id\": \"subject-003\",\n                \"name\": \"Science\",\n                \"icon\": \"🧪\",\n                \"icon_color\": \"#DC2626\",\n                \"score\": 80,\n                \"total_score\": 100,\n                \"percentage\": 80,\n                \"progress_color\": \"#22C55E\",\n                \"grade\": \"A\"\n            },\n            {\n                \"id\": \"subject-004\",\n                \"name\": \"Myanmar\",\n                \"icon\": \"ဃ\",\n                \"icon_color\": \"#F59E0B\",\n                \"score\": 78,\n                \"total_score\": 100,\n                \"percentage\": 78,\n                \"progress_color\": \"#3B82F6\",\n                \"grade\": \"B+\"\n            },\n            {\n                \"id\": \"subject-005\",\n                \"name\": \"History\",\n                \"icon\": \"📚\",\n                \"icon_color\": \"#DC2626\",\n                \"score\": 80,\n                \"total_score\": 100,\n                \"percentage\": 80,\n                \"progress_color\": \"#22C55E\",\n                \"grade\": \"A\"\n            },\n            {\n                \"id\": \"subject-006\",\n                \"name\": \"Geography\",\n                \"icon\": \"🌍\",\n                \"icon_color\": \"#2563EB\",\n                \"score\": 80,\n                \"total_score\": 100,\n                \"percentage\": 80,\n                \"progress_color\": \"#22C55E\",\n                \"grade\": \"A\"\n            }\n        ],\n        \"class_info\": {\n            \"class_id\": \"019b5a7c-3b83-72b8-ad3a-25b4359a996f\",\n            \"section\": \"Grade 0 B\",\n            \"total_students\": 30,\n            \"class_average\": 78.5\n        }\n    }\n}"
+						}
+					]
+				},
+				{
+					"name": "Get Exam Options",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"url": "{{base_url}}/classes/{{class_id}}/exams"
+					},
+					"response": [
+						{
+							"name": "Success Response",
+							"status": "OK",
+							"code": 200,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/json"
+								}
+							],
+							"body": "{\n    \"success\": true,\n    \"data\": {\n        \"exams\": [\n            {\n                \"id\": \"019b8001-xxxx-xxxx-xxxx-xxxxxxxxxxxx\",\n                \"name\": \"Mid-Term 2025\",\n                \"type\": \"exam\",\n                \"icon\": \"\\ud83c\\udfc6\"\n            },\n            {\n                \"id\": \"019b8003-xxxx-xxxx-xxxx-xxxxxxxxxxxx\",\n                \"name\": \"Math Quiz 1\",\n                \"type\": \"quiz\",\n                \"subject\": \"Mathematics\",\n                \"icon\": \"\\ud83d\\udcdd\"\n            }\n        ]\n    }\n}"
+						}
+					]
+				},
+				{
+					"name": "Get Class Remarks",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/classes/{{class_id}}/remarks?type=&date_from=&date_to=",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"classes",
+								"{{class_id}}",
+								"remarks"
+							],
+							"query": [
+								{
+									"key": "type",
+									"value": "",
+									"description": "Optional: Filter by type ('positive' | 'concern' | 'general')",
+									"disabled": true
+								},
+								{
+									"key": "date_from",
+									"value": "",
+									"description": "Optional: Filter from date (YYYY-MM-DD)",
+									"disabled": true
+								},
+								{
+									"key": "date_to",
+									"value": "",
+									"description": "Optional: Filter to date (YYYY-MM-DD)",
+									"disabled": true
+								}
+							]
+						}
+					},
+					"response": [
+						{
+							"name": "Success Response",
+							"status": "OK",
+							"code": 200,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/json"
+								}
+							],
+							"body": "{\n    \"success\": true,\n    \"data\": {\n        \"remarks\": [\n            {\n                \"id\": \"019b9001-xxxx-xxxx-xxxx-xxxxxxxxxxxx\",\n                \"teacher_name\": \"U Kyaw Zaw\",\n                \"subject\": \"Mathematics\",\n                \"remark\": \"Students are showing great improvement in algebra.\",\n                \"date\": \"2025-12-20\",\n                \"period\": \"P1\",\n                \"time\": \"08:00 - 08:45 AM\",\n                \"type\": \"positive\",\n                \"avatar\": \"\\ud83d\\udd22\"\n            }\n        ],\n        \"total\": 6\n    }\n}"
+						}
+					]
+				},
+				{
+					"name": "Assign Class Leader",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Accept",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"student_id\": \"{{student_id}}\"\n}"
+						},
+						"url": "{{base_url}}/classes/{{class_id}}/class-leader"
+					},
+					"response": [
+						{
+							"name": "Success Response",
+							"status": "OK",
+							"code": 200,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/json"
+								}
+							],
+							"body": "{\n    \"success\": true,\n    \"message\": \"Class leader assigned successfully\",\n    \"data\": {\n        \"class_leader_id\": \"019b6001-xxxx-xxxx-xxxx-xxxxxxxxxxxx\",\n        \"student_name\": \"Aung Aung\"\n    }\n}"
+						}
+					]
+				},
+				{
+					"name": "Get Switch Requests",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/classes/{{class_id}}/switch-requests?status=&type=",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"classes",
+								"{{class_id}}",
+								"switch-requests"
+							],
+							"query": [
+								{
+									"key": "status",
+									"value": "",
+									"description": "Optional: Filter by status ('pending' | 'accepted' | 'rejected')",
+									"disabled": true
+								},
+								{
+									"key": "type",
+									"value": "",
+									"description": "Optional: 'outgoing' | 'incoming'",
+									"disabled": true
+								}
+							]
+						}
+					},
+					"response": [
+						{
+							"name": "Success Response",
+							"status": "OK",
+							"code": 200,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/json"
+								}
+							],
+							"body": "{\n    \"success\": true,\n    \"data\": {\n        \"outgoing_requests\": [\n            {\n                \"id\": \"019ba001-xxxx-xxxx-xxxx-xxxxxxxxxxxx\",\n                \"from_teacher\": \"You\",\n                \"to_teacher\": \"U Kyaw Zaw\",\n                \"from_subject\": \"English\",\n                \"to_subject\": \"Mathematics\",\n                \"day\": \"Monday\",\n                \"period\": \"P1\",\n                \"status\": \"accepted\",\n                \"date\": \"2025-12-15\",\n                \"time\": \"09:00 AM\",\n                \"reason\": \"Need to attend a meeting\"\n            }\n        ],\n        \"incoming_requests\": []\n    }\n}"
+						}
+					]
+				},
+				{
+					"name": "Create Switch Request",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Accept",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"period_id\": \"{{period_id}}\",\n    \"request_subject\": \"{{subject_id}}\",\n    \"date\": \"2025-12-20\",\n    \"reason\": \"Need to attend a meeting during this period\"\n}"
+						},
+						"url": "{{base_url}}/classes/{{class_id}}/switch-requests",
+						"description": "Teacher clicks on another teacher's period and requests to switch. The teacher selects their own subject to teach during that period."
+					},
+					"response": [
+						{
+							"name": "Success Response",
+							"status": "OK",
+							"code": 200,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/json"
+								}
+							],
+							"body": "{\n    \"success\": true,\n    \"message\": \"Switch request sent successfully\",\n    \"data\": {\n        \"id\": \"019ba003-xxxx-xxxx-xxxx-xxxxxxxxxxxx\",\n        \"status\": \"pending\"\n    }\n}"
+						}
+					]
+				},
+				{
+					"name": "Respond to Switch Request",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Accept",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"status\": \"accepted\"\n}"
+						},
+						"url": "{{base_url}}/classes/{{class_id}}/switch-requests/{{switch_request_id}}"
+					},
+					"response": [
+						{
+							"name": "Success Response",
+							"status": "OK",
+							"code": 200,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/json"
+								}
+							],
+							"body": "{\n    \"success\": true,\n    \"message\": \"Switch request accepted\",\n    \"data\": {\n        \"id\": \"019ba002-xxxx-xxxx-xxxx-xxxxxxxxxxxx\",\n        \"status\": \"accepted\"\n    }\n}"
+						}
+					]
+				},
+				{
+					"name": "Get Available Teachers for Switch",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/classes/{{class_id}}/available-teachers?day=Monday&period=P1",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"classes",
+								"{{class_id}}",
+								"available-teachers"
+							],
+							"query": [
+								{
+									"key": "day",
+									"value": "Monday",
+									"description": "Required: Day of the week"
+								},
+								{
+									"key": "period",
+									"value": "P1",
+									"description": "Required: Period number (P1, P2, etc.)"
+								}
+							]
+						}
+					},
+					"response": [
+						{
+							"name": "Success Response",
+							"status": "OK",
+							"code": 200,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/json"
+								}
+							],
+							"body": "{\n    \"success\": true,\n    \"data\": {\n        \"teachers\": [\n            {\n                \"id\": \"019b7001-xxxx-xxxx-xxxx-xxxxxxxxxxxx\",\n                \"name\": \"U Kyaw Zaw\",\n                \"subject\": \"Mathematics\",\n                \"avatar\": \"K\"\n            }\n        ]\n    }\n}"
+						}
+					]
+				},
+				{
+					"name": "Get Student Academic Summary",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/students/{{student_id}}/academic?academic_year=&term=",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"students",
+								"{{student_id}}",
+								"academic"
+							],
+							"query": [
+								{
+									"key": "academic_year",
+									"value": "",
+									"description": "Optional: Filter by academic year (e.g., '2025-2026')",
+									"disabled": true
+								},
+								{
+									"key": "term",
+									"value": "",
+									"description": "Optional: Filter by term ('first', 'mid', 'final')",
+									"disabled": true
+								}
+							]
+						}
+					},
+					"response": [
+						{
+							"name": "Success Response",
+							"status": "OK",
+							"code": 200,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/json"
+								}
+							],
+							"body": "{\n    \"success\": true,\n    \"data\": {\n        \"summary\": {\n            \"gpa\": \"3.75\",\n            \"avg_score\": \"82.5%\",\n            \"highest\": \"95\",\n            \"passed\": \"8/8\"\n        },\n        \"subject_performance\": [\n            {\n                \"id\": \"019bc001-xxxx\",\n                \"subject\": \"Mathematics\",\n                \"grade\": \"A+\",\n                \"percentage\": 95,\n                \"rank\": 1,\n                \"color\": \"#10B981\"\n            }\n        ]\n    }\n}"
+						}
+					]
+				},
+				{
+					"name": "Get Student Attendance",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/students/{{student_id}}/attendance?month=&year=",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"students",
+								"{{student_id}}",
+								"attendance"
+							],
+							"query": [
+								{
+									"key": "month",
+									"value": "",
+									"description": "Optional: Filter by month (1-12)",
+									"disabled": true
+								},
+								{
+									"key": "year",
+									"value": "",
+									"description": "Optional: Filter by year (e.g., 2025)",
+									"disabled": true
+								}
+							]
+						}
+					},
+					"response": [
+						{
+							"name": "Success Response",
+							"status": "OK",
+							"code": 200,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/json"
+								}
+							],
+							"body": "{\n    \"success\": true,\n    \"data\": {\n        \"overall\": {\n            \"percentage\": 92,\n            \"present\": 78,\n            \"absent\": 5,\n            \"late\": 2,\n            \"total_days\": 85\n        },\n        \"monthly_breakdown\": [\n            {\n                \"month\": \"December\",\n                \"month_short\": \"Dec\",\n                \"year\": 2025,\n                \"percentage\": 90,\n                \"present_days\": 18,\n                \"total_days\": 20,\n                \"days_display\": \"18/20\"\n            }\n        ]\n    }\n}"
+						}
+					]
+				},
+				{
+					"name": "Get Student Remarks",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/students/{{student_id}}/remarks?type=&category=&date_from=&date_to=",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"students",
+								"{{student_id}}",
+								"remarks"
+							],
+							"query": [
+								{
+									"key": "type",
+									"value": "",
+									"description": "Optional: Filter by type ('Positive' | 'Achievement' | 'Improvement' | 'Concern')",
+									"disabled": true
+								},
+								{
+									"key": "category",
+									"value": "",
+									"description": "Optional: Filter by category ('Behavior' | 'Extracurricular' | 'Attitude' | 'Academic')",
+									"disabled": true
+								},
+								{
+									"key": "date_from",
+									"value": "",
+									"description": "Optional: Filter from date (YYYY-MM-DD)",
+									"disabled": true
+								},
+								{
+									"key": "date_to",
+									"value": "",
+									"description": "Optional: Filter to date (YYYY-MM-DD)",
+									"disabled": true
+								}
+							]
+						}
+					},
+					"response": [
+						{
+							"name": "Success Response",
+							"status": "OK",
+							"code": 200,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/json"
+								}
+							],
+							"body": "{\n    \"success\": true,\n    \"data\": {\n        \"remarks\": [\n            {\n                \"id\": \"019bd001-xxxx\",\n                \"type\": \"Positive\",\n                \"category\": \"Behavior\",\n                \"date\": \"2025-12-02\",\n                \"title\": \"Excellent Conduct\",\n                \"description\": \"Student showed excellent behavior.\",\n                \"color\": \"#10B981\",\n                \"teacher_name\": \"U Kyaw Zaw\",\n                \"subject\": \"Mathematics\"\n            }\n        ],\n        \"total\": 3\n    }\n}"
+						}
+					]
+				},
+				{
+					"name": "Get Student Rankings",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"url": "{{base_url}}/students/{{student_id}}/rankings"
+					},
+					"response": [
+						{
+							"name": "Success Response",
+							"status": "OK",
+							"code": 200,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/json"
+								}
+							],
+							"body": "{\n    \"success\": true,\n    \"data\": {\n        \"current_rankings\": {\n            \"class_rank\": 2,\n            \"grade_rank\": 5,\n            \"total_students_in_class\": 30,\n            \"total_students_in_grade\": 120\n        },\n        \"exam_history\": [\n            {\n                \"id\": \"019be001-xxxx\",\n                \"name\": \"Mid-Term 2025\",\n                \"date\": \"2025-10-15\",\n                \"total_score\": 456,\n                \"max_score\": 500,\n                \"percentage\": 91.2,\n                \"class_rank\": 2,\n                \"grade_rank\": 8\n            }\n        ]\n    }\n}"
+						}
+					]
+				},
+				{
+					"name": "Get Student Ranking Detail",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"url": "{{base_url}}/students/{{student_id}}/rankings/{{exam_id}}"
+					},
+					"response": [
+						{
+							"name": "Success Response",
+							"status": "OK",
+							"code": 200,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/json"
+								}
+							],
+							"body": "{\n    \"success\": true,\n    \"data\": {\n        \"exam\": {\n            \"id\": \"019be001-xxxx\",\n            \"name\": \"Mid-Term 2025\",\n            \"date\": \"2025-10-15\",\n            \"type\": \"exam\"\n        },\n        \"student\": {\n            \"id\": \"019b6001-xxxx\",\n            \"name\": \"Aung Aung\",\n            \"roll_no\": \"001\"\n        },\n        \"overall\": {\n            \"total_score\": 456,\n            \"max_score\": 500,\n            \"percentage\": 91.2,\n            \"class_rank\": 2,\n            \"grade_rank\": 8\n        },\n        \"subject_scores\": [\n            {\n                \"subject\": \"Mathematics\",\n                \"score\": 95,\n                \"max_score\": 100,\n                \"grade\": \"A+\",\n                \"rank\": 1\n            }\n        ]\n    }\n}"
+						}
+					]
+				}
+			]
+		},
+		{
+			"name": "Subjects",
+			"item": [
+				{
+					"name": "Get Subjects List",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"url": "{{base_url}}/subjects"
+					},
+					"response": [
+						{
+							"name": "Success Response",
+							"originalRequest": {
+								"method": "GET",
+								"header": [
+									{
+										"key": "Accept",
+										"value": "application/json"
+									},
+									{
+										"key": "Authorization",
+										"value": "Bearer {{token}}"
+									}
+								],
+								"url": "{{base_url}}/subjects"
+							},
+							"status": "OK",
+							"code": 200,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/json"
+								}
+							],
+							"body": "{\n    \"success\": true,\n    \"data\": {\n        \"subjects\": [\n            {\n                \"id\": \"019b4fcb-e1e6-7046-928d-fe25f067534a\",\n                \"name\": \"Myanmar\",\n                \"code\": \"MY-G0\",\n                \"periods_per_timetable\": 15,\n                \"icon\": \"\ud83d\udcda\",\n                \"icon_color\": \"#DC2626\",\n                \"progress_color\": \"#DC2626\",\n                \"classes\": [\n                    {\n                        \"id\": \"019b4fcb-e2a3-7016-9698-c9d0bbd12ab7\",\n                        \"name\": \"Grade 0 A\",\n                        \"grade\": \"Grade 0\"\n                    }\n                ],\n                \"classes_count\": 1\n            }\n        ],\n        \"total\": 1\n    }\n}"
+						}
+					]
+				},
+				{
+					"name": "Get Subject Detail",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"url": "{{base_url}}/subjects/{{subject_id}}"
+					},
+					"response": [
+						{
+							"name": "Success Response",
+							"originalRequest": {
+								"method": "GET",
+								"header": [
+									{
+										"key": "Accept",
+										"value": "application/json"
+									},
+									{
+										"key": "Authorization",
+										"value": "Bearer {{token}}"
+									}
+								],
+								"url": "{{base_url}}/subjects/{{subject_id}}"
+							},
+							"status": "OK",
+							"code": 200,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/json"
+								}
+							],
+							"body": "{\n    \"success\": true,\n    \"data\": {\n        \"id\": \"019b4fcb-e1e6-7046-928d-fe25f067534a\",\n        \"name\": \"Myanmar\",\n        \"code\": \"MY-G0\",\n        \"periods_per_timetable\": 15,\n        \"icon\": \"\ud83d\udcda\",\n        \"icon_color\": \"#DC2626\",\n        \"progress_color\": \"#DC2626\",\n        \"classes\": [\n            {\n                \"id\": \"019b4fcb-e2a3-7016-9698-c9d0bbd12ab7\",\n                \"name\": \"Grade 0 A\",\n                \"grade\": \"Grade 0\",\n                \"student_count\": 30\n            }\n        ],\n        \"classes_count\": 1,\n        \"total_students\": 30,\n        \"curriculum_progress\": {\n            \"total_chapters\": 5,\n            \"completed_chapters\": 2,\n            \"total_topics\": 22,\n            \"completed_topics\": 13,\n            \"overall_progress\": 59\n        }\n    }\n}"
+						}
+					]
+				},
+				{
+					"name": "Get Subject Curriculum",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"url": "{{base_url}}/subjects/{{subject_id}}/curriculum"
+					},
+					"response": [
+						{
+							"name": "Success Response",
+							"originalRequest": {
+								"method": "GET",
+								"header": [
+									{
+										"key": "Accept",
+										"value": "application/json"
+									},
+									{
+										"key": "Authorization",
+										"value": "Bearer {{token}}"
+									}
+								],
+								"url": "{{base_url}}/subjects/{{subject_id}}/curriculum"
+							},
+							"status": "OK",
+							"code": 200,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/json"
+								}
+							],
+							"body": "{\n    \"success\": true,\n    \"data\": {\n        \"subject\": {\n            \"id\": \"019b4fcb-e1e6-7046-928d-fe25f067534a\",\n            \"name\": \"Myanmar\",\n            \"code\": \"MY-G0\",\n            \"icon\": \"\ud83d\udcda\",\n            \"progress_color\": \"#DC2626\"\n        },\n        \"chapters\": [\n            {\n                \"id\": \"019b5060-xxxx-xxxx-xxxx-xxxxxxxxxxxx\",\n                \"title\": \"Introduction & Fundamentals\",\n                \"description\": \"Basic concepts\",\n                \"order\": 1,\n                \"topics\": [\n                    {\n                        \"id\": \"019b5061-xxxx-xxxx-xxxx-xxxxxxxxxxxx\",\n                        \"title\": \"Topic 1.1: Basic Concepts\",\n                        \"description\": \"Introduction to basics\",\n                        \"order\": 1,\n                        \"duration_minutes\": 45\n                    }\n                ],\n                \"topics_count\": 4\n            }\n        ],\n        \"total_chapters\": 5,\n        \"total_topics\": 22\n    }\n}"
+						}
+					]
+				},
+				{
+					"name": "Get Teaching Periods",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/subjects/{{subject_id}}/teaching-periods?class_id={{class_id}}&month=12&year=2025",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"subjects",
+								"{{subject_id}}",
+								"teaching-periods"
+							],
+							"query": [
+								{
+									"key": "class_id",
+									"value": "{{class_id}}",
+									"description": "Required: Class ID"
+								},
+								{
+									"key": "month",
+									"value": "12",
+									"description": "Optional: Month (1-12), defaults to current month"
+								},
+								{
+									"key": "year",
+									"value": "2025",
+									"description": "Optional: Year, defaults to current year"
+								}
+							]
+						}
+					},
+					"response": [
+						{
+							"name": "Success Response",
+							"originalRequest": {
+								"method": "GET",
+								"header": [
+									{
+										"key": "Accept",
+										"value": "application/json"
+									},
+									{
+										"key": "Authorization",
+										"value": "Bearer {{token}}"
+									}
+								],
+								"url": {
+									"raw": "{{base_url}}/subjects/{{subject_id}}/teaching-periods?class_id={{class_id}}&month=12&year=2025",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"subjects",
+										"{{subject_id}}",
+										"teaching-periods"
+									],
+									"query": [
+										{
+											"key": "class_id",
+											"value": "{{class_id}}"
+										},
+										{
+											"key": "month",
+											"value": "12"
+										},
+										{
+											"key": "year",
+											"value": "2025"
+										}
+									]
+								}
+							},
+							"status": "OK",
+							"code": 200,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/json"
+								}
+							],
+							"body": "{\n    \"success\": true,\n    \"message\": \"Success\",\n    \"data\": {\n        \"subject\": {\n            \"id\": \"019b4fcb-e1e6-7046-928d-fe25f067534a\",\n            \"name\": \"Mathematics\",\n            \"icon\": \"\ud83d\udd22\",\n            \"progress_color\": \"#0284C7\"\n        },\n        \"class\": {\n            \"id\": \"019b4fcb-e2a3-7016-9698-c9d0bbd12ab7\",\n            \"name\": \"Grade 8A\",\n            \"grade\": \"Grade 8\"\n        },\n        \"month\": 12,\n        \"year\": 2025,\n        \"statistics\": {\n            \"total\": 6,\n            \"completed\": 3,\n            \"upcoming\": 3\n        },\n        \"periods\": [\n            {\n                \"id\": \"019b6001-xxxx-xxxx-xxxx-xxxxxxxxxxxx_2025-12-10\",\n                \"date\": \"2025-12-10\",\n                \"date_formatted\": \"Dec 10, 2025\",\n                \"period\": 1,\n                \"period_label\": \"Period 1\",\n                \"start_time\": \"08:00\",\n                \"end_time\": \"08:45\",\n                \"status\": \"upcoming\"\n            },\n            {\n                \"id\": \"019b6002-xxxx-xxxx-xxxx-xxxxxxxxxxxx_2025-12-06\",\n                \"date\": \"2025-12-06\",\n                \"date_formatted\": \"Dec 6, 2025\",\n                \"period\": 1,\n                \"period_label\": \"Period 1\",\n                \"start_time\": \"08:00\",\n                \"end_time\": \"08:45\",\n                \"status\": \"completed\"\n            }\n        ]\n    }\n}"
+						}
+					]
+				}
+			]
+		},
+		{
+			"name": "Attendance",
+			"item": [
+				{
+					"name": "Get Students for Attendance",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/attendance/students?class_id={{class_id}}&current_period_id={{period_id}}&date=2025-12-23",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"attendance",
+								"students"
+							],
+							"query": [
+								{
+									"key": "class_id",
+									"value": "{{class_id}}"
+								},
+								{
+									"key": "current_period_id",
+									"value": "{{period_id}}"
+								},
+								{
+									"key": "date",
+									"value": "2025-12-23"
+								}
+							]
+						}
+					}
+				},
+				{
+					"name": "Save Attendance",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Accept",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"class_id\": \"{{class_id}}\",\n    \"current_period_id\": \"{{period_id}}\",\n    \"date\": \"2025-12-23\",\n    \"attendance\": [\n        {\"student_id\": \"student-uuid-1\", \"status\": \"present\"},\n        {\"student_id\": \"student-uuid-2\", \"status\": \"absent\"},\n        {\"student_id\": \"student-uuid-3\", \"status\": \"leave\"}\n    ]\n}"
+						},
+						"url": "{{base_url}}/attendance"
+					}
+				},
+				{
+					"name": "Bulk Update Attendance",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Accept",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"class_id\": \"{{class_id}}\",\n    \"current_period_id\": \"{{period_id}}\",\n    \"date\": \"2025-12-23\",\n    \"status\": \"present\"\n}"
+						},
+						"url": "{{base_url}}/attendance/bulk"
+					}
+				},
+				{
+					"name": "Get Attendance History",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/attendance/history?filter=thisMonth",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"attendance",
+								"history"
+							],
+							"query": [
+								{
+									"key": "filter",
+									"value": "thisMonth"
+								}
+							]
+						}
+					}
+				},
+				{
+					"name": "Get Attendance Detail",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"url": "{{base_url}}/attendance/history/{{record_id}}"
+					}
+				}
+			]
+		},
+		{
+			"name": "Homework",
+			"item": [
+				{
+					"name": "Get All Homework",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/homework?class_id={{class_id}}&status=active",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"homework"
+							],
+							"query": [
+								{
+									"key": "class_id",
+									"value": "{{class_id}}",
+									"disabled": true
+								},
+								{
+									"key": "status",
+									"value": "active",
+									"disabled": true
+								}
+							]
+						}
+					}
+				},
+				{
+					"name": "Get Homework Detail",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"url": "{{base_url}}/homework/{{homework_id}}"
+					}
+				},
+				{
+					"name": "Create Homework",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Accept",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"class_id\": \"{{class_id}}\",\n    \"subject_id\": \"{{subject_id}}\",\n    \"priority\": \"medium\",\n    \"title\": \"Chapter 6: Quadratic Equations\",\n    \"description\": \"Complete exercises 1-15 from Chapter 6\",\n    \"due_date\": \"2026-01-30\"\n}"
+						},
+						"url": "{{base_url}}/homework"
+					}
+				},
+				{
+					"name": "Collect Homework",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Accept",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"student_id\": \"{{student_id}}\"\n}"
+						},
+						"url": "{{base_url}}/homework/{{homework_id}}/collect"
+					}
+				}
+			]
+		},
+		{
+			"name": "Announcements",
+			"item": [
+				{
+					"name": "Get Announcements",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/announcements?page=1&per_page=10",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"announcements"
+							],
+							"query": [
+								{
+									"key": "page",
+									"value": "1"
+								},
+								{
+									"key": "per_page",
+									"value": "10"
+								}
+							]
+						}
+					}
+				},
+				{
+					"name": "Get Announcement Detail",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"url": "{{base_url}}/announcements/{{announcement_id}}"
+					}
+				}
+			]
+		},
+		{
+			"name": "Calendar Events",
+			"item": [
+				{
+					"name": "Get Calendar Events",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/calendar/events?month=12&year=2025",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"calendar",
+								"events"
+							],
+							"query": [
+								{
+									"key": "month",
+									"value": "12"
+								},
+								{
+									"key": "year",
+									"value": "2025"
+								}
+							]
+						}
+					}
+				},
+				{
+					"name": "Get Event Detail",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"url": "{{base_url}}/calendar/events/{{event_id}}"
+					}
+				}
+			]
+		},
+		{
+			"name": "My Leave Requests",
+			"item": [
+				{
+					"name": "Get My Leave Requests",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"url": "{{base_url}}/my-leave-requests"
+					}
+				},
+				{
+					"name": "Get My Leave Request Detail",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"url": "{{base_url}}/my-leave-requests/{{leave_request_id}}"
+					}
+				},
+				{
+					"name": "Apply for Leave",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Accept",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"type\": \"Casual\",\n    \"start_date\": \"2025-12-25\",\n    \"end_date\": \"2025-12-27\",\n    \"reason\": \"Family function - attending wedding ceremony\"\n}"
+						},
+						"url": "{{base_url}}/my-leave-requests"
+					}
+				},
+				{
+					"name": "Get Leave Balance",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"url": "{{base_url}}/leave-balance"
+					}
+				}
+			]
+		},
+		{
+			"name": "Student Leave Requests",
+			"item": [
+				{
+					"name": "Get Pending Leave Requests",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"url": "{{base_url}}/leave-requests/pending"
+					}
+				},
+				{
+					"name": "Get All Student Leave Requests",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/leave-requests?status=pending",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"leave-requests"
+							],
+							"query": [
+								{
+									"key": "status",
+									"value": "pending",
+									"disabled": true
+								}
+							]
+						}
+					}
+				},
+				{
+					"name": "Approve Leave Request",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Accept",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"remarks\": \"Approved. Please submit medical certificate upon return.\"\n}"
+						},
+						"url": "{{base_url}}/leave-requests/{{leave_request_id}}/approve"
+					}
+				},
+				{
+					"name": "Reject Leave Request",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Accept",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"remarks\": \"Rejected due to upcoming exams. Please reschedule.\"\n}"
+						},
+						"url": "{{base_url}}/leave-requests/{{leave_request_id}}/reject"
+					}
+				}
+			]
+		},
+		{
+			"name": "Daily Reports",
+			"item": [
+				{
+					"name": "Get My Reports",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"url": "{{base_url}}/daily-reports/my-reports"
+					}
+				},
+				{
+					"name": "Get Received Reports",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"url": "{{base_url}}/daily-reports/received"
+					}
+				},
+				{
+					"name": "Get Report Detail",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"url": "{{base_url}}/daily-reports/{{report_id}}"
+					}
+				},
+				{
+					"name": "Get Recipients List",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"url": "{{base_url}}/daily-reports/recipients"
+					}
+				},
+				{
+					"name": "Create Report",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Accept",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"category\": \"Suggestion\",\n    \"recipient\": \"Admin\",\n    \"subject\": \"Suggestion for Library Hours\",\n    \"message\": \"It would be helpful if the library could stay open until 5 PM for students who need extra study time.\"\n}"
+						},
+						"url": "{{base_url}}/daily-reports"
+					}
+				},
+				{
+					"name": "Update Report Status",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Accept",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"status\": \"Acknowledged\",\n    \"response\": \"Thank you for your feedback. We will consider this.\"\n}"
+						},
+						"url": "{{base_url}}/daily-reports/{{report_id}}/status"
+					}
+				}
+			]
+		},
+		{
+			"name": "Payslips",
+			"item": [
+				{
+					"name": "Get Payslips List",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"url": "{{base_url}}/payslips"
+					}
+				},
+				{
+					"name": "Get Payslip Detail",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"url": "{{base_url}}/payslips/{{payslip_id}}"
+					}
+				}
+			]
+		},
+		{
+			"name": "Class Records",
+			"item": [
+				{
+					"name": "Get Class Records (Week Filter)",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/class-records?start_date=2026-01-05&end_date=2026-01-11",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"class-records"
+							],
+							"query": [
+								{
+									"key": "start_date",
+									"value": "2026-01-05",
+									"description": "Week start date (Sunday) in YYYY-MM-DD format"
+								},
+								{
+									"key": "end_date",
+									"value": "2026-01-11",
+									"description": "Week end date (Saturday) in YYYY-MM-DD format"
+								}
+							]
+						},
+						"description": "Get class records for a specific week. Week starts on Sunday and ends on Saturday."
+					},
+					"response": [
+						{
+							"name": "Success Response",
+							"originalRequest": {
+								"method": "GET",
+								"header": [
+									{
+										"key": "Accept",
+										"value": "application/json"
+									},
+									{
+										"key": "Authorization",
+										"value": "Bearer {{token}}"
+									}
+								],
+								"url": {
+									"raw": "{{base_url}}/class-records?start_date=2026-01-05&end_date=2026-01-11",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"class-records"
+									],
+									"query": [
+										{
+											"key": "start_date",
+											"value": "2026-01-05"
+										},
+										{
+											"key": "end_date",
+											"value": "2026-01-11"
+										}
+									]
+								}
+							},
+							"status": "OK",
+							"code": 200,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/json"
+								}
+							],
+							"body": "{\n    \"success\": true,\n    \"data\": {\n        \"week_start\": \"2026-01-05\",\n        \"week_end\": \"2026-01-11\",\n        \"records\": [\n            {\n                \"id\": \"1\",\n                \"grade\": \"Grade 8A\",\n                \"class_id\": \"019b5a7c-3b83-72b8-ad3a-25b4359a996f\",\n                \"period\": \"P1\",\n                \"subject\": \"Mathematics\",\n                \"date\": \"Jan 10, 2026\",\n                \"date_raw\": \"2026-01-10\",\n                \"time\": \"08:00 - 08:45\",\n                \"chapter\": \"Chapter 8: Quadratic Equations - 8.1 Introduction\",\n                \"present\": 30,\n                \"absent\": 1,\n                \"leave\": 1,\n                \"total\": 32,\n                \"grade_color\": \"#DC2626\"\n            }\n        ],\n        \"summary\": {\n            \"total_classes\": 6,\n            \"total_present\": 168,\n            \"total_absent\": 8,\n            \"total_leave\": 3,\n            \"average_attendance\": 94\n        }\n    }\n}"
+						}
+					]
+				},
+				{
+					"name": "Get Class Record Detail",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"url": "{{base_url}}/class-records/{{record_id}}",
+						"description": "Get detailed information for a specific class record including attendance details and class info."
+					},
+					"response": [
+						{
+							"name": "Success Response",
+							"originalRequest": {
+								"method": "GET",
+								"header": [
+									{
+										"key": "Accept",
+										"value": "application/json"
+									},
+									{
+										"key": "Authorization",
+										"value": "Bearer {{token}}"
+									}
+								],
+								"url": "{{base_url}}/class-records/{{record_id}}"
+							},
+							"status": "OK",
+							"code": 200,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/json"
+								}
+							],
+							"body": "{\n    \"success\": true,\n    \"data\": {\n        \"record\": {\n            \"id\": \"1\",\n            \"grade\": \"Grade 8A\",\n            \"class_id\": \"019b5a7c-3b83-72b8-ad3a-25b4359a996f\",\n            \"period\": \"P1\",\n            \"subject\": \"Mathematics\",\n            \"date\": \"Jan 10, 2026\",\n            \"date_raw\": \"2026-01-10\",\n            \"time\": \"08:00 - 08:45\",\n            \"chapter\": \"Chapter 8: Quadratic Equations - 8.1 Introduction\",\n            \"topic\": \"Introduction to Quadratic Equations\",\n            \"description\": \"Students learned the basic form of quadratic equations ax² + bx + c = 0\",\n            \"present\": 30,\n            \"absent\": 1,\n            \"leave\": 1,\n            \"total\": 32,\n            \"grade_color\": \"#DC2626\",\n            \"homework_assigned\": true,\n            \"homework_title\": \"Exercise 8.1 - Problems 1-10\"\n        },\n        \"attendance\": {\n            \"present_students\": [\n                {\n                    \"id\": \"stu-001\",\n                    \"name\": \"Aung Aung\",\n                    \"roll_no\": \"001\",\n                    \"avatar\": \"A\"\n                }\n            ],\n            \"absent_students\": [\n                {\n                    \"id\": \"stu-003\",\n                    \"name\": \"Kyaw Kyaw\",\n                    \"roll_no\": \"003\",\n                    \"avatar\": \"K\"\n                }\n            ],\n            \"leave_students\": [\n                {\n                    \"id\": \"stu-008\",\n                    \"name\": \"Hla Hla\",\n                    \"roll_no\": \"008\",\n                    \"avatar\": \"H\"\n                }\n            ]\n        },\n        \"class_info\": {\n            \"id\": \"019b5a7c-3b83-72b8-ad3a-25b4359a996f\",\n            \"section\": \"Grade 8A\",\n            \"room\": \"Room 101\",\n            \"class_teacher\": \"Mrs. Lisa Park\",\n            \"total_students\": 32\n        }\n    }\n}"
+						}
+					]
+				}
+			]
+		},
+		{
+			"name": "Notifications",
+			"item": [
+				{
+					"name": "Create Notification",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Accept",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"type\": \"announcement\",\n    \"title\": \"Staff Meeting Tomorrow\",\n    \"message\": \"All teachers are required to attend the staff meeting at 9:00 AM in the conference room.\",\n    \"data\": {\n        \"announcement_id\": 15,\n        \"priority\": \"high\"\n    }\n}"
+						},
+						"url": "{{base_url}}/notifications"
+					}
+				},
+				{
+					"name": "Get All Notifications",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/notifications?page=1&per_page=20&type=all&is_read=unread",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"notifications"
+							],
+							"query": [
+								{
+									"key": "page",
+									"value": "1"
+								},
+								{
+									"key": "per_page",
+									"value": "20"
+								},
+								{
+									"key": "type",
+									"value": "all",
+									"disabled": true
+								},
+								{
+									"key": "is_read",
+									"value": "unread",
+									"disabled": true
+								}
+							]
+						}
+					}
+				},
+				{
+					"name": "Get Unread Count",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"url": "{{base_url}}/notifications/unread-count"
+					}
+				},
+				{
+					"name": "Mark Notification as Read",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"url": "{{base_url}}/notifications/{{notification_id}}/read"
+					}
+				},
+				{
+					"name": "Mark All as Read",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Accept",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"type\": \"announcement\"\n}"
+						},
+						"url": "{{base_url}}/notifications/mark-all-read"
+					}
+				},
+				{
+					"name": "Delete Notification",
+					"request": {
+						"method": "DELETE",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"url": "{{base_url}}/notifications/{{notification_id}}"
+					}
+				},
+				{
+					"name": "Clear All Notifications",
+					"request": {
+						"method": "DELETE",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Accept",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"type\": \"system\",\n    \"older_than_days\": 30\n}"
+						},
+						"url": "{{base_url}}/notifications/clear-all"
+					}
+				},
+				{
+					"name": "Get Notification Settings",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"url": "{{base_url}}/notifications/settings"
+					}
+				},
+				{
+					"name": "Update Notification Settings",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Accept",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"push_enabled\": true,\n    \"email_enabled\": true,\n    \"preferences\": {\n        \"announcement\": {\"push\": true, \"email\": true},\n        \"leave\": {\"push\": true, \"email\": true},\n        \"attendance\": {\"push\": true, \"email\": false}\n    },\n    \"quiet_hours\": {\n        \"enabled\": true,\n        \"start\": \"23:00\",\n        \"end\": \"06:00\"\n    }\n}"
+						},
+						"url": "{{base_url}}/notifications/settings"
+					}
+				}
+			]
+		},
+		{
+			"name": "Exams",
+			"item": [
+				{
+					"name": "Get Exams List",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"var jsonData = pm.response.json();",
+									"if (jsonData.success && jsonData.data.exams && jsonData.data.exams.length > 0) {",
+									"    pm.collectionVariables.set('exam_id', jsonData.data.exams[0].id);",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/exams?status=upcoming",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"exams"
+							],
+							"query": [
+								{
+									"key": "status",
+									"value": "upcoming",
+									"disabled": true
+								}
+							]
+						}
+					},
+					"response": [
+						{
+							"name": "Success Response",
+							"originalRequest": {
+								"method": "GET",
+								"header": [
+									{
+										"key": "Accept",
+										"value": "application/json"
+									},
+									{
+										"key": "Authorization",
+										"value": "Bearer {{token}}"
+									}
+								],
+								"url": "{{base_url}}/exams"
+							},
+							"status": "OK",
+							"code": 200,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/json"
+								}
+							],
+							"cookie": [],
+							"body": "{\n    \"success\": true,\n    \"data\": {\n        \"exams\": [\n            {\n                \"id\": \"019b5001-xxxx-xxxx-xxxx-xxxxxxxxxxxx\",\n                \"title\": \"Mid-term Exam\",\n                \"type\": \"exam\",\n                \"grade\": \"Grade 8A\",\n                \"subject_count\": 5,\n                \"date\": \"2025-12-08\",\n                \"time\": \"09:00 AM - 11:00 AM\",\n                \"location\": \"Hall A\",\n                \"status\": \"upcoming\",\n                \"is_your_subject\": true\n            }\n        ],\n        \"total\": 1\n    }\n}"
+						}
+					]
+				},
+				{
+					"name": "Get Exam Detail",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/exams/{{exam_id}}?class_id={{class_id}}",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"exams",
+								"{{exam_id}}"
+							],
+							"query": [
+								{
+									"key": "class_id",
+									"value": "{{class_id}}",
+									"description": "Optional: Override exam's default class"
+								}
+							]
+						}
+					},
+					"response": [
+						{
+							"name": "Success Response",
+							"originalRequest": {
+								"method": "GET",
+								"header": [
+									{
+										"key": "Accept",
+										"value": "application/json"
+									},
+									{
+										"key": "Authorization",
+										"value": "Bearer {{token}}"
+									}
+								],
+								"url": "{{base_url}}/exams/{{exam_id}}?class_id={{class_id}}"
+							},
+							"status": "OK",
+							"code": 200,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/json"
+								}
+							],
+							"cookie": [],
+							"body": "{\n    \"success\": true,\n    \"data\": {\n        \"id\": \"019b5001-xxxx-xxxx-xxxx-xxxxxxxxxxxx\",\n        \"title\": \"Mid-term Exam\",\n        \"type\": \"exam\",\n        \"class\": {\n            \"id\": \"019b5a0f-fd9a-7084-a7b1-44cc89c5b6f4\",\n            \"grade\": \"Grade 0\",\n            \"section\": \"Grade 0 A\",\n            \"room\": \"Room 101\",\n            \"student_count\": 30,\n            \"class_teacher\": \"Hay Phyu\",\n            \"academic_year\": \"2025-2026\",\n            \"grade_color\": \"#3b82f6\",\n            \"grade_bg_color\": \"#E1ECFD\"\n        },\n        \"grade\": \"Grade 0\",\n        \"date\": \"2025-12-08\",\n        \"time\": \"09:00 AM - 11:00 AM\",\n        \"location\": \"Hall A\",\n        \"status\": \"completed\",\n        \"is_your_subject\": true,\n        \"subjects\": [\n            {\n                \"id\": \"019b5010-xxxx-xxxx-xxxx-xxxxxxxxxxxx\",\n                \"name\": \"Mathematics\",\n                \"marks\": 100,\n                \"is_your_subject\": true,\n                \"grading_status\": \"graded\",\n                \"pass_percentage\": 92.0\n            }\n        ]\n    }\n}"
+						}
+					]
+				},
+				{
+					"name": "Get Exam Results",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"url": "{{base_url}}/exams/{{exam_id}}/results"
+					},
+					"response": [
+						{
+							"name": "Success Response",
+							"originalRequest": {
+								"method": "GET",
+								"header": [
+									{
+										"key": "Accept",
+										"value": "application/json"
+									},
+									{
+										"key": "Authorization",
+										"value": "Bearer {{token}}"
+									}
+								],
+								"url": "{{base_url}}/exams/019b5004-xxxx-xxxx-xxxx-xxxxxxxxxxxx/results"
+							},
+							"status": "OK",
+							"code": 200,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/json"
+								}
+							],
+							"cookie": [],
+							"body": "{\n    \"success\": true,\n    \"data\": {\n        \"id\": \"019bb405-285d-7283-8e6c-af8f955ebb10\",\n        \"title\": \"Monthly Test - Kindergarten A\",\n        \"type\": \"monthly (100 marks, 6 subjects)\",\n        \"class\": \"Kindergarten A\",\n        \"grade\": \"Kindergarten\",\n        \"date\": \"2026-01-12\",\n        \"time\": \"12:00 AM - 12:00 AM\",\n        \"location\": \"Room 101\",\n        \"status\": \"completed\",\n        \"subjects\": [\n            {\n                \"id\": \"019bb421-2b69-72c6-b04d-170b37379e0c\",\n                \"name\": \"Myanmar\",\n                \"marks\": 100,\n                \"is_your_subject\": true,\n                \"pass_percentage\": 60\n            },\n            {\n                \"id\": \"019bb421-2b6a-70b4-ba70-fb57b1961cf2\",\n                \"name\": \"English\",\n                \"marks\": 100,\n                \"is_your_subject\": false,\n                \"pass_percentage\": 0\n            },\n            {\n                \"id\": \"019bb421-2b6a-70b4-ba70-fb57b28b758f\",\n                \"name\": \"Mathematics\",\n                \"marks\": 100,\n                \"is_your_subject\": false,\n                \"pass_percentage\": 0\n            },\n            {\n                \"id\": \"019bb421-2b6b-727b-8265-9c8f7cc6acc9\",\n                \"name\": \"General Science\",\n                \"marks\": 100,\n                \"is_your_subject\": false,\n                \"pass_percentage\": 0\n            },\n            {\n                \"id\": \"019bb421-2b6b-727b-8265-9c8f7daef073\",\n                \"name\": \"Art & Craft\",\n                \"marks\": 100,\n                \"is_your_subject\": false,\n                \"pass_percentage\": 0\n            },\n            {\n                \"id\": \"019bb421-2b6b-727b-8265-9c8f7e6a77b7\",\n                \"name\": \"Physical Education\",\n                \"marks\": 100,\n                \"is_your_subject\": false,\n                \"pass_percentage\": 0\n            }\n        ],\n        \"students\": [\n            {\n                \"id\": \"student-001\",\n                \"name\": \"Aung Aung\",\n                \"student_id\": \"KG-A-001\",\n                \"avatar\": null,\n                \"total_marks\": 600,\n                \"obtained_marks\": 520,\n                \"percentage\": 86.67,\n                \"overall_grade\": \"A\",\n                \"overall_remark\": \"Excellent performance across all subjects. Shows strong understanding in Myanmar and Mathematics.\",\n                \"subject_results\": [\n                    {\n                        \"subject\": \"Myanmar\",\n                        \"marks_obtained\": 95,\n                        \"total_marks\": 100,\n                        \"grade\": \"A+\",\n                        \"remark\": \"Excellent reading and writing skills\"\n                    },\n                    {\n                        \"subject\": \"English\",\n                        \"marks_obtained\": 88,\n                        \"total_marks\": 100,\n                        \"grade\": \"A\",\n                        \"remark\": \"Good pronunciation and vocabulary\"\n                    },\n                    {\n                        \"subject\": \"Mathematics\",\n                        \"marks_obtained\": 92,\n                        \"total_marks\": 100,\n                        \"grade\": \"A+\",\n                        \"remark\": \"Strong problem-solving abilities\"\n                    },\n                    {\n                        \"subject\": \"General Science\",\n                        \"marks_obtained\": 85,\n                        \"total_marks\": 100,\n                        \"grade\": \"A\",\n                        \"remark\": \"Shows curiosity about nature\"\n                    },\n                    {\n                        \"subject\": \"Art & Craft\",\n                        \"marks_obtained\": 90,\n                        \"total_marks\": 100,\n                        \"grade\": \"A+\",\n                        \"remark\": \"Creative and artistic\"\n                    },\n                    {\n                        \"subject\": \"Physical Education\",\n                        \"marks_obtained\": 87,\n                        \"total_marks\": 100,\n                        \"grade\": \"A\",\n                        \"remark\": \"Active participation in sports\"\n                    }\n                ]\n            },\n            {\n                \"id\": \"student-002\",\n                \"name\": \"Thant Zin\",\n                \"student_id\": \"KG-A-002\",\n                \"avatar\": null,\n                \"total_marks\": 600,\n                \"obtained_marks\": 450,\n                \"percentage\": 75.0,\n                \"overall_grade\": \"B+\",\n                \"overall_remark\": \"Good performance. Room for improvement in some areas.\",\n                \"subject_results\": [\n                    {\n                        \"subject\": \"Myanmar\",\n                        \"marks_obtained\": 78,\n                        \"total_marks\": 100,\n                        \"grade\": \"B+\",\n                        \"remark\": \"Needs practice in writing\"\n                    },\n                    {\n                        \"subject\": \"English\",\n                        \"marks_obtained\": 72,\n                        \"total_marks\": 100,\n                        \"grade\": \"B+\",\n                        \"remark\": \"Improving vocabulary\"\n                    },\n                    {\n                        \"subject\": \"Mathematics\",\n                        \"marks_obtained\": 75,\n                        \"total_marks\": 100,\n                        \"grade\": \"B+\",\n                        \"remark\": \"Good basic understanding\"\n                    },\n                    {\n                        \"subject\": \"General Science\",\n                        \"marks_obtained\": 70,\n                        \"total_marks\": 100,\n                        \"grade\": \"B+\",\n                        \"remark\": \"Needs more observation skills\"\n                    },\n                    {\n                        \"subject\": \"Art & Craft\",\n                        \"marks_obtained\": 80,\n                        \"total_marks\": 100,\n                        \"grade\": \"A\",\n                        \"remark\": \"Shows creativity\"\n                    },\n                    {\n                        \"subject\": \"Physical Education\",\n                        \"marks_obtained\": 75,\n                        \"total_marks\": 100,\n                        \"grade\": \"B+\",\n                        \"remark\": \"Good team player\"\n                    }\n                ]\n            }\n        ],\n        \"total_students\": 2\n    }\n}"
+						}
+					]
+				},
+				{
+					"name": "Get Detailed Results",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/exams/{{exam_id}}/results/detailed?subject_id={{subject_id}}",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"exams",
+								"{{exam_id}}",
+								"results",
+								"detailed"
+							],
+							"query": [
+								{
+									"key": "subject_id",
+									"value": "{{subject_id}}",
+									"disabled": true
+								}
+							]
+						}
+					},
+					"response": [
+						{
+							"name": "Success Response",
+							"originalRequest": {
+								"method": "GET",
+								"header": [
+									{
+										"key": "Accept",
+										"value": "application/json"
+									},
+									{
+										"key": "Authorization",
+										"value": "Bearer {{token}}"
+									}
+								],
+								"url": "{{base_url}}/exams/019b5004-xxxx-xxxx-xxxx-xxxxxxxxxxxx/results/detailed"
+							},
+							"status": "OK",
+							"code": 200,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/json"
+								}
+							],
+							"cookie": [],
+							"body": "{\n    \"success\": true,\n    \"data\": {\n        \"exam\": {\n            \"id\": \"019b5004-xxxx-xxxx-xxxx-xxxxxxxxxxxx\",\n            \"title\": \"Math Quiz 2\",\n            \"grade\": \"Grade 8B\",\n            \"date\": \"2025-11-20\",\n            \"time\": \"02:00 PM - 03:00 PM\",\n            \"location\": \"Room 205\",\n            \"max_marks\": 25\n        },\n        \"statistics\": {\n            \"total_students\": 30,\n            \"pass_count\": 25,\n            \"fail_count\": 5\n        },\n        \"students\": [\n            {\n                \"id\": \"67068ff4-a9ac-41ec-bc9e-8a1fd8447ac4\",\n                \"name\": \"Hay Nwe\",\n                \"student_id\": \"STU-81536\",\n                \"avatar\": null,\n                \"score\": \"98.00\",\n                \"grade\": \"A+\",\n                \"status\": \"pass\",\n                \"rank\": 1,\n                \"remark\": \"Excellent work! Shows strong understanding of mathematical concepts.\"\n            },\n            {\n                \"id\": \"67068ff4-a9ac-41ec-bc9e-8a1fd8447ac5\",\n                \"name\": \"Thant Zin\",\n                \"student_id\": \"STU-81537\",\n                \"avatar\": null,\n                \"score\": \"85.00\",\n                \"grade\": \"A\",\n                \"status\": \"pass\",\n                \"rank\": 2,\n                \"remark\": \"Good performance. Keep practicing problem-solving techniques.\"\n            },\n            {\n                \"id\": \"67068ff4-a9ac-41ec-bc9e-8a1fd8447ac6\",\n                \"name\": \"Mya Mya\",\n                \"student_id\": \"STU-81538\",\n                \"avatar\": null,\n                \"score\": \"72.00\",\n                \"grade\": \"B+\",\n                \"status\": \"pass\",\n                \"rank\": 3,\n                \"remark\": \"Satisfactory work. Focus on accuracy in calculations.\"\n            }\n        ]\n    }\n}"
+						}
+					]
+				},
+				{
+					"name": "Get Students for Grade Entry",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/exams/{{exam_id}}/students?class_id={{class_id}}",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"exams",
+								"{{exam_id}}",
+								"students"
+							],
+							"query": [
+								{
+									"key": "class_id",
+									"value": "{{class_id}}"
+								}
+							]
+						}
+					},
+					"response": [
+						{
+							"name": "Success Response",
+							"originalRequest": {
+								"method": "GET",
+								"header": [
+									{
+										"key": "Accept",
+										"value": "application/json"
+									},
+									{
+										"key": "Authorization",
+										"value": "Bearer {{token}}"
+									}
+								],
+								"url": "{{base_url}}/exams/{{exam_id}}/students?class_id={{class_id}}"
+							},
+							"status": "OK",
+							"code": 200,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/json"
+								}
+							],
+							"cookie": [],
+							"body": "{\n    \"success\": true,\n    \"data\": {\n        \"exam\": {\n            \"id\": \"019b5001-xxxx-xxxx-xxxx-xxxxxxxxxxxx\",\n            \"title\": \"Mid-term Exam\",\n            \"grade\": \"Grade 0\"\n        },\n        \"class\": {\n            \"id\": \"019b5a0f-fd9a-7084-a7b1-44cc89c5b6f4\",\n            \"grade\": \"Grade 0\",\n            \"section\": \"Grade 0 A\",\n            \"room\": \"Room 101\",\n            \"student_count\": 30,\n            \"class_teacher\": \"Hay Phyu\",\n            \"academic_year\": \"2025-2026\",\n            \"grade_color\": \"#3b82f6\",\n            \"grade_bg_color\": \"#E1ECFD\"\n        },\n        \"students\": [\n            {\n                \"id\": \"019b5030-xxxx-xxxx-xxxx-xxxxxxxxxxxx\",\n                \"name\": \"Aung Kyaw\",\n                \"student_id\": \"STU001\",\n                \"avatar\": \"https://example.com/avatar1.jpg\",\n                \"roll_number\": \"STU001\",\n                \"gender\": \"male\"\n            }\n        ],\n        \"total_students\": 30\n    }\n}"
+						}
+					]
+				},
+				{
+					"name": "Submit Grades",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Accept",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"class_id\": \"{{class_id}}\",\n    \"grades\": [\n        {\n            \"student_id\": \"{{student_id}}\",\n            \"score\": 85\n        },\n        {\n            \"student_id\": \"019b5031-xxxx-xxxx-xxxx-xxxxxxxxxxxx\",\n            \"score\": 78\n        },\n        {\n            \"student_id\": \"019b5032-xxxx-xxxx-xxxx-xxxxxxxxxxxx\",\n            \"score\": 92\n        }\n    ]\n}"
+						},
+						"url": "{{base_url}}/exams/{{exam_id}}/grades"
+					},
+					"response": [
+						{
+							"name": "Success Response",
+							"originalRequest": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									},
+									{
+										"key": "Accept",
+										"value": "application/json"
+									},
+									{
+										"key": "Authorization",
+										"value": "Bearer {{token}}"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"class_id\": \"{{class_id}}\",\n    \"grades\": [\n        {\n            \"student_id\": \"{{student_id}}\",\n            \"score\": 85\n        }\n    ]\n}"
+								},
+								"url": "{{base_url}}/exams/{{exam_id}}/grades"
+							},
+							"status": "OK",
+							"code": 200,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/json"
+								}
+							],
+							"cookie": [],
+							"body": "{\n    \"success\": true,\n    \"message\": \"Grades submitted successfully\",\n    \"data\": {\n        \"exam_id\": \"019b5001-xxxx-xxxx-xxxx-xxxxxxxxxxxx\",\n        \"class_id\": \"019b5a0f-fd9a-7084-a7b1-44cc89c5b6f4\",\n        \"graded_count\": 30,\n        \"average_score\": 78.5\n    }\n}"
+						}
+					]
+				},
+				{
+					"name": "Update Single Grade",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Accept",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"class_id\": \"{{class_id}}\",\n    \"score\": 88\n}"
+						},
+						"url": "{{base_url}}/exams/{{exam_id}}/grades/{{student_id}}"
+					},
+					"response": [
+						{
+							"name": "Success Response",
+							"originalRequest": {
+								"method": "PUT",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									},
+									{
+										"key": "Accept",
+										"value": "application/json"
+									},
+									{
+										"key": "Authorization",
+										"value": "Bearer {{token}}"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"class_id\": \"{{class_id}}\",\n    \"score\": 88\n}"
+								},
+								"url": "{{base_url}}/exams/{{exam_id}}/grades/{{student_id}}"
+							},
+							"status": "OK",
+							"code": 200,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/json"
+								}
+							],
+							"cookie": [],
+							"body": "{\n    \"success\": true,\n    \"message\": \"Grade updated successfully\",\n    \"data\": {\n        \"student_id\": \"019b5030-xxxx-xxxx-xxxx-xxxxxxxxxxxx\",\n        \"score\": 88,\n        \"grade\": \"A\"\n    }\n}"
+						}
+					]
+				},
+				{
+					"name": "Mark Exam as Completed",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"url": "{{base_url}}/exams/{{exam_id}}/complete"
+					},
+					"response": [
+						{
+							"name": "Success Response",
+							"originalRequest": {
+								"method": "PUT",
+								"header": [
+									{
+										"key": "Accept",
+										"value": "application/json"
+									},
+									{
+										"key": "Authorization",
+										"value": "Bearer {{token}}"
+									}
+								],
+								"url": "{{base_url}}/exams/019b5001-xxxx-xxxx-xxxx-xxxxxxxxxxxx/complete"
+							},
+							"status": "OK",
+							"code": 200,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/json"
+								}
+							],
+							"cookie": [],
+							"body": "{\n    \"success\": true,\n    \"message\": \"Exam marked as completed\",\n    \"data\": {\n        \"id\": \"019b5001-xxxx-xxxx-xxxx-xxxxxxxxxxxx\",\n        \"status\": \"completed\"\n    }\n}"
+						}
+					]
+				}
+			]
+		},
+		{
+			"name": "Forgot Password",
+			"item": [
+				{
+					"name": "Step 1: Verify Identifier",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"var jsonData = pm.response.json();",
+									"if (jsonData.success && jsonData.data.verification_token) {",
+									"    pm.collectionVariables.set('verification_token', jsonData.data.verification_token);",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Accept",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"identifier\": \"teacher@smartcampusedu.com\",\n    \"identifier_type\": \"email\"\n}"
+						},
+						"url": "{{base_url}}/forgot-password/verify-identifier"
+					}
+				},
+				{
+					"name": "Step 2: Verify NRC",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"var jsonData = pm.response.json();",
+									"if (jsonData.success && jsonData.data.otp_token) {",
+									"    pm.collectionVariables.set('otp_token', jsonData.data.otp_token);",
+									"    if (jsonData.data.dev_otp) {",
+									"        pm.collectionVariables.set('otp_code', jsonData.data.dev_otp);",
+									"    }",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Accept",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"verification_token\": \"{{verification_token}}\",\n    \"nrc\": \"12/ABC(N)123458\"\n}"
+						},
+						"url": "{{base_url}}/forgot-password/verify-nrc"
+					}
+				},
+				{
+					"name": "Step 3: Verify OTP",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"var jsonData = pm.response.json();",
+									"if (jsonData.success && jsonData.data.reset_token) {",
+									"    pm.collectionVariables.set('reset_token', jsonData.data.reset_token);",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Accept",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"otp_token\": \"{{otp_token}}\",\n    \"otp_code\": \"{{otp_code}}\"\n}"
+						},
+						"url": "{{base_url}}/forgot-password/verify-otp"
+					}
+				},
+				{
+					"name": "Resend OTP",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"var jsonData = pm.response.json();",
+									"if (jsonData.success && jsonData.data.new_otp_token) {",
+									"    pm.collectionVariables.set('otp_token', jsonData.data.new_otp_token);",
+									"    if (jsonData.data.dev_otp) {",
+									"        pm.collectionVariables.set('otp_code', jsonData.data.dev_otp);",
+									"    }",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Accept",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"otp_token\": \"{{otp_token}}\"\n}"
+						},
+						"url": "{{base_url}}/forgot-password/resend-otp"
+					}
+				},
+				{
+					"name": "Step 4: Reset Password",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Accept",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"reset_token\": \"{{reset_token}}\",\n    \"password\": \"NewPassword123\",\n    \"password_confirmation\": \"NewPassword123\"\n}"
+						},
+						"url": "{{base_url}}/forgot-password/reset"
+					}
+				}
+			]
+		},
+		{
+			"name": "Remarks",
+			"item": [
+				{
+					"name": "Get Class Remarks",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/classes/{{class_id}}/remarks?type=positive&date_from=2025-12-01&date_to=2025-12-31",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"classes",
+								"{{class_id}}",
+								"remarks"
+							],
+							"query": [
+								{
+									"key": "type",
+									"value": "positive",
+									"description": "Optional: Filter by type ('positive' | 'concern' | 'note')",
+									"disabled": true
+								},
+								{
+									"key": "date_from",
+									"value": "2025-12-01",
+									"description": "Optional: Filter from date (YYYY-MM-DD)",
+									"disabled": true
+								},
+								{
+									"key": "date_to",
+									"value": "2025-12-31",
+									"description": "Optional: Filter to date (YYYY-MM-DD)",
+									"disabled": true
+								}
+							]
+						}
+					},
+					"response": [
+						{
+							"name": "Success Response",
+							"originalRequest": {
+								"method": "GET",
+								"header": [
+									{
+										"key": "Accept",
+										"value": "application/json"
+									},
+									{
+										"key": "Authorization",
+										"value": "Bearer {{token}}"
+									}
+								],
+								"url": {
+									"raw": "{{base_url}}/classes/{{class_id}}/remarks",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"classes",
+										"{{class_id}}",
+										"remarks"
+									]
+								}
+							},
+							"status": "OK",
+							"code": 200,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/json"
+								}
+							],
+							"body": "{\n    \"success\": true,\n    \"data\": {\n        \"remarks\": [\n            {\n                \"id\": \"019b9001-xxxx-xxxx-xxxx-xxxxxxxxxxxx\",\n                \"teacher_name\": \"U Kyaw Zaw\",\n                \"subject\": \"Mathematics\",\n                \"remark\": \"Students are showing great improvement in algebra. Keep up the good work!\",\n                \"date\": \"2025-12-20\",\n                \"period\": \"P1\",\n                \"time\": \"08:00 - 08:45 AM\",\n                \"type\": \"positive\",\n                \"avatar\": \"\ud83d\udd22\"\n            },\n            {\n                \"id\": \"019b9002-xxxx-xxxx-xxxx-xxxxxxxxxxxx\",\n                \"teacher_name\": \"Mrs. Jennifer Williams\",\n                \"subject\": \"English\",\n                \"remark\": \"Some students need extra practice in grammar and writing skills.\",\n                \"date\": \"2025-12-19\",\n                \"period\": \"P2\",\n                \"time\": \"08:50 - 09:35 AM\",\n                \"type\": \"concern\",\n                \"avatar\": \"abc\"\n            }\n        ],\n        \"total\": 2\n    }\n}"
+						}
+					]
+				},
+				{
+					"name": "Store Class Remark",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Accept",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"class_id\": \"{{class_id}}\",\n    \"subject_id\": \"{{subject_id}}\",\n    \"period_id\": \"{{period_id}}\",\n    \"date\": \"2025-12-29\",\n    \"remark\": \"Class was attentive today. Good participation in group activities.\",\n    \"type\": \"positive\"\n}"
+						},
+						"url": "{{base_url}}/class-remarks",
+						"description": "Create a new class remark. Type can be 'note', 'positive', or 'concern'."
+					},
+					"response": [
+						{
+							"name": "Success Response",
+							"originalRequest": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									},
+									{
+										"key": "Accept",
+										"value": "application/json"
+									},
+									{
+										"key": "Authorization",
+										"value": "Bearer {{token}}"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"class_id\": \"{{class_id}}\",\n    \"subject_id\": \"{{subject_id}}\",\n    \"period_id\": \"{{period_id}}\",\n    \"date\": \"2025-12-29\",\n    \"remark\": \"Class was attentive today. Good participation in group activities.\",\n    \"type\": \"positive\"\n}"
+								},
+								"url": "{{base_url}}/class-remarks"
+							},
+							"status": "OK",
+							"code": 200,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/json"
+								}
+							],
+							"body": "{\n    \"success\": true,\n    \"message\": \"Class remark added successfully\",\n    \"data\": {\n        \"id\": \"019b9003-xxxx-xxxx-xxxx-xxxxxxxxxxxx\",\n        \"remark\": \"Class was attentive today. Good participation in group activities.\",\n        \"type\": \"positive\",\n        \"date\": \"2025-12-29\",\n        \"created_at\": \"2025-12-29 10:30:00\"\n    }\n}"
+						}
+					]
+				},
+				{
+					"name": "Delete Class Remark",
+					"request": {
+						"method": "DELETE",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"url": "{{base_url}}/class-remarks/{{remark_id}}",
+						"description": "Delete a class remark. Only the teacher who created the remark can delete it."
+					},
+					"response": [
+						{
+							"name": "Success Response",
+							"originalRequest": {
+								"method": "DELETE",
+								"header": [
+									{
+										"key": "Accept",
+										"value": "application/json"
+									},
+									{
+										"key": "Authorization",
+										"value": "Bearer {{token}}"
+									}
+								],
+								"url": "{{base_url}}/class-remarks/{{remark_id}}"
+							},
+							"status": "OK",
+							"code": 200,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/json"
+								}
+							],
+							"body": "{\n    \"success\": true,\n    \"message\": \"Class remark deleted successfully\",\n    \"data\": null\n}"
+						}
+					]
+				},
+				{
+					"name": "Update Class Remark",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Accept",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"remark\": \"Updated remark text - students showed excellent teamwork.\",\n    \"type\": \"positive\"\n}"
+						},
+						"url": "{{base_url}}/class-remarks/{{remark_id}}",
+						"description": "Update an existing class remark. Only the teacher who created the remark can update it."
+					},
+					"response": [
+						{
+							"name": "Success Response",
+							"originalRequest": {
+								"method": "PUT",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									},
+									{
+										"key": "Accept",
+										"value": "application/json"
+									},
+									{
+										"key": "Authorization",
+										"value": "Bearer {{token}}"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"remark\": \"Updated remark text - students showed excellent teamwork.\",\n    \"type\": \"positive\"\n}"
+								},
+								"url": "{{base_url}}/class-remarks/{{remark_id}}"
+							},
+							"status": "OK",
+							"code": 200,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/json"
+								}
+							],
+							"body": "{\n    \"success\": true,\n    \"message\": \"Class remark updated successfully\",\n    \"data\": {\n        \"id\": \"019b9003-xxxx-xxxx-xxxx-xxxxxxxxxxxx\",\n        \"remark\": \"Updated remark text - students showed excellent teamwork.\",\n        \"type\": \"positive\",\n        \"date\": \"2025-12-29\",\n        \"created_at\": \"2025-12-29 10:30:00\"\n    }\n}"
+						}
+					]
+				},
+				{
+					"name": "Get Student Remarks",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/classes/{{class_id}}/student-remarks?date=2025-12-29",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"classes",
+								"{{class_id}}",
+								"student-remarks"
+							],
+							"query": [
+								{
+									"key": "date",
+									"value": "2025-12-29",
+									"description": "Optional: Date to filter remarks (YYYY-MM-DD). Defaults to today."
+								}
+							]
+						},
+						"description": "Get all student remarks for a class on a specific date."
+					},
+					"response": [
+						{
+							"name": "Success Response",
+							"originalRequest": {
+								"method": "GET",
+								"header": [
+									{
+										"key": "Accept",
+										"value": "application/json"
+									},
+									{
+										"key": "Authorization",
+										"value": "Bearer {{token}}"
+									}
+								],
+								"url": {
+									"raw": "{{base_url}}/classes/{{class_id}}/student-remarks?date=2025-12-29",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"classes",
+										"{{class_id}}",
+										"student-remarks"
+									],
+									"query": [
+										{
+											"key": "date",
+											"value": "2025-12-29"
+										}
+									]
+								}
+							},
+							"status": "OK",
+							"code": 200,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/json"
+								}
+							],
+							"body": "{\n    \"success\": true,\n    \"data\": [\n        {\n            \"id\": \"019bd001-xxxx-xxxx-xxxx-xxxxxxxxxxxx\",\n            \"student_id\": \"019b6001-xxxx-xxxx-xxxx-xxxxxxxxxxxx\",\n            \"student_name\": \"Aung Kyaw\",\n            \"student_avatar\": \"A\",\n            \"remark\": \"Excellent participation in class discussion.\",\n            \"type\": \"positive\",\n            \"date\": \"2025-12-29\",\n            \"subject\": \"Mathematics\",\n            \"period_number\": 3,\n            \"teacher\": \"U Kyaw Zaw\",\n            \"created_at\": \"2025-12-29 10:30:00\"\n        },\n        {\n            \"id\": \"019bd002-xxxx-xxxx-xxxx-xxxxxxxxxxxx\",\n            \"student_id\": \"019b6002-xxxx-xxxx-xxxx-xxxxxxxxxxxx\",\n            \"student_name\": \"Mya Mya\",\n            \"student_avatar\": \"M\",\n            \"remark\": \"Needs to focus more during lessons.\",\n            \"type\": \"concern\",\n            \"date\": \"2025-12-29\",\n            \"subject\": \"English\",\n            \"period_number\": 2,\n            \"teacher\": \"Mrs. Jennifer Williams\",\n            \"created_at\": \"2025-12-29 09:45:00\"\n        }\n    ]\n}"
+						}
+					]
+				},
+				{
+					"name": "Store Student Remark",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Accept",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"student_id\": \"{{student_id}}\",\n    \"class_id\": \"{{class_id}}\",\n    \"subject_id\": \"{{subject_id}}\",\n    \"period_id\": \"{{period_id}}\",\n    \"date\": \"2025-12-29\",\n    \"remark\": \"Excellent participation in class discussion. Showed great understanding of the topic.\",\n    \"type\": \"positive\"\n}"
+						},
+						"url": "{{base_url}}/student-remarks",
+						"description": "Create a new student remark. Type can be 'note', 'positive', or 'concern'."
+					},
+					"response": [
+						{
+							"name": "Success Response",
+							"originalRequest": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									},
+									{
+										"key": "Accept",
+										"value": "application/json"
+									},
+									{
+										"key": "Authorization",
+										"value": "Bearer {{token}}"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"student_id\": \"{{student_id}}\",\n    \"class_id\": \"{{class_id}}\",\n    \"subject_id\": \"{{subject_id}}\",\n    \"period_id\": \"{{period_id}}\",\n    \"date\": \"2025-12-29\",\n    \"remark\": \"Excellent participation in class discussion. Showed great understanding of the topic.\",\n    \"type\": \"positive\"\n}"
+								},
+								"url": "{{base_url}}/student-remarks"
+							},
+							"status": "OK",
+							"code": 200,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/json"
+								}
+							],
+							"body": "{\n    \"success\": true,\n    \"message\": \"Student remark added successfully\",\n    \"data\": {\n        \"id\": \"019bd003-xxxx-xxxx-xxxx-xxxxxxxxxxxx\",\n        \"student_id\": \"019b6001-xxxx-xxxx-xxxx-xxxxxxxxxxxx\",\n        \"student_name\": \"Aung Kyaw\",\n        \"student_avatar\": \"A\",\n        \"remark\": \"Excellent participation in class discussion. Showed great understanding of the topic.\",\n        \"type\": \"positive\",\n        \"date\": \"2025-12-29\",\n        \"created_at\": \"2025-12-29 10:30:00\"\n    }\n}"
+						}
+					]
+				},
+				{
+					"name": "Delete Student Remark",
+					"request": {
+						"method": "DELETE",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"url": "{{base_url}}/student-remarks/{{remark_id}}",
+						"description": "Delete a student remark. Only the teacher who created the remark can delete it."
+					},
+					"response": [
+						{
+							"name": "Success Response",
+							"originalRequest": {
+								"method": "DELETE",
+								"header": [
+									{
+										"key": "Accept",
+										"value": "application/json"
+									},
+									{
+										"key": "Authorization",
+										"value": "Bearer {{token}}"
+									}
+								],
+								"url": "{{base_url}}/student-remarks/{{remark_id}}"
+							},
+							"status": "OK",
+							"code": 200,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/json"
+								}
+							],
+							"body": "{\n    \"success\": true,\n    \"message\": \"Student remark deleted successfully\",\n    \"data\": null\n}"
+						}
+					]
+				},
+				{
+					"name": "Update Student Remark",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Accept",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"remark\": \"Updated student remark - showed improvement in behavior.\",\n    \"type\": \"positive\"\n}"
+						},
+						"url": "{{base_url}}/student-remarks/{{remark_id}}",
+						"description": "Update an existing student remark. Only the teacher who created the remark can update it."
+					},
+					"response": [
+						{
+							"name": "Success Response",
+							"originalRequest": {
+								"method": "PUT",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									},
+									{
+										"key": "Accept",
+										"value": "application/json"
+									},
+									{
+										"key": "Authorization",
+										"value": "Bearer {{token}}"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"remark\": \"Updated student remark - showed improvement in behavior.\",\n    \"type\": \"positive\"\n}"
+								},
+								"url": "{{base_url}}/student-remarks/{{remark_id}}"
+							},
+							"status": "OK",
+							"code": 200,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/json"
+								}
+							],
+							"body": "{\n    \"success\": true,\n    \"message\": \"Student remark updated successfully\",\n    \"data\": {\n        \"id\": \"019bd003-xxxx-xxxx-xxxx-xxxxxxxxxxxx\",\n        \"student_id\": \"019b6001-xxxx-xxxx-xxxx-xxxxxxxxxxxx\",\n        \"student_name\": \"Aung Kyaw\",\n        \"student_avatar\": \"A\",\n        \"remark\": \"Updated student remark - showed improvement in behavior.\",\n        \"type\": \"positive\",\n        \"date\": \"2025-12-29\",\n        \"created_at\": \"2025-12-29 10:30:00\"\n    }\n}"
+						}
+					]
+				},
+				{
+					"name": "Get Activity Summary",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/classes/{{class_id}}/activity-summary?date=2025-12-29",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"classes",
+								"{{class_id}}",
+								"activity-summary"
+							],
+							"query": [
+								{
+									"key": "date",
+									"value": "2025-12-29",
+									"description": "Optional: Date to get summary for (YYYY-MM-DD). Defaults to today."
+								}
+							]
+						},
+						"description": "Get a comprehensive activity summary for a class on a specific date. Includes attendance, class remarks, student remarks, curriculum updates, and homework assigned."
+					},
+					"response": [
+						{
+							"name": "Success Response",
+							"originalRequest": {
+								"method": "GET",
+								"header": [
+									{
+										"key": "Accept",
+										"value": "application/json"
+									},
+									{
+										"key": "Authorization",
+										"value": "Bearer {{token}}"
+									}
+								],
+								"url": {
+									"raw": "{{base_url}}/classes/{{class_id}}/activity-summary?date=2025-12-29",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"classes",
+										"{{class_id}}",
+										"activity-summary"
+									],
+									"query": [
+										{
+											"key": "date",
+											"value": "2025-12-29"
+										}
+									]
+								}
+							},
+							"status": "OK",
+							"code": 200,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/json"
+								}
+							],
+							"body": "{\n    \"success\": true,\n    \"data\": {\n        \"date\": \"2025-12-29\",\n        \"attendance\": {\n            \"total\": 30,\n            \"present\": 25,\n            \"absent\": 2,\n            \"leave\": 2,\n            \"late\": 1,\n            \"collected\": true\n        },\n        \"class_remarks\": [\n            {\n                \"id\": \"019b9001-xxxx-xxxx-xxxx-xxxxxxxxxxxx\",\n                \"teacher_name\": \"U Kyaw Zaw\",\n                \"subject\": \"Mathematics\",\n                \"remark\": \"Class was attentive today. Good participation in group activities.\",\n                \"type\": \"positive\",\n                \"period\": \"P1\",\n                \"time\": \"08:00 - 08:45 AM\",\n                \"created_at\": \"10:30\"\n            }\n        ],\n        \"student_remarks\": [\n            {\n                \"id\": \"019bd001-xxxx-xxxx-xxxx-xxxxxxxxxxxx\",\n                \"student_name\": \"Aung Kyaw\",\n                \"student_avatar\": \"A\",\n                \"remark\": \"Excellent participation in class discussion.\",\n                \"type\": \"positive\",\n                \"subject\": \"Mathematics\",\n                \"teacher\": \"U Kyaw Zaw\",\n                \"created_at\": \"10:30\"\n            }\n        ],\n        \"curriculum_updates\": [\n            {\n                \"topic\": \"Introduction to Quadratic Equations\",\n                \"chapter\": \"Chapter 5: Quadratic Equations\",\n                \"subject\": \"Mathematics\",\n                \"status\": \"completed\"\n            }\n        ],\n        \"homework_assigned\": [\n            {\n                \"id\": \"019bf001-xxxx-xxxx-xxxx-xxxxxxxxxxxx\",\n                \"title\": \"Practice Problems Set 5\",\n                \"subject\": \"Mathematics\",\n                \"due_date\": \"2025-12-31\",\n                \"teacher\": \"U Kyaw Zaw\"\n            }\n        ]\n    }\n}"
+						}
+					]
+				}
+			]
+		},
+		{
+			"name": "Notifications & Device Tokens",
+			"item": [
+				{
+					"name": "Register Device Token",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"token\": \"fcm_device_token_here\",\n    \"platform\": \"android\",\n    \"device_name\": \"Samsung Galaxy S21\"\n}"
+						},
+						"url": "{{base_url}}/device-tokens",
+						"description": "Register a device token for push notifications. Platform can be: ios, android, web"
+					},
+					"response": [
+						{
+							"name": "Success Response",
+							"status": "OK",
+							"code": 200,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/json"
+								}
+							],
+							"body": "{\n    \"success\": true,\n    \"message\": \"Device token registered successfully\",\n    \"data\": {\n        \"id\": \"019c0001-xxxx-xxxx-xxxx-xxxxxxxxxxxx\",\n        \"platform\": \"android\"\n    }\n}"
+						}
+					]
+				},
+				{
+					"name": "Remove Device Token",
+					"request": {
+						"method": "DELETE",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"token\": \"fcm_device_token_here\"\n}"
+						},
+						"url": "{{base_url}}/device-tokens",
+						"description": "Remove a device token (typically called on logout)"
+					},
+					"response": [
+						{
+							"name": "Success Response",
+							"status": "OK",
+							"code": 200,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/json"
+								}
+							],
+							"body": "{\n    \"success\": true,\n    \"message\": \"Device token removed successfully\"\n}"
+						}
+					]
+				},
+				{
+					"name": "Get Notifications",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/notifications?per_page=20&unread_only=false",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"notifications"
+							],
+							"query": [
+								{
+									"key": "per_page",
+									"value": "20",
+									"description": "Number of notifications per page (default: 20)"
+								},
+								{
+									"key": "unread_only",
+									"value": "false",
+									"description": "Set to true to get only unread notifications"
+								}
+							]
+						},
+						"description": "Get paginated list of notifications for the authenticated user"
+					},
+					"response": [
+						{
+							"name": "Success Response",
+							"status": "OK",
+							"code": 200,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/json"
+								}
+							],
+							"body": "{\n    \"success\": true,\n    \"data\": {\n        \"notifications\": [\n            {\n                \"id\": \"019c0002-xxxx-xxxx-xxxx-xxxxxxxxxxxx\",\n                \"type\": \"period_switch_requested\",\n                \"title\": \"Period Switch Request\",\n                \"body\": \"U Kyaw Zaw requested to switch P2 on Dec 30, 2025 for Grade 1 A with Mathematics.\",\n                \"data\": {\n                    \"type\": \"period_switch_requested\",\n                    \"switch_request_id\": \"019c0003-xxxx-xxxx-xxxx-xxxxxxxxxxxx\",\n                    \"class_id\": \"019b5a7c-xxxx-xxxx-xxxx-xxxxxxxxxxxx\"\n                },\n                \"read_at\": null,\n                \"created_at\": \"2025-12-30T10:30:00+00:00\"\n            }\n        ],\n        \"unread_count\": 3,\n        \"pagination\": {\n            \"current_page\": 1,\n            \"last_page\": 1,\n            \"per_page\": 20,\n            \"total\": 5\n        }\n    }\n}"
+						}
+					]
+				},
+				{
+					"name": "Get Unread Count",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"url": "{{base_url}}/notifications/unread-count",
+						"description": "Get the count of unread notifications (useful for badge display)"
+					},
+					"response": [
+						{
+							"name": "Success Response",
+							"status": "OK",
+							"code": 200,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/json"
+								}
+							],
+							"body": "{\n    \"success\": true,\n    \"data\": {\n        \"unread_count\": 3\n    }\n}"
+						}
+					]
+				},
+				{
+					"name": "Mark Notification as Read",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"url": "{{base_url}}/notifications/{{notification_id}}/read",
+						"description": "Mark a specific notification as read"
+					},
+					"response": [
+						{
+							"name": "Success Response",
+							"status": "OK",
+							"code": 200,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/json"
+								}
+							],
+							"body": "{\n    \"success\": true,\n    \"message\": \"Notification marked as read\"\n}"
+						}
+					]
+				},
+				{
+					"name": "Mark All Notifications as Read",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"url": "{{base_url}}/notifications/mark-all-read",
+						"description": "Mark all notifications as read"
+					},
+					"response": [
+						{
+							"name": "Success Response",
+							"status": "OK",
+							"code": 200,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/json"
+								}
+							],
+							"body": "{\n    \"success\": true,\n    \"message\": \"All notifications marked as read\"\n}"
+						}
+					]
+				}
+			]
+		},
+		{
+			"name": "Free Period Activities",
+			"item": [
+				{
+					"name": "Get Activity Types",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"url": "{{base_url}}/free-period/activity-types",
+						"description": "Get list of available activity types for free period recording"
+					},
+					"response": [
+						{
+							"name": "Success Response",
+							"status": "OK",
+							"code": 200,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/json"
+								}
+							],
+							"body": "{\n    \"success\": true,\n    \"data\": {\n        \"activity_types\": [\n            {\n                \"id\": \"lesson_prep\",\n                \"label\": \"Lesson Preparation\",\n                \"color\": \"#3B82F6\",\n                \"icon_svg\": \"<svg>...</svg>\"\n            },\n            {\n                \"id\": \"grading\",\n                \"label\": \"Grading Papers\",\n                \"color\": \"#8B5CF6\",\n                \"icon_svg\": \"<svg>...</svg>\"\n            },\n            {\n                \"id\": \"meeting\",\n                \"label\": \"Staff Meeting\",\n                \"color\": \"#F59E0B\",\n                \"icon_svg\": \"<svg>...</svg>\"\n            },\n            {\n                \"id\": \"parent_meeting\",\n                \"label\": \"Parent Meeting\",\n                \"color\": \"#EC4899\",\n                \"icon_svg\": \"<svg>...</svg>\"\n            },\n            {\n                \"id\": \"training\",\n                \"label\": \"Training/Workshop\",\n                \"color\": \"#10B981\",\n                \"icon_svg\": \"<svg>...</svg>\"\n            },\n            {\n                \"id\": \"admin_work\",\n                \"label\": \"Administrative Work\",\n                \"color\": \"#6366F1\",\n                \"icon_svg\": \"<svg>...</svg>\"\n            },\n            {\n                \"id\": \"student_support\",\n                \"label\": \"Student Support\",\n                \"color\": \"#14B8A6\",\n                \"icon_svg\": \"<svg>...</svg>\"\n            },\n            {\n                \"id\": \"take_break\",\n                \"label\": \"Take Break\",\n                \"color\": \"#EF4444\",\n                \"icon_svg\": \"<svg>...</svg>\"\n            },\n            {\n                \"id\": \"other\",\n                \"label\": \"Other Activity\",\n                \"color\": \"#6B7280\",\n                \"icon_svg\": \"<svg>...</svg>\"\n            }\n        ]\n    }\n}"
+						}
+					]
+				},
+				{
+					"name": "Store Free Period Activity",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"date\": \"2026-01-13\",\n    \"start_time\": \"08:00\",\n    \"end_time\": \"08:45\",\n    \"activities\": [\n        {\n            \"activity_type\": \"lesson_prep\",\n            \"notes\": \"Prepared lesson materials for Grade 5 Mathematics - Fractions chapter\"\n        },\n        {\n            \"activity_type\": \"student_support\",\n            \"notes\": \"Prepared lesson materials for Grade 5 Mathematics - Fractions chapter\"\n        }\n    ]\n}"
+						},
+						"url": "{{base_url}}/free-period/activities",
+						"description": "Record teacher's activities during a free period. Supports multiple activities in one request - teachers can log different activity types for the same time slot."
+					},
+					"response": [
+						{
+							"name": "Success Response (Single Activity)",
+							"status": "OK",
+							"code": 200,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/json"
+								}
+							],
+							"body": "{\n    \"success\": true,\n    \"message\": \"1 activity(ies) recorded successfully\",\n    \"data\": {\n        \"id\": \"019bb404-ec51-7238-b992-5c5b1fc128e0\",\n        \"teacher_id\": \"019bb404-1234-5678-abcd-1234567890ab\",\n        \"date\": \"2026-01-13\",\n        \"start_time\": \"08:00\",\n        \"end_time\": \"08:45\",\n        \"duration_minutes\": 45,\n        \"activity_type\": \"lesson_prep\",\n        \"activity_label\": \"Lesson Preparation\",\n        \"notes\": \"Prepared lesson materials for Grade 5 Mathematics - Fractions chapter\",\n        \"created_at\": \"2026-01-13T08:50:00.000Z\"\n    }\n}"
+						},
+						{
+							"name": "Success Response (Multiple Activities)",
+							"status": "OK",
+							"code": 200,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/json"
+								}
+							],
+							"body": "{\n    \"success\": true,\n    \"message\": \"2 activity(ies) recorded successfully\",\n    \"data\": [\n        {\n            \"id\": \"019bb404-ec51-7238-b992-5c5b1fc128e0\",\n            \"teacher_id\": \"019bb404-1234-5678-abcd-1234567890ab\",\n            \"date\": \"2026-01-13\",\n            \"start_time\": \"08:00\",\n            \"end_time\": \"08:45\",\n            \"duration_minutes\": 45,\n            \"activity_type\": \"lesson_prep\",\n            \"activity_label\": \"Lesson Preparation\",\n            \"notes\": \"Prepared lesson materials for Grade 5 Mathematics - Fractions chapter\",\n            \"created_at\": \"2026-01-13T08:50:00.000Z\"\n        },\n        {\n            \"id\": \"019bb404-ec51-7238-b992-5c5b1fc128e1\",\n            \"teacher_id\": \"019bb404-1234-5678-abcd-1234567890ab\",\n            \"date\": \"2026-01-13\",\n            \"start_time\": \"08:00\",\n            \"end_time\": \"08:45\",\n            \"duration_minutes\": 45,\n            \"activity_type\": \"student_support\",\n            \"activity_label\": \"Student Support\",\n            \"notes\": \"Prepared lesson materials for Grade 5 Mathematics - Fractions chapter\",\n            \"created_at\": \"2026-01-13T08:50:00.000Z\"\n        }\n    ]\n}"
+						},
+						{
+							"name": "Validation Error",
+							"status": "Unprocessable Entity",
+							"code": 422,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/json"
+								}
+							],
+							"body": "{\n    \"success\": false,\n    \"message\": \"Validation failed\",\n    \"errors\": {\n        \"activities.0.activity_type\": [\"The activity type field is required.\"],\n        \"date\": [\"The date field is required.\"]\n    }\n}"
+						}
+					]
+				},
+				{
+					"name": "Get My Activities",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/free-period/activities?start_date=2026-01-01&end_date=2026-01-31",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"free-period",
+								"activities"
+							],
+							"query": [
+								{
+									"key": "date",
+									"value": "2026-01-13",
+									"description": "Filter by specific date (optional)",
+									"disabled": true
+								},
+								{
+									"key": "start_date",
+									"value": "2026-01-01",
+									"description": "Filter by date range start (optional)"
+								},
+								{
+									"key": "end_date",
+									"value": "2026-01-31",
+									"description": "Filter by date range end (optional)"
+								}
+							]
+						},
+						"description": "Get teacher's recorded free period activities with optional date filtering"
+					},
+					"response": [
+						{
+							"name": "Success Response",
+							"status": "OK",
+							"code": 200,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/json"
+								}
+							],
+							"body": "{\n    \"success\": true,\n    \"data\": {\n        \"activities\": [\n            {\n                \"id\": \"019bb404-ec51-7238-b992-5c5b1fc128e0\",\n                \"date\": \"2026-01-13\",\n                \"start_time\": \"08:00:00\",\n                \"end_time\": \"08:45:00\",\n                \"duration_minutes\": 45,\n                \"activity_type\": \"lesson_prep\",\n                \"activity_label\": \"Lesson Preparation\",\n                \"activity_color\": \"#3B82F6\",\n                \"notes\": \"Prepared lesson materials for Grade 5 Mathematics\",\n                \"created_at\": \"2026-01-13T08:50:00.000Z\"\n            },\n            {\n                \"id\": \"019bb404-ec51-7238-b992-5c5b1fc128e1\",\n                \"date\": \"2026-01-12\",\n                \"start_time\": \"10:15:00\",\n                \"end_time\": \"11:00:00\",\n                \"duration_minutes\": 45,\n                \"activity_type\": \"grading\",\n                \"activity_label\": \"Grading Papers\",\n                \"activity_color\": \"#8B5CF6\",\n                \"notes\": \"Graded weekly math quizzes\",\n                \"created_at\": \"2026-01-12T11:05:00.000Z\"\n            }\n        ],\n        \"total\": 2\n    }\n}"
+						}
+					]
+				}
+			]
+		}
+	]
+}

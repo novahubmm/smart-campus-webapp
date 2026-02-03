@@ -1,0 +1,27 @@
+<?php
+
+return [
+    'Access Forbidden' => 'ဝင်ရောက်ခွင့် မရှိပါ',
+    'Administrator?' => 'စီမံခန့်ခွဲသူလား။',
+    'All rights reserved.' => 'မူပိုင်ခွင့်အားလုံး ရယူထားသည်။',
+    'Back to home' => 'ပင်မစာမျက်နှာသို့ ပြန်သွားရန်',
+    'Dark mode enabled' => 'အမှောင်မုဒ် ဖွင့်ထားသည်',
+    'Error' => 'အမှား',
+    'Go to dashboard' => 'ဒက်ရှ်ဘုတ်သို့ သွားရန်',
+    'If you need immediate assistance, please contact our support team.' => 'ချက်ချင်းအကူအညီလိုပါက ကျွန်ုပ်တို့၏ အထောက်အပံ့အဖွဲ့ကို ဆက်သွယ်ပါ။',
+    'Light mode enabled' => 'အလင်းမုဒ် ဖွင့်ထားသည်',
+    'Login here' => 'ဤနေရာတွင် ဝင်ရောက်ရန်',
+    'Maintenance Mode' => 'ပြုပြင်ထိန်းသိမ်းမှုမုဒ်',
+    'Oops!' => 'အိုး!',
+    'Page expired' => 'စာမျက်နှာ သက်တမ်းကုန်ဆုံးပြီ',
+    'Page not found' => 'စာမျက်နှာ မတွေ့ရှိပါ',
+    'Smart Campus' => 'Smart Campus',
+    'Something went wrong on our side. The team has been notified.' => 'ကျွန်ုပ်တို့ဘက်တွင် တစ်ခုခုမှားယွင်းသွားသည်။ အဖွဲ့ကို အသိပေးပြီးပါပြီ။',
+    'Something went wrong.' => 'တစ်ခုခုမှားယွင်းသွားသည်။',
+    'Sorry for the inconvenience. We\'re performing some maintenance at the moment. We\'ll be back online shortly!' => 'အဆင်မပြေမှုအတွက် တောင်းပန်ပါသည်။ လက်ရှိတွင် ပြုပြင်ထိန်းသိမ်းမှုအချို့ လုပ်ဆောင်နေပါသည်။ မကြာမီ ပြန်လည်အွန်လိုင်းဖြစ်ပါမည်!',
+    'Unexpected error' => 'မမျှော်လင့်ထားသော အမှား',
+    'We couldn\'t find the page you were looking for. It may have been moved or deleted.' => 'သင်ရှာနေသော စာမျက်နှာကို မတွေ့ရှိပါ။ ၎င်းကို ရွှေ့ထားခြင်း သို့မဟုတ် ဖျက်ထားခြင်း ဖြစ်နိုင်ပါသည်။',
+    'We\'ll be right back!' => 'မကြာမီ ပြန်လာပါမည်!',
+    'You don\'t have permission to access this resource. Please contact your administrator if you believe this is an error.' => 'ဤအရင်းအမြစ်ကို ဝင်ရောက်ရန် သင့်တွင် ခွင့်ပြုချက် မရှိပါ။ ဤအမှားဖြစ်သည်ဟု ယုံကြည်ပါက သင့်စီမံခန့်ခွဲသူကို ဆက်သွယ်ပါ။',
+    'Your session expired. Please refresh and try again.' => 'သင့်စက်ရှင် သက်တမ်းကုန်ဆုံးပြီ။ ပြန်လည်ဖွင့်၍ ထပ်ကြိုးစားပါ။',
+];

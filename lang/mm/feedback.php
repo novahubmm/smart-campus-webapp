@@ -1,0 +1,26 @@
+<?php
+
+return [
+    'Brief summary of your feedback' => 'သင့်အကြံပြုချက်၏ အကျဉ်းချုပ်',
+    'Bug Report' => 'ချွတ်ယွင်းချက်အစီရင်ခံစာ',
+    'Cancel' => 'မလုပ်တော့ပါ',
+    'Category' => 'အမျိုးအစား',
+    'Feature Request' => 'လုပ်ဆောင်ချက်အသစ်တောင်းဆိုမှု',
+    'Help us improve Smart Campus by sharing your feedback' => 'သင့်အကြံပြုချက်ပေးခြင်းဖြင့် Smart Campus ကို ပိုမိုကောင်းမွန်အောင် ကူညီပါ',
+    'High' => 'မြင့်',
+    'Improvement Suggestion' => 'တိုးတက်မှုအကြံပြုချက်',
+    'Low' => 'နိမ့်',
+    'Message' => 'မက်ဆေ့ချ်',
+    'Normal' => 'ပုံမှန်',
+    'Other' => 'အခြား',
+    'Please provide detailed information about your feedback...' => 'သင့်အကြံပြုချက်အကြောင်း အသေးစိတ်အချက်အလက်ပေးပါ...',
+    'Priority' => 'ဦးစားပေးအဆင့်',
+    'Question/Help' => 'မေးခွန်း/အကူအညီ',
+    'Select a category' => 'အမျိုးအစားရွေးချယ်ပါ',
+    'Select priority level' => 'ဦးစားပေးအဆင့်ရွေးချယ်ပါ',
+    'Submit Feedback' => 'အကြံပြုချက်တင်သွင်းရန်',
+    'Title' => 'ခေါင်းစဉ်',
+    'Urgent' => 'အရေးပေါ်',
+    'We review all feedback and will respond if necessary. Thank you for helping us improve Smart Campus!' => 'အကြံပြုချက်အားလုံးကို စစ်ဆေးပြီး လိုအပ်ပါက တုံ့ပြန်ပါမည်။ Smart Campus ကို ပိုမိုကောင်းမွန်အောင် ကူညီပေးသည့်အတွက် ကျေးဇူးတင်ပါသည်!',
+    'Your feedback will be sent directly to our support team' => 'သင့်အကြံပြုချက်ကို ကျွန်ုပ်တို့၏ ပံ့ပိုးကူညီရေးအဖွဲ့ထံ တိုက်ရိုက်ပေးပို့ပါမည်',
+];

@@ -1,0 +1,108 @@
+<?php
+
+namespace App\DTOs\TeacherProfile;
+
+use App\Models\TeacherProfile;
+use Illuminate\Http\UploadedFile;
+
+class TeacherProfileUpdateData
+{
+    public function __construct(
+        public readonly TeacherProfile $profile,
+        // user
+        public readonly string $name,
+        public readonly string $email,
+        public readonly string $phone,
+        public readonly string $nrc,
+        public readonly ?string $password,
+        public readonly bool $isActive,
+        // profile
+        public readonly ?string $employeeId,
+        public readonly ?string $position,
+        public readonly ?string $departmentId,
+        public readonly ?string $hireDate,
+        public readonly ?string $basicSalary,
+        public readonly ?string $gender,
+        public readonly ?string $ethnicity,
+        public readonly ?string $religious,
+        public readonly ?string $dob,
+        public readonly ?string $address,
+        public readonly ?string $phoneNo,
+        public readonly ?string $currentGrades,
+        public readonly ?string $currentClasses,
+        public readonly ?string $subjectsTaught,
+        public readonly ?string $responsibleClass,
+        public readonly ?string $qualification,
+        public readonly ?string $previousSchool,
+        public readonly ?int $previousExperienceYears,
+        public readonly ?string $greenCard,
+        public readonly ?string $fatherName,
+        public readonly ?string $fatherPhone,
+        public readonly ?string $motherName,
+        public readonly ?string $motherPhone,
+        public readonly ?string $emergencyContact,
+        public readonly ?string $maritalStatus,
+        public readonly ?string $partnerName,
+        public readonly ?string $partnerPhone,
+        public readonly ?string $inSchoolRelativeName,
+        public readonly ?string $inSchoolRelativeRelationship,
+        public readonly ?float $height,
+        public readonly ?float $weight,
+        public readonly ?string $bloodType,
+        public readonly ?string $medicineAllergy,
+        public readonly ?string $foodAllergy,
+        public readonly ?string $medicalDirectory,
+        public readonly ?UploadedFile $photo,
+        public readonly ?string $status,
+    ) {}
+
+    public static function from(TeacherProfile $profile, array $validated): self
+    {
+        return new self(
+            profile: $profile,
+            name: $validated['name'],
+            email: $validated['email'],
+            phone: $validated['phone'],
+            nrc: $validated['nrc'],
+            password: $validated['password'] ?? null,
+            isActive: (bool) ($validated['is_active'] ?? true),
+            employeeId: $validated['employee_id'] ?? null,
+            position: $validated['position'] ?? null,
+            departmentId: $validated['department_id'] ?? null,
+            hireDate: $validated['hire_date'] ?? null,
+            basicSalary: $validated['basic_salary'] ?? null,
+            gender: $validated['gender'] ?? null,
+            ethnicity: $validated['ethnicity'] ?? null,
+            religious: $validated['religious'] ?? null,
+            dob: $validated['dob'] ?? null,
+            address: $validated['address'] ?? null,
+            phoneNo: $validated['phone_no'] ?? null,
+            currentGrades: $validated['current_grades'] ?? null,
+            currentClasses: $validated['current_classes'] ?? null,
+            subjectsTaught: $validated['subjects_taught'] ?? null,
+            responsibleClass: $validated['responsible_class'] ?? null,
+            qualification: $validated['qualification'] ?? null,
+            previousSchool: $validated['previous_school'] ?? null,
+            previousExperienceYears: isset($validated['previous_experience_years']) ? (int) $validated['previous_experience_years'] : null,
+            greenCard: $validated['green_card'] ?? null,
+            fatherName: $validated['father_name'] ?? null,
+            fatherPhone: $validated['father_phone'] ?? null,
+            motherName: $validated['mother_name'] ?? null,
+            motherPhone: $validated['mother_phone'] ?? null,
+            emergencyContact: $validated['emergency_contact'] ?? null,
+            maritalStatus: $validated['marital_status'] ?? null,
+            partnerName: $validated['partner_name'] ?? null,
+            partnerPhone: $validated['partner_phone'] ?? null,
+            inSchoolRelativeName: $validated['in_school_relative_name'] ?? null,
+            inSchoolRelativeRelationship: $validated['in_school_relative_relationship'] ?? null,
+            height: isset($validated['height']) ? (float) $validated['height'] : null,
+            weight: isset($validated['weight']) ? (float) $validated['weight'] : null,
+            bloodType: $validated['blood_type'] ?? null,
+            medicineAllergy: $validated['medicine_allergy'] ?? null,
+            foodAllergy: $validated['food_allergy'] ?? null,
+            medicalDirectory: $validated['medical_directory'] ?? null,
+            photo: $validated['photo'] ?? null,
+            status: $validated['status'] ?? 'active',
+        );
+    }
+}

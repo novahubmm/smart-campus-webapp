@@ -1,0 +1,74 @@
+/* Custom CSS Rules */
+
+.floating-toggle-btn {
+    top: 95px;
+}
+
+.sticky-header {
+    position: sticky;
+    top: 0;
+    z-index: 30;
+}
+
+.delayed-show {
+    animation: delayedFadeIn 0.6s ease-out;
+}
+
+@keyframes delayedFadeIn {
+    0%,
+    50% {
+        opacity: 0;
+        transform: scale(0.8);
+    }
+    100% {
+        opacity: 1;
+        transform: scale(1);
+    }
+}
+
+.school-banner-logo {
+    height: 145px !important;
+    width: auto !important;
+}
+
+/* Main content width adjustment when nav is expanded */
+.main-content-expanded {
+    margin-left: 256px;
+    width: calc(100% - 256px);
+}
+
+.main-content-collapsed {
+    margin-left: 0;
+    width: 100%;
+}
+
+/* Myanmar font line-height adjustment */
+html[lang="mm"] body,
+html[lang="mm"] * {
+    line-height: 1.7 !important;
+}
+
+html[lang="mm"] .text-xs {
+    line-height: 1.6 !important;
+}
+
+html[lang="mm"] .text-sm {
+    line-height: 1.65 !important;
+}
+
+html[lang="mm"] .text-base {
+    line-height: 1.7 !important;
+}
+
+html[lang="mm"] .text-lg {
+    line-height: 1.75 !important;
+}
+
+html[lang="mm"] .text-xl {
+    line-height: 1.8 !important;
+}
+/* Favicon size optimization */
+link[rel="icon"] {
+    width: 32px !important;
+    height: 32px !important;
+}

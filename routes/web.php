@@ -1,0 +1,508 @@
+<?php
+
+use App\Http\Controllers\LanguageController;
+use App\Http\Controllers\ProfileController;
+use App\Http\Controllers\RoleController;
+use App\Http\Controllers\PermissionController;
+use App\Http\Controllers\UserController;
+use App\Http\Controllers\Auth\PasswordRecoveryController;
+use App\Http\Controllers\AcademicSetupController;
+use App\Http\Controllers\NotificationController;
+use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\AcademicManagementController;
+use App\Http\Controllers\SalaryPayrollController;
+use App\Http\Controllers\TimetableController;
+use App\Http\Controllers\FeedbackController;
+use App\Http\Controllers\RuleCategoryController;
+use App\Http\Controllers\SchoolRuleController;
+
+Route::view('/', 'welcome')->name('welcome');
+Route::view('/deactivated', 'auth.deactivated')->name('deactivated');
+
+// Language switcher
+Route::get('/language/{locale}', [LanguageController::class, 'switch'])->name('language.switch');
+
+// Guest password recovery (two-step: identifier -> NRC -> OTP send)
+Route::middleware('guest')->group(function () {
+    Route::get('/forgot-account', [PasswordRecoveryController::class, 'createIdentifier'])
+        ->name('password.recovery.identifier');
+    Route::post('/forgot-account', [PasswordRecoveryController::class, 'storeIdentifier'])
+        ->name('password.recovery.identifier.store');
+
+    Route::get('/forgot-account/verify', [PasswordRecoveryController::class, 'createNrc'])
+        ->name('password.recovery.nrc');
+    Route::post('/forgot-account/verify', [PasswordRecoveryController::class, 'storeNrc'])
+        ->name('password.recovery.nrc.store');
+
+    Route::get('/forgot-account/otp', [PasswordRecoveryController::class, 'createOtp'])
+        ->name('password.recovery.otp');
+    Route::post('/forgot-account/otp', [PasswordRecoveryController::class, 'storeOtp'])
+        ->name('password.recovery.otp.store');
+
+    Route::get('/forgot-account/reset', [PasswordRecoveryController::class, 'createReset'])
+        ->name('password.recovery.reset');
+    Route::post('/forgot-account/reset', [PasswordRecoveryController::class, 'storeReset'])
+        ->name('password.recovery.reset.store');
+});
+
+Route::get('/dashboard', \App\Http\Controllers\DashboardController::class)
+    ->middleware(['auth', 'ensure.active', 'verified', 'ensure.setup:school'])
+    ->name('dashboard');
+
+Route::middleware(['auth', 'ensure.active'])->group(function () {
+    Route::get('/setup', \App\Http\Controllers\SetupController::class)->name('setup.overview');
+});
+
+Route::middleware(['auth', 'ensure.active'])->group(function () {
+    Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
+    Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
+    Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
+
+    // Notifications (AJAX endpoints for web)
+    Route::prefix('notifications')->group(function () {
+        Route::get('/', [NotificationController::class, 'index'])->name('notifications.index');
+        Route::get('/unread-count', [NotificationController::class, 'unreadCount'])->name('notifications.unread-count');
+        Route::post('/{id}/read', [NotificationController::class, 'markAsRead'])->name('notifications.mark-read');
+        Route::post('/mark-all-read', [NotificationController::class, 'markAllAsRead'])->name('notifications.mark-all-read');
+    });
+
+    Route::view('/maintenance', 'maintenance')->name('maintenance');
+    Route::view('/user-manual', 'user-manual')->name('manual');
+
+    // User & access management
+    Route::resource('users', UserController::class);
+    Route::post('users/{user}/deactivate', [UserController::class, 'deactivate'])->name('users.deactivate');
+    Route::post('users/{user}/activate', [UserController::class, 'activate'])->name('users.activate');
+    Route::post('users/{user}/reset-password', [UserController::class, 'resetPassword'])->name('users.reset-password');
+    Route::resource('roles', RoleController::class)->except(['show']);
+    Route::get('/permissions', [PermissionController::class, 'index'])->name('permissions.index');
+
+    // Academic setup
+    Route::get('/academic-setup', [AcademicSetupController::class, 'index'])->name('academic-setup.index');
+    Route::post('/academic-setup/complete', [AcademicSetupController::class, 'completeSetup'])->name('academic-setup.complete');
+
+    // Academic Management
+    Route::prefix('academic-management')->middleware(['auth', 'ensure.setup:academic'])->group(function () {
+        Route::get('/', [AcademicManagementController::class, 'index'])->name('academic-management.index');
+
+        Route::post('/batches', [AcademicManagementController::class, 'storeBatch'])->name('academic-management.batches.store');
+        Route::get('/batches/{id}', [AcademicManagementController::class, 'showBatch'])->name('academic-management.batches.show');
+        Route::get('/batches/{id}/edit', [AcademicManagementController::class, 'editBatch'])->name('academic-management.batches.edit');
+        Route::put('/batches/{id}', [AcademicManagementController::class, 'updateBatch'])->name('academic-management.batches.update');
+        Route::delete('/batches/{id}', [AcademicManagementController::class, 'destroyBatch'])->name('academic-management.batches.destroy');
+
+        Route::post('/grades', [AcademicManagementController::class, 'storeGrade'])->name('academic-management.grades.store');
+        Route::get('/grades/{id}', [AcademicManagementController::class, 'showGrade'])->name('academic-management.grades.show');
+        Route::get('/grades/{id}/edit', [AcademicManagementController::class, 'editGrade'])->name('academic-management.grades.edit');
+        Route::put('/grades/{id}', [AcademicManagementController::class, 'updateGrade'])->name('academic-management.grades.update');
+        Route::delete('/grades/{id}', [AcademicManagementController::class, 'deleteGrade'])->name('academic-management.grades.destroy');
+
+        Route::post('/classes', [AcademicManagementController::class, 'storeClass'])->name('academic-management.classes.store');
+        Route::get('/classes/search-students', [AcademicManagementController::class, 'searchStudents'])
+            ->name('academic-management.classes.search-students');
+        Route::get('/classes/{id}', [AcademicManagementController::class, 'showClass'])->name('academic-management.classes.show');
+        Route::get('/classes/{id}/edit', [AcademicManagementController::class, 'editClass'])->name('academic-management.classes.edit');
+        Route::put('/classes/{id}', [AcademicManagementController::class, 'updateClass'])->name('academic-management.classes.update');
+        Route::delete('/classes/{id}', [AcademicManagementController::class, 'destroyClass'])->name('academic-management.classes.destroy');
+        Route::post('/classes/{class}/add-student', [AcademicManagementController::class, 'addStudentToClass'])
+            ->name('academic-management.classes.add-student');
+
+        Route::post('/rooms', [AcademicManagementController::class, 'storeRoom'])->name('academic-management.rooms.store');
+        Route::get('/rooms/{id}', [AcademicManagementController::class, 'showRoom'])->name('academic-management.rooms.show');
+        Route::get('/rooms/{id}/edit', [AcademicManagementController::class, 'editRoom'])->name('academic-management.rooms.edit');
+        Route::put('/rooms/{id}', [AcademicManagementController::class, 'updateRoom'])->name('academic-management.rooms.update');
+        Route::delete('/rooms/{id}', [AcademicManagementController::class, 'deleteRoom'])->name('academic-management.rooms.destroy');
+
+        Route::post('/subjects', [AcademicManagementController::class, 'storeSubject'])->name('academic-management.subjects.store');
+        Route::get('/subjects/{id}', [AcademicManagementController::class, 'showSubject'])->name('academic-management.subjects.show');
+        Route::get('/subjects/{id}/edit', [AcademicManagementController::class, 'editSubject'])->name('academic-management.subjects.edit');
+        Route::put('/subjects/{id}', [AcademicManagementController::class, 'updateSubject'])->name('academic-management.subjects.update');
+        Route::delete('/subjects/{id}', [AcademicManagementController::class, 'deleteSubject'])->name('academic-management.subjects.destroy');
+        Route::post('/subjects/{id}/teachers/attach', [AcademicManagementController::class, 'attachTeacher'])->name('academic-management.subjects.teachers.attach');
+        Route::delete('/subjects/{subjectId}/teachers/{teacherId}', [AcademicManagementController::class, 'detachTeacher'])->name('academic-management.subjects.teachers.detach');
+
+        // Curriculum Management Routes (single bulk save)
+        Route::post('/subjects/{subjectId}/curriculum', [\App\Http\Controllers\CurriculumController::class, 'saveCurriculum'])->name('curriculum.save');
+        Route::delete('/curriculum/chapters/{chapterId}', [\App\Http\Controllers\CurriculumController::class, 'destroyChapter'])->name('curriculum.chapters.destroy');
+        Route::delete('/curriculum/topics/{topicId}', [\App\Http\Controllers\CurriculumController::class, 'destroyTopic'])->name('curriculum.topics.destroy');
+    });
+
+    Route::prefix('exams')
+        ->middleware(['ensure.setup:academic', 'can:manage exam database'])
+        ->name('exams.')
+        ->group(function () {
+            Route::get('/', [\App\Http\Controllers\ExamController::class, 'index'])->name('index');
+            Route::post('/', [\App\Http\Controllers\ExamController::class, 'store'])->name('store');
+            Route::get('/{exam}', [\App\Http\Controllers\ExamController::class, 'show'])->name('show');
+            Route::put('/{exam}', [\App\Http\Controllers\ExamController::class, 'update'])->name('update');
+            Route::delete('/{exam}', [\App\Http\Controllers\ExamController::class, 'destroy'])->name('destroy');
+
+            Route::post('/marks', [\App\Http\Controllers\ExamController::class, 'storeMark'])->name('marks.store');
+            Route::put('/marks/{examMark}', [\App\Http\Controllers\ExamController::class, 'updateMark'])->name('marks.update');
+            Route::delete('/marks/{examMark}', [\App\Http\Controllers\ExamController::class, 'destroyMark'])->name('marks.destroy');
+        });
+
+    // Ongoing Class / Virtual Campus
+    Route::prefix('ongoing-class')->middleware(['ensure.setup:academic'])->name('ongoing-class.')->group(function () {
+        Route::get('/', [\App\Http\Controllers\OngoingClassController::class, 'index'])->name('index');
+        Route::get('/class/{class}', [\App\Http\Controllers\OngoingClassController::class, 'classDetail'])->name('class-detail');
+        Route::get('/{class}/quick-view', [\App\Http\Controllers\OngoingClassController::class, 'quickView'])->name('quick-view');
+        Route::get('/period/{period}', [\App\Http\Controllers\OngoingClassController::class, 'periodDetail'])->name('period-detail');
+        Route::get('/api/data', [\App\Http\Controllers\OngoingClassController::class, 'getOngoingData'])->name('api.data');
+    });
+
+    // Class Remarks (Web)
+    Route::post('/class-remarks', [\App\Http\Controllers\ClassRemarkController::class, 'store'])->name('class-remarks.store');
+
+    // Student Remarks (Web)
+    Route::post('/student-remarks', [\App\Http\Controllers\StudentRemarkController::class, 'store'])->name('student-remarks.store');
+
+    // Homework Management
+    Route::prefix('homework')->middleware(['ensure.setup:academic'])->name('homework.')->group(function () {
+        Route::get('/', [\App\Http\Controllers\HomeworkController::class, 'index'])->name('index');
+        Route::get('/create', [\App\Http\Controllers\HomeworkController::class, 'index'])->name('create');
+        Route::post('/', [\App\Http\Controllers\HomeworkController::class, 'store'])->name('store');
+        Route::get('/{homework}', [\App\Http\Controllers\HomeworkController::class, 'show'])->name('show');
+        Route::put('/{homework}', [\App\Http\Controllers\HomeworkController::class, 'update'])->name('update');
+        Route::delete('/{homework}', [\App\Http\Controllers\HomeworkController::class, 'destroy'])->name('destroy');
+        Route::get('/api/classes/{gradeId}', [\App\Http\Controllers\HomeworkController::class, 'getClassesByGrade'])->name('api.classes');
+        Route::get('/api/subjects/{gradeId}', [\App\Http\Controllers\HomeworkController::class, 'getSubjectsByGrade'])->name('api.subjects');
+    });
+
+    // Curriculum Management
+    Route::get('/curriculum', [\App\Http\Controllers\CurriculumController::class, 'index'])
+        ->middleware(['ensure.setup:academic'])
+        ->name('curriculum.index');
+
+    Route::get('/event-announcement-setup', [\App\Http\Controllers\EventAnnouncementSetupController::class, 'index'])
+        ->middleware('setup.locked')
+        ->name('event-announcement-setup.index');
+    Route::post('/event-announcement-setup', [\App\Http\Controllers\EventAnnouncementSetupController::class, 'store'])
+        ->middleware('setup.locked')
+        ->name('event-announcement-setup.store');
+
+    Route::resource('events', \App\Http\Controllers\EventController::class)
+        ->only(['index', 'store', 'update', 'destroy'])
+        ->middleware('ensure.setup:events');
+
+    Route::prefix('event-categories')->middleware('ensure.setup:events')->name('event-categories.')->group(function () {
+        Route::get('/', [\App\Http\Controllers\EventCategoryController::class, 'index'])->name('index');
+        Route::post('/', [\App\Http\Controllers\EventCategoryController::class, 'store'])->name('store');
+        Route::put('/{event_category}', [\App\Http\Controllers\EventCategoryController::class, 'update'])->name('update');
+        Route::delete('/{event_category}', [\App\Http\Controllers\EventCategoryController::class, 'destroy'])->name('destroy');
+    });
+
+    // Announcement management routes (admin only)
+    Route::resource('announcements', \App\Http\Controllers\AnnouncementController::class)
+        ->only(['index', 'store', 'update', 'destroy'])
+        ->middleware(['ensure.setup:events', 'can:manage announcements']);
+    
+    // Announcement view route (accessible to staff for viewing from notifications)
+    Route::get('/announcements/{announcement}', [\App\Http\Controllers\AnnouncementController::class, 'show'])
+        ->name('announcements.show')
+        ->middleware('ensure.setup:events');
+
+    Route::get('/time-table-attendance-setup', [\App\Http\Controllers\TimeTableAttendanceSetupController::class, 'index'])
+        ->middleware('setup.locked')
+        ->name('time-table-attendance-setup.index');
+    Route::post('/time-table-attendance-setup', [\App\Http\Controllers\TimeTableAttendanceSetupController::class, 'store'])
+        ->middleware('setup.locked')
+        ->name('time-table-attendance-setup.store');
+
+    Route::prefix('time-table')->group(function () {
+        Route::get('/', [TimetableController::class, 'index'])->name('time-table.index');
+        Route::get('/create', [TimetableController::class, 'create'])->name('time-table.create');
+        Route::get('/class/{class}/versions', [TimetableController::class, 'classVersions'])->name('time-table.class-versions');
+        Route::get('/{timetable}/edit', [TimetableController::class, 'edit'])->name('time-table.edit');
+        Route::post('/', [TimetableController::class, 'store'])->name('time-table.store');
+        Route::put('/{timetable}', [TimetableController::class, 'update'])->name('time-table.update');
+        Route::post('/{timetable}/publish', [TimetableController::class, 'publish'])->name('time-table.publish');
+        Route::post('/{timetable}/set-active', [TimetableController::class, 'setActive'])->name('time-table.set-active');
+        Route::post('/{timetable}/duplicate', [TimetableController::class, 'duplicate'])->name('time-table.duplicate');
+        Route::put('/{timetable}/version-name', [TimetableController::class, 'updateVersionName'])->name('time-table.update-version-name');
+        Route::delete('/{timetable}', [TimetableController::class, 'destroy'])->name('time-table.destroy');
+        Route::put('/period/{period}', [TimetableController::class, 'updatePeriod'])->name('time-table.update-period');
+        Route::post('/switch-request/{switchRequest}/approve', [TimetableController::class, 'approveSwitchRequest'])->name('time-table.switch-request.approve');
+        Route::post('/switch-request/{switchRequest}/reject', [TimetableController::class, 'rejectSwitchRequest'])->name('time-table.switch-request.reject');
+        Route::post('/class/{class}/switch-request', [TimetableController::class, 'storeSwitchRequest'])->name('time-table.switch-request.store');
+        Route::post('/global-settings', [TimetableController::class, 'updateGlobalSettings'])->name('time-table.global-settings');
+    });
+
+    Route::prefix('attendance')->middleware('ensure.setup:attendance')->group(function () {
+        Route::get('/students', [\App\Http\Controllers\StudentAttendanceController::class, 'index'])
+            ->name('student-attendance.index');
+        Route::get('/collect-attendance', [\App\Http\Controllers\StudentAttendanceController::class, 'create'])
+            ->name('student-attendance.create');
+        Route::get('/collect-attendance/{class}', [\App\Http\Controllers\StudentAttendanceController::class, 'collectClass'])
+            ->name('student-attendance.collect-class');
+        Route::get('/collect-attendance/{class}/students', [\App\Http\Controllers\StudentAttendanceController::class, 'collectClassStudents'])
+            ->name('student-attendance.collect-class-students');
+        Route::get('/collect-attendance/{class}/period-status', [\App\Http\Controllers\StudentAttendanceController::class, 'collectClassPeriodStatus'])
+            ->name('student-attendance.collect-class-period-status');
+        Route::post('/collect-attendance/{class}/store', [\App\Http\Controllers\StudentAttendanceController::class, 'storeClassAttendance'])
+            ->name('student-attendance.collect-class-store');
+        Route::get('/students/class/{class}', [\App\Http\Controllers\StudentAttendanceController::class, 'classDetail'])
+            ->name('student-attendance.class-detail');
+        Route::get('/students/detail/{student}', [\App\Http\Controllers\StudentAttendanceController::class, 'studentDetail'])
+            ->name('student-attendance.student-detail');
+        Route::get('/students/class-summary', [\App\Http\Controllers\StudentAttendanceController::class, 'classSummary'])
+            ->name('student-attendance.summary');
+        Route::get('/students/list', [\App\Http\Controllers\StudentAttendanceController::class, 'students'])
+            ->name('student-attendance.students');
+        Route::get('/students/register', [\App\Http\Controllers\StudentAttendanceController::class, 'register'])
+            ->name('student-attendance.register');
+        Route::post('/students/register', [\App\Http\Controllers\StudentAttendanceController::class, 'storeRegister'])
+            ->name('student-attendance.register.store');
+        Route::get('/students/schedule', [\App\Http\Controllers\StudentAttendanceController::class, 'schedule'])
+            ->name('student-attendance.schedule');
+        Route::get('/students/collect/{period}', [\App\Http\Controllers\StudentAttendanceController::class, 'collect'])
+            ->name('student-attendance.collect');
+        Route::post('/students/collect/{period}', [\App\Http\Controllers\StudentAttendanceController::class, 'storeCollect'])
+            ->name('student-attendance.collect.store');
+
+        Route::get('/teachers', [\App\Http\Controllers\TeacherAttendanceController::class, 'index'])
+            ->name('teacher-attendance.index');
+        Route::get('/teachers/daily', [\App\Http\Controllers\TeacherAttendanceController::class, 'daily'])
+            ->name('teacher-attendance.daily');
+        Route::get('/teachers/monthly', [\App\Http\Controllers\TeacherAttendanceController::class, 'monthly'])
+            ->name('teacher-attendance.monthly');
+        Route::get('/teachers/summer', [\App\Http\Controllers\TeacherAttendanceController::class, 'summer'])
+            ->name('teacher-attendance.summer');
+        Route::get('/teachers/annual', [\App\Http\Controllers\TeacherAttendanceController::class, 'annual'])
+            ->name('teacher-attendance.annual');
+        Route::get('/teachers/detail/{teacher}', [\App\Http\Controllers\TeacherAttendanceController::class, 'detail'])
+            ->name('teacher-attendance.detail');
+        Route::post('/teachers/store', [\App\Http\Controllers\TeacherAttendanceController::class, 'store'])
+            ->name('teacher-attendance.store');
+
+        Route::get('/staff', [\App\Http\Controllers\StaffAttendanceController::class, 'index'])
+            ->name('staff-attendance.index');
+        Route::get('/staff/daily', [\App\Http\Controllers\StaffAttendanceController::class, 'daily'])
+            ->name('staff-attendance.daily');
+        Route::get('/staff/monthly', [\App\Http\Controllers\StaffAttendanceController::class, 'monthly'])
+            ->name('staff-attendance.monthly');
+        Route::get('/staff/summer', [\App\Http\Controllers\StaffAttendanceController::class, 'summer'])
+            ->name('staff-attendance.summer');
+        Route::get('/staff/annual', [\App\Http\Controllers\StaffAttendanceController::class, 'annual'])
+            ->name('staff-attendance.annual');
+        Route::get('/staff/detail/{staff}', [\App\Http\Controllers\StaffAttendanceController::class, 'detail'])
+            ->name('staff-attendance.detail');
+        Route::post('/staff/store', [\App\Http\Controllers\StaffAttendanceController::class, 'store'])
+            ->name('staff-attendance.store');
+    });
+
+    Route::prefix('leave-requests')->middleware('ensure.setup:attendance')->group(function () {
+        Route::get('/', [\App\Http\Controllers\LeaveRequestController::class, 'index'])
+            ->name('leave-requests.index');
+        Route::get('/staff/pending', [\App\Http\Controllers\LeaveRequestController::class, 'staffPending'])
+            ->name('leave-requests.staff.pending');
+        Route::get('/staff/history', [\App\Http\Controllers\LeaveRequestController::class, 'staffHistory'])
+            ->name('leave-requests.staff.history');
+        Route::get('/students/pending', [\App\Http\Controllers\LeaveRequestController::class, 'studentPending'])
+            ->name('leave-requests.students.pending');
+        Route::get('/students/history', [\App\Http\Controllers\LeaveRequestController::class, 'studentHistory'])
+            ->name('leave-requests.students.history');
+        Route::get('/apply', [\App\Http\Controllers\LeaveRequestController::class, 'apply'])
+            ->name('leave-requests.apply');
+        Route::get('/apply-for-other', [\App\Http\Controllers\LeaveRequestController::class, 'applyForOther'])
+            ->name('leave-requests.apply-for-other');
+        Route::get('/apply-for-other/search-users', [\App\Http\Controllers\LeaveRequestController::class, 'searchUsers'])
+            ->name('leave-requests.search-users');
+        Route::get('/apply-for-other/history', [\App\Http\Controllers\LeaveRequestController::class, 'userHistory'])
+            ->name('leave-requests.user-history');
+        Route::post('/apply', [\App\Http\Controllers\LeaveRequestController::class, 'store'])
+            ->name('leave-requests.store');
+        Route::post('/apply-for-other', [\App\Http\Controllers\LeaveRequestController::class, 'storeForOther'])
+            ->name('leave-requests.store-for-other');
+        Route::get('/my', [\App\Http\Controllers\LeaveRequestController::class, 'myHistory'])
+            ->name('leave-requests.my');
+        Route::post('/{leaveRequest}/approve', [\App\Http\Controllers\LeaveRequestController::class, 'approve'])
+            ->name('leave-requests.approve');
+        Route::post('/{leaveRequest}/reject', [\App\Http\Controllers\LeaveRequestController::class, 'reject'])
+            ->name('leave-requests.reject');
+    });
+
+    // Department member management routes
+    Route::prefix('departments')->name('departments.')->group(function () {
+        Route::get('/search-members', [\App\Http\Controllers\DepartmentController::class, 'searchMembers'])
+            ->name('search-members');
+        Route::post('/{department}/add-member', [\App\Http\Controllers\DepartmentController::class, 'addMember'])
+            ->name('add-member');
+        Route::delete('/{department}/remove-member', [\App\Http\Controllers\DepartmentController::class, 'removeMember'])
+            ->name('remove-member');
+    });
+
+    Route::resource('departments', \App\Http\Controllers\DepartmentController::class)
+        ->whereUuid('department');
+
+    Route::resource('teacher-profiles', \App\Http\Controllers\TeacherProfileController::class)->except(['destroy']);
+    Route::get('teacher-profiles/{teacher_profile}/activities', [\App\Http\Controllers\TeacherProfileController::class, 'activities'])
+        ->name('teacher-profiles.activities');
+
+    Route::resource('student-profiles', \App\Http\Controllers\StudentProfileController::class)->except(['destroy']);
+
+    Route::resource('staff-profiles', \App\Http\Controllers\StaffProfileController::class)->except(['destroy']);
+
+    Route::resource('daily-report-recipients', \App\Http\Controllers\DailyReportRecipientController::class)
+        ->only(['index', 'store', 'update', 'destroy']);
+
+    Route::get('/finance-setup', [\App\Http\Controllers\FinanceSetupController::class, 'index'])
+        ->middleware('setup.locked')
+        ->name('finance-setup.index');
+    Route::post('/finance-setup', [\App\Http\Controllers\FinanceSetupController::class, 'store'])
+        ->middleware('setup.locked')
+        ->name('finance-setup.store');
+
+    Route::get('/student-fees', [\App\Http\Controllers\StudentFeeController::class, 'index'])
+        ->middleware('ensure.setup:finance')
+        ->name('student-fees.index');
+    Route::post('/student-fees/categories', [\App\Http\Controllers\StudentFeeController::class, 'storeCategory'])
+        ->middleware('ensure.setup:finance')
+        ->name('student-fees.categories.store');
+    Route::put('/student-fees/categories/{feeType}', [\App\Http\Controllers\StudentFeeController::class, 'updateCategory'])
+        ->middleware('ensure.setup:finance')
+        ->name('student-fees.categories.update');
+    Route::delete('/student-fees/categories/{feeType}', [\App\Http\Controllers\StudentFeeController::class, 'destroyCategory'])
+        ->middleware('ensure.setup:finance')
+        ->name('student-fees.categories.destroy');
+    Route::post('/student-fees/structures', [\App\Http\Controllers\StudentFeeController::class, 'storeStructure'])
+        ->middleware('ensure.setup:finance')
+        ->name('student-fees.structures.store');
+    Route::put('/student-fees/structures/{structure}', [\App\Http\Controllers\StudentFeeController::class, 'updateStructure'])
+        ->middleware('ensure.setup:finance')
+        ->name('student-fees.structures.update');
+    Route::delete('/student-fees/structures/{structure}', [\App\Http\Controllers\StudentFeeController::class, 'destroyStructure'])
+        ->middleware('ensure.setup:finance')
+        ->name('student-fees.structures.destroy');
+    Route::post('/student-fees/invoices', [\App\Http\Controllers\StudentFeeController::class, 'storeInvoice'])
+        ->middleware('ensure.setup:finance')
+        ->name('student-fees.invoices.store');
+    Route::put('/student-fees/invoices/{invoice}', [\App\Http\Controllers\StudentFeeController::class, 'updateInvoice'])
+        ->middleware('ensure.setup:finance')
+        ->name('student-fees.invoices.update');
+    Route::post('/student-fees/payments', [\App\Http\Controllers\StudentFeeController::class, 'storePayment'])
+        ->middleware('ensure.setup:finance')
+        ->name('student-fees.payments.store');
+    Route::post('/student-fees/payments/{payment}/confirm', [\App\Http\Controllers\StudentFeeController::class, 'confirmPayment'])
+        ->middleware('ensure.setup:finance')
+        ->name('student-fees.payments.confirm');
+    Route::post('/student-fees/payments/{payment}/reject', [\App\Http\Controllers\StudentFeeController::class, 'rejectPayment'])
+        ->middleware('ensure.setup:finance')
+        ->name('student-fees.payments.reject');
+    Route::put('/student-fees/grades/{grade}', [\App\Http\Controllers\StudentFeeController::class, 'updateGradeFee'])
+        ->middleware('ensure.setup:finance')
+        ->name('student-fees.grades.update');
+
+    Route::get('/salary-payroll', [SalaryPayrollController::class, 'index'])
+        ->middleware('ensure.setup:finance')
+        ->name('salary-payroll.index');
+
+    Route::post('/salary-payroll/pay', [SalaryPayrollController::class, 'pay'])
+        ->middleware('ensure.setup:finance')
+        ->name('salary-payroll.pay');
+
+    Route::prefix('finance')->middleware('ensure.setup:finance')->group(function () {
+        Route::get('/', [\App\Http\Controllers\FinanceController::class, 'index'])->name('finance.index');
+        Route::post('/income', [\App\Http\Controllers\FinanceController::class, 'storeIncome'])->name('finance.income.store');
+        Route::put('/income/{income}', [\App\Http\Controllers\FinanceController::class, 'updateIncome'])->name('finance.income.update');
+        Route::delete('/income/{income}', [\App\Http\Controllers\FinanceController::class, 'destroyIncome'])->name('finance.income.destroy');
+
+        Route::post('/expense', [\App\Http\Controllers\FinanceController::class, 'storeExpense'])->name('finance.expense.store');
+        Route::put('/expense/{expense}', [\App\Http\Controllers\FinanceController::class, 'updateExpense'])->name('finance.expense.update');
+        Route::delete('/expense/{expense}', [\App\Http\Controllers\FinanceController::class, 'destroyExpense'])->name('finance.expense.destroy');
+    });
+
+    Route::get('/settings/school-info', \App\Http\Controllers\SchoolInfoController::class)->name('settings.school-info');
+    Route::post('/settings/school-info', [\App\Http\Controllers\SchoolInfoController::class, 'update'])->name('settings.school-info.update');
+    Route::post('/settings/key-contacts', [\App\Http\Controllers\SchoolInfoController::class, 'storeContact'])->name('settings.key-contacts.store');
+    Route::put('/settings/key-contacts/{contact}', [\App\Http\Controllers\SchoolInfoController::class, 'updateContact'])->name('settings.key-contacts.update');
+    Route::delete('/settings/key-contacts/{contact}', [\App\Http\Controllers\SchoolInfoController::class, 'destroyContact'])->name('settings.key-contacts.destroy');
+
+    Route::prefix('rules')->name('rules.')->group(function () {
+        Route::get('/', [RuleCategoryController::class, 'index'])->name('index');
+        Route::post('/', [RuleCategoryController::class, 'store'])->name('store');
+        Route::get('/{ruleCategory}', [RuleCategoryController::class, 'show'])->name('show');
+        Route::put('/{ruleCategory}', [RuleCategoryController::class, 'update'])->name('update');
+        Route::delete('/{ruleCategory}', [RuleCategoryController::class, 'destroy'])->name('destroy');
+
+        Route::post('/{ruleCategory}/items', [SchoolRuleController::class, 'store'])->name('items.store');
+        Route::put('/{ruleCategory}/items/{schoolRule}', [SchoolRuleController::class, 'update'])->name('items.update');
+        Route::delete('/{ruleCategory}/items/{schoolRule}', [SchoolRuleController::class, 'destroy'])->name('items.destroy');
+    });
+
+    Route::view('/settings/academic-year-terms', 'placeholders.page', [
+        'title' => __('Academic Year & Terms'),
+        'description' => __('Manage academic years and terms.'),
+    ])->name('settings.academic-year-terms');
+
+    Route::get('/user-activity-logs', [\App\Http\Controllers\ActivityLogController::class, 'index'])
+        ->name('user-activity-logs.index');
+
+    // Report Centre
+    Route::prefix('reports')->name('reports.')->group(function () {
+        Route::get('/', [\App\Http\Controllers\ReportController::class, 'index'])->name('index');
+        Route::post('/', [\App\Http\Controllers\ReportController::class, 'store'])->name('store');
+        Route::delete('/{report}', [\App\Http\Controllers\ReportController::class, 'destroy'])->name('destroy');
+        
+        // Incoming Reports (Daily reports from teachers)
+        Route::get('/incoming', [\App\Http\Controllers\ReportController::class, 'incomingReports'])->name('incoming');
+        Route::get('/incoming/{report}', [\App\Http\Controllers\ReportController::class, 'showIncomingReport'])->name('incoming.show');
+        Route::post('/incoming/{report}/review', [\App\Http\Controllers\ReportController::class, 'reviewReport'])->name('incoming.review');
+        Route::post('/incoming/{report}/acknowledge', [\App\Http\Controllers\ReportController::class, 'acknowledgeReport'])->name('incoming.acknowledge');
+        
+        // Student Reports
+        Route::get('/students', [\App\Http\Controllers\ReportController::class, 'studentReports'])->name('students');
+        Route::post('/students/generate', [\App\Http\Controllers\ReportController::class, 'generateStudentReport'])->name('students.generate');
+        
+        // Teacher Reports
+        Route::get('/teachers', [\App\Http\Controllers\ReportController::class, 'teacherReports'])->name('teachers');
+        Route::post('/teachers/generate', [\App\Http\Controllers\ReportController::class, 'generateTeacherReport'])->name('teachers.generate');
+        
+        // Staff Reports
+        Route::get('/staff', [\App\Http\Controllers\ReportController::class, 'staffReports'])->name('staff');
+        Route::post('/staff/generate', [\App\Http\Controllers\ReportController::class, 'generateStaffReport'])->name('staff.generate');
+        
+        // Attendance Reports
+        Route::get('/attendance', [\App\Http\Controllers\ReportController::class, 'attendanceReports'])->name('attendance');
+        Route::post('/attendance/generate', [\App\Http\Controllers\ReportController::class, 'generateAttendanceReport'])->name('attendance.generate');
+        
+        // API endpoints for dynamic selects
+        Route::get('/api/classes/{gradeId}', [\App\Http\Controllers\ReportController::class, 'getClassesByGrade']);
+        Route::get('/api/students/{classId}', [\App\Http\Controllers\ReportController::class, 'getStudentsByClass']);
+    });
+
+    Route::view('/contacts', 'contacts.index')->name('contacts.index');
+
+    // Feedback system - sends directly to Control Panel
+    Route::get('/feedback', [FeedbackController::class, 'index'])->name('feedback.index');
+    Route::post('/feedback', [FeedbackController::class, 'store'])->name('feedback.store');
+
+    // Staff Notification routes (for staff role users)
+    Route::middleware('role:staff')->prefix('staff')->name('staff.')->group(function () {
+        Route::get('/notifications', [\App\Http\Controllers\Staff\NotificationController::class, 'index'])->name('notifications.index');
+        Route::get('/notifications/unread-count', [\App\Http\Controllers\Staff\NotificationController::class, 'unreadCount'])->name('notifications.unread-count');
+        Route::get('/notifications/list', [\App\Http\Controllers\Staff\NotificationController::class, 'list'])->name('notifications.list');
+        Route::post('/notifications/mark-all-read', [\App\Http\Controllers\Staff\NotificationController::class, 'markAllAsRead'])->name('notifications.mark-all-read');
+        Route::post('/notifications/save-fcm-token', [\App\Http\Controllers\Staff\NotificationController::class, 'saveFcmToken'])->name('notifications.save-fcm-token');
+        Route::get('/notifications/{id}', [\App\Http\Controllers\Staff\NotificationController::class, 'show'])->name('notifications.show');
+        Route::post('/notifications/{id}/read', [\App\Http\Controllers\Staff\NotificationController::class, 'markAsRead'])->name('notifications.read');
+        Route::delete('/notifications/{id}', [\App\Http\Controllers\Staff\NotificationController::class, 'destroy'])->name('notifications.destroy');
+    });
+
+    // FCM Test page (for development/testing)
+    Route::get('/test-fcm', function () {
+        return view('test-fcm');
+    })->name('test-fcm');
+
+    // Simple FCM Test page
+    Route::get('/simple-fcm-test', function () {
+        return view('simple-fcm-test');
+    })->name('simple-fcm-test');
+
+    // Backend FCM Test page
+    Route::get('/backend-fcm-test', function () {
+        return view('backend-fcm-test');
+    })->name('backend-fcm-test');
+});
+
+require __DIR__ . '/auth.php';

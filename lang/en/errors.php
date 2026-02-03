@@ -1,0 +1,27 @@
+<?php
+
+return [
+    'Access Forbidden' => 'Access Forbidden',
+    'Administrator?' => 'Administrator?',
+    'All rights reserved.' => 'All rights reserved.',
+    'Back to home' => 'Back to home',
+    'Dark mode enabled' => 'Dark mode enabled',
+    'Error' => 'Error',
+    'Go to dashboard' => 'Go to dashboard',
+    'If you need immediate assistance, please contact our support team.' => 'If you need immediate assistance, please contact our support team.',
+    'Light mode enabled' => 'Light mode enabled',
+    'Login here' => 'Login here',
+    'Maintenance Mode' => 'Maintenance Mode',
+    'Oops!' => 'Oops!',
+    'Page expired' => 'Page expired',
+    'Page not found' => 'Page not found',
+    'Smart Campus' => 'Smart Campus',
+    'Something went wrong on our side. The team has been notified.' => 'Something went wrong on our side. The team has been notified.',
+    'Something went wrong.' => 'Something went wrong.',
+    'Sorry for the inconvenience. We\'re performing some maintenance at the moment. We\'ll be back online shortly!' => 'Sorry for the inconvenience. We\'re performing some maintenance at the moment. We\'ll be back online shortly!',
+    'Unexpected error' => 'Unexpected error',
+    'We couldn\'t find the page you were looking for. It may have been moved or deleted.' => 'We couldn\'t find the page you were looking for. It may have been moved or deleted.',
+    'We\'ll be right back!' => 'We\'ll be right back!',
+    'You don\'t have permission to access this resource. Please contact your administrator if you believe this is an error.' => 'You don\'t have permission to access this resource. Please contact your administrator if you believe this is an error.',
+    'Your session expired. Please refresh and try again.' => 'Your session expired. Please refresh and try again.',
+];

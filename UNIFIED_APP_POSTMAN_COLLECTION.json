@@ -1,0 +1,671 @@
+{
+  "info": {
+    "name": "SmartCampus Unified App API",
+    "description": "Complete API collection for Unified Teacher-Guardian Mobile App",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "version": "1.0.0"
+  },
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "https://your-domain.com/api/v1",
+      "type": "string"
+    },
+    {
+      "key": "token",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "user_type",
+      "value": "",
+      "type": "string"
+    }
+  ],
+  "auth": {
+    "type": "bearer",
+    "bearer": [
+      {
+        "key": "token",
+        "value": "{{token}}",
+        "type": "string"
+      }
+    ]
+  },
+  "item": [
+    {
+      "name": "Authentication",
+      "item": [
+        {
+          "name": "Unified Login",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "    const response = pm.response.json();",
+                  "    if (response.success && response.data.token) {",
+                  "        pm.collectionVariables.set('token', response.data.token);",
+                  "        pm.collectionVariables.set('user_type', response.data.user_type);",
+                  "        console.log('Token saved:', response.data.token);",
+                  "        console.log('User type:', response.data.user_type);",
+                  "    }",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"login\": \"teacher@example.com\",\n    \"password\": \"password123\",\n    \"device_name\": \"iPhone 15\",\n    \"remember_me\": true\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/auth/login",
+              "host": ["{{base_url}}"],
+              "path": ["auth", "login"]
+            },
+            "description": "Login endpoint that works for both teachers and guardians. Returns user_type in response to determine app flow."
+          }
+        },
+        {
+          "name": "Get Profile",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/auth/profile",
+              "host": ["{{base_url}}"],
+              "path": ["auth", "profile"]
+            },
+            "description": "Get user profile - returns different data based on user role (teacher/guardian)"
+          }
+        },
+        {
+          "name": "Change Password",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"current_password\": \"oldpassword123\",\n    \"new_password\": \"newpassword123\",\n    \"new_password_confirmation\": \"newpassword123\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/auth/change-password",
+              "host": ["{{base_url}}"],
+              "path": ["auth", "change-password"]
+            }
+          }
+        },
+        {
+          "name": "Logout",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/auth/logout",
+              "host": ["{{base_url}}"],
+              "path": ["auth", "logout"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Dashboard",
+      "item": [
+        {
+          "name": "Get Dashboard",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/dashboard",
+              "host": ["{{base_url}}"],
+              "path": ["dashboard"]
+            },
+            "description": "Get dashboard data based on user role - teacher stats or guardian dashboard"
+          }
+        },
+        {
+          "name": "Get Today's Data",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/dashboard/today",
+              "host": ["{{base_url}}"],
+              "path": ["dashboard", "today"]
+            },
+            "description": "Get today's classes (teacher) or today's schedule (guardian)"
+          }
+        },
+        {
+          "name": "Get Stats",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/dashboard/stats",
+              "host": ["{{base_url}}"],
+              "path": ["dashboard", "stats"]
+            },
+            "description": "Get quick stats based on user role"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Notifications",
+      "item": [
+        {
+          "name": "Get Notifications",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/notifications?page=1&per_page=20",
+              "host": ["{{base_url}}"],
+              "path": ["notifications"],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "per_page",
+                  "value": "20"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get Unread Count",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/notifications/unread-count",
+              "host": ["{{base_url}}"],
+              "path": ["notifications", "unread-count"]
+            }
+          }
+        },
+        {
+          "name": "Mark as Read",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/notifications/123/read",
+              "host": ["{{base_url}}"],
+              "path": ["notifications", "123", "read"]
+            }
+          }
+        },
+        {
+          "name": "Mark All as Read",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/notifications/mark-all-read",
+              "host": ["{{base_url}}"],
+              "path": ["notifications", "mark-all-read"]
+            }
+          }
+        },
+        {
+          "name": "Get Settings",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/notifications/settings",
+              "host": ["{{base_url}}"],
+              "path": ["notifications", "settings"]
+            }
+          }
+        },
+        {
+          "name": "Update Settings",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"push_notifications\": true,\n    \"email_notifications\": false,\n    \"homework_reminders\": true,\n    \"attendance_alerts\": true,\n    \"announcement_notifications\": true\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/notifications/settings",
+              "host": ["{{base_url}}"],
+              "path": ["notifications", "settings"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Device Management",
+      "item": [
+        {
+          "name": "Register Device Token",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"device_token\": \"fcm_device_token_here\",\n    \"device_type\": \"ios\",\n    \"device_name\": \"iPhone 15\",\n    \"app_version\": \"1.0.0\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/device-tokens",
+              "host": ["{{base_url}}"],
+              "path": ["device-tokens"]
+            }
+          }
+        },
+        {
+          "name": "Remove Device Token",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"device_token\": \"fcm_device_token_here\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/device-tokens",
+              "host": ["{{base_url}}"],
+              "path": ["device-tokens"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Teacher Specific",
+      "item": [
+        {
+          "name": "Get Today's Classes",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/teacher/today-classes",
+              "host": ["{{base_url}}"],
+              "path": ["teacher", "today-classes"]
+            },
+            "description": "Teacher-specific endpoint for today's classes"
+          }
+        },
+        {
+          "name": "Get Classes",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/teacher/classes",
+              "host": ["{{base_url}}"],
+              "path": ["teacher", "classes"]
+            }
+          }
+        },
+        {
+          "name": "Take Attendance",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"class_id\": 1,\n    \"date\": \"2026-02-03\",\n    \"attendance\": [\n        {\n            \"student_id\": 1,\n            \"status\": \"present\"\n        },\n        {\n            \"student_id\": 2,\n            \"status\": \"absent\"\n        }\n    ]\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/teacher/attendance",
+              "host": ["{{base_url}}"],
+              "path": ["teacher", "attendance"]
+            }
+          }
+        },
+        {
+          "name": "Assign Homework",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"title\": \"Math Exercise 5.2\",\n    \"description\": \"Complete all problems from page 45-47\",\n    \"subject_id\": 1,\n    \"class_id\": 1,\n    \"due_date\": \"2026-02-10\",\n    \"instructions\": \"Show all working steps\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/teacher/homework",
+              "host": ["{{base_url}}"],
+              "path": ["teacher", "homework"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Guardian Specific",
+      "item": [
+        {
+          "name": "Get Students",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/guardian/students",
+              "host": ["{{base_url}}"],
+              "path": ["guardian", "students"]
+            },
+            "description": "Get guardian's children/wards"
+          }
+        },
+        {
+          "name": "Get Student Attendance",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/guardian/attendance?student_id=1&month=2&year=2026",
+              "host": ["{{base_url}}"],
+              "path": ["guardian", "attendance"],
+              "query": [
+                {
+                  "key": "student_id",
+                  "value": "1"
+                },
+                {
+                  "key": "month",
+                  "value": "2"
+                },
+                {
+                  "key": "year",
+                  "value": "2026"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get Student Homework",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/guardian/homework?student_id=1&status=pending",
+              "host": ["{{base_url}}"],
+              "path": ["guardian", "homework"],
+              "query": [
+                {
+                  "key": "student_id",
+                  "value": "1"
+                },
+                {
+                  "key": "status",
+                  "value": "pending"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Submit Leave Request",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"student_id\": 1,\n    \"leave_type\": \"sick\",\n    \"start_date\": \"2026-02-05\",\n    \"end_date\": \"2026-02-06\",\n    \"reason\": \"Student has fever and needs rest\",\n    \"supporting_documents\": []\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/guardian/leave-requests",
+              "host": ["{{base_url}}"],
+              "path": ["guardian", "leave-requests"]
+            }
+          }
+        },
+        {
+          "name": "Get Student Fees",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/guardian/fees?student_id=1",
+              "host": ["{{base_url}}"],
+              "path": ["guardian", "fees"],
+              "query": [
+                {
+                  "key": "student_id",
+                  "value": "1"
+                }
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Common Features",
+      "item": [
+        {
+          "name": "Get Announcements",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/{{user_type}}/announcements?page=1&per_page=10",
+              "host": ["{{base_url}}"],
+              "path": ["{{user_type}}", "announcements"],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "per_page",
+                  "value": "10"
+                }
+              ]
+            },
+            "description": "Get announcements - uses user_type variable set during login"
+          }
+        },
+        {
+          "name": "Get School Info",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/{{user_type}}/school/info",
+              "host": ["{{base_url}}"],
+              "path": ["{{user_type}}", "school", "info"]
+            }
+          }
+        },
+        {
+          "name": "Get School Rules",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/{{user_type}}/rules",
+              "host": ["{{base_url}}"],
+              "path": ["{{user_type}}", "rules"]
+            }
+          }
+        }
+      ]
+    }
+  ]
+}
