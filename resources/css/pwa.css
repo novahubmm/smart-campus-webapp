@@ -1,0 +1,707 @@
+/**
+ * Smart Campus PWA Styles
+ * Replicating exact mobile app design
+ */
+
+/* ============================================
+   CSS VARIABLES - From Mobile App Theme
+   ============================================ */
+:root {
+  /* Teacher Theme Colors */
+  --teacher-primary: #8BC34A;
+  --teacher-secondary: #306730;
+  --teacher-tab-bar: #8BC34A;
+  --teacher-tab-active: #d5e450;
+  --teacher-tab-active-text: #306730;
+  --teacher-header-bg: #8BC34A;
+  --teacher-header-start: #8BC34A;
+  --teacher-header-end: #5A7D5A;
+  --teacher-card-start: #9CCC65;
+  --teacher-card-end: #6B8E6B;
+  --teacher-greeting-text: #2E5A2E;
+
+  /* Guardian Theme Colors */
+  --guardian-primary: #26BFFF;
+  --guardian-tab-bar: #26BFFF;
+  --guardian-tab-active: #FFFFFF;
+  --guardian-tab-active-text: #17a4e1;
+  --guardian-header-bg: #26BFFF;
+
+  /* Common Colors */
+  --background: #F7F9FC;
+  --card-background: #FFFFFF;
+  --text-primary: #1C1C1E;
+  --text-secondary: #6E6E73;
+  --text-light: #FFFFFF;
+  --text-muted: #8E8E93;
+  --border: #E5E8EC;
+  --border-light: #F7F9FC;
+
+  /* Semantic Colors */
+  --success: #4CAF50;
+  --success-bg: #E8F5E9;
+  --warning: #FFC107;
+  --warning-bg: #FFF8E1;
+  --error: #E53935;
+  --error-bg: #FFEBEE;
+  --info: #2196F3;
+  --info-bg: #E3F2FD;
+
+  /* Attendance Colors */
+  --present: #4CAF50;
+  --present-bg: #E8F5E9;
+  --leave: #FFC107;
+  --leave-bg: #FFF8E1;
+  --absent: #E53935;
+  --absent-bg: #FFEBEE;
+
+  /* Spacing (matching mobile app) */
+  --spacing-xs: 4px;
+  --spacing-sm: 8px;
+  --spacing-md: 16px;
+  --spacing-lg: 24px;
+  --spacing-xl: 32px;
+
+  /* Border Radius */
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 16px;
+  --radius-xl: 20px;
+  --radius-full: 9999px;
+
+  /* Shadows */
+  --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+  --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+  --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+
+  /* Bottom Nav Height */
+  --bottom-nav-height: 60px;
+  --top-header-height: 56px;
+}
+
+/* ============================================
+   RESET & BASE STYLES
+   ============================================ */
+* {
+  -webkit-tap-highlight-color: transparent;
+  -webkit-touch-callout: none;
+}
+
+html, body {
+  margin: 0;
+  padding: 0;
+  width: 100%;
+  height: 100%;
+  overflow-x: hidden;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif;
+  background-color: var(--background);
+  color: var(--text-primary);
+  font-size: 16px;
+  line-height: 1.5;
+}
+
+/* ============================================
+   PWA LAYOUT
+   ============================================ */
+.pwa-container {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  max-width: 100vw;
+  overflow-x: hidden;
+}
+
+.pwa-header {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: var(--top-header-height);
+  z-index: 100;
+  background: linear-gradient(135deg, var(--header-start), var(--header-end));
+  box-shadow: var(--shadow-md);
+}
+
+.pwa-content {
+  flex: 1;
+  padding-top: var(--top-header-height);
+  padding-bottom: calc(var(--bottom-nav-height) + 16px);
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.pwa-bottom-nav {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: var(--bottom-nav-height);
+  background: var(--card-background);
+  border-top: 1px solid var(--border);
+  z-index: 100;
+  box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.05);
+}
+
+/* ============================================
+   HEADER STYLES
+   ============================================ */
+.pwa-header-content {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 100%;
+  padding: 0 var(--spacing-md);
+}
+
+.pwa-header-title {
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--text-light);
+  margin: 0;
+}
+
+.pwa-header-icon {
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--radius-full);
+  background: rgba(255, 255, 255, 0.2);
+  color: var(--text-light);
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.pwa-header-icon:active {
+  transform: scale(0.95);
+  background: rgba(255, 255, 255, 0.3);
+}
+
+/* ============================================
+   BOTTOM NAVIGATION
+   ============================================ */
+.bottom-nav-container {
+  display: flex;
+  align-items: center;
+  justify-content: space-around;
+  height: 100%;
+  padding: 0 var(--spacing-sm);
+}
+
+.bottom-nav-item {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  padding: var(--spacing-sm);
+  cursor: pointer;
+  transition: all 0.2s;
+  text-decoration: none;
+  color: var(--text-secondary);
+}
+
+.bottom-nav-item:active {
+  transform: scale(0.95);
+}
+
+.bottom-nav-item.active {
+  color: var(--nav-active-color);
+}
+
+.bottom-nav-icon {
+  font-size: 24px;
+  transition: all 0.2s;
+}
+
+.bottom-nav-label {
+  font-size: 11px;
+  font-weight: 500;
+  text-align: center;
+}
+
+.bottom-nav-badge {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 4px;
+  background: var(--error);
+  color: white;
+  border-radius: var(--radius-full);
+  font-size: 10px;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* ============================================
+   CARD STYLES
+   ============================================ */
+.pwa-card {
+  background: var(--card-background);
+  border-radius: var(--radius-md);
+  padding: var(--spacing-md);
+  margin-bottom: var(--spacing-md);
+  box-shadow: var(--shadow-sm);
+  transition: all 0.2s;
+}
+
+.pwa-card:active {
+  transform: scale(0.98);
+  box-shadow: var(--shadow-md);
+}
+
+.pwa-card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: var(--spacing-md);
+}
+
+.pwa-card-title {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin: 0;
+}
+
+.pwa-card-subtitle {
+  font-size: 14px;
+  color: var(--text-secondary);
+  margin: 4px 0 0 0;
+}
+
+/* ============================================
+   STAT CARD
+   ============================================ */
+.stat-card {
+  background: var(--card-background);
+  border-radius: var(--radius-md);
+  padding: var(--spacing-md);
+  text-align: center;
+  box-shadow: var(--shadow-sm);
+}
+
+.stat-card-value {
+  font-size: 32px;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin: 0;
+}
+
+.stat-card-label {
+  font-size: 12px;
+  color: var(--text-secondary);
+  margin: 4px 0 0 0;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+/* ============================================
+   LIST ITEMS
+   ============================================ */
+.pwa-list-item {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-md);
+  padding: var(--spacing-md);
+  background: var(--card-background);
+  border-radius: var(--radius-md);
+  margin-bottom: var(--spacing-sm);
+  cursor: pointer;
+  transition: all 0.2s;
+  text-decoration: none;
+  color: inherit;
+}
+
+.pwa-list-item:active {
+  transform: scale(0.98);
+  background: var(--background);
+}
+
+.pwa-list-icon {
+  width: 48px;
+  height: 48px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--radius-md);
+  font-size: 24px;
+  flex-shrink: 0;
+}
+
+.pwa-list-content {
+  flex: 1;
+  min-width: 0;
+}
+
+.pwa-list-title {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin: 0 0 4px 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.pwa-list-subtitle {
+  font-size: 14px;
+  color: var(--text-secondary);
+  margin: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.pwa-list-arrow {
+  color: var(--text-muted);
+  font-size: 20px;
+}
+
+/* ============================================
+   BUTTONS
+   ============================================ */
+.pwa-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--spacing-sm);
+  padding: 12px 24px;
+  border: none;
+  border-radius: var(--radius-md);
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+  text-decoration: none;
+  min-height: 48px;
+}
+
+.pwa-btn:active {
+  transform: scale(0.98);
+}
+
+.pwa-btn-primary {
+  background: var(--primary-color);
+  color: white;
+}
+
+.pwa-btn-secondary {
+  background: var(--background);
+  color: var(--text-primary);
+  border: 1px solid var(--border);
+}
+
+.pwa-btn-full {
+  width: 100%;
+}
+
+/* ============================================
+   BADGES
+   ============================================ */
+.pwa-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 12px;
+  border-radius: var(--radius-full);
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.pwa-badge-success {
+  background: var(--success-bg);
+  color: var(--success);
+}
+
+.pwa-badge-warning {
+  background: var(--warning-bg);
+  color: var(--warning);
+}
+
+.pwa-badge-error {
+  background: var(--error-bg);
+  color: var(--error);
+}
+
+.pwa-badge-info {
+  background: var(--info-bg);
+  color: var(--info);
+}
+
+/* ============================================
+   WELCOME CARD (Dashboard)
+   ============================================ */
+.welcome-card {
+  background: linear-gradient(135deg, var(--card-start), var(--card-end));
+  border-radius: var(--radius-lg);
+  padding: var(--spacing-lg);
+  margin-bottom: var(--spacing-md);
+  color: white;
+  box-shadow: var(--shadow-lg);
+}
+
+.welcome-greeting {
+  font-size: 14px;
+  opacity: 0.9;
+  margin: 0 0 4px 0;
+}
+
+.welcome-name {
+  font-size: 24px;
+  font-weight: 700;
+  margin: 0 0 var(--spacing-sm) 0;
+}
+
+.welcome-subtitle {
+  font-size: 14px;
+  opacity: 0.8;
+  margin: 0;
+}
+
+/* ============================================
+   CLASS CARD
+   ============================================ */
+.class-card {
+  background: var(--card-background);
+  border-radius: var(--radius-md);
+  padding: var(--spacing-md);
+  margin-bottom: var(--spacing-md);
+  border-left: 4px solid var(--primary-color);
+  box-shadow: var(--shadow-sm);
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.class-card:active {
+  transform: scale(0.98);
+}
+
+.class-card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: var(--spacing-sm);
+}
+
+.class-card-time {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--primary-color);
+}
+
+.class-card-status {
+  padding: 4px 12px;
+  border-radius: var(--radius-full);
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.class-card-title {
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin: 0 0 4px 0;
+}
+
+.class-card-subtitle {
+  font-size: 14px;
+  color: var(--text-secondary);
+  margin: 0;
+}
+
+/* ============================================
+   SECTION HEADER
+   ============================================ */
+.section-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin: var(--spacing-lg) 0 var(--spacing-md) 0;
+}
+
+.section-title {
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin: 0;
+}
+
+.section-action {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--primary-color);
+  cursor: pointer;
+  text-decoration: none;
+}
+
+/* ============================================
+   EMPTY STATE
+   ============================================ */
+.empty-state {
+  text-align: center;
+  padding: var(--spacing-xl) var(--spacing-md);
+}
+
+.empty-state-icon {
+  font-size: 64px;
+  color: var(--text-muted);
+  margin-bottom: var(--spacing-md);
+}
+
+.empty-state-title {
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin: 0 0 var(--spacing-sm) 0;
+}
+
+.empty-state-subtitle {
+  font-size: 14px;
+  color: var(--text-secondary);
+  margin: 0;
+}
+
+/* ============================================
+   LOADING STATE
+   ============================================ */
+.loading-container {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--spacing-xl);
+}
+
+.loading-spinner {
+  width: 40px;
+  height: 40px;
+  border: 4px solid var(--border);
+  border-top-color: var(--primary-color);
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+/* ============================================
+   PULL TO REFRESH
+   ============================================ */
+.pull-to-refresh {
+  position: absolute;
+  top: var(--top-header-height);
+  left: 0;
+  right: 0;
+  height: 60px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transform: translateY(-100%);
+  transition: transform 0.3s;
+}
+
+.pull-to-refresh.active {
+  transform: translateY(0);
+}
+
+/* ============================================
+   THEME SPECIFIC STYLES
+   ============================================ */
+.theme-teacher {
+  --primary-color: var(--teacher-primary);
+  --header-start: var(--teacher-header-start);
+  --header-end: var(--teacher-header-end);
+  --card-start: var(--teacher-card-start);
+  --card-end: var(--teacher-card-end);
+  --nav-active-color: var(--teacher-tab-active-text);
+}
+
+.theme-teacher .pwa-bottom-nav {
+  background: var(--teacher-tab-bar);
+}
+
+.theme-teacher .bottom-nav-item {
+  color: rgba(255, 255, 255, 0.7);
+}
+
+.theme-teacher .bottom-nav-item.active {
+  color: var(--teacher-tab-active-text);
+  background: var(--teacher-tab-active);
+  border-radius: var(--radius-md);
+}
+
+.theme-guardian {
+  --primary-color: var(--guardian-primary);
+  --header-start: var(--guardian-header-bg);
+  --header-end: var(--guardian-header-bg);
+  --card-start: var(--guardian-primary);
+  --card-end: #17a4e1;
+  --nav-active-color: var(--guardian-tab-active-text);
+}
+
+.theme-guardian .pwa-bottom-nav {
+  background: var(--guardian-tab-bar);
+}
+
+.theme-guardian .bottom-nav-item {
+  color: rgba(255, 255, 255, 0.7);
+}
+
+.theme-guardian .bottom-nav-item.active {
+  color: var(--guardian-tab-active-text);
+  background: var(--guardian-tab-active);
+  border-radius: var(--radius-md);
+}
+
+/* ============================================
+   RESPONSIVE
+   ============================================ */
+@media (min-width: 768px) {
+  .pwa-container {
+    max-width: 480px;
+    margin: 0 auto;
+    box-shadow: 0 0 20px rgba(0, 0, 0, 0.1);
+  }
+}
+
+/* ============================================
+   UTILITIES
+   ============================================ */
+.p-0 { padding: 0; }
+.p-sm { padding: var(--spacing-sm); }
+.p-md { padding: var(--spacing-md); }
+.p-lg { padding: var(--spacing-lg); }
+
+.mt-0 { margin-top: 0; }
+.mt-sm { margin-top: var(--spacing-sm); }
+.mt-md { margin-top: var(--spacing-md); }
+.mt-lg { margin-top: var(--spacing-lg); }
+
+.mb-0 { margin-bottom: 0; }
+.mb-sm { margin-bottom: var(--spacing-sm); }
+.mb-md { margin-bottom: var(--spacing-md); }
+.mb-lg { margin-bottom: var(--spacing-lg); }
+
+.text-center { text-align: center; }
+.text-left { text-align: left; }
+.text-right { text-align: right; }
+
+.flex { display: flex; }
+.flex-col { flex-direction: column; }
+.items-center { align-items: center; }
+.justify-between { justify-content: space-between; }
+.gap-sm { gap: var(--spacing-sm); }
+.gap-md { gap: var(--spacing-md); }
+
+.hidden { display: none; }

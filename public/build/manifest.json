@@ -54,13 +54,17 @@
     "isEntry": true
   },
   "resources/css/app.css": {
-    "file": "assets/app-CTMvyBUY.css",
+    "file": "assets/app-B6HzfAOC.css",
     "src": "resources/css/app.css",
     "isEntry": true,
     "name": "app",
     "names": [
       "app.css"
     ]
+  },
+  "resources/css/pwa.css": {
+    "file": "assets/pwa-BdG9w34W.css",
+    "src": "resources/css/pwa.css"
   },
   "resources/js/app.js": {
     "file": "assets/app-BKfQp1Il.js",

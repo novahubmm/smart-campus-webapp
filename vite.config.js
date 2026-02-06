@@ -6,6 +6,7 @@ export default defineConfig({
         laravel({
             input: [
                 'resources/css/app.css',
+                'resources/css/pwa.css',
                 'resources/js/app.js',
                 'public/css/academic-management.css',
                 'public/js/academic-management.js',

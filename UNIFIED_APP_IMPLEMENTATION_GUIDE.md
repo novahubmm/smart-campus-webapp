@@ -46,6 +46,8 @@ Content-Type: application/json
 ```
 
 #### 2. Login Response
+
+**Single Role User:**
 ```json
 {
     "success": true,
@@ -64,6 +66,38 @@ Content-Type: application/json
         "expires_at": "2026-03-05T10:30:00.000000Z",
         "permissions": ["view_classes", "take_attendance"],
         "roles": ["teacher"]
+    }
+}
+```
+
+**Multi-Role User (has both teacher and guardian roles):**
+```json
+{
+    "success": true,
+    "message": "Login successful",
+    "data": {
+        "user": {
+            // Default role user data (guardian preferred)
+        },
+        "user_data": {
+            "teacher": {
+                // Teacher profile data
+            },
+            "guardian": {
+                // Guardian profile data
+            }
+        },
+        "user_type": "guardian", // Default role
+        "available_roles": ["teacher", "guardian"],
+        "tokens": {
+            "teacher": "teacher_token_here",
+            "guardian": "guardian_token_here"
+        },
+        "token": "guardian_token_here", // Default token
+        "token_type": "Bearer",
+        "expires_at": "2026-03-05T10:30:00.000000Z",
+        "permissions": ["view_classes", "take_attendance", "view_children"],
+        "roles": ["teacher", "guardian"]
     }
 }
 ```
@@ -92,6 +126,79 @@ PUT /api/v1/notifications/settings
 GET /api/v1/auth/profile
 POST /api/v1/auth/change-password
 POST /api/v1/auth/logout
+GET /api/v1/auth/available-roles
+POST /api/v1/auth/switch-role
+```
+
+#### Multi-Role Support
+
+**Check Available Roles**
+```http
+GET /api/v1/auth/available-roles
+Authorization: Bearer {token}
+```
+
+Response:
+```json
+{
+    "success": true,
+    "data": {
+        "available_roles": ["teacher", "guardian"],
+        "role_data": {
+            "teacher": {
+                "type": "teacher",
+                "data": {
+                    "teacher_id": "TCH-001",
+                    "department": "Mathematics",
+                    "position": "Senior Teacher"
+                }
+            },
+            "guardian": {
+                "type": "guardian",
+                "data": {
+                    "students": [
+                        {
+                            "name": "Jane Doe",
+                            "grade": "Grade 5",
+                            "section": "A"
+                        }
+                    ],
+                    "student_count": 1
+                }
+            }
+        },
+        "has_multiple_roles": true
+    }
+}
+```
+
+**Switch Role**
+```http
+POST /api/v1/auth/switch-role
+Authorization: Bearer {current_token}
+Content-Type: application/json
+
+{
+    "role": "teacher",
+    "device_name": "iPhone 15"
+}
+```
+
+Response:
+```json
+{
+    "success": true,
+    "message": "Switched to teacher role successfully",
+    "data": {
+        "user": {
+            // Teacher profile data
+        },
+        "user_type": "teacher",
+        "token": "new_teacher_token_here",
+        "token_type": "Bearer",
+        "expires_at": "2026-03-05T10:30:00.000000Z"
+    }
+}
 ```
 
 #### Device Management

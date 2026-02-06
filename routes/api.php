@@ -152,6 +152,8 @@ Route::prefix('v1')->group(function () {
             Route::post('/logout', [UnifiedAuthController::class, 'logout']);
             Route::get('/profile', [UnifiedAuthController::class, 'profile']);
             Route::post('/change-password', [UnifiedAuthController::class, 'changePassword']);
+            Route::get('/available-roles', [UnifiedAuthController::class, 'availableRoles']);
+            Route::post('/switch-role', [UnifiedAuthController::class, 'switchRole']);
         });
     });
 

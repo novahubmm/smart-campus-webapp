@@ -23,6 +23,7 @@ class UnifiedAuthController extends Controller
 
     /**
      * Unified Login for both Teachers and Guardians
+     * Supports multi-role users (users who are both teacher and guardian)
      * POST /api/v1/auth/login
      */
     public function login(LoginRequest $request): JsonResponse
@@ -45,13 +46,29 @@ class UnifiedAuthController extends Controller
                 return ApiResponse::error('Your account is deactivated. Please contact admin.', 401);
             }
 
-            // Determine user role and handle accordingly
-            if ($user->hasRole('teacher')) {
-                return $this->handleTeacherLogin($user, $request);
-            } elseif ($user->hasRole('guardian')) {
-                return $this->handleGuardianLogin($user, $request);
-            } else {
+            // Check available roles
+            $isTeacher = $user->hasRole('teacher');
+            $isGuardian = $user->hasRole('guardian');
+
+            if (!$isTeacher && !$isGuardian) {
                 return ApiResponse::error('Access denied. Teacher or Guardian account required.', 403);
+            }
+
+            // Build available roles array
+            $availableRoles = [];
+            if ($isTeacher) $availableRoles[] = 'teacher';
+            if ($isGuardian) $availableRoles[] = 'guardian';
+
+            // Handle multi-role users
+            if (count($availableRoles) > 1) {
+                return $this->handleMultiRoleLogin($user, $request, $availableRoles);
+            }
+
+            // Handle single-role users
+            if ($isTeacher) {
+                return $this->handleTeacherLogin($user, $request);
+            } else {
+                return $this->handleGuardianLogin($user, $request);
             }
 
         } catch (\Exception $e) {
@@ -95,6 +112,53 @@ class UnifiedAuthController extends Controller
             'user' => new GuardianProfileResource($user),
             'user_type' => 'guardian',
             'token' => $token,
+            'token_type' => 'Bearer',
+            'expires_at' => $expiresAt->toISOString(),
+            'permissions' => $user->getAllPermissions()->pluck('name'),
+            'roles' => $user->getRoleNames(),
+        ], 'Login successful');
+    }
+
+    /**
+     * Handle multi-role login (user has both teacher and guardian roles)
+     * Returns tokens for both roles
+     */
+    private function handleMultiRoleLogin(User $user, LoginRequest $request, array $availableRoles): JsonResponse
+    {
+        $tokens = [];
+        $userData = [];
+        $expiresAt = now()->addDays(30);
+
+        // Generate teacher token if user has teacher role
+        if (in_array('teacher', $availableRoles)) {
+            $teacherToken = $this->teacherAuthRepository->createToken($user, $request->device_name ?? 'unified_app');
+            $tokens['teacher'] = $teacherToken;
+            
+            // Load teacher data
+            $user->load('teacherProfile.department');
+            $userData['teacher'] = new TeacherProfileResource($user);
+        }
+
+        // Generate guardian token if user has guardian role
+        if (in_array('guardian', $availableRoles)) {
+            $guardianToken = $this->guardianAuthRepository->createToken($user, $request->device_name ?? 'unified_app');
+            $tokens['guardian'] = $guardianToken;
+            
+            // Load guardian data
+            $user->load(['guardianProfile.students.user', 'guardianProfile.students.grade', 'guardianProfile.students.classModel']);
+            $userData['guardian'] = new GuardianProfileResource($user);
+        }
+
+        // Determine default role (prefer guardian for multi-role users)
+        $defaultRole = in_array('guardian', $availableRoles) ? 'guardian' : 'teacher';
+
+        return ApiResponse::success([
+            'user' => $userData[$defaultRole], // Return default role user data
+            'user_data' => $userData, // All role-specific user data
+            'user_type' => $defaultRole,
+            'available_roles' => $availableRoles,
+            'tokens' => $tokens,
+            'token' => $tokens[$defaultRole], // Default token for backward compatibility
             'token_type' => 'Bearer',
             'expires_at' => $expiresAt->toISOString(),
             'permissions' => $user->getAllPermissions()->pluck('name'),
@@ -174,6 +238,103 @@ class UnifiedAuthController extends Controller
             return ApiResponse::success(null, 'Password changed successfully');
         } catch (\Exception $e) {
             return ApiResponse::error('Failed to change password', 500);
+        }
+    }
+
+    /**
+     * Check available roles for current user
+     * GET /api/v1/auth/available-roles
+     */
+    public function availableRoles(Request $request): JsonResponse
+    {
+        try {
+            $user = $request->user();
+            
+            $availableRoles = [];
+            $roleData = [];
+
+            if ($user->hasRole('teacher')) {
+                $availableRoles[] = 'teacher';
+                $user->load('teacherProfile.department');
+                $roleData['teacher'] = [
+                    'type' => 'teacher',
+                    'data' => [
+                        'teacher_id' => $user->teacherProfile?->teacher_id ?? null,
+                        'department' => $user->teacherProfile?->department?->name ?? null,
+                        'position' => $user->teacherProfile?->position ?? null,
+                    ]
+                ];
+            }
+
+            if ($user->hasRole('guardian')) {
+                $availableRoles[] = 'guardian';
+                $user->load(['guardianProfile.students.user', 'guardianProfile.students.grade', 'guardianProfile.students.classModel']);
+                $students = $user->guardianProfile?->students->map(function ($student) {
+                    return [
+                        'name' => $student->user?->name ?? 'N/A',
+                        'grade' => $student->grade?->name ?? 'N/A',
+                        'section' => $student->classModel?->section ?? 'N/A',
+                    ];
+                }) ?? [];
+
+                $roleData['guardian'] = [
+                    'type' => 'guardian',
+                    'data' => [
+                        'students' => $students,
+                        'student_count' => $students->count(),
+                    ]
+                ];
+            }
+
+            return ApiResponse::success([
+                'available_roles' => $availableRoles,
+                'role_data' => $roleData,
+                'has_multiple_roles' => count($availableRoles) > 1,
+            ]);
+        } catch (\Exception $e) {
+            return ApiResponse::error('Failed to retrieve available roles', 500);
+        }
+    }
+
+    /**
+     * Switch role and get new token
+     * POST /api/v1/auth/switch-role
+     */
+    public function switchRole(Request $request): JsonResponse
+    {
+        $request->validate([
+            'role' => 'required|string|in:teacher,guardian',
+        ]);
+
+        try {
+            $user = $request->user();
+            $targetRole = $request->role;
+
+            // Verify user has the requested role
+            if (!$user->hasRole($targetRole)) {
+                return ApiResponse::error("You don't have access to {$targetRole} role", 403);
+            }
+
+            // Generate new token for the target role
+            if ($targetRole === 'teacher') {
+                $token = $this->teacherAuthRepository->createToken($user, $request->device_name ?? 'unified_app');
+                $user->load('teacherProfile.department');
+                $userData = new TeacherProfileResource($user);
+            } else {
+                $token = $this->guardianAuthRepository->createToken($user, $request->device_name ?? 'unified_app');
+                $user->load(['guardianProfile.students.user', 'guardianProfile.students.grade', 'guardianProfile.students.classModel']);
+                $userData = new GuardianProfileResource($user);
+            }
+
+            return ApiResponse::success([
+                'user' => $userData,
+                'user_type' => $targetRole,
+                'token' => $token,
+                'token_type' => 'Bearer',
+                'expires_at' => now()->addDays(30)->toISOString(),
+            ], "Switched to {$targetRole} role successfully");
+        } catch (\Exception $e) {
+            return ApiResponse::error('Failed to switch role: ' . $e->getMessage(), 500);
         }
     }
 }

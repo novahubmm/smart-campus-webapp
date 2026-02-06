@@ -28,6 +28,19 @@ class AuthenticatedSessionController extends Controller
 
         $request->session()->regenerate();
 
+        // Get authenticated user
+        $user = Auth::user();
+        $roles = $user->roles->pluck('name')->toArray();
+        
+        // Always redirect guardian and teacher roles to PWA
+        // Priority: guardian > teacher (as per API user_type)
+        if (in_array('guardian', $roles)) {
+            return redirect()->route('guardian-pwa.home');
+        } elseif (in_array('teacher', $roles)) {
+            return redirect()->route('teacher-pwa.dashboard');
+        }
+
+        // Admin and other roles go to regular dashboard
         return redirect()->intended(route('dashboard', absolute: false));
     }
 
@@ -42,6 +55,7 @@ class AuthenticatedSessionController extends Controller
 
         $request->session()->regenerateToken();
 
-        return redirect('/');
+        // Force redirect to login page with success message
+        return redirect()->route('login')->with('status', 'You have been logged out successfully.');
     }
 }

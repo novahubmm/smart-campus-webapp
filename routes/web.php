@@ -15,6 +15,8 @@ use App\Http\Controllers\TimetableController;
 use App\Http\Controllers\FeedbackController;
 use App\Http\Controllers\RuleCategoryController;
 use App\Http\Controllers\SchoolRuleController;
+use App\Http\Controllers\PWA\TeacherPWAController;
+use App\Http\Controllers\PWA\GuardianPWAController;
 
 Route::view('/', 'welcome')->name('welcome');
 Route::view('/deactivated', 'auth.deactivated')->name('deactivated');
@@ -503,6 +505,43 @@ Route::middleware(['auth', 'ensure.active'])->group(function () {
     Route::get('/backend-fcm-test', function () {
         return view('backend-fcm-test');
     })->name('backend-fcm-test');
+
+    // PWA Routes - Protected by auth middleware
+    // Teacher PWA Routes
+    Route::prefix('teacher-pwa')->name('teacher-pwa.')->group(function () {
+        Route::get('/dashboard', [TeacherPWAController::class, 'dashboard'])->name('dashboard');
+        Route::get('/classes', [TeacherPWAController::class, 'classes'])->name('classes');
+        Route::get('/attendance', [TeacherPWAController::class, 'attendance'])->name('attendance');
+        Route::get('/homework', [TeacherPWAController::class, 'homework'])->name('homework');
+        Route::get('/students', [TeacherPWAController::class, 'students'])->name('students');
+        Route::get('/announcements', [TeacherPWAController::class, 'announcements'])->name('announcements');
+        Route::get('/utilities', [TeacherPWAController::class, 'utilities'])->name('utilities');
+        Route::get('/profile', [TeacherPWAController::class, 'profile'])->name('profile');
+        Route::get('/timetable', [TeacherPWAController::class, 'timetable'])->name('timetable');
+    });
+    
+    // Guardian PWA Routes
+    Route::prefix('guardian-pwa')->name('guardian-pwa.')->group(function () {
+        Route::get('/home', [GuardianPWAController::class, 'home'])->name('home');
+        Route::get('/attendance', [GuardianPWAController::class, 'attendance'])->name('attendance');
+        Route::get('/homework', [GuardianPWAController::class, 'homework'])->name('homework');
+        Route::get('/timetable', [GuardianPWAController::class, 'timetable'])->name('timetable');
+        Route::get('/fees', [GuardianPWAController::class, 'fees'])->name('fees');
+        Route::get('/announcements', [GuardianPWAController::class, 'announcements'])->name('announcements');
+        Route::get('/utilities', [GuardianPWAController::class, 'utilities'])->name('utilities');
+        Route::get('/profile', [GuardianPWAController::class, 'profile'])->name('profile');
+        Route::get('/student/{id}', [GuardianPWAController::class, 'studentDetail'])->name('student-detail');
+        Route::get('/announcement/{id}', [GuardianPWAController::class, 'announcementDetail'])->name('announcement-detail');
+    });
+    
+    // Shared PWA Routes
+    Route::get('/pwa/notifications', function() {
+        return view('pwa.notifications', [
+            'headerTitle' => 'Notifications',
+            'showBack' => true,
+            'hideBottomNav' => true
+        ]);
+    })->name('pwa.notifications');
 });
 
 require __DIR__ . '/auth.php';
