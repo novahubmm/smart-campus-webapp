@@ -220,5 +220,19 @@ return array (
   'You can modify these settings later from the settings page' => 'You can modify these settings later from the settings page',
   'Click on a class to collect attendance' => 'Click on a class to collect attendance',
   'students' => 'students',
-  'classes' => 'classes'
+  'classes' => 'classes',
+  // Working hours translations
+  'Monday' => 'Monday',
+  'Tuesday' => 'Tuesday',
+  'Wednesday' => 'Wednesday',
+  'Thursday' => 'Thursday',
+  'Friday' => 'Friday',
+  'Saturday' => 'Saturday',
+  'Sunday' => 'Sunday',
+  'n_minutes' => '{1} :count minute|[2,*] :count minutes',
+  'n_hours' => '{1} :count hour|[2,*] :count hours',
+  'hours_and_minutes' => ':hours hours :minutes minutes',
+  '1 hour' => '1 hour',
+  '8 hours' => '8 hours',
+  '15 minutes' => '15 minutes',
 );

@@ -64,6 +64,36 @@ class SchoolInfoController extends Controller
             ->with('success', __('School information updated successfully. Please complete the remaining setup steps.'));
     }
 
+    public function updateWorkingHours(Request $request): RedirectResponse
+    {
+        $this->authorize('manage school settings');
+
+        $validated = $request->validate([
+            'office_working_days' => ['nullable', 'array'],
+            'office_working_days.*' => ['integer', 'between:1,7'],
+            'office_start_time' => ['nullable', 'date_format:H:i'],
+            'office_end_time' => ['nullable', 'date_format:H:i', 'after:office_start_time'],
+            'office_break_duration_minutes' => ['nullable', 'integer', 'min:0', 'max:240'],
+            'required_working_hours' => ['nullable', 'numeric', 'min:0', 'max:24'],
+            'allow_early_checkout' => ['nullable', 'boolean'],
+            'late_arrival_grace_minutes' => ['nullable', 'integer', 'min:0', 'max:60'],
+            'track_overtime' => ['nullable', 'boolean'],
+        ]);
+
+        $setting = Setting::firstOrCreate(['id' => '00000000-0000-0000-0000-000000000001']);
+
+        // Convert checkboxes to proper values
+        $validated['allow_early_checkout'] = $request->has('allow_early_checkout');
+        $validated['track_overtime'] = $request->has('track_overtime');
+
+        $setting->update($validated);
+
+        $this->logUpdate('WorkingHours', $setting->id, 'Working hours settings');
+
+        return redirect()->route('settings.school-info')
+            ->with('success', __('Working hours settings updated successfully.'));
+    }
+
     public function storeContact(Request $request): RedirectResponse
     {
         $this->authorize('manage school settings');

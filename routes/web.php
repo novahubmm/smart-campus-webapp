@@ -416,6 +416,7 @@ Route::middleware(['auth', 'ensure.active'])->group(function () {
 
     Route::get('/settings/school-info', \App\Http\Controllers\SchoolInfoController::class)->name('settings.school-info');
     Route::post('/settings/school-info', [\App\Http\Controllers\SchoolInfoController::class, 'update'])->name('settings.school-info.update');
+    Route::post('/settings/working-hours', [\App\Http\Controllers\SchoolInfoController::class, 'updateWorkingHours'])->name('settings.working-hours.update');
     Route::post('/settings/key-contacts', [\App\Http\Controllers\SchoolInfoController::class, 'storeContact'])->name('settings.key-contacts.store');
     Route::put('/settings/key-contacts/{contact}', [\App\Http\Controllers\SchoolInfoController::class, 'updateContact'])->name('settings.key-contacts.update');
     Route::delete('/settings/key-contacts/{contact}', [\App\Http\Controllers\SchoolInfoController::class, 'destroyContact'])->name('settings.key-contacts.destroy');

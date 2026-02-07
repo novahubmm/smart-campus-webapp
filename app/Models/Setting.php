@@ -45,6 +45,15 @@ class Setting extends Model
         'tuition_fee_by_grade',
         'maintenance_mode',
         'maintenance_message',
+        // Working hours settings
+        'office_start_time',
+        'office_end_time',
+        'office_break_duration_minutes',
+        'required_working_hours',
+        'office_working_days',
+        'allow_early_checkout',
+        'late_arrival_grace_minutes',
+        'track_overtime',
     ];
 
     protected $casts = [
@@ -65,6 +74,13 @@ class Setting extends Model
         'late_fee_grace_period' => 'integer',
         'week_days' => 'array',
         'tuition_fee_by_grade' => 'array',
+        // Working hours casts
+        'office_break_duration_minutes' => 'integer',
+        'required_working_hours' => 'decimal:2',
+        'office_working_days' => 'array',
+        'allow_early_checkout' => 'boolean',
+        'late_arrival_grace_minutes' => 'integer',
+        'track_overtime' => 'boolean',
     ];
 
     /**

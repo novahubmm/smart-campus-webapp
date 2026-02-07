@@ -95,6 +95,158 @@
                 </form>
             </div>
 
+            <!-- Working Hours Settings Section -->
+            <div class="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl overflow-hidden">
+                <div class="px-6 py-4 border-b border-gray-200 dark:border-gray-700">
+                    <h3 class="text-lg font-bold text-gray-900 dark:text-white flex items-center gap-2">
+                        <i class="fas fa-clock text-blue-600"></i>
+                        {{ __('settings.Working Hours Settings') }}
+                    </h3>
+                    <p class="text-sm text-gray-500 dark:text-gray-400">{{ __('settings.Configure office hours and attendance policies for staff and teachers.') }}</p>
+                </div>
+
+                <form method="POST" action="{{ route('settings.working-hours.update') }}">
+                    @csrf
+
+                    <div class="p-6 space-y-6">
+                        <!-- Working Days -->
+                        <div>
+                            <label class="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3">{{ __('settings.Working Days') }}</label>
+                            <div class="flex flex-wrap gap-3">
+                                @php
+                                    $days = [
+                                        1 => 'Monday',
+                                        2 => 'Tuesday',
+                                        3 => 'Wednesday',
+                                        4 => 'Thursday',
+                                        5 => 'Friday',
+                                        6 => 'Saturday',
+                                        7 => 'Sunday'
+                                    ];
+                                    $selectedDays = old('office_working_days', $setting?->office_working_days ?? [1, 2, 3, 4, 5]);
+                                @endphp
+                                @foreach($days as $value => $label)
+                                    <label class="flex items-center gap-2 px-4 py-2.5 rounded-lg border-2 cursor-pointer transition-all
+                                        {{ in_array($value, $selectedDays) ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20' : 'border-gray-300 dark:border-gray-600 hover:border-blue-300' }}">
+                                        <input type="checkbox" name="office_working_days[]" value="{{ $value }}"
+                                               {{ in_array($value, $selectedDays) ? 'checked' : '' }}
+                                               class="w-4 h-4 text-blue-600 rounded focus:ring-2 focus:ring-blue-500">
+                                        <span class="text-sm font-medium text-gray-700 dark:text-gray-300">{{ __('settings.' . $label) }}</span>
+                                    </label>
+                                @endforeach
+                            </div>
+                            @error('office_working_days')<p class="text-sm text-red-600 mt-1">{{ $message }}</p>@enderror
+                        </div>
+
+                        <!-- Office Hours -->
+                        <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                            <div>
+                                <label class="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1">
+                                    <i class="fas fa-sign-in-alt text-green-600 mr-1"></i>
+                                    {{ __('settings.Office Start Time') }}
+                                </label>
+                                <input type="time" name="office_start_time" value="{{ old('office_start_time', $setting?->office_start_time ?? '08:00') }}"
+                                       class="w-full px-4 py-2.5 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                                @error('office_start_time')<p class="text-sm text-red-600 mt-1">{{ $message }}</p>@enderror
+                            </div>
+                            <div>
+                                <label class="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1">
+                                    <i class="fas fa-sign-out-alt text-red-600 mr-1"></i>
+                                    {{ __('settings.Office End Time') }}
+                                </label>
+                                <input type="time" name="office_end_time" value="{{ old('office_end_time', $setting?->office_end_time ?? '17:00') }}"
+                                       class="w-full px-4 py-2.5 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                                @error('office_end_time')<p class="text-sm text-red-600 mt-1">{{ $message }}</p>@enderror
+                            </div>
+                            <div>
+                                <label class="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1">
+                                    <i class="fas fa-coffee text-amber-600 mr-1"></i>
+                                    {{ __('settings.Break Duration (minutes)') }}
+                                </label>
+                                <input type="number" name="office_break_duration_minutes" min="0" max="240" value="{{ old('office_break_duration_minutes', $setting?->office_break_duration_minutes ?? 60) }}"
+                                       class="w-full px-4 py-2.5 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                                @error('office_break_duration_minutes')<p class="text-sm text-red-600 mt-1">{{ $message }}</p>@enderror
+                            </div>
+                        </div>
+
+                        <!-- Required Working Hours -->
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1">
+                                    <i class="fas fa-hourglass-half text-purple-600 mr-1"></i>
+                                    {{ __('settings.Required Working Hours') }}
+                                </label>
+                                <input type="number" name="required_working_hours" min="0" max="24" step="0.5" value="{{ old('required_working_hours', $setting?->required_working_hours ?? 8.00) }}"
+                                       class="w-full px-4 py-2.5 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                                <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">{{ __('settings.Total hours required per day (e.g., 8.0 or 7.5)') }}</p>
+                                @error('required_working_hours')<p class="text-sm text-red-600 mt-1">{{ $message }}</p>@enderror
+                            </div>
+                            <div>
+                                <label class="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1">
+                                    <i class="fas fa-user-clock text-indigo-600 mr-1"></i>
+                                    {{ __('settings.Late Arrival Grace Period (minutes)') }}
+                                </label>
+                                <input type="number" name="late_arrival_grace_minutes" min="0" max="60" value="{{ old('late_arrival_grace_minutes', $setting?->late_arrival_grace_minutes ?? 15) }}"
+                                       class="w-full px-4 py-2.5 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                                <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">{{ __('settings.Grace period before marking as late') }}</p>
+                                @error('late_arrival_grace_minutes')<p class="text-sm text-red-600 mt-1">{{ $message }}</p>@enderror
+                            </div>
+                        </div>
+
+                        <!-- Policies -->
+                        <div class="space-y-3">
+                            <label class="flex items-center gap-3 p-4 rounded-lg border border-gray-200 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700/50 cursor-pointer transition-colors">
+                                <input type="checkbox" name="allow_early_checkout" value="1"
+                                       {{ old('allow_early_checkout', $setting?->allow_early_checkout ?? true) ? 'checked' : '' }}
+                                       class="w-5 h-5 text-blue-600 rounded focus:ring-2 focus:ring-blue-500">
+                                <div class="flex-1">
+                                    <span class="text-sm font-semibold text-gray-700 dark:text-gray-300 flex items-center gap-2">
+                                        <i class="fas fa-door-open text-blue-600"></i>
+                                        {{ __('settings.Allow Early Checkout') }}
+                                    </span>
+                                    <p class="text-xs text-gray-500 dark:text-gray-400 mt-0.5">{{ __('settings.Staff can check out before completing required hours (with confirmation)') }}</p>
+                                </div>
+                            </label>
+
+                            <label class="flex items-center gap-3 p-4 rounded-lg border border-gray-200 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700/50 cursor-pointer transition-colors">
+                                <input type="checkbox" name="track_overtime" value="1"
+                                       {{ old('track_overtime', $setting?->track_overtime ?? true) ? 'checked' : '' }}
+                                       class="w-5 h-5 text-blue-600 rounded focus:ring-2 focus:ring-blue-500">
+                                <div class="flex-1">
+                                    <span class="text-sm font-semibold text-gray-700 dark:text-gray-300 flex items-center gap-2">
+                                        <i class="fas fa-chart-line text-green-600"></i>
+                                        {{ __('settings.Track Overtime Hours') }}
+                                    </span>
+                                    <p class="text-xs text-gray-500 dark:text-gray-400 mt-0.5">{{ __('settings.Record hours worked beyond required working hours') }}</p>
+                                </div>
+                            </label>
+                        </div>
+
+                        <!-- Info Box -->
+                        <div class="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
+                            <div class="flex gap-3">
+                                <i class="fas fa-info-circle text-blue-600 dark:text-blue-400 mt-0.5"></i>
+                                <div class="flex-1">
+                                    <h4 class="text-sm font-semibold text-blue-900 dark:text-blue-100 mb-1">{{ __('settings.How it works') }}</h4>
+                                    <ul class="text-xs text-blue-800 dark:text-blue-200 space-y-1">
+                                        <li>• {{ __('settings.These settings apply to both teachers and staff attendance tracking') }}</li>
+                                        <li>• {{ __('settings.Working hours are calculated excluding break duration') }}</li>
+                                        <li>• {{ __('settings.Mobile app will use these settings for check-in/check-out validation') }}</li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Form Actions -->
+                    <div class="px-6 py-4 border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/50 flex justify-end gap-3">
+                        <button type="submit" class="px-4 py-2 text-sm font-semibold text-white bg-blue-600 rounded-lg hover:bg-blue-700 shadow-sm">
+                            <i class="fas fa-save mr-2"></i>{{ __('settings.Save Working Hours Settings') }}
+                        </button>
+                    </div>
+                </form>
+            </div>
+
             <!-- Key Contacts Section -->
             <div class="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl overflow-hidden">
                 <div class="px-6 py-4 border-b border-gray-200 dark:border-gray-700 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">

@@ -250,6 +250,13 @@ Route::prefix('v1')->group(function () {
             Route::get('/free-period/activities', [FreePeriodActivityController::class, 'index']);
             Route::post('/free-period/activities', [FreePeriodActivityController::class, 'store']);
 
+            // Teacher Attendance (Own)
+            Route::post('/attendance/check-in', [\App\Http\Controllers\Api\V1\Teacher\TeacherAttendanceController::class, 'checkIn']);
+            Route::post('/attendance/check-out', [\App\Http\Controllers\Api\V1\Teacher\TeacherAttendanceController::class, 'checkOut']);
+            Route::get('/attendance/today', [\App\Http\Controllers\Api\V1\Teacher\TeacherAttendanceController::class, 'today']);
+            Route::get('/attendance/settings', [\App\Http\Controllers\Api\V1\Teacher\TeacherAttendanceController::class, 'getSettings']);
+            Route::get('/my-attendance', [\App\Http\Controllers\Api\V1\Teacher\TeacherAttendanceController::class, 'myAttendance']);
+
             // Classes
             Route::get('/classes/dropdown', [TeacherClassController::class, 'dropdown']);
             Route::get('/classes/attendance-dropdown', [TeacherClassController::class, 'attendanceDropdown']);
