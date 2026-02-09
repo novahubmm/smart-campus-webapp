@@ -19,11 +19,12 @@ class FeeController extends Controller
     /**
      * Get Pending Fee
      * GET /api/v1/guardian/fees/pending?student_id={id}
+     * GET /api/v1/guardian/students/{student_id}/fees/pending (NEW)
      */
-    public function pending(Request $request): JsonResponse
+    public function pending(Request $request, ?string $studentId = null): JsonResponse
     {
         try {
-            $student = $this->getAuthorizedStudent($request);
+            $student = $this->getAuthorizedStudent($request, $studentId);
             if (!$student) {
                 return ApiResponse::error('Student not found or unauthorized', 404);
             }
@@ -43,11 +44,12 @@ class FeeController extends Controller
     /**
      * Get Fee Details
      * GET /api/v1/guardian/fees/{fee_id}
+     * GET /api/v1/guardian/students/{student_id}/fees/{fee_id} (NEW)
      */
-    public function show(Request $request, string $feeId): JsonResponse
+    public function show(Request $request, string $feeId, ?string $studentId = null): JsonResponse
     {
         try {
-            $student = $this->getAuthorizedStudent($request);
+            $student = $this->getAuthorizedStudent($request, $studentId);
             if (!$student) {
                 return ApiResponse::error('Student not found or unauthorized', 404);
             }
@@ -67,11 +69,12 @@ class FeeController extends Controller
     /**
      * Get All Fees
      * GET /api/v1/guardian/fees?student_id={id}&status={status}&page={page}&per_page={per_page}
+     * GET /api/v1/guardian/students/{student_id}/fees?status={status}&page={page}&per_page={per_page} (NEW)
      */
-    public function index(Request $request): JsonResponse
+    public function index(Request $request, ?string $studentId = null): JsonResponse
     {
         try {
-            $student = $this->getAuthorizedStudent($request);
+            $student = $this->getAuthorizedStudent($request, $studentId);
             if (!$student) {
                 return ApiResponse::error('Student not found or unauthorized', 404);
             }
@@ -101,8 +104,9 @@ class FeeController extends Controller
     /**
      * Initiate Payment
      * POST /api/v1/guardian/fees/{fee_id}/payment
+     * POST /api/v1/guardian/students/{student_id}/fees/{fee_id}/payment (NEW)
      */
-    public function initiatePayment(Request $request, string $feeId): JsonResponse
+    public function initiatePayment(Request $request, string $feeId, ?string $studentId = null): JsonResponse
     {
         try {
             $validator = Validator::make($request->all(), [
@@ -114,7 +118,7 @@ class FeeController extends Controller
                 return ApiResponse::error('Validation error', 400, $validator->errors()->toArray());
             }
 
-            $student = $this->getAuthorizedStudent($request);
+            $student = $this->getAuthorizedStudent($request, $studentId);
             if (!$student) {
                 return ApiResponse::error('Student not found or unauthorized', 404);
             }
@@ -134,11 +138,12 @@ class FeeController extends Controller
     /**
      * Get Payment History
      * GET /api/v1/guardian/fees/payment-history?student_id={id}&status={status}&page={page}
+     * GET /api/v1/guardian/students/{student_id}/fees/payment-history?status={status}&page={page} (NEW)
      */
-    public function paymentHistory(Request $request): JsonResponse
+    public function paymentHistory(Request $request, ?string $studentId = null): JsonResponse
     {
         try {
-            $student = $this->getAuthorizedStudent($request);
+            $student = $this->getAuthorizedStudent($request, $studentId);
             if (!$student) {
                 return ApiResponse::error('Student not found or unauthorized', 404);
             }
@@ -165,11 +170,80 @@ class FeeController extends Controller
     }
 
     /**
+     * Get Payment Receipt
+     * GET /api/v1/guardian/fees/receipts/{payment_id}?student_id={id}
+     * GET /api/v1/guardian/students/{student_id}/fees/receipts/{payment_id} (NEW)
+     */
+    public function receipt(Request $request, string $paymentId, ?string $studentId = null): JsonResponse
+    {
+        try {
+            $student = $this->getAuthorizedStudent($request, $studentId);
+            if (!$student) {
+                return ApiResponse::error('Student not found or unauthorized', 404);
+            }
+
+            $receipt = $this->feeRepository->generateReceipt($paymentId, $student);
+
+            return ApiResponse::success($receipt, 'Receipt generated successfully');
+        } catch (\Exception $e) {
+            return ApiResponse::error('Failed to generate receipt: ' . $e->getMessage(), 500);
+        }
+    }
+
+    /**
+     * Download Payment Receipt
+     * GET /api/v1/guardian/fees/receipts/{payment_id}/download?student_id={id}
+     * GET /api/v1/guardian/students/{student_id}/fees/receipts/{payment_id}/download (NEW)
+     */
+    public function downloadReceipt(Request $request, string $paymentId, ?string $studentId = null): JsonResponse
+    {
+        try {
+            $student = $this->getAuthorizedStudent($request, $studentId);
+            if (!$student) {
+                return ApiResponse::error('Student not found or unauthorized', 404);
+            }
+
+            $receiptUrl = $this->feeRepository->downloadReceipt($paymentId, $student);
+
+            return ApiResponse::success([
+                'download_url' => $receiptUrl,
+                'payment_id' => $paymentId,
+            ], 'Receipt download link generated successfully');
+        } catch (\Exception $e) {
+            return ApiResponse::error('Failed to generate download link: ' . $e->getMessage(), 500);
+        }
+    }
+
+    /**
+     * Get Payment Summary
+     * GET /api/v1/guardian/fees/summary?student_id={id}&year={year}
+     * GET /api/v1/guardian/students/{student_id}/fees/summary?year={year} (NEW)
+     */
+    public function paymentSummary(Request $request, ?string $studentId = null): JsonResponse
+    {
+        try {
+            $student = $this->getAuthorizedStudent($request, $studentId);
+            if (!$student) {
+                return ApiResponse::error('Student not found or unauthorized', 404);
+            }
+
+            $year = $request->input('year');
+            $summary = $this->feeRepository->getPaymentSummary($student, $year);
+
+            return ApiResponse::success($summary, 'Payment summary retrieved successfully');
+        } catch (\Exception $e) {
+            return ApiResponse::error('Failed to retrieve payment summary: ' . $e->getMessage(), 500);
+        }
+    }
+
+    /**
      * Helper to get authorized student
      */
-    private function getAuthorizedStudent(Request $request): ?StudentProfile
+    private function getAuthorizedStudent(Request $request, ?string $studentId = null): ?StudentProfile
     {
-        $studentId = $request->input('student_id');
+        // Use URL parameter if provided, otherwise fall back to query parameter
+        $studentId = $studentId ?? $request->input('student_id');
+        
         if (!$studentId) {
             return null;
         }

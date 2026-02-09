@@ -18,15 +18,16 @@ class CurriculumController extends Controller
     /**
      * Get Curriculum Overview
      * GET /api/v1/guardian/curriculum?student_id={id}
+     * GET /api/v1/guardian/students/{student_id}/curriculum (NEW)
      */
-    public function index(Request $request): JsonResponse
+    public function index(Request $request, ?string $studentId = null): JsonResponse
     {
         $request->validate([
-            'student_id' => 'required|string',
+            'student_id' => $studentId ? 'nullable|string' : 'required|string',
         ]);
 
         try {
-            $student = $this->getAuthorizedStudent($request);
+            $student = $this->getAuthorizedStudent($request, $studentId);
             if (!$student) {
                 return ApiResponse::error('Student not found or unauthorized', 404);
             }
@@ -42,15 +43,16 @@ class CurriculumController extends Controller
     /**
      * Get Subject Curriculum
      * GET /api/v1/guardian/curriculum/subjects/{id}?student_id={student_id}
+     * GET /api/v1/guardian/students/{student_id}/curriculum/subjects/{id} (NEW)
      */
-    public function subjectCurriculum(Request $request, string $id): JsonResponse
+    public function subjectCurriculum(Request $request, string $id, ?string $studentId = null): JsonResponse
     {
         $request->validate([
-            'student_id' => 'required|string',
+            'student_id' => $studentId ? 'nullable|string' : 'required|string',
         ]);
 
         try {
-            $student = $this->getAuthorizedStudent($request);
+            $student = $this->getAuthorizedStudent($request, $studentId);
             if (!$student) {
                 return ApiResponse::error('Student not found or unauthorized', 404);
             }
@@ -66,8 +68,9 @@ class CurriculumController extends Controller
     /**
      * Get Chapters
      * GET /api/v1/guardian/curriculum/chapters?subject_id={subject_id}
+     * GET /api/v1/guardian/students/{student_id}/curriculum/chapters?subject_id={subject_id} (NEW)
      */
-    public function chapters(Request $request): JsonResponse
+    public function chapters(Request $request, ?string $studentId = null): JsonResponse
     {
         $request->validate([
             'subject_id' => 'required|string',
@@ -86,8 +89,9 @@ class CurriculumController extends Controller
     /**
      * Get Chapter Detail
      * GET /api/v1/guardian/curriculum/chapters/{id}
+     * GET /api/v1/guardian/students/{student_id}/curriculum/chapters/{id} (NEW)
      */
-    public function chapterDetail(string $id): JsonResponse
+    public function chapterDetail(string $id, ?string $studentId = null): JsonResponse
     {
         try {
             $chapter = $this->curriculumRepository->getChapterDetail($id);
@@ -98,9 +102,11 @@ class CurriculumController extends Controller
         }
     }
 
-    private function getAuthorizedStudent(Request $request): ?StudentProfile
+    private function getAuthorizedStudent(Request $request, ?string $studentId = null): ?StudentProfile
     {
-        $studentId = $request->input('student_id');
+        // Use URL parameter if provided, otherwise fall back to query parameter
+        $studentId = $studentId ?? $request->input('student_id');
+        
         if (!$studentId) {
             return null;
         }

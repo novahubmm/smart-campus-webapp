@@ -38,4 +38,13 @@ return [
     'Theme' => 'Theme',
     'User Manual' => 'User Manual',
     'Work Offline' => 'Work Offline',
+    
+    // Day names for timetable
+    'Mon' => 'Mon',
+    'Tue' => 'Tue',
+    'Wed' => 'Wed',
+    'Thu' => 'Thu',
+    'Fri' => 'Fri',
+    'Sat' => 'Sat',
+    'Sun' => 'Sun',
 ];

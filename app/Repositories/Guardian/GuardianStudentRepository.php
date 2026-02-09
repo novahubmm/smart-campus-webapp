@@ -170,6 +170,240 @@ class GuardianStudentRepository implements GuardianStudentRepositoryInterface
         return GuardianNote::where('id', $noteId)->delete() > 0;
     }
 
+    public function getGPATrends(StudentProfile $student, int $months = 12): array
+    {
+        $startDate = Carbon::now()->subMonths($months);
+        
+        // Get exam marks grouped by month
+        $examMarks = ExamMark::where('student_id', $student->id)
+            ->whereHas('exam', function ($q) use ($startDate) {
+                $q->where('start_date', '>=', $startDate);
+            })
+            ->with(['exam', 'subject'])
+            ->get();
+
+        // Group by month and calculate GPA
+        $monthlyData = $examMarks->groupBy(function ($mark) {
+            return $mark->exam?->start_date?->format('Y-m') ?? Carbon::now()->format('Y-m');
+        })->map(function ($marks, $month) {
+            $totalObtained = $marks->sum('marks_obtained');
+            $totalPossible = $marks->sum(fn($m) => $m->exam?->total_marks ?? 100);
+            $percentage = $totalPossible > 0 ? round($totalObtained / $totalPossible * 100, 1) : 0;
+            $gpa = round($percentage / 25, 2); // Convert to 4.0 scale
+
+            return [
+                'month' => $month,
+                'gpa' => $gpa,
+                'percentage' => $percentage,
+                'exams_count' => $marks->count(),
+            ];
+        })->sortKeys()->values()->toArray();
+
+        $currentGPA = count($monthlyData) > 0 ? end($monthlyData)['gpa'] : 0;
+        $averageGPA = count($monthlyData) > 0 ? round(collect($monthlyData)->avg('gpa'), 2) : 0;
+
+        return [
+            'current_gpa' => $currentGPA,
+            'average_gpa' => $averageGPA,
+            'trend_data' => $monthlyData,
+            'period_months' => $months,
+        ];
+    }
+
+    public function getPerformanceAnalysis(StudentProfile $student): array
+    {
+        $examMarks = ExamMark::where('student_id', $student->id)
+            ->with(['exam', 'subject'])
+            ->orderBy('created_at', 'desc')
+            ->limit(20)
+            ->get();
+
+        // Calculate overall statistics
+        $totalMarks = $examMarks->sum('marks_obtained');
+        $totalPossible = $examMarks->sum(fn($m) => $m->exam?->total_marks ?? 100);
+        $overallPercentage = $totalPossible > 0 ? round($totalMarks / $totalPossible * 100, 1) : 0;
+
+        // Subject-wise analysis
+        $subjectAnalysis = $examMarks->groupBy('subject_id')->map(function ($marks) {
+            $subject = $marks->first()->subject;
+            $totalObtained = $marks->sum('marks_obtained');
+            $totalPossible = $marks->sum(fn($m) => $m->exam?->total_marks ?? 100);
+            $percentage = $totalPossible > 0 ? round($totalObtained / $totalPossible * 100, 1) : 0;
+            
+            return [
+                'subject_id' => $subject?->id,
+                'subject_name' => $subject?->name ?? 'N/A',
+                'average_percentage' => $percentage,
+                'grade' => $this->calculateGrade($percentage),
+                'exams_taken' => $marks->count(),
+                'trend' => $this->calculateTrend($marks),
+            ];
+        })->values()->toArray();
+
+        // Sort subjects by performance
+        usort($subjectAnalysis, fn($a, $b) => $b['average_percentage'] <=> $a['average_percentage']);
+
+        // Get strengths and weaknesses
+        $strengths = array_slice($subjectAnalysis, 0, 3);
+        $weaknesses = array_slice(array_reverse($subjectAnalysis), 0, 3);
+
+        return [
+            'overall_percentage' => $overallPercentage,
+            'overall_grade' => $this->calculateGrade($overallPercentage),
+            'total_exams' => $examMarks->count(),
+            'subject_analysis' => $subjectAnalysis,
+            'strengths' => $strengths,
+            'weaknesses' => array_reverse($weaknesses),
+        ];
+    }
+
+    public function getSubjectStrengthsWeaknesses(StudentProfile $student): array
+    {
+        $examMarks = ExamMark::where('student_id', $student->id)
+            ->with(['exam', 'subject'])
+            ->get();
+
+        $subjectPerformance = $examMarks->groupBy('subject_id')->map(function ($marks) {
+            $subject = $marks->first()->subject;
+            $totalObtained = $marks->sum('marks_obtained');
+            $totalPossible = $marks->sum(fn($m) => $m->exam?->total_marks ?? 100);
+            $percentage = $totalPossible > 0 ? round($totalObtained / $totalPossible * 100, 1) : 0;
+            
+            return [
+                'subject_id' => $subject?->id,
+                'subject_name' => $subject?->name ?? 'N/A',
+                'percentage' => $percentage,
+                'grade' => $this->calculateGrade($percentage),
+            ];
+        })->sortByDesc('percentage')->values();
+
+        $strengths = $subjectPerformance->take(3)->toArray();
+        $weaknesses = $subjectPerformance->reverse()->take(3)->reverse()->values()->toArray();
+
+        return [
+            'strengths' => $strengths,
+            'weaknesses' => $weaknesses,
+            'total_subjects' => $subjectPerformance->count(),
+        ];
+    }
+
+    public function getAcademicBadges(StudentProfile $student): array
+    {
+        $badges = [];
+
+        // Get attendance data
+        $yearStart = Carbon::now()->startOfYear();
+        $attendanceRecords = StudentAttendance::where('student_id', $student->id)
+            ->where('date', '>=', $yearStart)
+            ->get();
+        
+        $totalDays = $attendanceRecords->count();
+        $presentDays = $attendanceRecords->whereIn('status', ['present', 'late'])->count();
+        $attendancePercentage = $totalDays > 0 ? round($presentDays / $totalDays * 100, 1) : 0;
+
+        // Attendance badges
+        if ($attendancePercentage >= 100) {
+            $badges[] = [
+                'id' => 'perfect_attendance',
+                'name' => 'Perfect Attendance',
+                'description' => '100% attendance record',
+                'icon' => '🏆',
+                'category' => 'attendance',
+                'earned_date' => Carbon::now()->format('Y-m-d'),
+            ];
+        } elseif ($attendancePercentage >= 95) {
+            $badges[] = [
+                'id' => 'excellent_attendance',
+                'name' => 'Excellent Attendance',
+                'description' => '95%+ attendance record',
+                'icon' => '⭐',
+                'category' => 'attendance',
+                'earned_date' => Carbon::now()->format('Y-m-d'),
+            ];
+        }
+
+        // Academic performance badges
+        $examMarks = ExamMark::where('student_id', $student->id)
+            ->with('exam')
+            ->get();
+
+        $totalMarks = $examMarks->sum('marks_obtained');
+        $totalPossible = $examMarks->sum(fn($m) => $m->exam?->total_marks ?? 100);
+        $overallPercentage = $totalPossible > 0 ? round($totalMarks / $totalPossible * 100, 1) : 0;
+
+        if ($overallPercentage >= 90) {
+            $badges[] = [
+                'id' => 'honor_roll',
+                'name' => 'Honor Roll',
+                'description' => 'Maintained 90%+ average',
+                'icon' => '🎓',
+                'category' => 'academic',
+                'earned_date' => Carbon::now()->format('Y-m-d'),
+            ];
+        } elseif ($overallPercentage >= 80) {
+            $badges[] = [
+                'id' => 'high_achiever',
+                'name' => 'High Achiever',
+                'description' => 'Maintained 80%+ average',
+                'icon' => '📚',
+                'category' => 'academic',
+                'earned_date' => Carbon::now()->format('Y-m-d'),
+            ];
+        }
+
+        // Consistency badge
+        $recentExams = $examMarks->sortByDesc('created_at')->take(5);
+        if ($recentExams->count() >= 5) {
+            $allPassing = $recentExams->every(function ($mark) {
+                $totalMarks = $mark->exam?->total_marks ?? 100;
+                $percentage = $totalMarks > 0 ? ($mark->marks_obtained / $totalMarks) * 100 : 0;
+                return $percentage >= 60;
+            });
+
+            if ($allPassing) {
+                $badges[] = [
+                    'id' => 'consistent_performer',
+                    'name' => 'Consistent Performer',
+                    'description' => 'Passed last 5 exams',
+                    'icon' => '💪',
+                    'category' => 'consistency',
+                    'earned_date' => Carbon::now()->format('Y-m-d'),
+                ];
+            }
+        }
+
+        return [
+            'badges' => $badges,
+            'total_badges' => count($badges),
+            'categories' => array_unique(array_column($badges, 'category')),
+        ];
+    }
+
+    private function calculateTrend(Collection $marks): string
+    {
+        if ($marks->count() < 2) {
+            return 'stable';
+        }
+
+        $recent = $marks->take(3);
+        $previous = $marks->slice(3, 3);
+
+        if ($previous->isEmpty()) {
+            return 'stable';
+        }
+
+        $recentAvg = $recent->avg('marks_obtained');
+        $previousAvg = $previous->avg('marks_obtained');
+
+        if ($recentAvg > $previousAvg * 1.05) {
+            return 'improving';
+        } elseif ($recentAvg < $previousAvg * 0.95) {
+            return 'declining';
+        }
+
+        return 'stable';
+    }
+
     private function calculateGrade(float $percentage): string
     {
         if ($percentage >= 90) return 'A+';

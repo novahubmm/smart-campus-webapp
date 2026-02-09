@@ -13,6 +13,7 @@ Production: `https://yourdomain.com/api`
 - [Applications](#applications)
 - [Career Applications (Public)](#career-applications)
 - [Push Notifications](#push-notifications)
+- [Payment Screen APIs](#payment-screen-apis)
 - [Response Format](#response-format)
 - [Error Handling](#error-handling)
 
@@ -539,6 +540,68 @@ years_of_experience: 5 (optional)
 ```
 
 **Response:** `200 OK`
+
+---
+
+## 💰 Payment Screen APIs
+
+For complete Payment Screen API documentation including:
+- Fee Structure API
+- Payment Methods API
+- Submit Payment API
+- Payment Options API
+- Payment History API
+
+**See**: [PAYMENT_SCREEN_API_SPEC.md](./PAYMENT_SCREEN_API_SPEC.md)
+
+**Quick Reference**: [PAYMENT_APIS_QUICK_REFERENCE.md](./PAYMENT_APIS_QUICK_REFERENCE.md)
+
+**Implementation Guide**: [PAYMENT_SCREEN_IMPLEMENTATION.md](./PAYMENT_SCREEN_IMPLEMENTATION.md)
+
+**Postman Collection**: [Payment_Screen_API.postman_collection.json](./Payment_Screen_API.postman_collection.json)
+
+### Quick Reference
+
+**Get Fee Structure:**
+```
+GET /api/v1/guardian/students/{student_id}/fees/structure
+Authorization: Bearer {token}
+```
+
+**Get Payment Methods:**
+```
+GET /api/v1/guardian/payment-methods
+Authorization: Bearer {token}
+```
+
+**Submit Payment:**
+```
+POST /api/v1/guardian/students/{student_id}/fees/payments
+Authorization: Bearer {token}
+Content-Type: application/json
+
+{
+  "fee_ids": ["fee-monthly-1", "fee-add-1"],
+  "payment_method_id": "pm-1",
+  "payment_amount": 135000,
+  "payment_months": 1,
+  "payment_date": "2026-02-09",
+  "receipt_image": "data:image/jpeg;base64,...",
+  "notes": "Payment note"
+}
+```
+
+**Get Payment Options:**
+```
+GET /api/v1/guardian/payment-options
+Authorization: Bearer {token}
+```
+
+**Get Payment History:**
+```
+GET /api/v1/guardian/students/{student_id}/fees/payment-history?status=all&limit=10
+Authorization: Bearer {token}
+```
 
 ---
 

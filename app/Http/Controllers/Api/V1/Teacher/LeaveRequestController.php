@@ -236,23 +236,35 @@ class LeaveRequestController extends Controller
                 ->filter();
 
             // Get pending leave requests from students in those classes
+            // Order by start_date ASC to show nearest dates first
             $requests = LeaveRequest::where('status', 'pending')
                 ->where('user_type', 'student')
                 ->whereHas('user.studentProfile', fn($q) => $q->whereIn('class_id', $classIds))
                 ->with(['user.studentProfile.classModel.grade'])
-                ->orderByDesc('created_at')
+                ->orderBy('start_date', 'asc')
                 ->limit(5)
                 ->get();
 
             $requestsData = $requests->map(function ($req) {
                 $student = $req->user?->studentProfile;
+                $startDate = Carbon::parse($req->start_date);
+                $today = Carbon::today();
+                
+                // Calculate days until leave starts
+                $daysUntil = $today->diffInDays($startDate, false);
+                $isToday = $startDate->isToday();
+                
                 return [
                     'id' => $req->id,
                     'name' => $req->user?->name ?? 'Unknown',
                     'initial' => $req->user?->name ? strtoupper(substr($req->user->name, 0, 1)) : 'U',
+                    'avatar' => avatar_url($student?->photo_path, 'student'),
+                    'student_id' => $student?->student_identifier ?? '',
                     'grade' => $student?->classModel?->grade?->name . ($student?->classModel?->name ? ' ' . $student->classModel->name : ''),
                     'type' => ucfirst($req->leave_type ?? 'Personal'),
-                    'date' => Carbon::parse($req->start_date)->format('Y-m-d'),
+                    'date' => $startDate->format('Y-m-d'),
+                    'days_until' => $daysUntil,
+                    'is_today' => $isToday,
                 ];
             });
 
@@ -297,7 +309,13 @@ class LeaveRequestController extends Controller
                 $query->where('status', $status);
             }
 
-            $requests = $query->orderByDesc('created_at')->paginate(10);
+            // Order by start_date for pending requests (nearest first)
+            // Order by created_at for approved/rejected requests (newest first)
+            if ($status === 'pending') {
+                $requests = $query->orderBy('start_date', 'asc')->paginate(10);
+            } else {
+                $requests = $query->orderByDesc('created_at')->paginate(10);
+            }
 
             $counts = [
                 'pending' => LeaveRequest::where('user_type', 'student')->whereHas('user.studentProfile', fn($q) => $q->whereIn('class_id', $classIds))->where('status', 'pending')->count(),
@@ -305,13 +323,13 @@ class LeaveRequestController extends Controller
                 'rejected' => LeaveRequest::where('user_type', 'student')->whereHas('user.studentProfile', fn($q) => $q->whereIn('class_id', $classIds))->where('status', 'rejected')->count(),
             ];
 
-            $requestsData = $requests->map(function ($req) {
+            $requestsData = $requests->map(function ($req) use ($status) {
                 $student = $req->user?->studentProfile;
                 $startDate = Carbon::parse($req->start_date);
                 $endDate = Carbon::parse($req->end_date);
                 $days = $startDate->diffInDays($endDate) + 1;
-
-                return [
+                
+                $data = [
                     'id' => $req->id,
                     'student_name' => $req->user?->name ?? 'Unknown',
                     'grade' => $student?->classModel?->grade?->name . ($student?->classModel?->name ? ' ' . $student->classModel->name : ''),
@@ -326,6 +344,16 @@ class LeaveRequestController extends Controller
                     'avatar' => avatar_url($req->user?->studentProfile?->photo_path, 'student'),
                     'submitted_at' => $req->created_at->toISOString(),
                 ];
+                
+                // Add days_until and is_today for pending requests
+                if ($status === 'pending') {
+                    $today = Carbon::today();
+                    $daysUntil = $today->diffInDays($startDate, false);
+                    $data['days_until'] = $daysUntil;
+                    $data['is_today'] = $startDate->isToday();
+                }
+
+                return $data;
             });
 
             return ApiResponse::success([

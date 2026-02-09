@@ -1,0 +1,218 @@
+{
+  "info": {
+    "name": "Payment Screen API",
+    "description": "Complete Payment Screen API collection for SmartCampus Guardian App",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "http://192.168.100.114:8088/api/v1",
+      "type": "string"
+    },
+    {
+      "key": "access_token",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "student_id",
+      "value": "",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "1. Get Fee Structure",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{access_token}}",
+            "type": "text"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "{{base_url}}/guardian/students/{{student_id}}/fees/structure",
+          "host": ["{{base_url}}"],
+          "path": ["guardian", "students", "{{student_id}}", "fees", "structure"]
+        },
+        "description": "Get student-specific fee structure including monthly fees and additional fees."
+      },
+      "response": []
+    },
+    {
+      "name": "2. Get Payment Methods",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{access_token}}",
+            "type": "text"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "{{base_url}}/guardian/payment-methods?type=all&active_only=true",
+          "host": ["{{base_url}}"],
+          "path": ["guardian", "payment-methods"],
+          "query": [
+            {
+              "key": "type",
+              "value": "all",
+              "description": "Filter by type: bank, mobile_wallet, all"
+            },
+            {
+              "key": "active_only",
+              "value": "true",
+              "description": "Show only active methods"
+            }
+          ]
+        },
+        "description": "Get available payment methods (bank accounts, mobile wallets) for fee payment."
+      },
+      "response": []
+    },
+    {
+      "name": "3. Submit Payment",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{access_token}}",
+            "type": "text"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"fee_ids\": [\"fee-monthly-1\", \"fee-add-1\"],\n  \"payment_method_id\": \"pm-1\",\n  \"payment_amount\": 135000,\n  \"payment_months\": 1,\n  \"payment_date\": \"2026-02-09\",\n  \"receipt_image\": \"data:image/jpeg;base64,/9j/4AAQSkZJRg...\",\n  \"notes\": \"Test payment via Postman\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{base_url}}/guardian/students/{{student_id}}/fees/payments",
+          "host": ["{{base_url}}"],
+          "path": ["guardian", "students", "{{student_id}}", "fees", "payments"]
+        },
+        "description": "Submit payment proof (receipt image) for fee payment. Receipt image should be base64 encoded."
+      },
+      "response": []
+    },
+    {
+      "name": "4. Get Payment Options",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{access_token}}",
+            "type": "text"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "{{base_url}}/guardian/payment-options",
+          "host": ["{{base_url}}"],
+          "path": ["guardian", "payment-options"]
+        },
+        "description": "Get available payment period options with discount rates (1, 2, 3, 6, 12 months)."
+      },
+      "response": []
+    },
+    {
+      "name": "5. Get Payment History",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{access_token}}",
+            "type": "text"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "{{base_url}}/guardian/students/{{student_id}}/fees/payment-history?status=all&limit=10&page=1",
+          "host": ["{{base_url}}"],
+          "path": ["guardian", "students", "{{student_id}}", "fees", "payment-history"],
+          "query": [
+            {
+              "key": "status",
+              "value": "all",
+              "description": "Filter by status: pending, verified, rejected, all"
+            },
+            {
+              "key": "limit",
+              "value": "10",
+              "description": "Number of records (1-50)"
+            },
+            {
+              "key": "page",
+              "value": "1",
+              "description": "Page number"
+            }
+          ]
+        },
+        "description": "Get payment history for a student with pagination."
+      },
+      "response": []
+    },
+    {
+      "name": "Auth - Guardian Login",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"identifier\": \"guardian@example.com\",\n  \"password\": \"password\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{base_url}}/guardian/auth/login",
+          "host": ["{{base_url}}"],
+          "path": ["guardian", "auth", "login"]
+        },
+        "description": "Login as guardian to get access token. Use the token in other requests."
+      },
+      "response": []
+    }
+  ]
+}

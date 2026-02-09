@@ -18,17 +18,18 @@ class HomeworkController extends Controller
     /**
      * Get Homework List
      * GET /api/v1/guardian/homework?student_id={id}&status={status}&subject_id={subject_id}
+     * GET /api/v1/guardian/students/{student_id}/homework?status={status}&subject_id={subject_id} (NEW)
      */
-    public function index(Request $request): JsonResponse
+    public function index(Request $request, ?string $studentId = null): JsonResponse
     {
         $request->validate([
-            'student_id' => 'required|string',
+            'student_id' => $studentId ? 'nullable|string' : 'required|string',
             'status' => 'nullable|string|in:pending,completed,overdue',
             'subject_id' => 'nullable|string',
         ]);
 
         try {
-            $student = $this->getAuthorizedStudent($request);
+            $student = $this->getAuthorizedStudent($request, $studentId);
             if (!$student) {
                 return ApiResponse::error('Student not found or unauthorized', 404);
             }
@@ -46,15 +47,16 @@ class HomeworkController extends Controller
     /**
      * Get Homework Detail
      * GET /api/v1/guardian/homework/{id}?student_id={student_id}
+     * GET /api/v1/guardian/students/{student_id}/homework/{id} (NEW)
      */
-    public function show(Request $request, string $id): JsonResponse
+    public function show(Request $request, string $id, ?string $studentId = null): JsonResponse
     {
         $request->validate([
-            'student_id' => 'required|string',
+            'student_id' => $studentId ? 'nullable|string' : 'required|string',
         ]);
 
         try {
-            $student = $this->getAuthorizedStudent($request);
+            $student = $this->getAuthorizedStudent($request, $studentId);
             if (!$student) {
                 return ApiResponse::error('Student not found or unauthorized', 404);
             }
@@ -70,15 +72,16 @@ class HomeworkController extends Controller
     /**
      * Get Homework Stats
      * GET /api/v1/guardian/homework/stats?student_id={id}
+     * GET /api/v1/guardian/students/{student_id}/homework/stats (NEW)
      */
-    public function stats(Request $request): JsonResponse
+    public function stats(Request $request, ?string $studentId = null): JsonResponse
     {
         $request->validate([
-            'student_id' => 'required|string',
+            'student_id' => $studentId ? 'nullable|string' : 'required|string',
         ]);
 
         try {
-            $student = $this->getAuthorizedStudent($request);
+            $student = $this->getAuthorizedStudent($request, $studentId);
             if (!$student) {
                 return ApiResponse::error('Student not found or unauthorized', 404);
             }
@@ -92,18 +95,46 @@ class HomeworkController extends Controller
     }
 
     /**
-     * Update Homework Status
-     * PUT /api/v1/guardian/homework/{id}/status
+     * Get Upcoming Homework
+     * GET /api/v1/guardian/homework/upcoming?student_id={id}
+     * GET /api/v1/guardian/students/{student_id}/homework/upcoming (NEW)
      */
-    public function updateStatus(Request $request, string $id): JsonResponse
+    public function upcoming(Request $request, ?string $studentId = null): JsonResponse
     {
         $request->validate([
-            'student_id' => 'required|string',
+            'student_id' => $studentId ? 'nullable|string' : 'required|string',
+            'limit' => 'nullable|integer|min:1|max:50',
+        ]);
+
+        try {
+            $student = $this->getAuthorizedStudent($request, $studentId);
+            if (!$student) {
+                return ApiResponse::error('Student not found or unauthorized', 404);
+            }
+
+            $limit = $request->input('limit', 5);
+            $homework = $this->homeworkRepository->getHomework($student, 'pending', null, $limit);
+
+            return ApiResponse::success($homework);
+        } catch (\Exception $e) {
+            return ApiResponse::error('Failed to retrieve upcoming homework: ' . $e->getMessage(), 500);
+        }
+    }
+
+    /**
+     * Update Homework Status
+     * PUT /api/v1/guardian/homework/{id}/status
+     * PUT /api/v1/guardian/students/{student_id}/homework/{id}/status (NEW)
+     */
+    public function updateStatus(Request $request, string $id, ?string $studentId = null): JsonResponse
+    {
+        $request->validate([
+            'student_id' => $studentId ? 'nullable|string' : 'required|string',
             'status' => 'required|string|in:pending,completed',
         ]);
 
         try {
-            $student = $this->getAuthorizedStudent($request);
+            $student = $this->getAuthorizedStudent($request, $studentId);
             if (!$student) {
                 return ApiResponse::error('Student not found or unauthorized', 404);
             }
@@ -120,18 +151,19 @@ class HomeworkController extends Controller
     /**
      * Submit Homework
      * POST /api/v1/guardian/homework/{id}/submit
+     * POST /api/v1/guardian/students/{student_id}/homework/{id}/submit (NEW)
      */
-    public function submit(Request $request, string $id): JsonResponse
+    public function submit(Request $request, string $id, ?string $studentId = null): JsonResponse
     {
         $request->validate([
-            'student_id' => 'required|string',
+            'student_id' => $studentId ? 'nullable|string' : 'required|string',
             'notes' => 'nullable|string',
             'photos' => 'nullable|array',
             'photos.*' => 'file|mimes:jpg,jpeg,png,pdf|max:10240', // 10MB max per file
         ]);
 
         try {
-            $student = $this->getAuthorizedStudent($request);
+            $student = $this->getAuthorizedStudent($request, $studentId);
             if (!$student) {
                 return ApiResponse::error('Student not found or unauthorized', 404);
             }
@@ -147,9 +179,11 @@ class HomeworkController extends Controller
         }
     }
 
-    private function getAuthorizedStudent(Request $request): ?StudentProfile
+    private function getAuthorizedStudent(Request $request, ?string $studentId = null): ?StudentProfile
     {
-        $studentId = $request->input('student_id');
+        // Use URL parameter if provided, otherwise fall back to query parameter
+        $studentId = $studentId ?? $request->input('student_id');
+        
         if (!$studentId) {
             return null;
         }

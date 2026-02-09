@@ -265,6 +265,63 @@ class FinanceRecordRepository implements FinanceRecordRepositoryInterface
         return $this->profitLossByCategory($filter);
     }
 
+    public function dailyProfitLoss(FinanceFilterData $filter): Collection
+    {
+        [$year, $month] = [$filter->year, $filter->month];
+
+        // Get daily income breakdown
+        $dailyIncome = Income::query()
+            ->selectRaw('DATE(income_date) as date, SUM(amount) as total')
+            ->when($year, fn($q) => $q->whereYear('income_date', $year))
+            ->when($month, fn($q) => $q->whereMonth('income_date', $month))
+            ->groupBy('date')
+            ->pluck('total', 'date');
+
+        // Get daily student fee payments
+        $dailyFees = Payment::query()
+            ->where('status', true)
+            ->selectRaw('DATE(payment_date) as date, SUM(amount) as total')
+            ->when($year, fn($q) => $q->whereYear('payment_date', $year))
+            ->when($month, fn($q) => $q->whereMonth('payment_date', $month))
+            ->groupBy('date')
+            ->pluck('total', 'date');
+
+        // Get daily expenses
+        $dailyExpenses = Expense::query()
+            ->selectRaw('DATE(expense_date) as date, SUM(amount) as total')
+            ->when($year, fn($q) => $q->whereYear('expense_date', $year))
+            ->when($month, fn($q) => $q->whereMonth('expense_date', $month))
+            ->groupBy('date')
+            ->pluck('total', 'date');
+
+        // Merge all dates
+        $allDates = collect($dailyIncome->keys())
+            ->merge($dailyFees->keys())
+            ->merge($dailyExpenses->keys())
+            ->unique()
+            ->sort()
+            ->values();
+
+        // Build daily breakdown
+        $result = collect();
+        foreach ($allDates as $date) {
+            $income = (float) ($dailyIncome[$date] ?? 0);
+            $fees = (float) ($dailyFees[$date] ?? 0);
+            $totalIncome = $income + $fees;
+            $expenses = (float) ($dailyExpenses[$date] ?? 0);
+            $net = $totalIncome - $expenses;
+
+            $result[$date] = [
+                'date' => $date,
+                'income' => $totalIncome,
+                'expenses' => $expenses,
+                'net' => $net,
+            ];
+        }
+
+        return $result->sortByDesc('date');
+    }
+
     private function applyCommonFilters(Builder $query, FinanceFilterData $filter, string $dateColumn): void
     {
         if ($filter->year) {

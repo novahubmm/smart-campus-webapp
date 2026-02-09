@@ -74,4 +74,9 @@ class FinanceRecordService
     {
         return $this->repository->profitLossByCategoryForYear($year);
     }
+
+    public function dailyProfitLoss(FinanceFilterData $filter): Collection
+    {
+        return $this->repository->dailyProfitLoss($filter);
+    }
 }

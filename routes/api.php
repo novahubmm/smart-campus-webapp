@@ -406,8 +406,144 @@ Route::prefix('v1')->group(function () {
 
             // Students (Guardian's children/wards)
             Route::get('/students', [GuardianAuthController::class, 'students']);
+            Route::post('/students/switch', [GuardianAuthController::class, 'switchStudent']);
 
-            // Dashboard
+            // ============================================
+            // NEW: RESTful Student-Specific Routes
+            // ============================================
+            Route::prefix('students/{student_id}')->group(function () {
+                
+                // Dashboard
+                Route::get('/dashboard', [GuardianDashboardController::class, 'dashboard']);
+                Route::get('/dashboard/current-class', [GuardianDashboardController::class, 'currentClass']);
+                Route::get('/fee-reminder', [GuardianDashboardController::class, 'feeReminder']);
+                
+                // Attendance
+                Route::get('/attendance', [GuardianAttendanceController::class, 'index']);
+                Route::get('/attendance/summary', [GuardianAttendanceController::class, 'summary']);
+                Route::get('/attendance/calendar', [GuardianAttendanceController::class, 'calendar']);
+                Route::get('/attendance/stats', [GuardianAttendanceController::class, 'stats']);
+
+                // Exams
+                Route::get('/exams', [GuardianExamController::class, 'index']);
+                Route::get('/exams/performance-trends', [GuardianExamController::class, 'performanceTrends']);
+                Route::get('/exams/upcoming', [GuardianExamController::class, 'upcomingExams']);
+                Route::get('/exams/past', [GuardianExamController::class, 'pastExams']);
+                Route::post('/exams/compare', [GuardianExamController::class, 'compareExams']);
+                Route::get('/exams/{exam_id}', [GuardianExamController::class, 'show']);
+                Route::get('/exams/{exam_id}/results', [GuardianExamController::class, 'results']);
+
+                // Subjects
+                Route::get('/subjects', [GuardianExamController::class, 'subjects']);
+                Route::get('/subjects/{subject_id}', [GuardianExamController::class, 'subjectDetail']);
+                Route::get('/subjects/{subject_id}/performance', [GuardianExamController::class, 'subjectPerformance']);
+                Route::get('/subjects/{subject_id}/schedule', [GuardianExamController::class, 'subjectSchedule']);
+                Route::get('/subjects/{subject_id}/curriculum', [GuardianExamController::class, 'subjectCurriculum']);
+
+                // Homework
+                Route::get('/homework', [GuardianHomeworkController::class, 'index']);
+                Route::get('/homework/stats', [GuardianHomeworkController::class, 'stats']);
+                Route::get('/homework/upcoming', [GuardianHomeworkController::class, 'upcoming']);
+                Route::get('/upcoming-homework', [GuardianDashboardController::class, 'upcomingHomework']);
+                Route::get('/homework/{homework_id}', [GuardianHomeworkController::class, 'show']);
+                Route::post('/homework/{homework_id}/submit', [GuardianHomeworkController::class, 'submit']);
+                Route::put('/homework/{homework_id}/status', [GuardianHomeworkController::class, 'updateStatus']);
+
+                // Timetable & Schedule
+                Route::get('/timetable', [GuardianTimetableController::class, 'index']);
+                Route::get('/timetable/{day}', [GuardianTimetableController::class, 'day']);
+                Route::get('/schedule/today', [GuardianDashboardController::class, 'todaySchedule']);
+                Route::get('/schedule/current-class', [GuardianDashboardController::class, 'currentClass']);
+
+                // Class Information
+                Route::get('/class', [GuardianTimetableController::class, 'classInfo']);
+                Route::get('/class/details', [GuardianTimetableController::class, 'detailedClassInfo']);
+                Route::get('/class/teachers', [GuardianTimetableController::class, 'classTeachers']);
+                Route::get('/class/statistics', [GuardianTimetableController::class, 'classStatistics']);
+
+                // Announcements
+                Route::get('/announcements', [GuardianAnnouncementController::class, 'index']);
+                Route::get('/announcements/recent', [GuardianDashboardController::class, 'recentAnnouncements']);
+                Route::get('/announcements/{announcement_id}', [GuardianAnnouncementController::class, 'show']);
+                Route::post('/announcements/{announcement_id}/read', [GuardianAnnouncementController::class, 'markAsRead']);
+
+                // Fees & Payments
+                Route::prefix('fees')->group(function () {
+                    Route::get('/', [GuardianFeeController::class, 'index']);
+                    Route::get('/pending', [GuardianFeeController::class, 'pending']);
+                    Route::get('/summary', [GuardianFeeController::class, 'paymentSummary']);
+                    Route::get('/payment-history', [GuardianFeeController::class, 'paymentHistory']);
+                    Route::get('/receipts/{payment_id}', [GuardianFeeController::class, 'receipt']);
+                    Route::get('/receipts/{payment_id}/download', [GuardianFeeController::class, 'downloadReceipt']);
+                    
+                    // NEW: Payment Screen APIs (MUST be before /{fee_id} to avoid route conflict)
+                    Route::get('/structure', [\App\Http\Controllers\Api\V1\Guardian\PaymentController::class, 'feeStructure']);
+                    Route::post('/payments', [\App\Http\Controllers\Api\V1\Guardian\PaymentController::class, 'submitPayment']);
+                    
+                    // Catch-all routes MUST be last
+                    Route::get('/{fee_id}', [GuardianFeeController::class, 'show']);
+                    Route::post('/{fee_id}/payment', [GuardianFeeController::class, 'initiatePayment']);
+                });
+
+                // Leave Requests
+                Route::post('/leave-requests/bulk', [GuardianLeaveRequestController::class, 'bulkStore']);
+                Route::get('/leave-requests', [GuardianLeaveRequestController::class, 'index']);
+                Route::get('/leave-requests/stats', [GuardianLeaveRequestController::class, 'stats']);
+                Route::post('/leave-requests', [GuardianLeaveRequestController::class, 'store']);
+                Route::put('/leave-requests', [GuardianLeaveRequestController::class, 'update']); // Query param support
+                Route::delete('/leave-requests', [GuardianLeaveRequestController::class, 'destroy']); // Query param support
+                Route::get('/leave-requests/{request_id}', [GuardianLeaveRequestController::class, 'show']);
+                Route::put('/leave-requests/{request_id}', [GuardianLeaveRequestController::class, 'update']);
+                Route::delete('/leave-requests/{request_id}', [GuardianLeaveRequestController::class, 'destroy']);
+
+                // Curriculum
+                Route::get('/curriculum', [GuardianCurriculumController::class, 'index']);
+                Route::get('/curriculum/subjects/{subject_id}', [GuardianCurriculumController::class, 'subjectCurriculum']);
+                Route::get('/curriculum/chapters', [GuardianCurriculumController::class, 'chapters']);
+                Route::get('/curriculum/chapters/{chapter_id}', [GuardianCurriculumController::class, 'chapterDetail']);
+                Route::get('/curriculum/topics/{topic_id}', [GuardianCurriculumController::class, 'topicDetail']);
+
+                // Report Cards
+                Route::get('/report-cards', [GuardianReportCardController::class, 'index']);
+                Route::get('/report-cards/latest', [GuardianReportCardController::class, 'latest']);
+                Route::get('/report-cards/{report_card_id}', [GuardianReportCardController::class, 'show']);
+                Route::post('/report-cards/{report_card_id}/download', [GuardianReportCardController::class, 'download']);
+
+                // Academic Performance
+                Route::prefix('academic')->group(function () {
+                    Route::get('/overview', [GuardianStudentController::class, 'academicSummary']);
+                    Route::get('/gpa-trends', [GuardianStudentController::class, 'gpaTrends']);
+                    Route::get('/performance-analysis', [GuardianStudentController::class, 'performanceAnalysis']);
+                    Route::get('/strengths-weaknesses', [GuardianStudentController::class, 'subjectStrengthsWeaknesses']);
+                    Route::get('/badges', [GuardianStudentController::class, 'badges']);
+                });
+
+                // Student Profile
+                Route::get('/profile', [GuardianStudentController::class, 'profile']);
+                Route::get('/profile/academic-data', [GuardianStudentController::class, 'academicSummary']);
+                Route::get('/rankings', [GuardianStudentController::class, 'rankings']);
+                Route::get('/achievements', [GuardianStudentController::class, 'achievements']);
+
+                // Notifications (Student-specific)
+                Route::get('/notifications', [GuardianNotificationController::class, 'index']);
+                Route::get('/notifications/unread-count', [GuardianNotificationController::class, 'unreadCount']);
+                Route::post('/notifications/{notification_id}/read', [GuardianNotificationController::class, 'markAsRead']);
+                Route::post('/notifications/read-all', [GuardianNotificationController::class, 'markAllAsRead']);
+            });
+
+            // ============================================
+            // OLD: Backward Compatibility Routes (Deprecated)
+            // Will be removed after mobile team migrates
+            // ============================================
+            
+            // OLD: Student-Specific Routes with /students/{student_id}/ prefix
+            Route::prefix('students/{student_id}')->group(function () {
+                Route::get('/today-schedule', [GuardianDashboardController::class, 'todaySchedule']);
+                Route::get('/dashboard', [GuardianDashboardController::class, 'dashboard']);
+                Route::get('/current-class', [GuardianDashboardController::class, 'currentClass']);
+            });
+            
+            // Dashboard (Old)
             Route::get('/home/dashboard', [GuardianDashboardController::class, 'dashboard']);
             Route::get('/dashboard/current-class', [GuardianDashboardController::class, 'currentClass']);
             Route::get('/today-schedule', [GuardianDashboardController::class, 'todaySchedule']);
@@ -415,70 +551,85 @@ Route::prefix('v1')->group(function () {
             Route::get('/announcements/recent', [GuardianDashboardController::class, 'recentAnnouncements']);
             Route::get('/fee-reminder', [GuardianDashboardController::class, 'feeReminder']);
 
-            // Student Profile & Academic
+            // Student Profile & Academic (Old)
             Route::get('/students/{id}/profile', [GuardianStudentController::class, 'profile']);
             Route::get('/students/{id}/academic-summary', [GuardianStudentController::class, 'academicSummary']);
             Route::get('/students/{id}/rankings', [GuardianStudentController::class, 'rankings']);
             Route::get('/students/{id}/achievements', [GuardianStudentController::class, 'achievements']);
+            Route::get('/students/{id}/gpa-trends', [GuardianStudentController::class, 'gpaTrends']);
+            Route::get('/students/{id}/performance-analysis', [GuardianStudentController::class, 'performanceAnalysis']);
+            Route::get('/students/{id}/subject-strengths-weaknesses', [GuardianStudentController::class, 'subjectStrengthsWeaknesses']);
+            Route::get('/students/{id}/badges', [GuardianStudentController::class, 'badges']);
 
-            // Student Goals
+            // Student Goals (Old)
             Route::get('/students/{id}/goals', [GuardianStudentController::class, 'goals']);
             Route::post('/students/{id}/goals', [GuardianStudentController::class, 'createGoal']);
             Route::put('/students/{id}/goals/{goalId}', [GuardianStudentController::class, 'updateGoal']);
             Route::delete('/students/{id}/goals/{goalId}', [GuardianStudentController::class, 'deleteGoal']);
 
-            // Guardian Notes
+            // Guardian Notes (Old)
             Route::get('/students/{id}/notes', [GuardianStudentController::class, 'notes']);
             Route::post('/students/{id}/notes', [GuardianStudentController::class, 'createNote']);
             Route::put('/students/{id}/notes/{noteId}', [GuardianStudentController::class, 'updateNote']);
             Route::delete('/students/{id}/notes/{noteId}', [GuardianStudentController::class, 'deleteNote']);
 
-            // Attendance
+            // Attendance (Old)
             Route::get('/attendance', [GuardianAttendanceController::class, 'index']);
             Route::get('/attendance/summary', [GuardianAttendanceController::class, 'summary']);
             Route::get('/attendance/calendar', [GuardianAttendanceController::class, 'calendar']);
             Route::get('/attendance/stats', [GuardianAttendanceController::class, 'stats']);
 
-            // Exams
+            // Exams (Old)
             Route::get('/exams', [GuardianExamController::class, 'index']);
+            Route::get('/exams/performance-trends', [GuardianExamController::class, 'performanceTrends']);
+            Route::get('/exams/upcoming', [GuardianExamController::class, 'upcomingExams']);
+            Route::get('/exams/past', [GuardianExamController::class, 'pastExams']);
+            Route::post('/exams/compare', [GuardianExamController::class, 'compareExams']);
             Route::get('/exams/{id}', [GuardianExamController::class, 'show']);
             Route::get('/exams/{id}/results', [GuardianExamController::class, 'results']);
 
-            // Subjects
+            // Subjects (Old)
             Route::get('/subjects', [GuardianExamController::class, 'subjects']);
             Route::get('/subjects/{id}', [GuardianExamController::class, 'subjectDetail']);
             Route::get('/subjects/{id}/performance', [GuardianExamController::class, 'subjectPerformance']);
             Route::get('/subjects/{id}/schedule', [GuardianExamController::class, 'subjectSchedule']);
 
-            // Homework
+            // Homework (Old)
             Route::get('/homework', [GuardianHomeworkController::class, 'index']);
             Route::get('/homework/stats', [GuardianHomeworkController::class, 'stats']);
             Route::get('/homework/{id}', [GuardianHomeworkController::class, 'show']);
             Route::post('/homework/{id}/submit', [GuardianHomeworkController::class, 'submit']);
             Route::put('/homework/{id}/status', [GuardianHomeworkController::class, 'updateStatus']);
 
-            // Timetable
+            // Timetable (Old)
             Route::get('/timetable', [GuardianTimetableController::class, 'index']);
             Route::get('/timetable/day', [GuardianTimetableController::class, 'day']);
             Route::get('/class-info', [GuardianTimetableController::class, 'classInfo']);
             Route::get('/classes/{id}', [GuardianTimetableController::class, 'classInfo']);
+            Route::get('/class-details', [GuardianTimetableController::class, 'detailedClassInfo']);
+            Route::get('/class-teachers', [GuardianTimetableController::class, 'classTeachers']);
+            Route::get('/class-statistics', [GuardianTimetableController::class, 'classStatistics']);
 
-            // Announcements
+            // Announcements (Old)
             Route::get('/announcements', [GuardianAnnouncementController::class, 'index']);
             Route::get('/announcements/{id}', [GuardianAnnouncementController::class, 'show']);
             Route::post('/announcements/{id}/read', [GuardianAnnouncementController::class, 'markAsRead']);
             Route::post('/announcements/mark-all-read', [GuardianAnnouncementController::class, 'markAllAsRead']);
 
-            // Fees & Payments
+            // Fees & Payments (Old)
             Route::prefix('fees')->group(function () {
                 Route::get('/', [GuardianFeeController::class, 'index']);
                 Route::get('/pending', [GuardianFeeController::class, 'pending']);
                 Route::get('/payment-history', [GuardianFeeController::class, 'paymentHistory']);
+                Route::get('/summary', [GuardianFeeController::class, 'paymentSummary']);
+                Route::get('/receipts/{payment_id}', [GuardianFeeController::class, 'receipt'])->name('api.v1.guardian.fees.receipt');
+                Route::get('/receipts/{payment_id}/download', [GuardianFeeController::class, 'downloadReceipt']);
                 Route::get('/{fee_id}', [GuardianFeeController::class, 'show']);
                 Route::post('/{fee_id}/payment', [GuardianFeeController::class, 'initiatePayment']);
             });
 
-            // Leave Requests
+            // Leave Requests (Old)
+            Route::post('/leave-requests/bulk', [GuardianLeaveRequestController::class, 'bulkStore']);
             Route::get('/leave-requests', [GuardianLeaveRequestController::class, 'index']);
             Route::get('/leave-requests/stats', [GuardianLeaveRequestController::class, 'stats']);
             Route::get('/leave-requests/{id}', [GuardianLeaveRequestController::class, 'show']);
@@ -487,7 +638,7 @@ Route::prefix('v1')->group(function () {
             Route::delete('/leave-requests/{id}', [GuardianLeaveRequestController::class, 'destroy']);
             Route::get('/leave-types', [GuardianLeaveRequestController::class, 'leaveTypes']);
 
-            // Notifications
+            // Notifications (Old - Parent-level)
             Route::get('/notifications', [GuardianNotificationController::class, 'index']);
             Route::get('/notifications/unread-count', [GuardianNotificationController::class, 'unreadCount']);
             Route::get('/notifications/settings', [GuardianNotificationController::class, 'getSettings']);
@@ -495,19 +646,28 @@ Route::prefix('v1')->group(function () {
             Route::post('/notifications/mark-all-read', [GuardianNotificationController::class, 'markAllAsRead']);
             Route::post('/notifications/{id}/read', [GuardianNotificationController::class, 'markAsRead']);
 
-            // Curriculum
+            // Curriculum (Old)
             Route::get('/curriculum', [GuardianCurriculumController::class, 'index']);
             Route::get('/curriculum/subjects/{id}', [GuardianCurriculumController::class, 'subjectCurriculum']);
             Route::get('/curriculum/chapters', [GuardianCurriculumController::class, 'chapters']);
             Route::get('/curriculum/chapters/{id}', [GuardianCurriculumController::class, 'chapterDetail']);
 
-            // Report Cards
+            // Report Cards (Old)
             Route::get('/report-cards', [GuardianReportCardController::class, 'index']);
+            Route::get('/report-cards/latest', [GuardianReportCardController::class, 'latest']);
             Route::get('/report-cards/{id}', [GuardianReportCardController::class, 'show']);
 
+            // ============================================
+            // Parent-Level Routes (No student_id needed)
+            // ============================================
+            
             // Settings
             Route::get('/settings', [GuardianSettingsController::class, 'index']);
             Route::put('/settings', [GuardianSettingsController::class, 'update']);
+
+            // Notification Preferences (Parent-level)
+            Route::get('/notification-preferences', [GuardianNotificationController::class, 'getSettings']);
+            Route::put('/notification-preferences', [GuardianNotificationController::class, 'updateSettings']);
 
             // School Info (authenticated)
             Route::get('/school/info', [GuardianSettingsController::class, 'schoolInfo']);
@@ -515,9 +675,20 @@ Route::prefix('v1')->group(function () {
             Route::get('/school/contact', [GuardianSettingsController::class, 'schoolContact']);
             Route::get('/school/facilities', [GuardianSettingsController::class, 'schoolFacilities']);
 
+            // School-Wide Info (No auth needed - moved outside)
+            // GET /guardian/school-info
+            // GET /guardian/rules
+
             // Device Tokens (for push notifications)
             Route::post('/device-tokens', [DeviceTokenController::class, 'store']);
             Route::delete('/device-tokens', [DeviceTokenController::class, 'destroy']);
+
+            // Leave Types (Reference data)
+            Route::get('/leave-types', [GuardianLeaveRequestController::class, 'leaveTypes']);
+            
+            // NEW: Payment Methods & Options (Parent-level, no student_id needed)
+            Route::get('/payment-methods', [\App\Http\Controllers\Api\V1\Guardian\PaymentController::class, 'paymentMethods']);
+            Route::get('/payment-options', [\App\Http\Controllers\Api\V1\Guardian\PaymentController::class, 'paymentOptions']);
         });
     });
 });

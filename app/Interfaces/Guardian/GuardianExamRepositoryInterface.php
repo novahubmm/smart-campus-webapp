@@ -19,4 +19,15 @@ interface GuardianExamRepositoryInterface
     public function getSubjectPerformance(string $subjectId, StudentProfile $student): array;
 
     public function getSubjectSchedule(string $subjectId, StudentProfile $student): array;
+
+    public function getSubjectCurriculum(string $subjectId, StudentProfile $student): array;
+
+    // Enhanced methods for trends and analysis
+    public function getPerformanceTrends(StudentProfile $student, ?string $subjectId = null): array;
+
+    public function getUpcomingExams(StudentProfile $student): array;
+
+    public function getPastExams(StudentProfile $student, int $limit = 10): array;
+
+    public function getExamComparison(StudentProfile $student, array $examIds): array;
 }

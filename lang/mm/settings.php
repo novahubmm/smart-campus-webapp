@@ -33,6 +33,7 @@ return array(
     'Update Contact' => 'ဆက်သွယ်ရန်ပြင်ဆင်',
     'Update the school brand, contact, and address details.' => 'ကျောင်းအမှတ်တံဆိပ်၊ ဆက်သွယ်ရန်နှင့် လိပ်စာအသေးစိတ်များကို ပြင်ဆင်ပါ။',
     'Website' => 'ဝက်ဘ်ဆိုက်',
+     'About Us' => 'ကျောင်းအကြောင်း',
     // Working Hours Settings
     'Working Hours Settings' => 'အလုပ်ချိန်ဆက်တင်များ',
     'Configure office hours and attendance policies for staff and teachers.' => 'ဝန်ထမ်းများနှင့် ဆရာများအတွက် ရုံးချိန်နှင့် တက်ရောက်မှုမူဝါဒများကို စီစဉ်သတ်မှတ်ပါ။',

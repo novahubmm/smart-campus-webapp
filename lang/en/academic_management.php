@@ -231,5 +231,7 @@ return array(
     'e.g., Room 101' => 'e.g., Room 101',
     'months' => 'months',
     'students' => 'students',
-    'Type' => 'Type'
+    'Type' => 'Type',
+    'Room Facilities' => 'Room Facilities',
+    'Assigned Classes' => 'Assigned Classes'
 );

@@ -218,7 +218,7 @@
                 <div class="p-4" x-show="calendarView === 'month'">
                     <div class="grid grid-cols-7 gap-px bg-gray-200 dark:bg-gray-700 border border-gray-200 dark:border-gray-700 mb-px">
                         @foreach(['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'] as $day)
-                            <div class="bg-gray-50 dark:bg-gray-800 px-2 py-2 text-center text-xs font-semibold text-gray-600 dark:text-gray-400">{{ __($day) }}</div>
+                            <div class="bg-gray-50 dark:bg-gray-800 px-2 py-2 text-center text-xs font-semibold text-gray-600 dark:text-gray-400">{{ __('components.' . $day) }}</div>
                         @endforeach
                     </div>
                     <div class="grid grid-cols-7 gap-px bg-gray-200 dark:bg-gray-700 border border-gray-200 dark:border-gray-700" style="min-height: 400px;">
@@ -427,7 +427,7 @@
                 },
                 get weekDays() {
                     const start = this.getWeekStart(this.currentDate), days = [], today = new Date(); today.setHours(0, 0, 0, 0);
-                    const dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+                    const dayNames = [@json(__('components.Sun')), @json(__('components.Mon')), @json(__('components.Tue')), @json(__('components.Wed')), @json(__('components.Thu')), @json(__('components.Fri')), @json(__('components.Sat'))];
                     for (let i = 0; i < 7; i++) { const d = new Date(start); d.setDate(d.getDate() + i); const dateStr = this.formatDate(d); days.push({ date: dateStr, dayNum: d.getDate(), dayName: dayNames[d.getDay()], isToday: d.getTime() === today.getTime(), events: this.getEventsForDate(dateStr) }); }
                     return days;
                 },

@@ -220,18 +220,23 @@ class GuardianExamRepository implements GuardianExamRepositoryInterface
         $periods = \App\Models\Period::where('class_id', $student->class_id)
             ->where('subject_id', $subjectId)
             ->with(['room', 'teacher.user'])
-            ->orderByRaw("FIELD(day, 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday')")
-            ->orderBy('start_time')
+            ->orderBy('starts_at')
             ->get();
+
+        // Sort by day of week manually
+        $dayOrder = ['monday' => 1, 'tuesday' => 2, 'wednesday' => 3, 'thursday' => 4, 'friday' => 5, 'saturday' => 6, 'sunday' => 7];
+        $periods = $periods->sortBy(function ($period) use ($dayOrder) {
+            return $dayOrder[strtolower($period->day_of_week)] ?? 8;
+        });
 
         $schedule = $periods->map(function ($period) {
             return [
-                'day' => ucfirst($period->day),
-                'time' => $period->start_time . ' - ' . $period->end_time,
+                'day' => ucfirst($period->day_of_week),
+                'time' => substr($period->starts_at, 0, 5) . ' - ' . substr($period->ends_at, 0, 5),
                 'room' => $period->room?->name ?? 'TBA',
                 'teacher' => $period->teacher?->user?->name ?? 'N/A',
             ];
-        })->toArray();
+        })->values()->toArray();
 
         // Get upcoming classes (next 7 days)
         $upcomingClasses = [];
@@ -239,7 +244,7 @@ class GuardianExamRepository implements GuardianExamRepositoryInterface
         $dayMap = ['sunday' => 0, 'monday' => 1, 'tuesday' => 2, 'wednesday' => 3, 'thursday' => 4, 'friday' => 5, 'saturday' => 6];
 
         foreach ($periods as $period) {
-            $periodDayNum = $dayMap[strtolower($period->day)] ?? 0;
+            $periodDayNum = $dayMap[strtolower($period->day_of_week)] ?? 0;
             $currentDayNum = $today->dayOfWeek;
             
             $daysUntil = $periodDayNum - $currentDayNum;
@@ -251,8 +256,8 @@ class GuardianExamRepository implements GuardianExamRepositoryInterface
             
             $upcomingClasses[] = [
                 'date' => $classDate->format('Y-m-d'),
-                'day' => ucfirst($period->day),
-                'time' => $period->start_time . ' - ' . $period->end_time,
+                'day' => ucfirst($period->day_of_week),
+                'time' => substr($period->starts_at, 0, 5) . ' - ' . substr($period->ends_at, 0, 5),
                 'room' => $period->room?->name ?? 'TBA',
             ];
         }
@@ -271,6 +276,84 @@ class GuardianExamRepository implements GuardianExamRepositoryInterface
         ];
     }
 
+    public function getSubjectCurriculum(string $subjectId, StudentProfile $student): array
+    {
+        $subject = Subject::findOrFail($subjectId);
+        
+        // Get curriculum chapters for this subject
+        // Try grade-specific first, then fall back to general curriculum
+        $chapters = \App\Models\CurriculumChapter::where('subject_id', $subjectId)
+            ->where(function ($query) use ($student) {
+                $query->where('grade_id', $student->grade_id)
+                      ->orWhereNull('grade_id');
+            })
+            ->with(['topics' => function ($query) use ($student) {
+                $query->with(['progress' => function ($q) use ($student) {
+                    $q->where('class_id', $student->class_id);
+                }]);
+            }])
+            ->orderBy('order')
+            ->get();
+
+        $curriculumData = $chapters->map(function ($chapter) {
+            $topics = $chapter->topics->map(function ($topic) {
+                $progress = $topic->progress->first();
+                
+                return [
+                    'id' => $topic->id,
+                    'title' => $topic->title,
+                    'order' => $topic->order,
+                    'status' => $progress?->status ?? 'not_started',
+                    'started_at' => $progress?->started_at?->format('Y-m-d'),
+                    'completed_at' => $progress?->completed_at?->format('Y-m-d'),
+                ];
+            });
+
+            // Calculate chapter progress
+            $totalTopics = $topics->count();
+            $completedTopics = $topics->where('status', 'completed')->count();
+            $inProgressTopics = $topics->where('status', 'in_progress')->count();
+            
+            $progressPercentage = $totalTopics > 0 
+                ? round((($completedTopics + ($inProgressTopics * 0.5)) / $totalTopics) * 100, 1)
+                : 0;
+
+            return [
+                'id' => $chapter->id,
+                'title' => $chapter->title,
+                'order' => $chapter->order,
+                'total_topics' => $totalTopics,
+                'completed_topics' => $completedTopics,
+                'in_progress_topics' => $inProgressTopics,
+                'progress_percentage' => $progressPercentage,
+                'topics' => $topics->toArray(),
+            ];
+        });
+
+        // Calculate overall progress
+        $totalChapters = $curriculumData->count();
+        $totalTopics = $curriculumData->sum('total_topics');
+        $completedTopics = $curriculumData->sum('completed_topics');
+        $inProgressTopics = $curriculumData->sum('in_progress_topics');
+        
+        $overallProgress = $totalTopics > 0 
+            ? round((($completedTopics + ($inProgressTopics * 0.5)) / $totalTopics) * 100, 1)
+            : 0;
+
+        return [
+            'subject' => [
+                'id' => $subject->id,
+                'name' => $subject->name,
+            ],
+            'overall_progress' => $overallProgress,
+            'total_chapters' => $totalChapters,
+            'total_topics' => $totalTopics,
+            'completed_topics' => $completedTopics,
+            'in_progress_topics' => $inProgressTopics,
+            'chapters' => $curriculumData->toArray(),
+        ];
+    }
+
     private function getExamStatus(Exam $exam): string
     {
         $now = Carbon::now();
@@ -284,6 +367,163 @@ class GuardianExamRepository implements GuardianExamRepositoryInterface
         }
         
         return 'ongoing';
+    }
+
+    public function getPerformanceTrends(StudentProfile $student, ?string $subjectId = null): array
+    {
+        $query = ExamMark::where('student_id', $student->id)
+            ->with(['exam', 'subject']);
+
+        if ($subjectId) {
+            $query->where('subject_id', $subjectId);
+        }
+
+        $marks = $query->orderBy('created_at', 'asc')->get();
+
+        $trends = $marks->map(function ($mark) {
+            $totalMarks = $mark->exam?->total_marks ?? 100;
+            $percentage = $totalMarks > 0 ? round(($mark->marks_obtained / $totalMarks) * 100, 1) : 0;
+
+            return [
+                'exam_id' => $mark->exam_id,
+                'exam_name' => $mark->exam?->name ?? 'N/A',
+                'subject' => $mark->subject?->name ?? 'N/A',
+                'percentage' => $percentage,
+                'grade' => $this->calculateGrade($percentage),
+                'date' => $mark->created_at->format('Y-m-d'),
+            ];
+        });
+
+        // Calculate trend direction
+        $recentAvg = $trends->take(-3)->avg('percentage');
+        $previousAvg = $trends->slice(-6, 3)->avg('percentage');
+        $trendDirection = $recentAvg > $previousAvg ? 'improving' : ($recentAvg < $previousAvg ? 'declining' : 'stable');
+
+        return [
+            'overall_average' => round($trends->avg('percentage'), 1),
+            'recent_average' => round($recentAvg, 1),
+            'trend_direction' => $trendDirection,
+            'total_exams' => $trends->count(),
+            'data' => $trends->toArray(),
+        ];
+    }
+
+    public function getUpcomingExams(StudentProfile $student): array
+    {
+        $exams = Exam::whereHas('examSchedules', function ($q) use ($student) {
+                $q->where('class_id', $student->class_id);
+            })
+            ->where('start_date', '>=', Carbon::now())
+            ->with(['examType', 'examSchedules' => function ($q) use ($student) {
+                $q->where('class_id', $student->class_id)->with('subject');
+            }])
+            ->orderBy('start_date', 'asc')
+            ->get();
+
+        return $exams->map(function ($exam) {
+            $schedule = $exam->examSchedules->first();
+            $daysUntil = Carbon::now()->diffInDays($exam->start_date, false);
+
+            return [
+                'id' => $exam->id,
+                'name' => $exam->name,
+                'subject' => $schedule?->subject?->name ?? 'Multiple Subjects',
+                'date' => $exam->start_date?->format('Y-m-d'),
+                'start_time' => $schedule?->start_time,
+                'end_time' => $schedule?->end_time,
+                'total_marks' => $exam->total_marks ?? 100,
+                'room' => $schedule?->room ?? 'TBA',
+                'days_until' => max(0, $daysUntil),
+                'is_today' => $daysUntil === 0,
+                'is_tomorrow' => $daysUntil === 1,
+            ];
+        })->toArray();
+    }
+
+    public function getPastExams(StudentProfile $student, int $limit = 10): array
+    {
+        $exams = Exam::whereHas('examSchedules', function ($q) use ($student) {
+                $q->where('class_id', $student->class_id);
+            })
+            ->where('end_date', '<', Carbon::now())
+            ->with(['examType', 'examSchedules' => function ($q) use ($student) {
+                $q->where('class_id', $student->class_id)->with('subject');
+            }])
+            ->orderBy('end_date', 'desc')
+            ->limit($limit)
+            ->get();
+
+        return $exams->map(function ($exam) use ($student) {
+            $schedule = $exam->examSchedules->first();
+            $result = ExamMark::where('exam_id', $exam->id)
+                ->where('student_id', $student->id)
+                ->first();
+
+            $data = [
+                'id' => $exam->id,
+                'name' => $exam->name,
+                'subject' => $schedule?->subject?->name ?? 'Multiple Subjects',
+                'date' => $exam->end_date?->format('Y-m-d'),
+                'total_marks' => $exam->total_marks ?? 100,
+                'has_result' => $result !== null,
+            ];
+
+            if ($result) {
+                $totalMarks = $exam->total_marks ?? 100;
+                $percentage = $totalMarks > 0 ? round(($result->marks_obtained / $totalMarks) * 100, 1) : 0;
+                
+                $data['marks_obtained'] = $result->marks_obtained;
+                $data['percentage'] = $percentage;
+                $data['grade'] = $this->calculateGrade($percentage);
+            }
+
+            return $data;
+        })->toArray();
+    }
+
+    public function getExamComparison(StudentProfile $student, array $examIds): array
+    {
+        $exams = Exam::whereIn('id', $examIds)
+            ->with(['examType', 'examSchedules.subject'])
+            ->get();
+
+        $comparison = [];
+
+        foreach ($exams as $exam) {
+            $result = ExamMark::where('exam_id', $exam->id)
+                ->where('student_id', $student->id)
+                ->first();
+
+            $classResults = ExamMark::where('exam_id', $exam->id)
+                ->whereHas('student', function ($q) use ($student) {
+                    $q->where('class_id', $student->class_id);
+                })
+                ->get();
+
+            $totalMarks = $exam->total_marks ?? 100;
+            $percentage = $result && $totalMarks > 0 
+                ? round(($result->marks_obtained / $totalMarks) * 100, 1) 
+                : 0;
+
+            $comparison[] = [
+                'exam_id' => $exam->id,
+                'exam_name' => $exam->name,
+                'date' => $exam->start_date?->format('Y-m-d'),
+                'marks_obtained' => $result?->marks_obtained ?? 0,
+                'total_marks' => $totalMarks,
+                'percentage' => $percentage,
+                'grade' => $this->calculateGrade($percentage),
+                'class_average' => round($classResults->avg('marks_obtained'), 1),
+                'class_highest' => $classResults->max('marks_obtained'),
+                'rank' => $result ? $classResults->where('marks_obtained', '>', $result->marks_obtained)->count() + 1 : null,
+            ];
+        }
+
+        return [
+            'student_id' => $student->id,
+            'comparison' => $comparison,
+            'average_percentage' => round(collect($comparison)->avg('percentage'), 1),
+        ];
     }
 
     private function calculateGrade(float $percentage): string

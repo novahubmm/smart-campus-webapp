@@ -607,7 +607,15 @@ function timetableForm(config = {}) {
         },
 
         dayLabel(day) {
-            const map = { mon: 'Mon', tue: 'Tue', wed: 'Wed', thu: 'Thu', fri: 'Fri', sat: 'Sat', sun: 'Sun' };
+            const map = { 
+                mon: @json(__('components.Mon')), 
+                tue: @json(__('components.Tue')), 
+                wed: @json(__('components.Wed')), 
+                thu: @json(__('components.Thu')), 
+                fri: @json(__('components.Fri')), 
+                sat: @json(__('components.Sat')), 
+                sun: @json(__('components.Sun')) 
+            };
             return map[day] || day;
         },
 

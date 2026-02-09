@@ -34,6 +34,7 @@ class FinanceController extends Controller
         $summary = $this->service->profitLossSummary($filter);
         $monthlyBreakdown = $this->service->profitLossByCategory($filter);
         $annualBreakdown = $this->service->profitLossByCategoryForYear($filter->year ?? now()->year);
+        $dailyBreakdown = $this->service->dailyProfitLoss($filter);
 
         return view('finance.index', [
             'filter' => $filter,
@@ -43,6 +44,7 @@ class FinanceController extends Controller
             'summary' => $summary,
             'monthlyBreakdown' => $monthlyBreakdown,
             'annualBreakdown' => $annualBreakdown,
+            'dailyBreakdown' => $dailyBreakdown,
             'expenseCategories' => ExpenseCategory::orderBy('name')->get(),
             'grades' => Grade::orderBy('level')->get(),
             'classes' => SchoolClass::orderBy('name')->get(),

@@ -23,7 +23,7 @@
     <!-- Day Tabs -->
     <div class="pwa-tabs pwa-tabs-scroll">
         @foreach(['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'] as $day)
-            <button class="pwa-tab {{ $currentDay === $day ? 'active' : '' }}" data-day="{{ $day }}">{{ $day }}</button>
+            <button class="pwa-tab {{ $currentDay === $day ? 'active' : '' }}" data-day="{{ $day }}">{{ __('attendance.' . $day) }}</button>
         @endforeach
     </div>
 

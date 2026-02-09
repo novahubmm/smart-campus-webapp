@@ -35,4 +35,6 @@ interface FinanceRecordRepositoryInterface
     public function profitLossByCategory(FinanceFilterData $filter): Collection;
 
     public function profitLossByCategoryForYear(int $year): Collection;
+
+    public function dailyProfitLoss(FinanceFilterData $filter): Collection;
 }

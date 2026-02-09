@@ -14,7 +14,7 @@ class GuardianReportCardRepository implements GuardianReportCardRepositoryInterf
     public function getReportCards(StudentProfile $student): array
     {
         // Get exams that have results for this student
-        $exams = Exam::whereHas('examMarks', function ($q) use ($student) {
+        $exams = Exam::whereHas('marks', function ($q) use ($student) {
                 $q->where('student_id', $student->id);
             })
             ->where('status', 'completed')
@@ -54,6 +54,23 @@ class GuardianReportCardRepository implements GuardianReportCardRepositoryInterf
                 'status' => 'published',
             ];
         })->toArray();
+    }
+
+    public function getLatestReportCard(StudentProfile $student): ?array
+    {
+        // Get the most recent exam that has results for this student
+        $exam = Exam::whereHas('marks', function ($q) use ($student) {
+                $q->where('student_id', $student->id);
+            })
+            ->where('status', 'completed')
+            ->orderBy('end_date', 'desc')
+            ->first();
+
+        if (!$exam) {
+            return null;
+        }
+
+        return $this->getReportCardDetail($exam->id, $student);
     }
 
     public function getReportCardDetail(string $reportCardId, StudentProfile $student): array

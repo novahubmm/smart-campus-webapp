@@ -19,17 +19,18 @@ class AttendanceController extends Controller
     /**
      * Get Attendance Records
      * GET /api/v1/guardian/attendance?student_id={id}&month={month}&year={year}
+     * GET /api/v1/guardian/students/{student_id}/attendance?month={month}&year={year} (NEW)
      */
-    public function index(Request $request): JsonResponse
+    public function index(Request $request, ?string $studentId = null): JsonResponse
     {
         $request->validate([
-            'student_id' => 'required|string',
+            'student_id' => $studentId ? 'nullable|string' : 'required|string',
             'month' => 'nullable|integer|min:1|max:12',
             'year' => 'nullable|integer|min:2020|max:2100',
         ]);
 
         try {
-            $student = $this->getAuthorizedStudent($request);
+            $student = $this->getAuthorizedStudent($request, $studentId);
             if (!$student) {
                 return ApiResponse::error('Student not found or unauthorized', 404);
             }
@@ -48,17 +49,18 @@ class AttendanceController extends Controller
     /**
      * Get Attendance Summary
      * GET /api/v1/guardian/attendance/summary?student_id={id}&month={month}&year={year}
+     * GET /api/v1/guardian/students/{student_id}/attendance/summary?month={month}&year={year} (NEW)
      */
-    public function summary(Request $request): JsonResponse
+    public function summary(Request $request, ?string $studentId = null): JsonResponse
     {
         $request->validate([
-            'student_id' => 'required|string',
+            'student_id' => $studentId ? 'nullable|string' : 'required|string',
             'month' => 'nullable|integer|min:1|max:12',
             'year' => 'nullable|integer|min:2020|max:2100',
         ]);
 
         try {
-            $student = $this->getAuthorizedStudent($request);
+            $student = $this->getAuthorizedStudent($request, $studentId);
             if (!$student) {
                 return ApiResponse::error('Student not found or unauthorized', 404);
             }
@@ -77,17 +79,18 @@ class AttendanceController extends Controller
     /**
      * Get Attendance Calendar
      * GET /api/v1/guardian/attendance/calendar?student_id={id}&month={month}&year={year}
+     * GET /api/v1/guardian/students/{student_id}/attendance/calendar?month={month}&year={year} (NEW)
      */
-    public function calendar(Request $request): JsonResponse
+    public function calendar(Request $request, ?string $studentId = null): JsonResponse
     {
         $request->validate([
-            'student_id' => 'required|string',
+            'student_id' => $studentId ? 'nullable|string' : 'required|string',
             'month' => 'nullable|integer|min:1|max:12',
             'year' => 'nullable|integer|min:2020|max:2100',
         ]);
 
         try {
-            $student = $this->getAuthorizedStudent($request);
+            $student = $this->getAuthorizedStudent($request, $studentId);
             if (!$student) {
                 return ApiResponse::error('Student not found or unauthorized', 404);
             }
@@ -106,15 +109,16 @@ class AttendanceController extends Controller
     /**
      * Get Attendance Stats
      * GET /api/v1/guardian/attendance/stats?student_id={id}
+     * GET /api/v1/guardian/students/{student_id}/attendance/stats (NEW)
      */
-    public function stats(Request $request): JsonResponse
+    public function stats(Request $request, ?string $studentId = null): JsonResponse
     {
         $request->validate([
-            'student_id' => 'required|string',
+            'student_id' => $studentId ? 'nullable|string' : 'required|string',
         ]);
 
         try {
-            $student = $this->getAuthorizedStudent($request);
+            $student = $this->getAuthorizedStudent($request, $studentId);
             if (!$student) {
                 return ApiResponse::error('Student not found or unauthorized', 404);
             }
@@ -130,9 +134,11 @@ class AttendanceController extends Controller
     /**
      * Helper to get authorized student
      */
-    private function getAuthorizedStudent(Request $request): ?StudentProfile
+    private function getAuthorizedStudent(Request $request, ?string $studentId = null): ?StudentProfile
     {
-        $studentId = $request->input('student_id');
+        // Use URL parameter if provided, otherwise fall back to query parameter
+        $studentId = $studentId ?? $request->input('student_id');
+        
         if (!$studentId) {
             return null;
         }

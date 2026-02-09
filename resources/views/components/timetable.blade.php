@@ -7,7 +7,7 @@
 ])
 
 @php
-    $dayLabel = fn(string $day) => ucfirst($day);
+    $dayLabel = fn(string $day) => __('components.' . ucfirst($day));
     $periodNumbers = range(1, max(1, (int) $periods));
 @endphp
 

@@ -10,7 +10,11 @@ interface GuardianLeaveRequestRepositoryInterface
 
     public function getLeaveRequestDetail(string $requestId): array;
 
+    public function getLeaveRequestDetailForStudent(string $requestId, string $studentId): ?array;
+
     public function createLeaveRequest(StudentProfile $student, string $guardianId, array $data): array;
+
+    public function createBulkLeaveRequests(array $studentIds, string $guardianId, array $data): array;
 
     public function updateLeaveRequest(string $requestId, array $data): array;
 

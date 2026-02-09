@@ -82,4 +82,20 @@ class StudentProfile extends Model
     {
         return $this->belongsTo(SchoolClass::class, 'class_id');
     }
+
+    /**
+     * Check if student is male leader of their class.
+     */
+    public function isMaleLeader(): bool
+    {
+        return $this->classModel && $this->classModel->male_class_leader_id === $this->id;
+    }
+
+    /**
+     * Check if student is female leader of their class.
+     */
+    public function isFemaleLeader(): bool
+    {
+        return $this->classModel && $this->classModel->female_class_leader_id === $this->id;
+    }
 }

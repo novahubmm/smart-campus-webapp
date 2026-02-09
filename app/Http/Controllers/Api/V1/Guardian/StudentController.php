@@ -293,6 +293,91 @@ class StudentController extends Controller
     }
 
     /**
+     * Get GPA Trends
+     * GET /api/v1/guardian/students/{id}/gpa-trends?months={months}
+     */
+    public function gpaTrends(Request $request, string $id): JsonResponse
+    {
+        $request->validate([
+            'months' => 'nullable|integer|min:1|max:24',
+        ]);
+
+        try {
+            $student = $this->getAuthorizedStudent($request, $id);
+            if (!$student) {
+                return ApiResponse::error('Student not found or unauthorized', 404);
+            }
+
+            $months = $request->input('months', 12);
+            $trends = $this->studentRepository->getGPATrends($student, $months);
+
+            return ApiResponse::success($trends);
+        } catch (\Exception $e) {
+            return ApiResponse::error('Failed to retrieve GPA trends: ' . $e->getMessage(), 500);
+        }
+    }
+
+    /**
+     * Get Performance Analysis
+     * GET /api/v1/guardian/students/{id}/performance-analysis
+     */
+    public function performanceAnalysis(Request $request, string $id): JsonResponse
+    {
+        try {
+            $student = $this->getAuthorizedStudent($request, $id);
+            if (!$student) {
+                return ApiResponse::error('Student not found or unauthorized', 404);
+            }
+
+            $analysis = $this->studentRepository->getPerformanceAnalysis($student);
+
+            return ApiResponse::success($analysis);
+        } catch (\Exception $e) {
+            return ApiResponse::error('Failed to retrieve performance analysis: ' . $e->getMessage(), 500);
+        }
+    }
+
+    /**
+     * Get Subject Strengths and Weaknesses
+     * GET /api/v1/guardian/students/{id}/subject-strengths-weaknesses
+     */
+    public function subjectStrengthsWeaknesses(Request $request, string $id): JsonResponse
+    {
+        try {
+            $student = $this->getAuthorizedStudent($request, $id);
+            if (!$student) {
+                return ApiResponse::error('Student not found or unauthorized', 404);
+            }
+
+            $data = $this->studentRepository->getSubjectStrengthsWeaknesses($student);
+
+            return ApiResponse::success($data);
+        } catch (\Exception $e) {
+            return ApiResponse::error('Failed to retrieve subject analysis: ' . $e->getMessage(), 500);
+        }
+    }
+
+    /**
+     * Get Academic Badges
+     * GET /api/v1/guardian/students/{id}/badges
+     */
+    public function badges(Request $request, string $id): JsonResponse
+    {
+        try {
+            $student = $this->getAuthorizedStudent($request, $id);
+            if (!$student) {
+                return ApiResponse::error('Student not found or unauthorized', 404);
+            }
+
+            $badges = $this->studentRepository->getAcademicBadges($student);
+
+            return ApiResponse::success($badges);
+        } catch (\Exception $e) {
+            return ApiResponse::error('Failed to retrieve badges: ' . $e->getMessage(), 500);
+        }
+    }
+
+    /**
      * Helper to get authorized student
      */
     private function getAuthorizedStudent(Request $request, string $studentId): ?StudentProfile

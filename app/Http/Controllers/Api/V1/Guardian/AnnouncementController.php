@@ -18,17 +18,18 @@ class AnnouncementController extends Controller
     /**
      * Get Announcements List
      * GET /api/v1/guardian/announcements?student_id={id}&category={category}&is_read={boolean}
+     * GET /api/v1/guardian/students/{student_id}/announcements?category={category}&is_read={boolean} (NEW)
      */
-    public function index(Request $request): JsonResponse
+    public function index(Request $request, ?string $studentId = null): JsonResponse
     {
         $request->validate([
-            'student_id' => 'required|string',
+            'student_id' => $studentId ? 'nullable|string' : 'required|string',
             'category' => 'nullable|string',
             'is_read' => 'nullable|boolean',
         ]);
 
         try {
-            $student = $this->getAuthorizedStudent($request);
+            $student = $this->getAuthorizedStudent($request, $studentId);
             if (!$student) {
                 return ApiResponse::error('Student not found or unauthorized', 404);
             }
@@ -47,8 +48,9 @@ class AnnouncementController extends Controller
     /**
      * Get Announcement Detail
      * GET /api/v1/guardian/announcements/{id}
+     * GET /api/v1/guardian/students/{student_id}/announcements/{id} (NEW)
      */
-    public function show(Request $request, string $id): JsonResponse
+    public function show(Request $request, string $id, ?string $studentId = null): JsonResponse
     {
         try {
             $announcement = $this->announcementRepository->getAnnouncementDetail($id);
@@ -62,8 +64,9 @@ class AnnouncementController extends Controller
     /**
      * Mark Announcement as Read
      * POST /api/v1/guardian/announcements/{id}/read
+     * POST /api/v1/guardian/students/{student_id}/announcements/{id}/read (NEW)
      */
-    public function markAsRead(Request $request, string $id): JsonResponse
+    public function markAsRead(Request $request, string $id, ?string $studentId = null): JsonResponse
     {
         try {
             $guardianId = $request->user()->guardianProfile?->id;
@@ -83,8 +86,9 @@ class AnnouncementController extends Controller
     /**
      * Mark All Announcements as Read
      * POST /api/v1/guardian/announcements/mark-all-read
+     * POST /api/v1/guardian/students/{student_id}/announcements/mark-all-read (NEW)
      */
-    public function markAllAsRead(Request $request): JsonResponse
+    public function markAllAsRead(Request $request, ?string $studentId = null): JsonResponse
     {
         try {
             $guardianId = $request->user()->guardianProfile?->id;
@@ -101,9 +105,11 @@ class AnnouncementController extends Controller
         }
     }
 
-    private function getAuthorizedStudent(Request $request): ?StudentProfile
+    private function getAuthorizedStudent(Request $request, ?string $studentId = null): ?StudentProfile
     {
-        $studentId = $request->input('student_id');
+        // Use URL parameter if provided, otherwise fall back to query parameter
+        $studentId = $studentId ?? $request->input('student_id');
+        
         if (!$studentId) {
             return null;
         }

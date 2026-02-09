@@ -29,4 +29,13 @@ interface GuardianStudentRepositoryInterface
     public function updateNote(string $noteId, array $data): \App\Models\GuardianNote;
 
     public function deleteNote(string $noteId): bool;
+
+    // Enhanced methods for academic performance
+    public function getGPATrends(StudentProfile $student, int $months = 12): array;
+
+    public function getPerformanceAnalysis(StudentProfile $student): array;
+
+    public function getSubjectStrengthsWeaknesses(StudentProfile $student): array;
+
+    public function getAcademicBadges(StudentProfile $student): array;
 }

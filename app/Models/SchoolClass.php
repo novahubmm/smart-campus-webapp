@@ -23,6 +23,8 @@ class SchoolClass extends Model
         'teacher_id',
         'room_id',
         'class_leader_id',
+        'male_class_leader_id',
+        'female_class_leader_id',
     ];
 
     /**
@@ -31,6 +33,22 @@ class SchoolClass extends Model
     public function classLeader(): BelongsTo
     {
         return $this->belongsTo(StudentProfile::class, 'class_leader_id');
+    }
+
+    /**
+     * Get the male class leader (student).
+     */
+    public function maleLeader(): BelongsTo
+    {
+        return $this->belongsTo(StudentProfile::class, 'male_class_leader_id');
+    }
+
+    /**
+     * Get the female class leader (student).
+     */
+    public function femaleLeader(): BelongsTo
+    {
+        return $this->belongsTo(StudentProfile::class, 'female_class_leader_id');
     }
 
     /**

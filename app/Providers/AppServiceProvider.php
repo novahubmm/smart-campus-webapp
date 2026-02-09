@@ -225,6 +225,11 @@ class AppServiceProvider extends ServiceProvider
             \App\Interfaces\Guardian\GuardianSettingsRepositoryInterface::class,
             \App\Repositories\Guardian\GuardianSettingsRepository::class
         );
+
+        $this->app->bind(
+            \App\Interfaces\Guardian\GuardianPaymentRepositoryInterface::class,
+            \App\Repositories\Guardian\GuardianPaymentRepository::class
+        );
     }
 
     /**

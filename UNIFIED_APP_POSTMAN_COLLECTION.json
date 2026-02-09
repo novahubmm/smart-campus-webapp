@@ -1,9 +1,9 @@
 {
     "info": {
         "name": "SmartCampus Unified App API",
-        "description": "Complete API collection for Unified Teacher-Guardian Mobile App",
+        "description": "Complete API collection for Unified Teacher-Guardian Mobile App with RESTful URLs",
         "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
-        "version": "1.0.0"
+        "version": "2.0.0"
     },
     "variable": [
         {
@@ -19,6 +19,56 @@
         {
             "key": "user_type",
             "value": "",
+            "type": "string"
+        },
+        {
+            "key": "student_id",
+            "value": "1",
+            "type": "string"
+        },
+        {
+            "key": "subject_id",
+            "value": "1",
+            "type": "string"
+        },
+        {
+            "key": "homework_id",
+            "value": "1",
+            "type": "string"
+        },
+        {
+            "key": "exam_id",
+            "value": "1",
+            "type": "string"
+        },
+        {
+            "key": "fee_id",
+            "value": "1",
+            "type": "string"
+        },
+        {
+            "key": "payment_id",
+            "value": "1",
+            "type": "string"
+        },
+        {
+            "key": "request_id",
+            "value": "1",
+            "type": "string"
+        },
+        {
+            "key": "announcement_id",
+            "value": "1",
+            "type": "string"
+        },
+        {
+            "key": "chapter_id",
+            "value": "1",
+            "type": "string"
+        },
+        {
+            "key": "report_card_id",
+            "value": "1",
             "type": "string"
         }
     ],
@@ -567,6 +617,1791 @@
             "name": "Guardian Specific",
             "item": [
                 {
+                    "name": "RESTful Endpoints (NEW)",
+                    "description": "New RESTful URL structure with student_id in path. Use these for new development.",
+                    "item": [
+                        {
+                            "name": "Attendance",
+                            "item": [
+                                {
+                                    "name": "Get Attendance Records (RESTful)",
+                                    "request": {
+                                        "method": "GET",
+                                        "header": [
+                                            {
+                                                "key": "Accept",
+                                                "value": "application/json"
+                                            }
+                                        ],
+                                        "url": {
+                                            "raw": "{{base_url}}/guardian/students/{{student_id}}/attendance?month=2&year=2026",
+                                            "host": [
+                                                "{{base_url}}"
+                                            ],
+                                            "path": [
+                                                "guardian",
+                                                "students",
+                                                "{{student_id}}",
+                                                "attendance"
+                                            ],
+                                            "query": [
+                                                {
+                                                    "key": "month",
+                                                    "value": "2"
+                                                },
+                                                {
+                                                    "key": "year",
+                                                    "value": "2026"
+                                                }
+                                            ]
+                                        },
+                                        "description": "Get student attendance records for a specific month"
+                                    }
+                                },
+                                {
+                                    "name": "Get Attendance Summary (RESTful)",
+                                    "request": {
+                                        "method": "GET",
+                                        "header": [
+                                            {
+                                                "key": "Accept",
+                                                "value": "application/json"
+                                            }
+                                        ],
+                                        "url": {
+                                            "raw": "{{base_url}}/guardian/students/{{student_id}}/attendance/summary?month=2&year=2026",
+                                            "host": [
+                                                "{{base_url}}"
+                                            ],
+                                            "path": [
+                                                "guardian",
+                                                "students",
+                                                "{{student_id}}",
+                                                "attendance",
+                                                "summary"
+                                            ],
+                                            "query": [
+                                                {
+                                                    "key": "month",
+                                                    "value": "2"
+                                                },
+                                                {
+                                                    "key": "year",
+                                                    "value": "2026"
+                                                }
+                                            ]
+                                        },
+                                        "description": "Get attendance summary with statistics"
+                                    }
+                                },
+                                {
+                                    "name": "Get Attendance Calendar (RESTful)",
+                                    "request": {
+                                        "method": "GET",
+                                        "header": [
+                                            {
+                                                "key": "Accept",
+                                                "value": "application/json"
+                                            }
+                                        ],
+                                        "url": {
+                                            "raw": "{{base_url}}/guardian/students/{{student_id}}/attendance/calendar?month=2&year=2026",
+                                            "host": [
+                                                "{{base_url}}"
+                                            ],
+                                            "path": [
+                                                "guardian",
+                                                "students",
+                                                "{{student_id}}",
+                                                "attendance",
+                                                "calendar"
+                                            ],
+                                            "query": [
+                                                {
+                                                    "key": "month",
+                                                    "value": "2"
+                                                },
+                                                {
+                                                    "key": "year",
+                                                    "value": "2026"
+                                                }
+                                            ]
+                                        },
+                                        "description": "Get attendance calendar view"
+                                    }
+                                },
+                                {
+                                    "name": "Get Attendance Stats (RESTful)",
+                                    "request": {
+                                        "method": "GET",
+                                        "header": [
+                                            {
+                                                "key": "Accept",
+                                                "value": "application/json"
+                                            }
+                                        ],
+                                        "url": {
+                                            "raw": "{{base_url}}/guardian/students/{{student_id}}/attendance/stats",
+                                            "host": [
+                                                "{{base_url}}"
+                                            ],
+                                            "path": [
+                                                "guardian",
+                                                "students",
+                                                "{{student_id}}",
+                                                "attendance",
+                                                "stats"
+                                            ]
+                                        },
+                                        "description": "Get overall attendance statistics"
+                                    }
+                                }
+                            ]
+                        },
+                        {
+                            "name": "Exams",
+                            "item": [
+                                {
+                                    "name": "Get Exams List (RESTful)",
+                                    "request": {
+                                        "method": "GET",
+                                        "header": [
+                                            {
+                                                "key": "Accept",
+                                                "value": "application/json"
+                                            }
+                                        ],
+                                        "url": {
+                                            "raw": "{{base_url}}/guardian/students/{{student_id}}/exams?subject_id=",
+                                            "host": [
+                                                "{{base_url}}"
+                                            ],
+                                            "path": [
+                                                "guardian",
+                                                "students",
+                                                "{{student_id}}",
+                                                "exams"
+                                            ],
+                                            "query": [
+                                                {
+                                                    "key": "subject_id",
+                                                    "value": ""
+                                                }
+                                            ]
+                                        },
+                                        "description": "Get all exams for student"
+                                    }
+                                },
+                                {
+                                    "name": "Get Upcoming Exams (RESTful)",
+                                    "request": {
+                                        "method": "GET",
+                                        "header": [
+                                            {
+                                                "key": "Accept",
+                                                "value": "application/json"
+                                            }
+                                        ],
+                                        "url": {
+                                            "raw": "{{base_url}}/guardian/students/{{student_id}}/exams/upcoming",
+                                            "host": [
+                                                "{{base_url}}"
+                                            ],
+                                            "path": [
+                                                "guardian",
+                                                "students",
+                                                "{{student_id}}",
+                                                "exams",
+                                                "upcoming"
+                                            ]
+                                        },
+                                        "description": "Get upcoming exams with countdown"
+                                    }
+                                },
+                                {
+                                    "name": "Get Past Exams (RESTful)",
+                                    "request": {
+                                        "method": "GET",
+                                        "header": [
+                                            {
+                                                "key": "Accept",
+                                                "value": "application/json"
+                                            }
+                                        ],
+                                        "url": {
+                                            "raw": "{{base_url}}/guardian/students/{{student_id}}/exams/past?limit=10",
+                                            "host": [
+                                                "{{base_url}}"
+                                            ],
+                                            "path": [
+                                                "guardian",
+                                                "students",
+                                                "{{student_id}}",
+                                                "exams",
+                                                "past"
+                                            ],
+                                            "query": [
+                                                {
+                                                    "key": "limit",
+                                                    "value": "10"
+                                                }
+                                            ]
+                                        },
+                                        "description": "Get past exams with results"
+                                    }
+                                },
+                                {
+                                    "name": "Get Performance Trends (RESTful)",
+                                    "request": {
+                                        "method": "GET",
+                                        "header": [
+                                            {
+                                                "key": "Accept",
+                                                "value": "application/json"
+                                            }
+                                        ],
+                                        "url": {
+                                            "raw": "{{base_url}}/guardian/students/{{student_id}}/exams/performance-trends?subject_id=",
+                                            "host": [
+                                                "{{base_url}}"
+                                            ],
+                                            "path": [
+                                                "guardian",
+                                                "students",
+                                                "{{student_id}}",
+                                                "exams",
+                                                "performance-trends"
+                                            ],
+                                            "query": [
+                                                {
+                                                    "key": "subject_id",
+                                                    "value": ""
+                                                }
+                                            ]
+                                        },
+                                        "description": "Get exam performance trends with analysis"
+                                    }
+                                },
+                                {
+                                    "name": "Compare Exams (RESTful)",
+                                    "request": {
+                                        "method": "POST",
+                                        "header": [
+                                            {
+                                                "key": "Accept",
+                                                "value": "application/json"
+                                            },
+                                            {
+                                                "key": "Content-Type",
+                                                "value": "application/json"
+                                            }
+                                        ],
+                                        "url": {
+                                            "raw": "{{base_url}}/guardian/students/{{student_id}}/exams/compare",
+                                            "host": [
+                                                "{{base_url}}"
+                                            ],
+                                            "path": [
+                                                "guardian",
+                                                "students",
+                                                "{{student_id}}",
+                                                "exams",
+                                                "compare"
+                                            ]
+                                        },
+                                        "body": {
+                                            "mode": "raw",
+                                            "raw": "{\n    \"exam_ids\": [\n        \"1\",\n        \"2\",\n        \"3\"\n    ]\n}"
+                                        },
+                                        "description": "Compare multiple exams side-by-side"
+                                    }
+                                },
+                                {
+                                    "name": "Get Exam Results (RESTful)",
+                                    "request": {
+                                        "method": "GET",
+                                        "header": [
+                                            {
+                                                "key": "Accept",
+                                                "value": "application/json"
+                                            }
+                                        ],
+                                        "url": {
+                                            "raw": "{{base_url}}/guardian/students/{{student_id}}/exams/{{exam_id}}/results",
+                                            "host": [
+                                                "{{base_url}}"
+                                            ],
+                                            "path": [
+                                                "guardian",
+                                                "students",
+                                                "{{student_id}}",
+                                                "exams",
+                                                "1",
+                                                "results"
+                                            ]
+                                        },
+                                        "description": "Get detailed results for a specific exam"
+                                    }
+                                }
+                            ]
+                        },
+                        {
+                            "name": "Homework",
+                            "item": [
+                                {
+                                    "name": "Get Homework List (RESTful)",
+                                    "request": {
+                                        "method": "GET",
+                                        "header": [
+                                            {
+                                                "key": "Accept",
+                                                "value": "application/json"
+                                            }
+                                        ],
+                                        "url": {
+                                            "raw": "{{base_url}}/guardian/students/{{student_id}}/homework?status=pending&subject_id=",
+                                            "host": [
+                                                "{{base_url}}"
+                                            ],
+                                            "path": [
+                                                "guardian",
+                                                "students",
+                                                "{{student_id}}",
+                                                "homework"
+                                            ],
+                                            "query": [
+                                                {
+                                                    "key": "status",
+                                                    "value": "pending"
+                                                },
+                                                {
+                                                    "key": "subject_id",
+                                                    "value": ""
+                                                }
+                                            ]
+                                        },
+                                        "description": "Get homework list with filters"
+                                    }
+                                },
+                                {
+                                    "name": "Get Homework Detail (RESTful)",
+                                    "request": {
+                                        "method": "GET",
+                                        "header": [
+                                            {
+                                                "key": "Accept",
+                                                "value": "application/json"
+                                            }
+                                        ],
+                                        "url": {
+                                            "raw": "{{base_url}}/guardian/students/{{student_id}}/homework/{{homework_id}}",
+                                            "host": [
+                                                "{{base_url}}"
+                                            ],
+                                            "path": [
+                                                "guardian",
+                                                "students",
+                                                "{{student_id}}",
+                                                "homework",
+                                                "1"
+                                            ]
+                                        },
+                                        "description": "Get detailed homework information"
+                                    }
+                                },
+                                {
+                                    "name": "Get Homework Stats (RESTful)",
+                                    "request": {
+                                        "method": "GET",
+                                        "header": [
+                                            {
+                                                "key": "Accept",
+                                                "value": "application/json"
+                                            }
+                                        ],
+                                        "url": {
+                                            "raw": "{{base_url}}/guardian/students/{{student_id}}/homework/stats",
+                                            "host": [
+                                                "{{base_url}}"
+                                            ],
+                                            "path": [
+                                                "guardian",
+                                                "students",
+                                                "{{student_id}}",
+                                                "homework",
+                                                "stats"
+                                            ]
+                                        },
+                                        "description": "Get homework statistics"
+                                    }
+                                },
+                                {
+                                    "name": "Submit Homework (RESTful)",
+                                    "request": {
+                                        "method": "POST",
+                                        "header": [
+                                            {
+                                                "key": "Accept",
+                                                "value": "application/json"
+                                            },
+                                            {
+                                                "key": "Content-Type",
+                                                "value": "application/json"
+                                            }
+                                        ],
+                                        "url": {
+                                            "raw": "{{base_url}}/guardian/students/{{student_id}}/homework/{{homework_id}}/submit",
+                                            "host": [
+                                                "{{base_url}}"
+                                            ],
+                                            "path": [
+                                                "guardian",
+                                                "students",
+                                                "{{student_id}}",
+                                                "homework",
+                                                "1",
+                                                "submit"
+                                            ]
+                                        },
+                                        "body": {
+                                            "mode": "raw",
+                                            "raw": "{\n    \"notes\": \"Homework completed\",\n    \"photos\": []\n}"
+                                        },
+                                        "description": "Submit homework with notes and photos"
+                                    }
+                                },
+                                {
+                                    "name": "Update Homework Status (RESTful)",
+                                    "request": {
+                                        "method": "PUT",
+                                        "header": [
+                                            {
+                                                "key": "Accept",
+                                                "value": "application/json"
+                                            },
+                                            {
+                                                "key": "Content-Type",
+                                                "value": "application/json"
+                                            }
+                                        ],
+                                        "url": {
+                                            "raw": "{{base_url}}/guardian/students/{{student_id}}/homework/{{homework_id}}/status",
+                                            "host": [
+                                                "{{base_url}}"
+                                            ],
+                                            "path": [
+                                                "guardian",
+                                                "students",
+                                                "{{student_id}}",
+                                                "homework",
+                                                "1",
+                                                "status"
+                                            ]
+                                        },
+                                        "body": {
+                                            "mode": "raw",
+                                            "raw": "{\n    \"status\": \"completed\"\n}"
+                                        },
+                                        "description": "Update homework completion status"
+                                    }
+                                }
+                            ]
+                        },
+                        {
+                            "name": "Timetable",
+                            "item": [
+                                {
+                                    "name": "Get Full Timetable (RESTful)",
+                                    "request": {
+                                        "method": "GET",
+                                        "header": [
+                                            {
+                                                "key": "Accept",
+                                                "value": "application/json"
+                                            }
+                                        ],
+                                        "url": {
+                                            "raw": "{{base_url}}/guardian/students/{{student_id}}/timetable",
+                                            "host": [
+                                                "{{base_url}}"
+                                            ],
+                                            "path": [
+                                                "guardian",
+                                                "students",
+                                                "{{student_id}}",
+                                                "timetable"
+                                            ]
+                                        },
+                                        "description": "Get complete weekly timetable"
+                                    }
+                                },
+                                {
+                                    "name": "Get Day Timetable (RESTful)",
+                                    "request": {
+                                        "method": "GET",
+                                        "header": [
+                                            {
+                                                "key": "Accept",
+                                                "value": "application/json"
+                                            }
+                                        ],
+                                        "url": {
+                                            "raw": "{{base_url}}/guardian/students/{{student_id}}/timetable/day?day=Monday",
+                                            "host": [
+                                                "{{base_url}}"
+                                            ],
+                                            "path": [
+                                                "guardian",
+                                                "students",
+                                                "{{student_id}}",
+                                                "timetable",
+                                                "day"
+                                            ],
+                                            "query": [
+                                                {
+                                                    "key": "day",
+                                                    "value": "Monday"
+                                                }
+                                            ]
+                                        },
+                                        "description": "Get timetable for specific day"
+                                    }
+                                },
+                                {
+                                    "name": "Get Class Info (RESTful)",
+                                    "request": {
+                                        "method": "GET",
+                                        "header": [
+                                            {
+                                                "key": "Accept",
+                                                "value": "application/json"
+                                            }
+                                        ],
+                                        "url": {
+                                            "raw": "{{base_url}}/guardian/students/{{student_id}}/class-info",
+                                            "host": [
+                                                "{{base_url}}"
+                                            ],
+                                            "path": [
+                                                "guardian",
+                                                "students",
+                                                "{{student_id}}",
+                                                "class-info"
+                                            ]
+                                        },
+                                        "description": "Get basic class information"
+                                    }
+                                },
+                                {
+                                    "name": "Get Detailed Class Info (RESTful)",
+                                    "request": {
+                                        "method": "GET",
+                                        "header": [
+                                            {
+                                                "key": "Accept",
+                                                "value": "application/json"
+                                            }
+                                        ],
+                                        "url": {
+                                            "raw": "{{base_url}}/guardian/students/{{student_id}}/class-details",
+                                            "host": [
+                                                "{{base_url}}"
+                                            ],
+                                            "path": [
+                                                "guardian",
+                                                "students",
+                                                "{{student_id}}",
+                                                "class-details"
+                                            ]
+                                        },
+                                        "description": "Get detailed class information with students and teachers"
+                                    }
+                                },
+                                {
+                                    "name": "Get Class Teachers (RESTful)",
+                                    "request": {
+                                        "method": "GET",
+                                        "header": [
+                                            {
+                                                "key": "Accept",
+                                                "value": "application/json"
+                                            }
+                                        ],
+                                        "url": {
+                                            "raw": "{{base_url}}/guardian/students/{{student_id}}/class-teachers",
+                                            "host": [
+                                                "{{base_url}}"
+                                            ],
+                                            "path": [
+                                                "guardian",
+                                                "students",
+                                                "{{student_id}}",
+                                                "class-teachers"
+                                            ]
+                                        },
+                                        "description": "Get list of class teachers"
+                                    }
+                                },
+                                {
+                                    "name": "Get Class Statistics (RESTful)",
+                                    "request": {
+                                        "method": "GET",
+                                        "header": [
+                                            {
+                                                "key": "Accept",
+                                                "value": "application/json"
+                                            }
+                                        ],
+                                        "url": {
+                                            "raw": "{{base_url}}/guardian/students/{{student_id}}/class-statistics",
+                                            "host": [
+                                                "{{base_url}}"
+                                            ],
+                                            "path": [
+                                                "guardian",
+                                                "students",
+                                                "{{student_id}}",
+                                                "class-statistics"
+                                            ]
+                                        },
+                                        "description": "Get class performance statistics"
+                                    }
+                                }
+                            ]
+                        },
+                        {
+                            "name": "Fees",
+                            "item": [
+                                {
+                                    "name": "Get All Fees (RESTful)",
+                                    "request": {
+                                        "method": "GET",
+                                        "header": [
+                                            {
+                                                "key": "Accept",
+                                                "value": "application/json"
+                                            }
+                                        ],
+                                        "url": {
+                                            "raw": "{{base_url}}/guardian/students/{{student_id}}/fees?status=&per_page=10",
+                                            "host": [
+                                                "{{base_url}}"
+                                            ],
+                                            "path": [
+                                                "guardian",
+                                                "students",
+                                                "{{student_id}}",
+                                                "fees"
+                                            ],
+                                            "query": [
+                                                {
+                                                    "key": "status",
+                                                    "value": ""
+                                                },
+                                                {
+                                                    "key": "per_page",
+                                                    "value": "10"
+                                                }
+                                            ]
+                                        },
+                                        "description": "Get all fee records with pagination"
+                                    }
+                                },
+                                {
+                                    "name": "Get Pending Fee (RESTful)",
+                                    "request": {
+                                        "method": "GET",
+                                        "header": [
+                                            {
+                                                "key": "Accept",
+                                                "value": "application/json"
+                                            }
+                                        ],
+                                        "url": {
+                                            "raw": "{{base_url}}/guardian/students/{{student_id}}/fees/pending",
+                                            "host": [
+                                                "{{base_url}}"
+                                            ],
+                                            "path": [
+                                                "guardian",
+                                                "students",
+                                                "{{student_id}}",
+                                                "fees",
+                                                "pending"
+                                            ]
+                                        },
+                                        "description": "Get current pending fee"
+                                    }
+                                },
+                                {
+                                    "name": "Get Fee Details (RESTful)",
+                                    "request": {
+                                        "method": "GET",
+                                        "header": [
+                                            {
+                                                "key": "Accept",
+                                                "value": "application/json"
+                                            }
+                                        ],
+                                        "url": {
+                                            "raw": "{{base_url}}/guardian/students/{{student_id}}/fees/{{fee_id}}",
+                                            "host": [
+                                                "{{base_url}}"
+                                            ],
+                                            "path": [
+                                                "guardian",
+                                                "students",
+                                                "{{student_id}}",
+                                                "fees",
+                                                "1"
+                                            ]
+                                        },
+                                        "description": "Get detailed fee information"
+                                    }
+                                },
+                                {
+                                    "name": "Initiate Payment (RESTful)",
+                                    "request": {
+                                        "method": "POST",
+                                        "header": [
+                                            {
+                                                "key": "Accept",
+                                                "value": "application/json"
+                                            },
+                                            {
+                                                "key": "Content-Type",
+                                                "value": "application/json"
+                                            }
+                                        ],
+                                        "url": {
+                                            "raw": "{{base_url}}/guardian/students/{{student_id}}/fees/{{fee_id}}/payment",
+                                            "host": [
+                                                "{{base_url}}"
+                                            ],
+                                            "path": [
+                                                "guardian",
+                                                "students",
+                                                "{{student_id}}",
+                                                "fees",
+                                                "1",
+                                                "payment"
+                                            ]
+                                        },
+                                        "body": {
+                                            "mode": "raw",
+                                            "raw": "{\n    \"payment_method\": \"easy_pay\",\n    \"amount\": 50000\n}"
+                                        },
+                                        "description": "Initiate fee payment"
+                                    }
+                                },
+                                {
+                                    "name": "Get Payment History (RESTful)",
+                                    "request": {
+                                        "method": "GET",
+                                        "header": [
+                                            {
+                                                "key": "Accept",
+                                                "value": "application/json"
+                                            }
+                                        ],
+                                        "url": {
+                                            "raw": "{{base_url}}/guardian/students/{{student_id}}/fees/payment-history?status=&per_page=10",
+                                            "host": [
+                                                "{{base_url}}"
+                                            ],
+                                            "path": [
+                                                "guardian",
+                                                "students",
+                                                "{{student_id}}",
+                                                "fees",
+                                                "payment-history"
+                                            ],
+                                            "query": [
+                                                {
+                                                    "key": "status",
+                                                    "value": ""
+                                                },
+                                                {
+                                                    "key": "per_page",
+                                                    "value": "10"
+                                                }
+                                            ]
+                                        },
+                                        "description": "Get payment history with pagination"
+                                    }
+                                },
+                                {
+                                    "name": "Get Payment Receipt (RESTful)",
+                                    "request": {
+                                        "method": "GET",
+                                        "header": [
+                                            {
+                                                "key": "Accept",
+                                                "value": "application/json"
+                                            }
+                                        ],
+                                        "url": {
+                                            "raw": "{{base_url}}/guardian/students/{{student_id}}/fees/receipts/{{payment_id}}",
+                                            "host": [
+                                                "{{base_url}}"
+                                            ],
+                                            "path": [
+                                                "guardian",
+                                                "students",
+                                                "{{student_id}}",
+                                                "fees",
+                                                "receipts",
+                                                "1"
+                                            ]
+                                        },
+                                        "description": "Get payment receipt details"
+                                    }
+                                },
+                                {
+                                    "name": "Download Receipt (RESTful)",
+                                    "request": {
+                                        "method": "GET",
+                                        "header": [
+                                            {
+                                                "key": "Accept",
+                                                "value": "application/json"
+                                            }
+                                        ],
+                                        "url": {
+                                            "raw": "{{base_url}}/guardian/students/{{student_id}}/fees/receipts/{{payment_id}}/download",
+                                            "host": [
+                                                "{{base_url}}"
+                                            ],
+                                            "path": [
+                                                "guardian",
+                                                "students",
+                                                "{{student_id}}",
+                                                "fees",
+                                                "receipts",
+                                                "1",
+                                                "download"
+                                            ]
+                                        },
+                                        "description": "Get receipt download URL"
+                                    }
+                                },
+                                {
+                                    "name": "Get Payment Summary (RESTful)",
+                                    "request": {
+                                        "method": "GET",
+                                        "header": [
+                                            {
+                                                "key": "Accept",
+                                                "value": "application/json"
+                                            }
+                                        ],
+                                        "url": {
+                                            "raw": "{{base_url}}/guardian/students/{{student_id}}/fees/summary?year=2026",
+                                            "host": [
+                                                "{{base_url}}"
+                                            ],
+                                            "path": [
+                                                "guardian",
+                                                "students",
+                                                "{{student_id}}",
+                                                "fees",
+                                                "summary"
+                                            ],
+                                            "query": [
+                                                {
+                                                    "key": "year",
+                                                    "value": "2026"
+                                                }
+                                            ]
+                                        },
+                                        "description": "Get payment summary for year"
+                                    }
+                                },
+                                {
+                                    "name": "Get Fee Structure (RESTful)",
+                                    "request": {
+                                        "method": "GET",
+                                        "header": [
+                                            {
+                                                "key": "Accept",
+                                                "value": "application/json"
+                                            }
+                                        ],
+                                        "url": {
+                                            "raw": "{{base_url}}/guardian/students/{{student_id}}/fees/structure",
+                                            "host": [
+                                                "{{base_url}}"
+                                            ],
+                                            "path": [
+                                                "guardian",
+                                                "students",
+                                                "{{student_id}}",
+                                                "fees",
+                                                "structure"
+                                            ]
+                                        },
+                                        "description": "Get fee structure with payment methods and overdue fees"
+                                    }
+                                },
+                                {
+                                    "name": "Submit Payment (RESTful)",
+                                    "request": {
+                                        "method": "POST",
+                                        "header": [
+                                            {
+                                                "key": "Accept",
+                                                "value": "application/json"
+                                            },
+                                            {
+                                                "key": "Content-Type",
+                                                "value": "application/json"
+                                            }
+                                        ],
+                                        "url": {
+                                            "raw": "{{base_url}}/guardian/students/{{student_id}}/fees/payments",
+                                            "host": [
+                                                "{{base_url}}"
+                                            ],
+                                            "path": [
+                                                "guardian",
+                                                "students",
+                                                "{{student_id}}",
+                                                "fees",
+                                                "payments"
+                                            ]
+                                        },
+                                        "body": {
+                                            "mode": "raw",
+                                            "raw": "{\n    \"payment_method_id\": \"pm-001\",\n    \"amount\": 50000,\n    \"payment_date\": \"2026-02-09\",\n    \"transaction_id\": \"TXN123456\",\n    \"notes\": \"Payment for January fees\"\n}"
+                                        },
+                                        "description": "Submit a new payment"
+                                    }
+                                }
+                            ]
+                        },
+                        {
+                            "name": "Leave Requests",
+                            "item": [
+                                {
+                                    "name": "Get Leave Requests (RESTful)",
+                                    "request": {
+                                        "method": "GET",
+                                        "header": [
+                                            {
+                                                "key": "Accept",
+                                                "value": "application/json"
+                                            }
+                                        ],
+                                        "url": {
+                                            "raw": "{{base_url}}/guardian/students/{{student_id}}/leave-requests?status=pending",
+                                            "host": [
+                                                "{{base_url}}"
+                                            ],
+                                            "path": [
+                                                "guardian",
+                                                "students",
+                                                "{{student_id}}",
+                                                "leave-requests"
+                                            ],
+                                            "query": [
+                                                {
+                                                    "key": "status",
+                                                    "value": "pending"
+                                                }
+                                            ]
+                                        },
+                                        "description": "Get leave requests with status filter"
+                                    }
+                                },
+                                {
+                                    "name": "Get Leave Request Detail (RESTful)",
+                                    "request": {
+                                        "method": "GET",
+                                        "header": [
+                                            {
+                                                "key": "Accept",
+                                                "value": "application/json"
+                                            }
+                                        ],
+                                        "url": {
+                                            "raw": "{{base_url}}/guardian/students/{{student_id}}/leave-requests/{{request_id}}",
+                                            "host": [
+                                                "{{base_url}}"
+                                            ],
+                                            "path": [
+                                                "guardian",
+                                                "students",
+                                                "{{student_id}}",
+                                                "leave-requests",
+                                                "{{request_id}}"
+                                            ]
+                                        },
+                                        "description": "Get detailed leave request information"
+                                    }
+                                },
+                                {
+                                    "name": "Create Leave Request (RESTful)",
+                                    "request": {
+                                        "method": "POST",
+                                        "header": [
+                                            {
+                                                "key": "Accept",
+                                                "value": "application/json"
+                                            },
+                                            {
+                                                "key": "Content-Type",
+                                                "value": "application/json"
+                                            }
+                                        ],
+                                        "url": {
+                                            "raw": "{{base_url}}/guardian/students/{{student_id}}/leave-requests",
+                                            "host": [
+                                                "{{base_url}}"
+                                            ],
+                                            "path": [
+                                                "guardian",
+                                                "students",
+                                                "{{student_id}}",
+                                                "leave-requests"
+                                            ]
+                                        },
+                                        "body": {
+                                            "mode": "raw",
+                                            "raw": "{\n    \"leave_type\": \"sick\",\n    \"start_date\": \"2026-02-10\",\n    \"end_date\": \"2026-02-11\",\n    \"reason\": \"Student has fever\"\n}"
+                                        },
+                                        "description": "Submit new leave request"
+                                    }
+                                },
+                                {
+                                    "name": "Update Leave Request (RESTful)",
+                                    "request": {
+                                        "method": "PUT",
+                                        "header": [
+                                            {
+                                                "key": "Accept",
+                                                "value": "application/json"
+                                            },
+                                            {
+                                                "key": "Content-Type",
+                                                "value": "application/json"
+                                            }
+                                        ],
+                                        "url": {
+                                            "raw": "{{base_url}}/guardian/students/{{student_id}}/leave-requests/{{request_id}}",
+                                            "host": [
+                                                "{{base_url}}"
+                                            ],
+                                            "path": [
+                                                "guardian",
+                                                "students",
+                                                "{{student_id}}",
+                                                "leave-requests",
+                                                "{{request_id}}"
+                                            ]
+                                        },
+                                        "body": {
+                                            "mode": "raw",
+                                            "raw": "{\n    \"reason\": \"Updated reason\"\n}"
+                                        },
+                                        "description": "Update existing leave request"
+                                    }
+                                },
+                                {
+                                    "name": "Delete Leave Request (RESTful)",
+                                    "request": {
+                                        "method": "DELETE",
+                                        "header": [
+                                            {
+                                                "key": "Accept",
+                                                "value": "application/json"
+                                            }
+                                        ],
+                                        "url": {
+                                            "raw": "{{base_url}}/guardian/students/{{student_id}}/leave-requests/{{request_id}}",
+                                            "host": [
+                                                "{{base_url}}"
+                                            ],
+                                            "path": [
+                                                "guardian",
+                                                "students",
+                                                "{{student_id}}",
+                                                "leave-requests",
+                                                "{{request_id}}"
+                                            ]
+                                        },
+                                        "description": "Delete leave request"
+                                    }
+                                },
+                                {
+                                    "name": "Get Leave Stats (RESTful)",
+                                    "request": {
+                                        "method": "GET",
+                                        "header": [
+                                            {
+                                                "key": "Accept",
+                                                "value": "application/json"
+                                            }
+                                        ],
+                                        "url": {
+                                            "raw": "{{base_url}}/guardian/students/{{student_id}}/leave-requests/stats",
+                                            "host": [
+                                                "{{base_url}}"
+                                            ],
+                                            "path": [
+                                                "guardian",
+                                                "students",
+                                                "{{student_id}}",
+                                                "leave-requests",
+                                                "stats"
+                                            ]
+                                        },
+                                        "description": "Get leave request statistics"
+                                    }
+                                },
+                                {
+                                    "name": "Bulk Create Leave Requests (RESTful)",
+                                    "request": {
+                                        "method": "POST",
+                                        "header": [
+                                            {
+                                                "key": "Accept",
+                                                "value": "application/json"
+                                            },
+                                            {
+                                                "key": "Content-Type",
+                                                "value": "application/json"
+                                            }
+                                        ],
+                                        "url": {
+                                            "raw": "{{base_url}}/guardian/students/{{student_id}}/leave-requests/bulk",
+                                            "host": [
+                                                "{{base_url}}"
+                                            ],
+                                            "path": [
+                                                "guardian",
+                                                "students",
+                                                "{{student_id}}",
+                                                "leave-requests",
+                                                "bulk"
+                                            ]
+                                        },
+                                        "body": {
+                                            "mode": "raw",
+                                            "raw": "{\n    \"leave_type\": \"sick\",\n    \"start_date\": \"2026-02-10\",\n    \"end_date\": \"2026-02-14\",\n    \"reason\": \"Student has fever\",\n    \"half_day\": false\n}"
+                                        },
+                                        "description": "Create leave requests for multiple consecutive days"
+                                    }
+                                }
+                            ]
+                        },
+                        {
+                            "name": "Announcements",
+                            "item": [
+                                {
+                                    "name": "Get Announcements (RESTful)",
+                                    "request": {
+                                        "method": "GET",
+                                        "header": [
+                                            {
+                                                "key": "Accept",
+                                                "value": "application/json"
+                                            }
+                                        ],
+                                        "url": {
+                                            "raw": "{{base_url}}/guardian/students/{{student_id}}/announcements?category=&is_read=",
+                                            "host": [
+                                                "{{base_url}}"
+                                            ],
+                                            "path": [
+                                                "guardian",
+                                                "students",
+                                                "{{student_id}}",
+                                                "announcements"
+                                            ],
+                                            "query": [
+                                                {
+                                                    "key": "category",
+                                                    "value": ""
+                                                },
+                                                {
+                                                    "key": "is_read",
+                                                    "value": ""
+                                                }
+                                            ]
+                                        },
+                                        "description": "Get announcements with filters"
+                                    }
+                                },
+                                {
+                                    "name": "Get Announcement Detail (RESTful)",
+                                    "request": {
+                                        "method": "GET",
+                                        "header": [
+                                            {
+                                                "key": "Accept",
+                                                "value": "application/json"
+                                            }
+                                        ],
+                                        "url": {
+                                            "raw": "{{base_url}}/guardian/students/{{student_id}}/announcements/1",
+                                            "host": [
+                                                "{{base_url}}"
+                                            ],
+                                            "path": [
+                                                "guardian",
+                                                "students",
+                                                "{{student_id}}",
+                                                "announcements",
+                                                "1"
+                                            ]
+                                        },
+                                        "description": "Get detailed announcement"
+                                    }
+                                },
+                                {
+                                    "name": "Mark as Read (RESTful)",
+                                    "request": {
+                                        "method": "POST",
+                                        "header": [
+                                            {
+                                                "key": "Accept",
+                                                "value": "application/json"
+                                            },
+                                            {
+                                                "key": "Content-Type",
+                                                "value": "application/json"
+                                            }
+                                        ],
+                                        "url": {
+                                            "raw": "{{base_url}}/guardian/students/{{student_id}}/announcements/1/read",
+                                            "host": [
+                                                "{{base_url}}"
+                                            ],
+                                            "path": [
+                                                "guardian",
+                                                "students",
+                                                "{{student_id}}",
+                                                "announcements",
+                                                "1",
+                                                "read"
+                                            ]
+                                        },
+                                        "description": "Mark announcement as read"
+                                    }
+                                },
+                                {
+                                    "name": "Mark All as Read (RESTful)",
+                                    "request": {
+                                        "method": "POST",
+                                        "header": [
+                                            {
+                                                "key": "Accept",
+                                                "value": "application/json"
+                                            },
+                                            {
+                                                "key": "Content-Type",
+                                                "value": "application/json"
+                                            }
+                                        ],
+                                        "url": {
+                                            "raw": "{{base_url}}/guardian/students/{{student_id}}/announcements/mark-all-read",
+                                            "host": [
+                                                "{{base_url}}"
+                                            ],
+                                            "path": [
+                                                "guardian",
+                                                "students",
+                                                "{{student_id}}",
+                                                "announcements",
+                                                "mark-all-read"
+                                            ]
+                                        },
+                                        "description": "Mark all announcements as read"
+                                    }
+                                }
+                            ]
+                        },
+                        {
+                            "name": "Curriculum",
+                            "item": [
+                                {
+                                    "name": "Get Curriculum Overview (RESTful)",
+                                    "request": {
+                                        "method": "GET",
+                                        "header": [
+                                            {
+                                                "key": "Accept",
+                                                "value": "application/json"
+                                            }
+                                        ],
+                                        "url": {
+                                            "raw": "{{base_url}}/guardian/students/{{student_id}}/curriculum",
+                                            "host": [
+                                                "{{base_url}}"
+                                            ],
+                                            "path": [
+                                                "guardian",
+                                                "students",
+                                                "{{student_id}}",
+                                                "curriculum"
+                                            ]
+                                        },
+                                        "description": "Get curriculum overview"
+                                    }
+                                },
+                                {
+                                    "name": "Get Subject Curriculum (RESTful)",
+                                    "request": {
+                                        "method": "GET",
+                                        "header": [
+                                            {
+                                                "key": "Accept",
+                                                "value": "application/json"
+                                            }
+                                        ],
+                                        "url": {
+                                            "raw": "{{base_url}}/guardian/students/{{student_id}}/subjects/{{subject_id}}/curriculum",
+                                            "host": [
+                                                "{{base_url}}"
+                                            ],
+                                            "path": [
+                                                "guardian",
+                                                "students",
+                                                "{{student_id}}",
+                                                "subjects",
+                                                "{{subject_id}}",
+                                                "curriculum"
+                                            ]
+                                        },
+                                        "description": "Get curriculum for specific subject"
+                                    }
+                                },
+                                {
+                                    "name": "Get Chapters (RESTful)",
+                                    "request": {
+                                        "method": "GET",
+                                        "header": [
+                                            {
+                                                "key": "Accept",
+                                                "value": "application/json"
+                                            }
+                                        ],
+                                        "url": {
+                                            "raw": "{{base_url}}/guardian/students/{{student_id}}/curriculum/chapters?subject_id={{subject_id}}",
+                                            "host": [
+                                                "{{base_url}}"
+                                            ],
+                                            "path": [
+                                                "guardian",
+                                                "students",
+                                                "{{student_id}}",
+                                                "curriculum",
+                                                "chapters"
+                                            ],
+                                            "query": [
+                                                {
+                                                    "key": "subject_id",
+                                                    "value": "{{subject_id}}"
+                                                }
+                                            ]
+                                        },
+                                        "description": "Get chapters for subject"
+                                    }
+                                },
+                                {
+                                    "name": "Get Chapter Detail (RESTful)",
+                                    "request": {
+                                        "method": "GET",
+                                        "header": [
+                                            {
+                                                "key": "Accept",
+                                                "value": "application/json"
+                                            }
+                                        ],
+                                        "url": {
+                                            "raw": "{{base_url}}/guardian/students/{{student_id}}/curriculum/chapters/{{chapter_id}}",
+                                            "host": [
+                                                "{{base_url}}"
+                                            ],
+                                            "path": [
+                                                "guardian",
+                                                "students",
+                                                "{{student_id}}",
+                                                "curriculum",
+                                                "chapters",
+                                                "{{chapter_id}}"
+                                            ]
+                                        },
+                                        "description": "Get detailed chapter information"
+                                    }
+                                }
+                            ]
+                        },
+                        {
+                            "name": "Report Cards",
+                            "item": [
+                                {
+                                    "name": "Get Report Cards (RESTful)",
+                                    "request": {
+                                        "method": "GET",
+                                        "header": [
+                                            {
+                                                "key": "Accept",
+                                                "value": "application/json"
+                                            }
+                                        ],
+                                        "url": {
+                                            "raw": "{{base_url}}/guardian/students/{{student_id}}/report-cards",
+                                            "host": [
+                                                "{{base_url}}"
+                                            ],
+                                            "path": [
+                                                "guardian",
+                                                "students",
+                                                "{{student_id}}",
+                                                "report-cards"
+                                            ]
+                                        },
+                                        "description": "Get all report cards"
+                                    }
+                                },
+                                {
+                                    "name": "Get Report Card Detail (RESTful)",
+                                    "request": {
+                                        "method": "GET",
+                                        "header": [
+                                            {
+                                                "key": "Accept",
+                                                "value": "application/json"
+                                            }
+                                        ],
+                                        "url": {
+                                            "raw": "{{base_url}}/guardian/students/{{student_id}}/report-cards/1",
+                                            "host": [
+                                                "{{base_url}}"
+                                            ],
+                                            "path": [
+                                                "guardian",
+                                                "students",
+                                                "{{student_id}}",
+                                                "report-cards",
+                                                "1"
+                                            ]
+                                        },
+                                        "description": "Get detailed report card"
+                                    }
+                                }
+                            ]
+                        },
+                        {
+                            "name": "Dashboard",
+                            "item": [
+                                {
+                                    "name": "Get Dashboard (RESTful)",
+                                    "request": {
+                                        "method": "GET",
+                                        "header": [
+                                            {
+                                                "key": "Accept",
+                                                "value": "application/json"
+                                            }
+                                        ],
+                                        "url": {
+                                            "raw": "{{base_url}}/guardian/students/{{student_id}}/dashboard",
+                                            "host": [
+                                                "{{base_url}}"
+                                            ],
+                                            "path": [
+                                                "guardian",
+                                                "students",
+                                                "{{student_id}}",
+                                                "dashboard"
+                                            ]
+                                        },
+                                        "description": "Get complete dashboard data"
+                                    }
+                                },
+                                {
+                                    "name": "Get Today's Schedule (RESTful)",
+                                    "request": {
+                                        "method": "GET",
+                                        "header": [
+                                            {
+                                                "key": "Accept",
+                                                "value": "application/json"
+                                            }
+                                        ],
+                                        "url": {
+                                            "raw": "{{base_url}}/guardian/students/{{student_id}}/today-schedule",
+                                            "host": [
+                                                "{{base_url}}"
+                                            ],
+                                            "path": [
+                                                "guardian",
+                                                "students",
+                                                "{{student_id}}",
+                                                "today-schedule"
+                                            ]
+                                        },
+                                        "description": "Get today's class schedule"
+                                    }
+                                },
+                                {
+                                    "name": "Get Upcoming Homework (RESTful)",
+                                    "request": {
+                                        "method": "GET",
+                                        "header": [
+                                            {
+                                                "key": "Accept",
+                                                "value": "application/json"
+                                            }
+                                        ],
+                                        "url": {
+                                            "raw": "{{base_url}}/guardian/students/{{student_id}}/upcoming-homework?limit=5",
+                                            "host": [
+                                                "{{base_url}}"
+                                            ],
+                                            "path": [
+                                                "guardian",
+                                                "students",
+                                                "{{student_id}}",
+                                                "upcoming-homework"
+                                            ],
+                                            "query": [
+                                                {
+                                                    "key": "limit",
+                                                    "value": "5"
+                                                }
+                                            ]
+                                        },
+                                        "description": "Get upcoming homework"
+                                    }
+                                },
+                                {
+                                    "name": "Get Recent Announcements (RESTful)",
+                                    "request": {
+                                        "method": "GET",
+                                        "header": [
+                                            {
+                                                "key": "Accept",
+                                                "value": "application/json"
+                                            }
+                                        ],
+                                        "url": {
+                                            "raw": "{{base_url}}/guardian/students/{{student_id}}/announcements/recent?limit=5",
+                                            "host": [
+                                                "{{base_url}}"
+                                            ],
+                                            "path": [
+                                                "guardian",
+                                                "students",
+                                                "{{student_id}}",
+                                                "announcements",
+                                                "recent"
+                                            ],
+                                            "query": [
+                                                {
+                                                    "key": "limit",
+                                                    "value": "5"
+                                                }
+                                            ]
+                                        },
+                                        "description": "Get recent announcements"
+                                    }
+                                },
+                                {
+                                    "name": "Get Fee Reminder (RESTful)",
+                                    "request": {
+                                        "method": "GET",
+                                        "header": [
+                                            {
+                                                "key": "Accept",
+                                                "value": "application/json"
+                                            }
+                                        ],
+                                        "url": {
+                                            "raw": "{{base_url}}/guardian/students/{{student_id}}/fee-reminder",
+                                            "host": [
+                                                "{{base_url}}"
+                                            ],
+                                            "path": [
+                                                "guardian",
+                                                "students",
+                                                "{{student_id}}",
+                                                "fee-reminder"
+                                            ]
+                                        },
+                                        "description": "Get fee payment reminder"
+                                    }
+                                },
+                                {
+                                    "name": "Get Current Class (RESTful)",
+                                    "request": {
+                                        "method": "GET",
+                                        "header": [
+                                            {
+                                                "key": "Accept",
+                                                "value": "application/json"
+                                            }
+                                        ],
+                                        "url": {
+                                            "raw": "{{base_url}}/guardian/students/{{student_id}}/dashboard/current-class",
+                                            "host": [
+                                                "{{base_url}}"
+                                            ],
+                                            "path": [
+                                                "guardian",
+                                                "students",
+                                                "{{student_id}}",
+                                                "dashboard",
+                                                "current-class"
+                                            ]
+                                        },
+                                        "description": "Get currently active class"
+                                    }
+                                }
+                            ]
+                        },
+                        {
+                            "name": "Subjects",
+                            "item": [
+                                {
+                                    "name": "Get Subjects List (RESTful)",
+                                    "request": {
+                                        "method": "GET",
+                                        "header": [
+                                            {
+                                                "key": "Accept",
+                                                "value": "application/json"
+                                            }
+                                        ],
+                                        "url": {
+                                            "raw": "{{base_url}}/guardian/students/{{student_id}}/subjects",
+                                            "host": [
+                                                "{{base_url}}"
+                                            ],
+                                            "path": [
+                                                "guardian",
+                                                "students",
+                                                "{{student_id}}",
+                                                "subjects"
+                                            ]
+                                        },
+                                        "description": "Get all subjects for student"
+                                    }
+                                },
+                                {
+                                    "name": "Get Subject Detail (RESTful)",
+                                    "request": {
+                                        "method": "GET",
+                                        "header": [
+                                            {
+                                                "key": "Accept",
+                                                "value": "application/json"
+                                            }
+                                        ],
+                                        "url": {
+                                            "raw": "{{base_url}}/guardian/students/{{student_id}}/subjects/{{subject_id}}",
+                                            "host": [
+                                                "{{base_url}}"
+                                            ],
+                                            "path": [
+                                                "guardian",
+                                                "students",
+                                                "{{student_id}}",
+                                                "subjects",
+                                                "{{subject_id}}"
+                                            ]
+                                        },
+                                        "description": "Get detailed subject information"
+                                    }
+                                },
+                                {
+                                    "name": "Get Subject Performance (RESTful)",
+                                    "request": {
+                                        "method": "GET",
+                                        "header": [
+                                            {
+                                                "key": "Accept",
+                                                "value": "application/json"
+                                            }
+                                        ],
+                                        "url": {
+                                            "raw": "{{base_url}}/guardian/students/{{student_id}}/subjects/{{subject_id}}/performance",
+                                            "host": [
+                                                "{{base_url}}"
+                                            ],
+                                            "path": [
+                                                "guardian",
+                                                "students",
+                                                "{{student_id}}",
+                                                "subjects",
+                                                "{{subject_id}}",
+                                                "performance"
+                                            ]
+                                        },
+                                        "description": "Get performance analysis for subject"
+                                    }
+                                },
+                                {
+                                    "name": "Get Subject Schedule (RESTful)",
+                                    "request": {
+                                        "method": "GET",
+                                        "header": [
+                                            {
+                                                "key": "Accept",
+                                                "value": "application/json"
+                                            }
+                                        ],
+                                        "url": {
+                                            "raw": "{{base_url}}/guardian/students/{{student_id}}/subjects/{{subject_id}}/schedule",
+                                            "host": [
+                                                "{{base_url}}"
+                                            ],
+                                            "path": [
+                                                "guardian",
+                                                "students",
+                                                "{{student_id}}",
+                                                "subjects",
+                                                "{{subject_id}}",
+                                                "schedule"
+                                            ]
+                                        },
+                                        "description": "Get class schedule for subject"
+                                    }
+                                },
+                                {
+                                    "name": "Get Subject Curriculum (RESTful)",
+                                    "request": {
+                                        "method": "GET",
+                                        "header": [
+                                            {
+                                                "key": "Accept",
+                                                "value": "application/json"
+                                            }
+                                        ],
+                                        "url": {
+                                            "raw": "{{base_url}}/guardian/students/{{student_id}}/subjects/{{subject_id}}/curriculum",
+                                            "host": [
+                                                "{{base_url}}"
+                                            ],
+                                            "path": [
+                                                "guardian",
+                                                "students",
+                                                "{{student_id}}",
+                                                "subjects",
+                                                "{{subject_id}}",
+                                                "curriculum"
+                                            ]
+                                        },
+                                        "description": "Get curriculum chapters, topics, and progress tracking for subject"
+                                    }
+                                }
+                            ]
+                        }
+                    ]
+                },
+                {
                     "name": "Get Students",
                     "request": {
                         "method": "GET",
@@ -586,7 +2421,7 @@
                                 "students"
                             ]
                         },
-                        "description": "Get guardian's children/wards"
+                        "description": "\u26a0\ufe0f DEPRECATED - Use RESTful endpoint instead. Get guardian's children/wards"
                     }
                 },
                 {
@@ -622,7 +2457,8 @@
                                     "value": "2026"
                                 }
                             ]
-                        }
+                        },
+                        "description": "\u26a0\ufe0f DEPRECATED - Use RESTful endpoint instead"
                     }
                 },
                 {
@@ -654,7 +2490,8 @@
                                     "value": "pending"
                                 }
                             ]
-                        }
+                        },
+                        "description": "\u26a0\ufe0f DEPRECATED - Use RESTful endpoint instead"
                     }
                 },
                 {
@@ -684,7 +2521,8 @@
                                 "guardian",
                                 "leave-requests"
                             ]
-                        }
+                        },
+                        "description": "\u26a0\ufe0f DEPRECATED - Use RESTful endpoint instead"
                     }
                 },
                 {
@@ -712,7 +2550,458 @@
                                     "value": "1"
                                 }
                             ]
-                        }
+                        },
+                        "description": "\u26a0\ufe0f DEPRECATED - Use RESTful endpoint instead"
+                    }
+                },
+                {
+                    "name": "Get Exams List",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/guardian/exams?student_id=1",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "guardian",
+                                "exams"
+                            ],
+                            "query": [
+                                {
+                                    "key": "student_id",
+                                    "value": "1"
+                                }
+                            ]
+                        },
+                        "description": "\u26a0\ufe0f DEPRECATED - Use RESTful endpoint instead. Get all exams for student"
+                    }
+                },
+                {
+                    "name": "Get Performance Trends",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/guardian/exams/performance-trends?student_id=1",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "guardian",
+                                "exams",
+                                "performance-trends"
+                            ],
+                            "query": [
+                                {
+                                    "key": "student_id",
+                                    "value": "1"
+                                },
+                                {
+                                    "key": "subject_id",
+                                    "value": "",
+                                    "disabled": true
+                                }
+                            ]
+                        },
+                        "description": "\u26a0\ufe0f DEPRECATED - Use RESTful endpoint instead. Get exam performance trends with analysis"
+                    }
+                },
+                {
+                    "name": "Get Upcoming Exams",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/guardian/exams/upcoming?student_id=1",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "guardian",
+                                "exams",
+                                "upcoming"
+                            ],
+                            "query": [
+                                {
+                                    "key": "student_id",
+                                    "value": "1"
+                                }
+                            ]
+                        },
+                        "description": "\u26a0\ufe0f DEPRECATED - Use RESTful endpoint instead. Get upcoming exams with countdown"
+                    }
+                },
+                {
+                    "name": "Get Past Exams",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/guardian/exams/past?student_id=1&limit=10",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "guardian",
+                                "exams",
+                                "past"
+                            ],
+                            "query": [
+                                {
+                                    "key": "student_id",
+                                    "value": "1"
+                                },
+                                {
+                                    "key": "limit",
+                                    "value": "10"
+                                }
+                            ]
+                        },
+                        "description": "\u26a0\ufe0f DEPRECATED - Use RESTful endpoint instead. Get past exams with results"
+                    }
+                },
+                {
+                    "name": "Compare Exams",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"student_id\": \"1\",\n    \"exam_ids\": [\"1\", \"2\", \"3\"]\n}"
+                        },
+                        "url": {
+                            "raw": "{{base_url}}/guardian/exams/compare",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "guardian",
+                                "exams",
+                                "compare"
+                            ]
+                        },
+                        "description": "\u26a0\ufe0f DEPRECATED - Use RESTful endpoint instead. Compare multiple exams side-by-side"
+                    }
+                },
+                {
+                    "name": "Get GPA Trends",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/guardian/students/1/gpa-trends?months=12",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "guardian",
+                                "students",
+                                "1",
+                                "gpa-trends"
+                            ],
+                            "query": [
+                                {
+                                    "key": "months",
+                                    "value": "12"
+                                }
+                            ]
+                        },
+                        "description": "\u26a0\ufe0f DEPRECATED - Use RESTful endpoint instead. Get GPA trends over time"
+                    }
+                },
+                {
+                    "name": "Get Performance Analysis",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/guardian/students/1/performance-analysis",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "guardian",
+                                "students",
+                                "1",
+                                "performance-analysis"
+                            ]
+                        },
+                        "description": "\u26a0\ufe0f DEPRECATED - Use RESTful endpoint instead. Get comprehensive performance analysis"
+                    }
+                },
+                {
+                    "name": "Get Subject Strengths & Weaknesses",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/guardian/students/1/subject-strengths-weaknesses",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "guardian",
+                                "students",
+                                "1",
+                                "subject-strengths-weaknesses"
+                            ]
+                        },
+                        "description": "\u26a0\ufe0f DEPRECATED - Use RESTful endpoint instead. Get top strengths and weaknesses by subject"
+                    }
+                },
+                {
+                    "name": "Get Academic Badges",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/guardian/students/1/badges",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "guardian",
+                                "students",
+                                "1",
+                                "badges"
+                            ]
+                        },
+                        "description": "\u26a0\ufe0f DEPRECATED - Use RESTful endpoint instead. Get earned academic badges"
+                    }
+                },
+                {
+                    "name": "Get Payment Receipt",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/guardian/fees/receipts/{{payment_id}}?student_id={{student_id}}",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "guardian",
+                                "fees",
+                                "receipts",
+                                "1"
+                            ],
+                            "query": [
+                                {
+                                    "key": "student_id",
+                                    "value": "1"
+                                }
+                            ]
+                        },
+                        "description": "\u26a0\ufe0f DEPRECATED - Use RESTful endpoint instead. Get payment receipt details"
+                    }
+                },
+                {
+                    "name": "Download Receipt",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/guardian/fees/receipts/{{payment_id}}/download?student_id={{student_id}}",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "guardian",
+                                "fees",
+                                "receipts",
+                                "1",
+                                "download"
+                            ],
+                            "query": [
+                                {
+                                    "key": "student_id",
+                                    "value": "1"
+                                }
+                            ]
+                        },
+                        "description": "\u26a0\ufe0f DEPRECATED - Use RESTful endpoint instead. Get receipt download URL"
+                    }
+                },
+                {
+                    "name": "Get Payment Summary",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/guardian/fees/summary?student_id=1&year=2026",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "guardian",
+                                "fees",
+                                "summary"
+                            ],
+                            "query": [
+                                {
+                                    "key": "student_id",
+                                    "value": "1"
+                                },
+                                {
+                                    "key": "year",
+                                    "value": "2026"
+                                }
+                            ]
+                        },
+                        "description": "\u26a0\ufe0f DEPRECATED - Use RESTful endpoint instead. Get yearly payment summary"
+                    }
+                },
+                {
+                    "name": "Get Detailed Class Info",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/guardian/class-details?student_id=1",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "guardian",
+                                "class-details"
+                            ],
+                            "query": [
+                                {
+                                    "key": "student_id",
+                                    "value": "1"
+                                }
+                            ]
+                        },
+                        "description": "\u26a0\ufe0f DEPRECATED - Use RESTful endpoint instead. Get comprehensive class information"
+                    }
+                },
+                {
+                    "name": "Get Class Teachers",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/guardian/class-teachers?student_id=1",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "guardian",
+                                "class-teachers"
+                            ],
+                            "query": [
+                                {
+                                    "key": "student_id",
+                                    "value": "1"
+                                }
+                            ]
+                        },
+                        "description": "\u26a0\ufe0f DEPRECATED - Use RESTful endpoint instead. Get all teachers teaching the class"
+                    }
+                },
+                {
+                    "name": "Get Class Statistics",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/guardian/class-statistics?student_id=1",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "guardian",
+                                "class-statistics"
+                            ],
+                            "query": [
+                                {
+                                    "key": "student_id",
+                                    "value": "1"
+                                }
+                            ]
+                        },
+                        "description": "\u26a0\ufe0f DEPRECATED - Use RESTful endpoint instead. Get class statistics"
                     }
                 }
             ]

@@ -197,12 +197,108 @@ class GuardianFeeRepository implements GuardianFeeRepositoryInterface
                 'transaction_id' => $payment->transaction_id,
                 'reference_number' => $payment->reference_number,
                 'paid_at' => $payment->payment_date?->toISOString(),
-                'receipt_url' => null, // TODO: Implement receipt generation
+                'receipt_url' => $payment->status ? route('api.v1.guardian.fees.receipt', ['payment_id' => $payment->id]) : null,
                 'notes' => $payment->notes,
             ];
         });
 
         return $payments;
+    }
+
+    public function generateReceipt(string $paymentId, StudentProfile $student): array
+    {
+        $payment = Payment::where('id', $paymentId)
+            ->where('student_id', $student->id)
+            ->where('status', true) // Only completed payments
+            ->with(['items.invoice.items.feeType'])
+            ->first();
+
+        if (!$payment) {
+            throw new \Exception('Payment not found or not completed');
+        }
+
+        $invoice = $payment->items->first()?->invoice;
+
+        return [
+            'receipt_number' => $payment->payment_number,
+            'payment_id' => $payment->id,
+            'student' => [
+                'id' => $student->id,
+                'name' => $student->user?->name ?? 'N/A',
+                'student_id' => $student->student_identifier ?? $student->student_id,
+                'grade' => $student->grade?->name ?? 'N/A',
+                'section' => $student->classModel?->section ?? 'N/A',
+            ],
+            'payment_details' => [
+                'amount' => (float) $payment->amount,
+                'currency' => 'MMK',
+                'payment_method' => $payment->payment_method,
+                'transaction_id' => $payment->transaction_id,
+                'reference_number' => $payment->reference_number,
+                'payment_date' => $payment->payment_date->format('Y-m-d H:i:s'),
+            ],
+            'invoice_details' => $invoice ? [
+                'invoice_number' => $invoice->invoice_number,
+                'invoice_date' => $invoice->invoice_date->format('Y-m-d'),
+                'term' => $this->getInvoiceTerm($invoice),
+                'items' => $invoice->items->map(function ($item) {
+                    return [
+                        'description' => $item->feeType?->name ?? $item->description,
+                        'amount' => (float) $item->amount,
+                    ];
+                })->toArray(),
+            ] : null,
+            'school_info' => [
+                'name' => config('app.name', 'SmartCampus School'),
+                'address' => 'School Address Here',
+                'phone' => 'School Phone Here',
+                'email' => 'school@example.com',
+            ],
+            'generated_at' => Carbon::now()->toISOString(),
+        ];
+    }
+
+    public function downloadReceipt(string $paymentId, StudentProfile $student): string
+    {
+        $receiptData = $this->generateReceipt($paymentId, $student);
+        
+        // In a real implementation, this would generate a PDF
+        // For now, return a URL to the receipt endpoint
+        return route('api.v1.guardian.fees.receipt', ['payment_id' => $paymentId]);
+    }
+
+    public function getPaymentSummary(StudentProfile $student, ?int $year = null): array
+    {
+        $year = $year ?? Carbon::now()->year;
+        $startDate = Carbon::create($year, 1, 1)->startOfDay();
+        $endDate = Carbon::create($year, 12, 31)->endOfDay();
+
+        // Get all invoices for the year
+        $invoices = Invoice::where('student_id', $student->id)
+            ->whereBetween('invoice_date', [$startDate, $endDate])
+            ->get();
+
+        // Calculate totals
+        // 'sent' and 'partial' are considered pending (not yet fully paid)
+        $pendingInvoices = $invoices->whereIn('status', ['sent', 'partial', 'draft']);
+        $overdueInvoices = $invoices->where('status', 'overdue');
+
+        $totalPending = (float) $pendingInvoices->sum('balance');
+        $totalOverdue = (float) $overdueInvoices->sum('balance');
+        $pendingCount = $pendingInvoices->count();
+        $overdueCount = $overdueInvoices->count();
+
+        // Get earliest due date from pending and overdue invoices
+        $unpaidInvoices = $invoices->whereIn('status', ['sent', 'partial', 'draft', 'overdue']);
+        $earliestDueDate = $unpaidInvoices->min('due_date');
+
+        return [
+            'total_pending' => $totalPending,
+            'total_overdue' => $totalOverdue,
+            'earliest_due_date' => $earliestDueDate ? Carbon::parse($earliestDueDate)->format('Y-m-d') : null,
+            'pending_count' => $pendingCount,
+            'overdue_count' => $overdueCount,
+        ];
     }
 
     private function getInvoiceTerm(Invoice $invoice): string

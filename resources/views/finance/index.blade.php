@@ -305,6 +305,53 @@
                     </div>
                 </div>
 
+                <!-- Daily P&L Table -->
+                <div class="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl shadow-sm mb-6">
+                    <div class="flex flex-wrap items-center justify-between gap-3 p-4 border-b border-gray-200 dark:border-gray-700">
+                        <h3 class="text-lg font-semibold text-gray-900 dark:text-white">{{ __('finance.Daily Profit & Loss') }}</h3>
+                        <span class="text-sm text-gray-500 dark:text-gray-400">{{ $filter->periodLabel() }}</span>
+                    </div>
+                    <div class="overflow-x-auto">
+                        <table class="min-w-full finance-table">
+                            <thead class="bg-gray-50 dark:bg-gray-900">
+                                <tr>
+                                    <th class="th-cell">{{ __('finance.Date') }}</th>
+                                    <th class="th-cell text-right">{{ __('finance.Income') }}</th>
+                                    <th class="th-cell text-right">{{ __('finance.Expenses') }}</th>
+                                    <th class="th-cell text-right">{{ __('finance.Net') }}</th>
+                                </tr>
+                            </thead>
+                            <tbody class="divide-y divide-gray-200 dark:divide-gray-700">
+                                @forelse($dailyBreakdown as $day)
+                                <tr class="bg-white dark:bg-gray-900 hover:bg-gray-50 dark:hover:bg-gray-800/50">
+                                    <td class="td-cell font-medium text-gray-900 dark:text-white">{{ \Carbon\Carbon::parse($day['date'])->format('M j, Y (D)') }}</td>
+                                    <td class="td-cell text-right text-green-600 dark:text-green-400">{{ number_format($day['income'] ?? 0, 0) }} MMK</td>
+                                    <td class="td-cell text-right text-red-600 dark:text-red-400">{{ number_format($day['expenses'] ?? 0, 0) }} MMK</td>
+                                    <td class="td-cell text-right font-semibold {{ ($day['net'] ?? 0) >= 0 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400' }}">{{ number_format($day['net'] ?? 0, 0) }} MMK</td>
+                                </tr>
+                                @empty
+                                <tr>
+                                    <td colspan="4" class="td-empty">
+                                        <div class="flex flex-col items-center py-8">
+                                            <i class="fas fa-inbox text-4xl text-gray-300 dark:text-gray-600 mb-3"></i>
+                                            <p class="text-gray-500 dark:text-gray-400">{{ __('finance.No daily data available for selected month') }}</p>
+                                        </div>
+                                    </td>
+                                </tr>
+                                @endforelse
+                                @if(count($dailyBreakdown) > 0)
+                                <tr class="bg-gray-100 dark:bg-gray-800 font-bold">
+                                    <td class="td-cell text-gray-900 dark:text-white">{{ __('finance.Total') }}</td>
+                                    <td class="td-cell text-right text-green-600 dark:text-green-400">{{ number_format($summary['total_income'] ?? 0, 0) }} MMK</td>
+                                    <td class="td-cell text-right text-red-600 dark:text-red-400">{{ number_format($summary['total_expenses'] ?? 0, 0) }} MMK</td>
+                                    <td class="td-cell text-right {{ ($summary['net'] ?? 0) >= 0 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400' }}">{{ number_format($summary['net'] ?? 0, 0) }} MMK</td>
+                                </tr>
+                                @endif
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
                 <!-- Monthly P&L Table -->
                 <div class="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl shadow-sm mb-6">
                     <div class="flex flex-wrap items-center justify-between gap-3 p-4 border-b border-gray-200 dark:border-gray-700">

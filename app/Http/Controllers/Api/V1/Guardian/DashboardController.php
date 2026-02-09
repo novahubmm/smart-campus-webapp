@@ -18,11 +18,12 @@ class DashboardController extends Controller
     /**
      * Get Home Dashboard
      * GET /api/v1/guardian/home/dashboard?student_id={id}
+     * GET /api/v1/guardian/students/{student_id}/dashboard (NEW)
      */
-    public function dashboard(Request $request): JsonResponse
+    public function dashboard(Request $request, ?string $studentId = null): JsonResponse
     {
         try {
-            $student = $this->getAuthorizedStudent($request);
+            $student = $this->getAuthorizedStudent($request, $studentId);
             if (!$student) {
                 return ApiResponse::error('Student not found or unauthorized', 404);
             }
@@ -38,11 +39,12 @@ class DashboardController extends Controller
     /**
      * Get Today's Schedule
      * GET /api/v1/guardian/today-schedule?student_id={id}
+     * GET /api/v1/guardian/students/{student_id}/today-schedule (NEW)
      */
-    public function todaySchedule(Request $request): JsonResponse
+    public function todaySchedule(Request $request, ?string $studentId = null): JsonResponse
     {
         try {
-            $student = $this->getAuthorizedStudent($request);
+            $student = $this->getAuthorizedStudent($request, $studentId);
             if (!$student) {
                 return ApiResponse::error('Student not found or unauthorized', 404);
             }
@@ -58,11 +60,12 @@ class DashboardController extends Controller
     /**
      * Get Upcoming Homework
      * GET /api/v1/guardian/upcoming-homework?student_id={id}&limit={limit}
+     * GET /api/v1/guardian/students/{student_id}/upcoming-homework?limit={limit} (NEW)
      */
-    public function upcomingHomework(Request $request): JsonResponse
+    public function upcomingHomework(Request $request, ?string $studentId = null): JsonResponse
     {
         try {
-            $student = $this->getAuthorizedStudent($request);
+            $student = $this->getAuthorizedStudent($request, $studentId);
             if (!$student) {
                 return ApiResponse::error('Student not found or unauthorized', 404);
             }
@@ -79,11 +82,12 @@ class DashboardController extends Controller
     /**
      * Get Recent Announcements
      * GET /api/v1/guardian/announcements/recent?student_id={id}
+     * GET /api/v1/guardian/students/{student_id}/announcements/recent (NEW)
      */
-    public function recentAnnouncements(Request $request): JsonResponse
+    public function recentAnnouncements(Request $request, ?string $studentId = null): JsonResponse
     {
         try {
-            $student = $this->getAuthorizedStudent($request);
+            $student = $this->getAuthorizedStudent($request, $studentId);
             if (!$student) {
                 return ApiResponse::error('Student not found or unauthorized', 404);
             }
@@ -100,11 +104,12 @@ class DashboardController extends Controller
     /**
      * Get Fee Reminder
      * GET /api/v1/guardian/fee-reminder?student_id={id}
+     * GET /api/v1/guardian/students/{student_id}/fee-reminder (NEW)
      */
-    public function feeReminder(Request $request): JsonResponse
+    public function feeReminder(Request $request, ?string $studentId = null): JsonResponse
     {
         try {
-            $student = $this->getAuthorizedStudent($request);
+            $student = $this->getAuthorizedStudent($request, $studentId);
             if (!$student) {
                 return ApiResponse::error('Student not found or unauthorized', 404);
             }
@@ -120,11 +125,12 @@ class DashboardController extends Controller
     /**
      * Get Current Live Class
      * GET /api/v1/guardian/dashboard/current-class?student_id={id}
+     * GET /api/v1/guardian/students/{student_id}/dashboard/current-class (NEW)
      */
-    public function currentClass(Request $request): JsonResponse
+    public function currentClass(Request $request, ?string $studentId = null): JsonResponse
     {
         try {
-            $student = $this->getAuthorizedStudent($request);
+            $student = $this->getAuthorizedStudent($request, $studentId);
             if (!$student) {
                 return ApiResponse::error('Student not found or unauthorized', 404);
             }
@@ -151,9 +157,11 @@ class DashboardController extends Controller
     /**
      * Helper to get authorized student
      */
-    private function getAuthorizedStudent(Request $request): ?StudentProfile
+    private function getAuthorizedStudent(Request $request, ?string $studentId = null): ?StudentProfile
     {
-        $studentId = $request->input('student_id');
+        // Use URL parameter if provided, otherwise fall back to query parameter
+        $studentId = $studentId ?? $request->input('student_id');
+        
         if (!$studentId) {
             return null;
         }

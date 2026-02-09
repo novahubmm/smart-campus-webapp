@@ -134,99 +134,100 @@
             </div>
 
             {{-- Modal Body --}}
-            <div class="p-6 overflow-y-auto max-h-[calc(95vh-140px)]" x-show="currentTimetable">
-                
-                {{-- Edit Mode Banner --}}
-                <div x-show="isEditMode" class="mb-4 p-3 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg">
-                    <div class="flex items-center gap-2 text-amber-700 dark:text-amber-300">
-                        <i class="fas fa-edit"></i>
-                        <span class="font-medium">{{ __('time_table.Edit Mode') }}</span>
-                        <span class="text-sm">- {{ __('time_table.Click on periods to edit times, click cells to assign subjects') }}</span>
+            <div class="overflow-y-auto" style="max-height: calc(95vh - 180px);" x-show="currentTimetable">
+                <div class="p-6">
+                    {{-- Edit Mode Banner --}}
+                    <div x-show="isEditMode" class="mb-4 p-3 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg">
+                        <div class="flex items-center gap-2 text-amber-700 dark:text-amber-300">
+                            <i class="fas fa-edit"></i>
+                            <span class="font-medium">{{ __('time_table.Edit Mode') }}</span>
+                            <span class="text-sm">- {{ __('time_table.Click on periods to edit times, click cells to assign subjects') }}</span>
+                        </div>
                     </div>
-                </div>
 
-                {{-- Periods Row --}}
-                <div class="mb-4 p-4 bg-gray-50 dark:bg-gray-900/30 rounded-lg border border-gray-200 dark:border-gray-700">
-                    <div class="flex flex-wrap gap-2 items-center">
-                        <template x-for="(period, pIdx) in currentTimetable?.periods || []" :key="pIdx">
-                            <div class="relative group">
-                                <div class="px-3 py-2 rounded-lg border text-sm font-medium transition-colors"
-                                     :class="[
-                                         period.is_break ? 'bg-amber-50 dark:bg-amber-900/30 border-amber-300 dark:border-amber-700 text-amber-800 dark:text-amber-200' : 'bg-white dark:bg-gray-800 border-gray-300 dark:border-gray-600 text-gray-900 dark:text-white',
-                                         isEditMode ? 'pr-8 cursor-pointer hover:border-blue-400' : ''
-                                     ]"
-                                     @click="isEditMode && editPeriodTime(pIdx)">
-                                    <span x-text="period.label + ': ' + formatTimeRange(period.starts_at, period.ends_at)"></span>
-                                </div>
-                                <template x-if="isEditMode && currentTimetable.periods.length > 1">
-                                    <button type="button" 
-                                        class="absolute top-1/2 right-1 -translate-y-1/2 w-5 h-5 rounded-full bg-red-500 text-white text-xs flex items-center justify-center opacity-80 hover:opacity-100"
-                                        @click.stop="removePeriod(pIdx)">
-                                        <i class="fas fa-times text-[10px]"></i>
-                                    </button>
-                                </template>
-                            </div>
-                        </template>
-                        <template x-if="isEditMode">
-                            <button type="button" class="px-3 py-2 rounded-lg border-2 border-dashed border-gray-300 dark:border-gray-600 text-gray-600 dark:text-gray-400 hover:border-blue-400 hover:text-blue-600 text-sm" @click="addPeriod('period')">
-                                <i class="fas fa-plus mr-1"></i>{{ __('time_table.Period') }}
-                            </button>
-                        </template>
-                        <template x-if="isEditMode">
-                            <button type="button" class="px-3 py-2 rounded-lg border-2 border-dashed border-amber-300 dark:border-amber-700 text-amber-600 dark:text-amber-400 hover:border-amber-400 text-sm" @click="addPeriod('break')">
-                                <i class="fas fa-coffee mr-1"></i>{{ __('time_table.Break') }}
-                            </button>
-                        </template>
-                    </div>
-                </div>
-
-                {{-- Schedule Grid --}}
-                <div class="overflow-x-auto">
-                    <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700 border border-gray-200 dark:border-gray-700 rounded-lg overflow-hidden">
-                        <thead class="bg-gray-50 dark:bg-gray-900/50">
-                            <tr>
-                                <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 dark:text-gray-300 uppercase w-28">{{ __('time_table.Period') }}</th>
-                                <template x-for="day in currentTimetable?.week_days || []" :key="day">
-                                    <th class="px-4 py-3 text-center text-xs font-semibold text-gray-600 dark:text-gray-300 uppercase" x-text="dayLabel(day)"></th>
-                                </template>
-                            </tr>
-                        </thead>
-                        <tbody class="divide-y divide-gray-200 dark:divide-gray-700 bg-white dark:bg-gray-800">
+                    {{-- Periods Row --}}
+                    <div class="mb-4 p-4 bg-gray-50 dark:bg-gray-900/30 rounded-lg border border-gray-200 dark:border-gray-700">
+                        <div class="flex flex-wrap gap-2 items-center">
                             <template x-for="(period, pIdx) in currentTimetable?.periods || []" :key="pIdx">
+                                <div class="relative group">
+                                    <div class="px-3 py-2 rounded-lg border text-sm font-medium transition-colors"
+                                         :class="[
+                                             period.is_break ? 'bg-amber-50 dark:bg-amber-900/30 border-amber-300 dark:border-amber-700 text-amber-800 dark:text-amber-200' : 'bg-white dark:bg-gray-800 border-gray-300 dark:border-gray-600 text-gray-900 dark:text-white',
+                                             isEditMode ? 'pr-8 cursor-pointer hover:border-blue-400' : ''
+                                         ]"
+                                         @click="isEditMode && editPeriodTime(pIdx)">
+                                        <span x-text="period.label + ': ' + formatTimeRange(period.starts_at, period.ends_at)"></span>
+                                    </div>
+                                    <template x-if="isEditMode && currentTimetable.periods.length > 1">
+                                        <button type="button" 
+                                            class="absolute top-1/2 right-1 -translate-y-1/2 w-5 h-5 rounded-full bg-red-500 text-white text-xs flex items-center justify-center opacity-80 hover:opacity-100"
+                                            @click.stop="removePeriod(pIdx)">
+                                            <i class="fas fa-times text-[10px]"></i>
+                                        </button>
+                                    </template>
+                                </div>
+                            </template>
+                            <template x-if="isEditMode">
+                                <button type="button" class="px-3 py-2 rounded-lg border-2 border-dashed border-gray-300 dark:border-gray-600 text-gray-600 dark:text-gray-400 hover:border-blue-400 hover:text-blue-600 text-sm" @click="addPeriod('period')">
+                                    <i class="fas fa-plus mr-1"></i>{{ __('time_table.Period') }}
+                                </button>
+                            </template>
+                            <template x-if="isEditMode">
+                                <button type="button" class="px-3 py-2 rounded-lg border-2 border-dashed border-amber-300 dark:border-amber-700 text-amber-600 dark:text-amber-400 hover:border-amber-400 text-sm" @click="addPeriod('break')">
+                                    <i class="fas fa-coffee mr-1"></i>{{ __('time_table.Break') }}
+                                </button>
+                            </template>
+                        </div>
+                    </div>
+
+                    {{-- Schedule Grid --}}
+                    <div class="overflow-x-auto">
+                        <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700 border border-gray-200 dark:border-gray-700 rounded-lg overflow-hidden">
+                            <thead class="bg-gray-50 dark:bg-gray-900/50 sticky top-0 z-10">
                                 <tr>
-                                    <td class="px-4 py-3 text-sm font-semibold" :class="period.is_break ? 'bg-amber-50 dark:bg-amber-900/20 text-amber-800 dark:text-amber-200' : 'bg-gray-50 dark:bg-gray-900/30 text-gray-900 dark:text-white'">
-                                        <div x-text="period.label"></div>
-                                        <div class="text-xs font-normal opacity-70" x-text="formatTimeRange(period.starts_at, period.ends_at)"></div>
-                                    </td>
-                                    <template x-for="day in currentTimetable?.week_days || []" :key="day + '-' + pIdx">
-                                        <td class="px-2 py-2 text-center">
-                                            <template x-if="period.is_break">
-                                                <div class="text-gray-400 dark:text-gray-500">—</div>
-                                            </template>
-                                            <template x-if="!period.is_break">
-                                                <div class="w-full min-h-[60px] rounded-lg border px-2 py-2 text-left text-sm transition-colors"
-                                                     :class="[
-                                                         hasEntry(day, pIdx) ? 'border-green-300 dark:border-green-700 bg-green-50 dark:bg-green-900/20' : 'border-gray-300 dark:border-gray-600',
-                                                         isEditMode ? 'border-dashed cursor-pointer hover:border-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20' : ''
-                                                     ]"
-                                                     @click="isEditMode && openSubjectModal(day, pIdx)">
-                                                    <template x-if="hasEntry(day, pIdx)">
-                                                        <div>
-                                                            <div class="font-medium text-gray-900 dark:text-white text-xs" x-text="getEntrySubject(day, pIdx)"></div>
-                                                            <div class="text-xs text-gray-500 dark:text-gray-400" x-text="getEntryTeacher(day, pIdx)"></div>
-                                                        </div>
-                                                    </template>
-                                                    <template x-if="!hasEntry(day, pIdx)">
-                                                        <div class="text-center text-gray-400 dark:text-gray-500" x-text="isEditMode ? '+' : '—'"></div>
-                                                    </template>
-                                                </div>
-                                            </template>
-                                        </td>
+                                    <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 dark:text-gray-300 uppercase w-28">{{ __('time_table.Period') }}</th>
+                                    <template x-for="day in currentTimetable?.week_days || []" :key="day">
+                                        <th class="px-4 py-3 text-center text-xs font-semibold text-gray-600 dark:text-gray-300 uppercase" x-text="dayLabel(day)"></th>
                                     </template>
                                 </tr>
-                            </template>
-                        </tbody>
-                    </table>
+                            </thead>
+                            <tbody class="divide-y divide-gray-200 dark:divide-gray-700 bg-white dark:bg-gray-800">
+                                <template x-for="(period, pIdx) in currentTimetable?.periods || []" :key="pIdx">
+                                    <tr>
+                                        <td class="px-4 py-3 text-sm font-semibold" :class="period.is_break ? 'bg-amber-50 dark:bg-amber-900/20 text-amber-800 dark:text-amber-200' : 'bg-gray-50 dark:bg-gray-900/30 text-gray-900 dark:text-white'">
+                                            <div x-text="period.label"></div>
+                                            <div class="text-xs font-normal opacity-70" x-text="formatTimeRange(period.starts_at, period.ends_at)"></div>
+                                        </td>
+                                        <template x-for="day in currentTimetable?.week_days || []" :key="day + '-' + pIdx">
+                                            <td class="px-2 py-2 text-center">
+                                                <template x-if="period.is_break">
+                                                    <div class="text-gray-400 dark:text-gray-500">—</div>
+                                                </template>
+                                                <template x-if="!period.is_break">
+                                                    <div class="w-full min-h-[60px] rounded-lg border px-2 py-2 text-left text-sm transition-colors"
+                                                         :class="[
+                                                             hasEntry(day, pIdx) ? 'border-green-300 dark:border-green-700 bg-green-50 dark:bg-green-900/20' : 'border-gray-300 dark:border-gray-600',
+                                                             isEditMode ? 'border-dashed cursor-pointer hover:border-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20' : ''
+                                                         ]"
+                                                         @click="isEditMode && openSubjectModal(day, pIdx)">
+                                                        <template x-if="hasEntry(day, pIdx)">
+                                                            <div>
+                                                                <div class="font-medium text-gray-900 dark:text-white text-xs" x-text="getEntrySubject(day, pIdx)"></div>
+                                                                <div class="text-xs text-gray-500 dark:text-gray-400" x-text="getEntryTeacher(day, pIdx)"></div>
+                                                            </div>
+                                                        </template>
+                                                        <template x-if="!hasEntry(day, pIdx)">
+                                                            <div class="text-center text-gray-400 dark:text-gray-500" x-text="isEditMode ? '+' : '—'"></div>
+                                                        </template>
+                                                    </div>
+                                                </template>
+                                            </td>
+                                        </template>
+                                    </tr>
+                                </template>
+                            </tbody>
+                        </table>
+                    </div>
                 </div>
             </div>
 
@@ -669,7 +670,15 @@ function timetableEditorModal() {
         },
 
         dayLabel(day) {
-            const map = { mon: 'Mon', tue: 'Tue', wed: 'Wed', thu: 'Thu', fri: 'Fri', sat: 'Sat', sun: 'Sun' };
+            const map = { 
+                mon: @json(__('components.Mon')), 
+                tue: @json(__('components.Tue')), 
+                wed: @json(__('components.Wed')), 
+                thu: @json(__('components.Thu')), 
+                fri: @json(__('components.Fri')), 
+                sat: @json(__('components.Sat')), 
+                sun: @json(__('components.Sun')) 
+            };
             return map[day] || day;
         },
 
