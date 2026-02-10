@@ -1,7 +1,7 @@
 <?php
 
 return array(
-    'Back to dashboard' => 'ဒက်ရှ်ဘုတ်သို့ပြန်သွား',
+    'Back to dashboard' => 'စီမံခန့်ခွဲမှုအနှစ်ချုပ်သို့ပြန်ရန်',
     'Maintenance Mode' => 'ပြုပြင်ထိန်းသိမ်းမှုမုဒ်',
     'Quick links' => 'အမြန်လင့်ခ်များ',
     'Run health checks before reenabling features' => 'လုပ်ဆောင်ချက်များပြန်ဖွင့်မီ ကျန်းမာရေးစစ်ဆေးမှုများလုပ်ဆောင်ပါ',

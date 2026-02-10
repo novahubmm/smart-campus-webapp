@@ -26,7 +26,7 @@ return [
     // Table Headers
     'Reports from Teachers' => 'ဆရာ/ဆရာမများထံမှ အစီရင်ခံစာများ',
     'Reports Sent to Teachers' => 'ဆရာ/ဆရာမများထံ ပေးပို့သော အစီရင်ခံစာများ',
-    'From' => 'မှ',
+    'From' => 'ပေးပို့သူ',
     'To' => 'သို့',
     'Subject' => 'ခေါင်းစဉ်',
     'Category' => 'အမျိုးအစား',
@@ -73,7 +73,7 @@ return [
     'Notice' => 'အသိပေးချက်',
     'Reminder' => 'သတိပေးချက်',
     'Request' => 'တောင်းဆိုချက်',
-    'Feedback' => 'တုံ့ပြန်ချက်',
+    'Feedback' => 'အကြံပြုလွှာ',
     'Report' => 'အစီရင်ခံစာ',
     'Suggestion' => 'အကြံပြုချက်',
     'Complaint' => 'တိုင်ကြားချက်',

@@ -7,7 +7,7 @@ return [
     'Back to home' => 'ပင်မစာမျက်နှာသို့ ပြန်သွားရန်',
     'Dark mode enabled' => 'အမှောင်မုဒ် ဖွင့်ထားသည်',
     'Error' => 'အမှား',
-    'Go to dashboard' => 'ဒက်ရှ်ဘုတ်သို့ သွားရန်',
+    'Go to dashboard' => 'စီမံခန့်ခွဲမှုအနှစ်ချုပ် သို့သွားရန်',
     'If you need immediate assistance, please contact our support team.' => 'ချက်ချင်းအကူအညီလိုပါက ကျွန်ုပ်တို့၏ အထောက်အပံ့အဖွဲ့ကို ဆက်သွယ်ပါ။',
     'Light mode enabled' => 'အလင်းမုဒ် ဖွင့်ထားသည်',
     'Login here' => 'ဤနေရာတွင် ဝင်ရောက်ရန်',

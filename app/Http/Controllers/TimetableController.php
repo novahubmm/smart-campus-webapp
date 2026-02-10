@@ -473,7 +473,17 @@ class TimetableController extends Controller
     {
         $validated = $request->validate([
             'subject_id' => 'nullable|exists:subjects,id',
-            'teacher_profile_id' => 'nullable|exists:teacher_profiles,id',
+            'teacher_profile_id' => [
+                'nullable',
+                'exists:teacher_profiles,id',
+                new \App\Rules\TeacherNotDoubleBooked(
+                    $period->day_of_week,
+                    $period->starts_at,
+                    $period->ends_at,
+                    $period->timetable_id,
+                    $period->id
+                ),
+            ],
             'is_break' => 'boolean',
         ]);
 

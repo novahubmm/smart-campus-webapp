@@ -114,7 +114,7 @@
     </style>
     @endpush
 
-    <div class="py-6 sm:py-10 overflow-x-hidden" x-data="studentFeeManager()">
+    <div class="py-6 sm:py-10 overflow-x-hidden" x-data="studentFeeManager()" x-init="init()">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-6">
             @if(session('status'))
                 <div class="rounded-lg border border-green-200 bg-green-50 px-4 py-3 text-green-800 dark:border-green-900/50 dark:bg-green-900/30 dark:text-green-100">
@@ -122,11 +122,18 @@
                 </div>
             @endif
 
+            @if(session('error'))
+                <div class="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-red-800 dark:border-red-900/50 dark:bg-red-900/30 dark:text-red-100">
+                    {{ session('error') }}
+                </div>
+            @endif
+
             <!-- Tabs Navigation -->
             <x-academic-tabs :tabs="[
                 'invoice' => __('finance.Fee Management'),
-                'structure' => __('finance.Fee Structure'),
                 'history' => __('finance.Payment History'),
+                'structure' => __('finance.Fee Structure'),
+                'payment-methods' => __('finance.Payment Methods'),
             ]" />
 
             <!-- Fee Management Tab -->
@@ -214,11 +221,11 @@
                                         </td>
                                         <td class="px-4 py-3 text-sm">
                                             <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium
-                                                @if($payment->payment_method === 'easy_pay') bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300
-                                                @elseif($payment->payment_method === 'bank_transfer') bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300
+                                                @if($payment->paymentMethod?->type === 'mobile_wallet') bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300
+                                                @elseif($payment->paymentMethod?->type === 'bank') bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300
                                                 @else bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300
                                                 @endif">
-                                                {{ ucfirst(str_replace('_', ' ', $payment->payment_method)) }}
+                                                {{ $payment->paymentMethod?->name ?? ucfirst(str_replace('_', ' ', $payment->payment_method)) }}
                                             </span>
                                         </td>
                                         <td class="px-4 py-3 text-sm text-gray-600 dark:text-gray-400">
@@ -278,18 +285,13 @@
                                     <option value="{{ $grade->id }}" {{ request('grade') == $grade->id ? 'selected' : '' }}>@gradeName($grade->level)</option>
                                 @endforeach
                             </select>
-                            <select name="status" class="form-select-sm">
-                                <option value="">{{ __('finance.All Status') }}</option>
-                                <option value="pending" {{ request('status') == 'pending' ? 'selected' : '' }}>{{ __('finance.Pending') }}</option>
-                                <option value="paid" {{ request('status') == 'paid' ? 'selected' : '' }}>{{ __('finance.Paid') }}</option>
-                            </select>
                             <input type="text" name="search" value="{{ request('search') }}" placeholder="{{ __('finance.Search by name or ID...') }}" class="form-input-sm">
                             <button type="submit" class="btn-filter">{{ __('finance.Apply') }}</button>
                             <a href="{{ route('student-fees.index') }}" class="btn-filter-reset">{{ __('finance.Reset') }}</a>
                         </form>
                     </div>
 
-                    <!-- Students Fee Table -->
+                    <!-- Invoices Fee Table -->
                     <div class="student-fee-table-wrapper">
                         <table class="divide-y divide-gray-200 dark:divide-gray-700 student-fee-table">
                             <thead class="bg-gray-50 dark:bg-gray-700">
@@ -298,88 +300,80 @@
                                     <th class="fee-sticky-col fee-sticky-col-2 px-4 py-3 text-left text-xs font-semibold text-gray-600 dark:text-gray-300 whitespace-nowrap bg-gray-50 dark:bg-gray-700">{{ __('finance.Student Name') }}</th>
                                     <th class="fee-sticky-col fee-sticky-col-3 px-4 py-3 text-left text-xs font-semibold text-gray-600 dark:text-gray-300 whitespace-nowrap bg-gray-50 dark:bg-gray-700">{{ __('finance.Student ID') }}</th>
                                     <th class="fee-sticky-col fee-sticky-col-4 px-4 py-3 text-left text-xs font-semibold text-gray-600 dark:text-gray-300 whitespace-nowrap bg-gray-50 dark:bg-gray-700">{{ __('finance.Grade/Class') }}</th>
+                                    <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 dark:text-gray-300 whitespace-nowrap">{{ __('finance.Invoice No') }}</th>
+                                    <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 dark:text-gray-300 whitespace-nowrap">{{ __('finance.Fee Type') }}</th>
                                     <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 dark:text-gray-300 whitespace-nowrap">{{ __('finance.Month') }}</th>
-                                    <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 dark:text-gray-300 whitespace-nowrap">{{ __('finance.Academic Year') }}</th>
                                     <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 dark:text-gray-300 whitespace-nowrap">{{ __('finance.Fee Amount') }}</th>
-                                    <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 dark:text-gray-300 whitespace-nowrap">{{ __('finance.Paid Amount') }}</th>
-                                    <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 dark:text-gray-300 whitespace-nowrap">{{ __('finance.Payment Date') }}</th>
-                                    <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 dark:text-gray-300 whitespace-nowrap">{{ __('finance.Payment Method') }}</th>
-                                    <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 dark:text-gray-300 whitespace-nowrap">{{ __('finance.Status') }}</th>
                                     <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 dark:text-gray-300 whitespace-nowrap">{{ __('finance.Actions') }}</th>
                                 </tr>
                             </thead>
                             <tbody class="divide-y divide-gray-200 dark:divide-gray-700">
-                                @php
-                                    // Get current academic year from batch or default
-                                    $academicYear = $batches->first()?->name ?? now()->format('Y');
-                                @endphp
-                                @forelse($students as $index => $student)
+                                @forelse($unpaidInvoices as $index => $invoice)
                                     @php
-                                        $feeAmount = $feeByGrade[$student->grade_id] ?? 0;
-                                        $studentInvoice = $invoices->where('student_id', $student->id)->where('invoice_date', '>=', now()->startOfMonth())->first();
-                                        $paidAmount = $studentInvoice ? ($studentInvoice->total_amount - $studentInvoice->balance) : 0;
-                                        $isPaid = $studentInvoice && $studentInvoice->status === 'paid';
-                                        $studentPayment = $payments->where('student_id', $student->id)->first();
+                                        $student = $invoice->student;
+                                        $feeType = $invoice->feeStructure?->feeType;
+                                        $hasRejectedProof = isset($rejectedProofsByInvoice[$invoice->id]);
+                                        $rejectedProof = $hasRejectedProof ? $rejectedProofsByInvoice[$invoice->id] : null;
                                     @endphp
-                                    <tr class="bg-white dark:bg-gray-900 hover:bg-gray-50 dark:hover:bg-gray-800/50">
-                                        <td class="td-cell text-center fee-sticky-col fee-sticky-col-1">{{ $students->firstItem() + $index }}</td>
+                                    <tr class="bg-white dark:bg-gray-900 hover:bg-gray-50 dark:hover:bg-gray-800/50 {{ $hasRejectedProof ? 'border-l-4 border-red-500' : '' }}">
+                                        <td class="td-cell text-center fee-sticky-col fee-sticky-col-1">{{ $unpaidInvoices->firstItem() + $index }}</td>
                                         <td class="td-cell fee-sticky-col fee-sticky-col-2">
                                             <div class="font-medium text-gray-900 dark:text-white">{{ $student->user?->name ?? '-' }}</div>
+                                            @if($hasRejectedProof)
+                                                <div class="flex items-center gap-1 mt-1">
+                                                    <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300">
+                                                        <i class="fas fa-times-circle mr-1"></i>
+                                                        {{ __('finance.Payment Rejected') }}
+                                                    </span>
+                                                </div>
+                                            @endif
                                         </td>
                                         <td class="td-cell text-gray-600 dark:text-gray-400 fee-sticky-col fee-sticky-col-3">{{ $student->student_identifier }}</td>
                                         <td class="td-cell fee-sticky-col fee-sticky-col-4">@gradeName($student->grade?->level ?? 0) / @className($student->classModel?->name ?? '-', $student->grade?->level)</td>
-                                        <td class="td-cell">{{ $currentMonth }}</td>
-                                        <td class="td-cell">{{ $academicYear }}</td>
-                                        <td class="td-cell font-semibold">{{ number_format($feeAmount, 0) }} MMK</td>
-                                        <td class="td-cell text-green-600 dark:text-green-400">{{ number_format($paidAmount, 0) }} MMK</td>
-                                        <td class="td-cell text-gray-600 dark:text-gray-400">{{ $studentPayment?->payment_date?->format('M j, Y') ?? '-' }}</td>
                                         <td class="td-cell">
-                                            @if($studentPayment?->payment_method)
-                                                <span class="payment-method-badge" data-method="{{ $studentPayment->payment_method }}">
-                                                    {{ ucfirst(str_replace('_', ' ', $studentPayment->payment_method)) }}
-                                                </span>
-                                            @else
-                                                <span class="text-gray-400">-</span>
+                                            <span class="font-mono text-xs text-gray-600 dark:text-gray-400">{{ $invoice->invoice_number ?? '-' }}</span>
+                                        </td>
+                                        <td class="td-cell">
+                                            <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-300">
+                                                {{ $feeType->name ?? '-' }}
+                                            </span>
+                                        </td>
+                                        <td class="td-cell">
+                                            <div>{{ $invoice->invoice_date?->format('F Y') ?? $currentMonth }}</div>
+                                            @if($hasRejectedProof && $rejectedProof->rejection_reason)
+                                                <div class="text-xs text-red-600 dark:text-red-400 mt-1">
+                                                    <i class="fas fa-info-circle"></i> {{ Str::limit($rejectedProof->rejection_reason, 30) }}
+                                                </div>
                                             @endif
                                         </td>
-                                        <!-- Status -->
-                                        <td class="td-cell border-r border-gray-100 dark:border-gray-800">
-                                            @if($isPaid)
-                                                <span class="status-badge paid">{{ __('finance.Paid') }}</span>
-                                            @elseif($studentInvoice)
-                                                <span class="status-badge partial">{{ __('finance.Pending') }}</span>
-                                            @else
-                                                <span class="status-badge draft">{{ __('finance.Not Invoiced') }}</span>
-                                            @endif
-                                        </td>
+                                        <td class="td-cell font-semibold">{{ number_format($invoice->total_amount, 0) }} MMK</td>
                                         <!-- Actions -->
                                         <td class="td-cell">
                                             <div class="flex items-center gap-1">
-                                                @if(!$isPaid && $feeAmount > 0)
-                                                    <button type="button" class="action-btn process" @click="openPaymentModal(@js(['student' => $student, 'amount' => $feeAmount, 'invoice' => $studentInvoice]))" title="{{ __('finance.Process Payment') }}">
-                                                        <i class="fas fa-credit-card"></i> {{ __('finance.Pay') }}
+                                                <button type="button" class="action-btn process" @click="openPaymentModal(@js(['student' => $student, 'amount' => $invoice->total_amount, 'invoice' => $invoice]))" title="{{ __('finance.Process Payment') }}">
+                                                    <i class="fas fa-credit-card"></i> {{ __('finance.Pay') }}
+                                                </button>
+                                                <button type="button" 
+                                                        onclick="showInvoiceHistory('{{ $invoice->id }}')" 
+                                                        class="action-btn" 
+                                                        title="{{ __('finance.View Payment History') }}">
+                                                    <i class="fas fa-history"></i>
+                                                </button>
+                                                <form method="POST" action="{{ route('student-fees.students.reinform', $student) }}" class="inline">
+                                                    @csrf
+                                                    <button type="submit" class="action-btn" title="{{ __('finance.Send Reminder') }}" onclick="return confirm('{{ __('finance.Send payment reminder to guardian?') }}')">
+                                                        <i class="fas fa-bell"></i>
                                                     </button>
-                                                @else
-                                                    @php
-                                                        $studentPaymentForReceipt = $payments->where('student_id', $student->id)->first();
-                                                    @endphp
-                                                    @if($studentPaymentForReceipt)
-                                                        <button type="button" class="action-btn view" title="{{ __('finance.View Receipt') }}" @click="openReceiptModal(@js($studentPaymentForReceipt))">
-                                                            <i class="fas fa-receipt"></i>
-                                                        </button>
-                                                    @else
-                                                        <span class="text-gray-400 text-sm">-</span>
-                                                    @endif
-                                                @endif
+                                                </form>
                                             </div>
                                         </td>
                                     </tr>
                                 @empty
                                     <tr>
-                                        <td colspan="12" class="td-empty">
+                                        <td colspan="9" class="td-empty">
                                             <div class="flex flex-col items-center py-8">
-                                                <i class="fas fa-users text-4xl text-gray-300 dark:text-gray-600 mb-3"></i>
-                                                <p class="text-gray-500 dark:text-gray-400">{{ __('finance.No students found.') }}</p>
+                                                <i class="fas fa-file-invoice text-4xl text-gray-300 dark:text-gray-600 mb-3"></i>
+                                                <p class="text-gray-500 dark:text-gray-400">{{ __('finance.No unpaid invoices found.') }}</p>
                                             </div>
                                         </td>
                                     </tr>
@@ -389,44 +383,198 @@
                     </div>
 
                     <!-- Pagination -->
-                    @if($students->total() > 0)
+                    @if($unpaidInvoices->total() > 0)
                         <div class="px-4 py-3 border-t border-gray-200 dark:border-gray-700 flex flex-wrap items-center justify-between gap-3">
                             <div class="text-sm text-gray-600 dark:text-gray-400">
-                                {{ __('pagination.Showing') }} {{ $students->firstItem() ?? 0 }} {{ __('pagination.to') }} {{ $students->lastItem() ?? 0 }} {{ __('pagination.of') }} {{ $students->total() }} {{ __('pagination.results') }}
+                                {{ __('pagination.Showing') }} {{ $unpaidInvoices->firstItem() ?? 0 }} {{ __('pagination.to') }} {{ $unpaidInvoices->lastItem() ?? 0 }} {{ __('pagination.of') }} {{ $unpaidInvoices->total() }} {{ __('pagination.results') }}
                             </div>
-                            @if($students->hasPages())
+                            @if($unpaidInvoices->hasPages())
                                 <div class="flex items-center gap-1">
                                     {{-- First Page --}}
-                                    <a href="{{ $students->url(1) }}" class="px-3 py-1.5 text-sm font-medium rounded-lg border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 {{ $students->onFirstPage() ? 'opacity-50 pointer-events-none' : '' }}">
+                                    <a href="{{ $unpaidInvoices->url(1) }}" class="px-3 py-1.5 text-sm font-medium rounded-lg border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 {{ $unpaidInvoices->onFirstPage() ? 'opacity-50 pointer-events-none' : '' }}">
                                         <i class="fas fa-angle-double-left"></i>
                                     </a>
                                     {{-- Previous Page --}}
-                                    <a href="{{ $students->previousPageUrl() ?? '#' }}" class="px-3 py-1.5 text-sm font-medium rounded-lg border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 {{ $students->onFirstPage() ? 'opacity-50 pointer-events-none' : '' }}">
+                                    <a href="{{ $unpaidInvoices->previousPageUrl() ?? '#' }}" class="px-3 py-1.5 text-sm font-medium rounded-lg border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 {{ $unpaidInvoices->onFirstPage() ? 'opacity-50 pointer-events-none' : '' }}">
                                         <i class="fas fa-angle-left"></i>
                                     </a>
                                     {{-- Page Numbers --}}
                                     @php
-                                        $currentPage = $students->currentPage();
-                                        $lastPage = $students->lastPage();
+                                        $currentPage = $unpaidInvoices->currentPage();
+                                        $lastPage = $unpaidInvoices->lastPage();
                                         $start = max(1, $currentPage - 2);
                                         $end = min($lastPage, $start + 4);
                                         if ($end - $start < 4) $start = max(1, $end - 4);
                                     @endphp
                                     @for($page = $start; $page <= $end; $page++)
-                                        <a href="{{ $students->url($page) }}" class="px-3 py-1.5 text-sm font-medium rounded-lg border {{ $page === $currentPage ? 'bg-blue-600 text-white border-blue-600' : 'border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700' }}">
+                                        <a href="{{ $unpaidInvoices->url($page) }}" class="px-3 py-1.5 text-sm font-medium rounded-lg border {{ $page === $currentPage ? 'bg-blue-600 text-white border-blue-600' : 'border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700' }}">
                                             {{ $page }}
                                         </a>
                                     @endfor
                                     {{-- Next Page --}}
-                                    <a href="{{ $students->nextPageUrl() ?? '#' }}" class="px-3 py-1.5 text-sm font-medium rounded-lg border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 {{ !$students->hasMorePages() ? 'opacity-50 pointer-events-none' : '' }}">
+                                    <a href="{{ $unpaidInvoices->nextPageUrl() ?? '#' }}" class="px-3 py-1.5 text-sm font-medium rounded-lg border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 {{ !$unpaidInvoices->hasMorePages() ? 'opacity-50 pointer-events-none' : '' }}">
                                         <i class="fas fa-angle-right"></i>
                                     </a>
                                     {{-- Last Page --}}
-                                    <a href="{{ $students->url($students->lastPage()) }}" class="px-3 py-1.5 text-sm font-medium rounded-lg border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 {{ !$students->hasMorePages() ? 'opacity-50 pointer-events-none' : '' }}">
+                                    <a href="{{ $unpaidInvoices->url($unpaidInvoices->lastPage()) }}" class="px-3 py-1.5 text-sm font-medium rounded-lg border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 {{ !$unpaidInvoices->hasMorePages() ? 'opacity-50 pointer-events-none' : '' }}">
                                         <i class="fas fa-angle-double-right"></i>
                                     </a>
                                 </div>
                             @endif
+                        </div>
+                    @endif
+                </div>
+
+                <!-- Pending Payment Proofs Section - Always show -->
+                <div class="bg-white dark:bg-gray-800 border border-purple-200 dark:border-purple-700 rounded-xl shadow-sm mt-6">
+                    <div class="flex items-center justify-between p-4 border-b border-purple-200 dark:border-purple-700 bg-purple-50 dark:bg-purple-900/20">
+                        <div class="flex items-center gap-3">
+                            <div class="w-10 h-10 rounded-lg bg-purple-500 text-white flex items-center justify-center">
+                                <i class="fas fa-receipt"></i>
+                            </div>
+                            <div>
+                                <h3 class="text-lg font-semibold text-gray-900 dark:text-white">{{ __('finance.Pending Payment Proofs') }}</h3>
+                                <p class="text-sm text-gray-600 dark:text-gray-400">
+                                    @if($pendingPaymentProofs->total() > 0)
+                                        {{ $pendingPaymentProofs->total() }} {{ __('finance.payment proofs awaiting verification') }}
+                                    @else
+                                        {{ __('finance.No pending payment proofs') }}
+                                    @endif
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Proof Filters -->
+                    <div class="p-4 bg-gray-50 dark:bg-gray-900/50 border-b border-gray-200 dark:border-gray-700">
+                        <form method="GET" action="{{ route('student-fees.index') }}" class="flex flex-wrap items-center gap-3">
+                            <!-- Preserve student fee list filters -->
+                            <input type="hidden" name="month" value="{{ $selectedMonth }}">
+                            @if(request('grade'))
+                                <input type="hidden" name="grade" value="{{ request('grade') }}">
+                            @endif
+                            @if(request('search'))
+                                <input type="hidden" name="search" value="{{ request('search') }}">
+                            @endif
+                            
+                            <span class="text-sm font-semibold text-gray-600 dark:text-gray-400">{{ __('finance.Proof Filters:') }}</span>
+                            <select name="proof_month" class="form-select-sm">
+                                @foreach($monthOptions as $option)
+                                    <option value="{{ $option['value'] }}" {{ request('proof_month', $selectedMonth) == $option['value'] ? 'selected' : '' }}>
+                                        {{ $option['label'] }}
+                                    </option>
+                                @endforeach
+                            </select>
+                            <select name="proof_grade" class="form-select-sm">
+                                <option value="">{{ __('finance.All Grades') }}</option>
+                                @foreach($grades as $grade)
+                                    <option value="{{ $grade->id }}" {{ request('proof_grade') == $grade->id ? 'selected' : '' }}>@gradeName($grade->level)</option>
+                                @endforeach
+                            </select>
+                            <input type="text" name="proof_search" value="{{ request('proof_search') }}" placeholder="{{ __('finance.Search by name or ID...') }}" class="form-input-sm">
+                            <button type="submit" class="btn-filter">{{ __('finance.Apply') }}</button>
+                            <a href="{{ route('student-fees.index', ['month' => $selectedMonth]) }}" class="btn-filter-reset">{{ __('finance.Reset') }}</a>
+                        </form>
+                    </div>
+
+                    <div class="p-4">
+                        <div class="overflow-x-auto">
+                            <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+                                <thead class="bg-gray-50 dark:bg-gray-700">
+                                    <tr>
+                                        <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 dark:text-gray-300">{{ __('finance.Student') }}</th>
+                                        <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 dark:text-gray-300">{{ __('finance.Grade') }}</th>
+                                        <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 dark:text-gray-300">{{ __('finance.Amount') }}</th>
+                                        <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 dark:text-gray-300">{{ __('finance.Months') }}</th>
+                                        <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 dark:text-gray-300">{{ __('finance.Method') }}</th>
+                                        <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 dark:text-gray-300">{{ __('finance.Payment Date') }}</th>
+                                        <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 dark:text-gray-300">{{ __('finance.Submitted') }}</th>
+                                        <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 dark:text-gray-300">{{ __('finance.Actions') }}</th>
+                                    </tr>
+                                </thead>
+                                <tbody class="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
+                                    @forelse($pendingPaymentProofs as $proof)
+                                    <tr class="hover:bg-gray-50 dark:hover:bg-gray-700/50">
+                                        <td class="px-4 py-3 text-sm">
+                                            <div>
+                                                <p class="font-medium text-gray-900 dark:text-gray-100">{{ $proof->student?->user?->name ?? 'N/A' }}</p>
+                                                <p class="text-xs text-gray-500 dark:text-gray-400">{{ $proof->student?->student_identifier ?? 'N/A' }}</p>
+                                            </div>
+                                        </td>
+                                        <td class="px-4 py-3 text-sm text-gray-900 dark:text-gray-100">
+                                            @gradeName($proof->student?->grade?->level ?? 0)
+                                        </td>
+                                        <td class="px-4 py-3 text-sm font-semibold text-gray-900 dark:text-gray-100">
+                                            {{ number_format($proof->payment_amount, 0) }} MMK
+                                        </td>
+                                        <td class="px-4 py-3 text-sm text-gray-600 dark:text-gray-400">
+                                            {{ $proof->payment_months }} {{ __('finance.month(s)') }}
+                                        </td>
+                                        <td class="px-4 py-3 text-sm">
+                                            <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300">
+                                                {{ $proof->paymentMethod?->name ?? 'N/A' }}
+                                            </span>
+                                        </td>
+                                        <td class="px-4 py-3 text-sm text-gray-600 dark:text-gray-400">
+                                            {{ $proof->payment_date?->format('M j, Y') }}
+                                        </td>
+                                        <td class="px-4 py-3 text-sm text-gray-600 dark:text-gray-400">
+                                            {{ $proof->created_at?->diffForHumans() }}
+                                        </td>
+                                        <td class="px-4 py-3 text-sm">
+                                            <button type="button"
+                                                    onclick="viewPaymentProof('{{ $proof->id }}')"
+                                                    class="inline-flex items-center px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white text-xs font-medium rounded-lg transition-colors">
+                                                <i class="fas fa-eye mr-1"></i>
+                                                {{ __('finance.View & Process') }}
+                                            </button>
+                                        </td>
+                                    </tr>
+                                    @empty
+                                    <tr>
+                                        <td colspan="8" class="px-4 py-8 text-center">
+                                            <div class="flex flex-col items-center">
+                                                <i class="fas fa-inbox text-4xl text-gray-300 dark:text-gray-600 mb-3"></i>
+                                                <p class="text-gray-500 dark:text-gray-400">{{ __('finance.No pending payment proofs at the moment.') }}</p>
+                                                <p class="text-sm text-gray-400 dark:text-gray-500 mt-1">{{ __('finance.Payment proofs submitted by guardians will appear here.') }}</p>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                    @endforelse
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <!-- Proof Pagination -->
+                    @if($pendingPaymentProofs->hasPages())
+                        <div class="px-4 py-3 border-t border-gray-200 dark:border-gray-700 flex flex-wrap items-center justify-between gap-3">
+                            <div class="text-sm text-gray-600 dark:text-gray-400">
+                                {{ __('pagination.Showing') }} {{ $pendingPaymentProofs->firstItem() ?? 0 }} {{ __('pagination.to') }} {{ $pendingPaymentProofs->lastItem() ?? 0 }} {{ __('pagination.of') }} {{ $pendingPaymentProofs->total() }} {{ __('pagination.results') }}
+                            </div>
+                            <div class="flex items-center gap-1">
+                                {{-- Previous Page --}}
+                                <a href="{{ $pendingPaymentProofs->appends(request()->except('proof_page'))->previousPageUrl() ?? '#' }}" class="px-3 py-1.5 text-sm font-medium rounded-lg border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 {{ $pendingPaymentProofs->onFirstPage() ? 'opacity-50 pointer-events-none' : '' }}">
+                                    <i class="fas fa-angle-left"></i>
+                                </a>
+                                {{-- Page Numbers --}}
+                                @php
+                                    $currentPage = $pendingPaymentProofs->currentPage();
+                                    $lastPage = $pendingPaymentProofs->lastPage();
+                                    $start = max(1, $currentPage - 2);
+                                    $end = min($lastPage, $start + 4);
+                                    if ($end - $start < 4) $start = max(1, $end - 4);
+                                @endphp
+                                @for($page = $start; $page <= $end; $page++)
+                                    <a href="{{ $pendingPaymentProofs->appends(request()->except('proof_page'))->url($page) }}" class="px-3 py-1.5 text-sm font-medium rounded-lg border {{ $page === $currentPage ? 'bg-purple-600 text-white border-purple-600' : 'border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700' }}">
+                                        {{ $page }}
+                                    </a>
+                                @endfor
+                                {{-- Next Page --}}
+                                <a href="{{ $pendingPaymentProofs->appends(request()->except('proof_page'))->nextPageUrl() ?? '#' }}" class="px-3 py-1.5 text-sm font-medium rounded-lg border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 {{ !$pendingPaymentProofs->hasMorePages() ? 'opacity-50 pointer-events-none' : '' }}">
+                                    <i class="fas fa-angle-right"></i>
+                                </a>
+                            </div>
                         </div>
                     @endif
                 </div>
@@ -612,6 +760,9 @@
                                                         <button type="button" class="action-btn edit" @click="openEditStructureModal(@js($structure))">
                                                             <i class="fas fa-edit"></i>
                                                         </button>
+                                                        <button type="button" class="action-btn delete" @click="confirmDeleteStructure(@js($structure))">
+                                                            <i class="fas fa-trash"></i>
+                                                        </button>
                                                     </div>
                                                 </td>
                                             </tr>
@@ -621,6 +772,66 @@
                             </div>
                         </div>
                     @endif
+
+                    <!-- Payment Promotions -->
+                    <div class="p-4 border-t border-gray-200 dark:border-gray-700">
+                        <div class="flex flex-wrap items-center justify-between gap-3 mb-3">
+                            <div>
+                                <h4 class="text-md font-semibold text-gray-900 dark:text-white flex items-center gap-2">
+                                    <i class="fas fa-percentage text-green-600"></i> {{ __('finance.Payment Promotions') }}
+                                </h4>
+                                <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">{{ __('finance.Discount percentages for multi-month payments') }}</p>
+                            </div>
+                        </div>
+                        <div class="overflow-x-auto">
+                            <table class="min-w-full">
+                                <thead class="bg-gray-50 dark:bg-gray-800">
+                                    <tr>
+                                        <th class="th-cell">{{ __('finance.Payment Duration') }}</th>
+                                        <th class="th-cell">{{ __('finance.Discount Percentage') }}</th>
+                                        <th class="th-cell">{{ __('finance.Status') }}</th>
+                                        <th class="th-cell">{{ __('finance.Actions') }}</th>
+                                    </tr>
+                                </thead>
+                                <tbody class="divide-y divide-gray-200 dark:divide-gray-700">
+                                    @foreach($paymentPromotions as $promotion)
+                                        <tr class="bg-white dark:bg-gray-900 hover:bg-gray-50 dark:hover:bg-gray-800/50">
+                                            <td class="td-cell font-semibold">
+                                                <span class="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300">
+                                                    <i class="fas fa-calendar-alt"></i>
+                                                    {{ $promotion->months }} {{ $promotion->months == 1 ? __('finance.Month') : __('finance.Months') }}
+                                                </span>
+                                            </td>
+                                            <td class="td-cell">
+                                                <span class="text-lg font-bold {{ $promotion->discount_percent > 0 ? 'text-green-600 dark:text-green-400' : 'text-gray-400' }}">
+                                                    {{ number_format($promotion->discount_percent, 1) }}%
+                                                </span>
+                                                @if($promotion->discount_percent > 0)
+                                                    <span class="ml-2 text-xs text-gray-500 dark:text-gray-400">{{ __('finance.discount') }}</span>
+                                                @endif
+                                            </td>
+                                            <td class="td-cell">
+                                                @if($promotion->is_active)
+                                                    <span class="px-2 py-1 text-xs font-semibold rounded-md bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300">
+                                                        <i class="fas fa-check-circle mr-1"></i>{{ __('finance.Active') }}
+                                                    </span>
+                                                @else
+                                                    <span class="px-2 py-1 text-xs font-semibold rounded-md bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300">
+                                                        {{ __('finance.Inactive') }}
+                                                    </span>
+                                                @endif
+                                            </td>
+                                            <td class="td-cell">
+                                                <button type="button" class="action-btn edit" @click="openEditPromotionModal(@js($promotion))" title="{{ __('finance.Edit') }}">
+                                                    <i class="fas fa-edit"></i>
+                                                </button>
+                                            </td>
+                                        </tr>
+                                    @endforeach
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
                 </div>
             </div>
 
@@ -745,6 +956,111 @@
                     @if($payments->hasPages())
                         <div class="p-4 border-t border-gray-200 dark:border-gray-700">{{ $payments->withQueryString()->links() }}</div>
                     @endif
+                </div>
+            </div>
+
+            <!-- Payment Methods Tab -->
+            <div x-show="activeTab === 'payment-methods'" x-cloak>
+                <!-- Header with Add Button -->
+                <div class="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl shadow-sm mb-6">
+                    <div class="flex flex-wrap items-center justify-between gap-3 p-4 border-b border-gray-200 dark:border-gray-700">
+                        <h3 class="text-lg font-semibold text-gray-900 dark:text-white flex items-center gap-2">
+                            <i class="fas fa-credit-card text-blue-600"></i>
+                            {{ __('finance.Payment Methods') }}
+                        </h3>
+                        <button type="button" @click="openPaymentMethodModal()" class="px-4 py-2 text-sm font-semibold rounded-lg text-white bg-blue-600 hover:bg-blue-700 shadow-sm">
+                            <i class="fas fa-plus mr-2"></i>{{ __('finance.Add Payment Method') }}
+                        </button>
+                    </div>
+
+                    <!-- Payment Methods Grid -->
+                    <div class="p-6">
+                        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                            @forelse($paymentMethods as $method)
+                                <div class="bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-700 dark:to-gray-800 border border-gray-200 dark:border-gray-600 rounded-xl p-4 hover:shadow-lg transition-all">
+                                    <!-- Header -->
+                                    <div class="flex items-start justify-between mb-3">
+                                        <div class="flex items-center gap-3">
+                                            @if($method->logo_url && file_exists(public_path($method->logo_url)))
+                                                <img src="{{ asset($method->logo_url) }}" alt="{{ $method->name }}" class="w-12 h-12 rounded-lg object-cover">
+                                            @else
+                                                <div class="w-12 h-12 rounded-lg bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-white font-bold text-lg">
+                                                    {{ substr($method->name, 0, 1) }}
+                                                </div>
+                                            @endif
+                                            <div>
+                                                <h4 class="font-semibold text-gray-900 dark:text-white">{{ $method->name }}</h4>
+                                                <p class="text-xs text-gray-500 dark:text-gray-400">{{ $method->name_mm }}</p>
+                                            </div>
+                                        </div>
+                                        <div class="flex items-center gap-2">
+                                            @if($method->is_active)
+                                                <span class="px-2 py-1 text-xs font-medium rounded-full bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400">
+                                                    {{ __('finance.Active') }}
+                                                </span>
+                                            @else
+                                                <span class="px-2 py-1 text-xs font-medium rounded-full bg-gray-100 text-gray-800 dark:bg-gray-900/30 dark:text-gray-400">
+                                                    {{ __('finance.Inactive') }}
+                                                </span>
+                                            @endif
+                                        </div>
+                                    </div>
+
+                                    <!-- Type Badge -->
+                                    <div class="mb-3">
+                                        @if($method->type === 'bank')
+                                            <span class="inline-flex items-center gap-1 px-2 py-1 text-xs font-medium rounded-full bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400">
+                                                <i class="fas fa-university"></i> {{ __('finance.Bank Transfer') }}
+                                            </span>
+                                        @else
+                                            <span class="inline-flex items-center gap-1 px-2 py-1 text-xs font-medium rounded-full bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-400">
+                                                <i class="fas fa-mobile-alt"></i> {{ __('finance.Mobile Wallet') }}
+                                            </span>
+                                        @endif
+                                    </div>
+
+                                    <!-- Account Details -->
+                                    <div class="space-y-2 mb-4">
+                                        <div class="flex items-center justify-between p-2 bg-white dark:bg-gray-900 rounded-lg">
+                                            <span class="text-xs text-gray-500 dark:text-gray-400">{{ __('finance.Account Number') }}</span>
+                                            <span class="text-sm font-mono font-semibold text-gray-900 dark:text-white">{{ $method->account_number }}</span>
+                                        </div>
+                                        <div class="flex items-center justify-between p-2 bg-white dark:bg-gray-900 rounded-lg">
+                                            <span class="text-xs text-gray-500 dark:text-gray-400">{{ __('finance.Account Name') }}</span>
+                                            <span class="text-sm font-semibold text-gray-900 dark:text-white">{{ $method->account_name }}</span>
+                                        </div>
+                                    </div>
+
+                                    <!-- Instructions -->
+                                    <div class="mb-4">
+                                        <p class="text-xs text-gray-600 dark:text-gray-300 line-clamp-2">{{ $method->instructions }}</p>
+                                    </div>
+
+                                    <!-- Actions -->
+                                    <div class="flex items-center gap-2 pt-3 border-t border-gray-200 dark:border-gray-600">
+                                        <button type="button" @click="editPaymentMethod({{ json_encode($method) }})" class="flex-1 px-3 py-2 text-xs font-medium rounded-lg text-blue-700 bg-blue-50 hover:bg-blue-100 dark:bg-blue-900/30 dark:text-blue-400 dark:hover:bg-blue-900/50">
+                                            <i class="fas fa-edit mr-1"></i>{{ __('finance.Edit') }}
+                                        </button>
+                                        <form method="POST" action="{{ route('payment-methods.destroy', $method) }}" class="flex-1" onsubmit="return confirm('{{ __('finance.Are you sure you want to delete this payment method?') }}')">
+                                            @csrf
+                                            @method('DELETE')
+                                            <button type="submit" class="w-full px-3 py-2 text-xs font-medium rounded-lg text-red-700 bg-red-50 hover:bg-red-100 dark:bg-red-900/30 dark:text-red-400 dark:hover:bg-red-900/50">
+                                                <i class="fas fa-trash mr-1"></i>{{ __('finance.Delete') }}
+                                            </button>
+                                        </form>
+                                    </div>
+                                </div>
+                            @empty
+                                <div class="col-span-full text-center py-12">
+                                    <i class="fas fa-credit-card text-6xl text-gray-300 dark:text-gray-600 mb-4"></i>
+                                    <p class="text-gray-500 dark:text-gray-400">{{ __('finance.No payment methods found') }}</p>
+                                    <button type="button" @click="openPaymentMethodModal()" class="mt-4 px-4 py-2 text-sm font-semibold rounded-lg text-white bg-blue-600 hover:bg-blue-700">
+                                        <i class="fas fa-plus mr-2"></i>{{ __('finance.Add Your First Payment Method') }}
+                                    </button>
+                                </div>
+                            @endforelse
+                        </div>
+                    </div>
                 </div>
             </div>
 
@@ -953,6 +1269,58 @@
             </div>
         </div>
 
+        <!-- Edit Promotion Modal -->
+        <div x-show="showPromotionModal" x-cloak class="fixed inset-0 z-50 overflow-y-auto" @click.self="showPromotionModal = false">
+            <div class="fixed inset-0 bg-black/50 backdrop-blur-sm"></div>
+            <div class="flex min-h-full items-center justify-center p-4">
+                <div class="relative bg-white dark:bg-gray-800 rounded-xl w-full max-w-md shadow-2xl" @click.stop>
+                    <form method="POST" :action="promotionFormAction" x-ref="promotionForm">
+                        @csrf
+                        @method('PUT')
+                        <div class="flex items-center justify-between p-5 border-b border-gray-200 dark:border-gray-700">
+                            <h4 class="text-lg font-semibold text-gray-900 dark:text-white flex items-center gap-2">
+                                <i class="fas fa-percentage text-green-600"></i> {{ __('finance.Edit Promotion') }}
+                            </h4>
+                            <button type="button" class="w-8 h-8 rounded-lg flex items-center justify-center text-gray-500 hover:bg-gray-200 dark:hover:bg-gray-700" @click="showPromotionModal = false">
+                                <i class="fas fa-times"></i>
+                            </button>
+                        </div>
+                        <div class="p-5 space-y-4">
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-1.5">{{ __('finance.Payment Duration') }}</label>
+                                <input type="text" class="form-input-full bg-gray-100 dark:bg-gray-700" x-model="promotionForm.durationLabel" readonly>
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-1.5">{{ __('finance.Discount Percentage') }} <span class="text-red-500">*</span></label>
+                                <div class="relative">
+                                    <input type="number" step="0.1" min="0" max="100" name="discount_percent" class="form-input-full pr-12" x-model="promotionForm.discount_percent" placeholder="0" required>
+                                    <div class="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
+                                        <span class="text-gray-500 dark:text-gray-400 font-semibold">%</span>
+                                    </div>
+                                </div>
+                                <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">{{ __('finance.Enter discount percentage (0-100)') }}</p>
+                            </div>
+                            <div class="flex items-center">
+                                <input type="hidden" name="is_active" value="0">
+                                <label class="inline-flex items-center gap-2 cursor-pointer">
+                                    <input type="checkbox" name="is_active" value="1" class="rounded border-gray-300 text-green-600 focus:ring-green-500" x-model="promotionForm.is_active">
+                                    <span class="text-sm font-medium text-gray-700 dark:text-gray-200">{{ __('finance.Active') }}</span>
+                                </label>
+                            </div>
+                        </div>
+                        <div class="flex items-center justify-between gap-3 p-5 border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900/50 rounded-b-xl">
+                            <button type="button" class="px-4 py-2 text-sm font-medium rounded-lg border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700" @click="showPromotionModal = false">
+                                <i class="fas fa-times mr-2"></i>{{ __('finance.Cancel') }}
+                            </button>
+                            <button type="submit" class="px-4 py-2 text-sm font-semibold rounded-lg text-white bg-green-600 hover:bg-green-700">
+                                <i class="fas fa-save mr-2"></i>{{ __('finance.Save Promotion') }}
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
         <!-- Payment Receipt Modal -->
         <div x-show="showReceiptModal" x-cloak class="fixed inset-0 z-50 overflow-y-auto" @click.self="showReceiptModal = false">
             <div class="fixed inset-0 bg-black/50 backdrop-blur-sm"></div>
@@ -1073,6 +1441,220 @@
                             </button>
                         </div>
                     </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- Payment Method Modal -->
+        <div x-show="showPaymentMethodModal" x-cloak class="fixed inset-0 z-50 overflow-y-auto" @click.self="showPaymentMethodModal = false">
+            <div class="fixed inset-0 bg-black/50 backdrop-blur-sm"></div>
+            <div class="flex min-h-full items-center justify-center p-4">
+                <div class="relative bg-white dark:bg-gray-800 rounded-xl w-full max-w-2xl shadow-2xl" @click.stop>
+                    <form method="POST" :action="paymentMethodFormAction">
+                        @csrf
+                        <template x-if="paymentMethodFormMethod === 'PUT'"><input type="hidden" name="_method" value="PUT"></template>
+                        
+                        <div class="flex items-center justify-between p-5 border-b border-gray-200 dark:border-gray-700">
+                            <h4 class="text-lg font-semibold text-gray-900 dark:text-white flex items-center gap-2">
+                                <i class="fas fa-credit-card text-blue-600"></i>
+                                <span x-text="paymentMethodFormMethod === 'PUT' ? '{{ __('finance.Edit Payment Method') }}' : '{{ __('finance.Add Payment Method') }}'"></span>
+                            </h4>
+                            <button type="button" class="w-8 h-8 rounded-lg flex items-center justify-center text-gray-500 hover:bg-gray-200 dark:hover:bg-gray-700" @click="showPaymentMethodModal = false">
+                                <i class="fas fa-times"></i>
+                            </button>
+                        </div>
+                        
+                        <div class="p-5 space-y-4 max-h-[70vh] overflow-y-auto">
+                            <!-- Basic Information -->
+                            <div class="grid grid-cols-2 gap-4">
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-1.5">{{ __('finance.Name (English)') }} <span class="text-red-500">*</span></label>
+                                    <input type="text" name="name" x-model="paymentMethodForm.name" class="form-input-full" required placeholder="e.g., KBZ Bank">
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-1.5">{{ __('finance.Name (Myanmar)') }}</label>
+                                    <input type="text" name="name_mm" x-model="paymentMethodForm.name_mm" class="form-input-full" placeholder="e.g., KBZ ဘဏ်">
+                                </div>
+                            </div>
+
+                            <!-- Type -->
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-1.5">{{ __('finance.Type') }} <span class="text-red-500">*</span></label>
+                                <select name="type" x-model="paymentMethodForm.type" class="form-select-full" required>
+                                    <option value="bank">{{ __('finance.Bank Transfer') }}</option>
+                                    <option value="mobile_wallet">{{ __('finance.Mobile Wallet') }}</option>
+                                </select>
+                            </div>
+
+                            <!-- Account Information -->
+                            <div class="grid grid-cols-2 gap-4">
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-1.5">{{ __('finance.Account Number') }} <span class="text-red-500">*</span></label>
+                                    <input type="text" name="account_number" x-model="paymentMethodForm.account_number" class="form-input-full" required placeholder="e.g., 01234567890123456">
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-1.5">{{ __('finance.Account Name (English)') }} <span class="text-red-500">*</span></label>
+                                    <input type="text" name="account_name" x-model="paymentMethodForm.account_name" class="form-input-full" required placeholder="e.g., SmartCampus School">
+                                </div>
+                            </div>
+
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-1.5">{{ __('finance.Account Name (Myanmar)') }}</label>
+                                <input type="text" name="account_name_mm" x-model="paymentMethodForm.account_name_mm" class="form-input-full" placeholder="e.g., SmartCampus ကျောင်း">
+                            </div>
+
+                            <!-- Instructions -->
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-1.5">{{ __('finance.Instructions (English)') }}</label>
+                                <textarea name="instructions" x-model="paymentMethodForm.instructions" rows="2" class="form-input-full" placeholder="e.g., Transfer to this account and upload receipt"></textarea>
+                            </div>
+
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-1.5">{{ __('finance.Instructions (Myanmar)') }}</label>
+                                <textarea name="instructions_mm" x-model="paymentMethodForm.instructions_mm" rows="2" class="form-input-full" placeholder="e.g., ဒီ account ကို လွှဲပြီး ပြေစာ upload လုပ်ပါ"></textarea>
+                            </div>
+
+                            <!-- Logo URL and Sort Order -->
+                            <div class="grid grid-cols-2 gap-4">
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-1.5">{{ __('finance.Logo URL') }}</label>
+                                    <input type="text" name="logo_url" x-model="paymentMethodForm.logo_url" class="form-input-full" placeholder="/images/payment-methods/kbz.png">
+                                    <p class="text-xs text-gray-500 mt-1">{{ __('finance.Relative path to logo image') }}</p>
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-1.5">{{ __('finance.Sort Order') }}</label>
+                                    <input type="number" name="sort_order" x-model="paymentMethodForm.sort_order" class="form-input-full" min="0" placeholder="0">
+                                </div>
+                            </div>
+
+                            <!-- Status -->
+                            <div class="flex items-center gap-2">
+                                <input type="checkbox" name="is_active" id="is_active" x-model="paymentMethodForm.is_active" value="1" class="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 dark:focus:ring-blue-600 dark:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600">
+                                <label for="is_active" class="text-sm font-medium text-gray-700 dark:text-gray-200">{{ __('finance.Active') }}</label>
+                            </div>
+                        </div>
+                        
+                        <div class="flex items-center justify-between gap-3 p-5 border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900/50 rounded-b-xl">
+                            <button type="button" class="px-4 py-2 text-sm font-medium rounded-lg border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700" @click="showPaymentMethodModal = false">
+                                <i class="fas fa-times mr-2"></i>{{ __('finance.Cancel') }}
+                            </button>
+                            <button type="submit" class="px-4 py-2 text-sm font-semibold rounded-lg text-white bg-blue-600 hover:bg-blue-700">
+                                <i class="fas fa-save mr-2"></i>{{ __('finance.Save Payment Method') }}
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- Delete Confirmation Modal -->
+        <div x-show="showDeleteConfirmModal" x-cloak class="fixed inset-0 z-50 overflow-y-auto" @click.self="closeDeleteConfirm()">
+            <div class="fixed inset-0 bg-black/50 backdrop-blur-sm"></div>
+            <div class="flex items-center justify-center min-h-screen p-4">
+                <div class="relative bg-white dark:bg-gray-800 rounded-xl shadow-2xl max-w-md w-full" @click.stop>
+                    <!-- Header -->
+                    <div class="flex items-center justify-between p-5 border-b border-gray-200 dark:border-gray-700">
+                        <div class="flex items-center gap-3">
+                            <div class="flex items-center justify-center w-10 h-10 rounded-lg bg-red-100 dark:bg-red-900/30">
+                                <i class="fas fa-exclamation-triangle text-red-600 dark:text-red-400"></i>
+                            </div>
+                            <h3 class="text-lg font-semibold text-gray-900 dark:text-white" x-text="deleteConfirmData.title"></h3>
+                        </div>
+                        <button type="button" class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300" @click="closeDeleteConfirm()">
+                            <i class="fas fa-times text-xl"></i>
+                        </button>
+                    </div>
+
+                    <!-- Body -->
+                    <div class="p-6 space-y-4">
+                        <p class="text-gray-700 dark:text-gray-300" x-text="deleteConfirmData.message"></p>
+                        <div class="p-4 bg-gray-50 dark:bg-gray-900/50 rounded-lg border border-gray-200 dark:border-gray-700">
+                            <p class="text-sm text-gray-600 dark:text-gray-400">{{ __('finance.Item to delete') }}:</p>
+                            <p class="font-semibold text-gray-900 dark:text-white mt-1" x-text="deleteConfirmData.itemName"></p>
+                        </div>
+                        <div class="flex items-start gap-2 p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg">
+                            <i class="fas fa-exclamation-circle text-red-600 dark:text-red-400 mt-0.5"></i>
+                            <p class="text-sm text-red-700 dark:text-red-300">{{ __('finance.This action cannot be undone.') }}</p>
+                        </div>
+                    </div>
+
+                    <!-- Footer -->
+                    <div class="flex items-center justify-end gap-3 p-5 border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900/50 rounded-b-xl">
+                        <button type="button" class="px-4 py-2 text-sm font-medium rounded-lg border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700" @click="closeDeleteConfirm()">
+                            <i class="fas fa-times mr-2"></i>{{ __('finance.Cancel') }}
+                        </button>
+                        <form :action="deleteConfirmData.formAction" method="POST" id="deleteConfirmForm" class="inline">
+                            @csrf
+                            @method('DELETE')
+                            <button type="submit" class="px-4 py-2 text-sm font-semibold rounded-lg text-white bg-red-600 hover:bg-red-700">
+                                <i class="fas fa-trash mr-2"></i>{{ __('finance.Delete') }}
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Approve Payment Proof Confirmation Modal -->
+        <div x-show="showApproveConfirmModal" x-cloak class="fixed inset-0 z-50 overflow-y-auto" @click.self="closeApproveConfirm()">
+            <div class="fixed inset-0 bg-black/50 backdrop-blur-sm"></div>
+            <div class="flex items-center justify-center min-h-screen p-4">
+                <div class="relative bg-white dark:bg-gray-800 rounded-xl shadow-2xl max-w-md w-full" @click.stop>
+                    <!-- Header -->
+                    <div class="flex items-center justify-between p-5 border-b border-gray-200 dark:border-gray-700">
+                        <div class="flex items-center gap-3">
+                            <div class="flex items-center justify-center w-10 h-10 rounded-lg bg-green-100 dark:bg-green-900/30">
+                                <i class="fas fa-check-circle text-green-600 dark:text-green-400"></i>
+                            </div>
+                            <h3 class="text-lg font-semibold text-gray-900 dark:text-white">{{ __('finance.Approve Payment Proof') }}</h3>
+                        </div>
+                        <button type="button" class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300" @click="closeApproveConfirm()">
+                            <i class="fas fa-times text-xl"></i>
+                        </button>
+                    </div>
+
+                    <!-- Body -->
+                    <div class="p-6 space-y-4">
+                        <p class="text-gray-700 dark:text-gray-300">{{ __('finance.Are you sure you want to approve this payment proof?') }}</p>
+                        <div class="p-4 bg-gray-50 dark:bg-gray-900/50 rounded-lg border border-gray-200 dark:border-gray-700 space-y-2">
+                            <div class="flex justify-between">
+                                <span class="text-sm text-gray-600 dark:text-gray-400">{{ __('finance.Student') }}:</span>
+                                <span class="font-semibold text-gray-900 dark:text-white" x-text="approveConfirmData.studentName"></span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span class="text-sm text-gray-600 dark:text-gray-400">{{ __('finance.Amount') }}:</span>
+                                <span class="font-semibold text-gray-900 dark:text-white" x-text="approveConfirmData.amount"></span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span class="text-sm text-gray-600 dark:text-gray-400">{{ __('finance.Payment Date') }}:</span>
+                                <span class="font-semibold text-gray-900 dark:text-white" x-text="approveConfirmData.paymentDate"></span>
+                            </div>
+                        </div>
+                        <div class="flex items-start gap-2 p-3 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg">
+                            <i class="fas fa-info-circle text-green-600 dark:text-green-400 mt-0.5"></i>
+                            <div class="text-sm text-green-700 dark:text-green-300">
+                                <p class="font-semibold mb-1">{{ __('finance.This action will:') }}</p>
+                                <ul class="list-disc list-inside space-y-1">
+                                    <li>{{ __('finance.Mark the invoices as paid') }}</li>
+                                    <li>{{ __('finance.Create a payment record') }}</li>
+                                    <li>{{ __('finance.Notify the guardian via app') }}</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Footer -->
+                    <div class="flex items-center justify-end gap-3 p-5 border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900/50 rounded-b-xl">
+                        <button type="button" class="px-4 py-2 text-sm font-medium rounded-lg border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700" @click="closeApproveConfirm()">
+                            <i class="fas fa-times mr-2"></i>{{ __('finance.Cancel') }}
+                        </button>
+                        <form :action="approveConfirmData.formAction" method="POST" id="approveConfirmForm" class="inline">
+                            @csrf
+                            <button type="submit" class="px-4 py-2 text-sm font-semibold rounded-lg text-white bg-green-600 hover:bg-green-700">
+                                <i class="fas fa-check mr-2"></i>{{ __('finance.Approve') }}
+                            </button>
+                        </form>
+                    </div>
                 </div>
             </div>
         </div>
@@ -1315,7 +1897,24 @@
                 showStructureModal: false,
                 showCategoryModal: false,
                 showGradeFeeModal: false,
+                showPromotionModal: false,
                 showReceiptModal: false,
+                showPaymentMethodModal: false,
+                showDeleteConfirmModal: false,
+                showApproveConfirmModal: false,
+                deleteConfirmData: {
+                    title: '',
+                    message: '',
+                    formAction: '',
+                    itemName: ''
+                },
+                approveConfirmData: {
+                    proofId: '',
+                    studentName: '',
+                    amount: '',
+                    paymentDate: '',
+                    formAction: ''
+                },
                 receiptData: {
                     payment_number: '',
                     student_name: '',
@@ -1331,6 +1930,8 @@
                 categoryFormMethod: 'POST',
                 categoryFormAction: '{{ route('student-fees.categories.store') }}',
                 gradeFeeFormAction: '',
+                paymentMethodFormMethod: 'POST',
+                paymentMethodFormAction: '{{ route('payment-methods.store') }}',
                 structureForm: {
                     grade_id: '',
                     batch_id: '',
@@ -1349,6 +1950,26 @@
                 gradeFeeForm: {
                     gradeName: '',
                     price_per_month: ''
+                },
+                promotionFormAction: '',
+                promotionForm: {
+                    durationLabel: '',
+                    discount_percent: '',
+                    is_active: true
+                },
+                paymentMethodForm: {
+                    id: '',
+                    name: '',
+                    name_mm: '',
+                    type: 'bank',
+                    account_number: '',
+                    account_name: '',
+                    account_name_mm: '',
+                    logo_url: '',
+                    is_active: true,
+                    instructions: '',
+                    instructions_mm: '',
+                    sort_order: 0
                 },
                 paymentInfo: '',
                 paymentStudentId: '',
@@ -1520,6 +2141,17 @@
                     this.showGradeFeeModal = true;
                 },
                 
+                openEditPromotionModal(promotion) {
+                    this.promotionFormAction = '{{ url('student-fees/promotions') }}/' + promotion.id;
+                    const monthLabel = promotion.months == 1 ? '1 {{ __('finance.Month') }}' : promotion.months + ' {{ __('finance.Months') }}';
+                    this.promotionForm = {
+                        durationLabel: monthLabel,
+                        discount_percent: promotion.discount_percent || 0,
+                        is_active: promotion.is_active ? true : false
+                    };
+                    this.showPromotionModal = true;
+                },
+                
                 clearGradeFee(gradeId) {
                     if (confirm('{{ __('finance.Are you sure you want to clear the fee for this grade?') }}')) {
                         const form = document.createElement('form');
@@ -1627,6 +2259,83 @@
                     `);
                     printWindow.document.close();
                     printWindow.print();
+                },
+                
+                openPaymentMethodModal() {
+                    this.paymentMethodFormMethod = 'POST';
+                    this.paymentMethodFormAction = '{{ route('payment-methods.store') }}';
+                    this.paymentMethodForm = {
+                        id: '',
+                        name: '',
+                        name_mm: '',
+                        type: 'bank',
+                        account_number: '',
+                        account_name: '',
+                        account_name_mm: '',
+                        logo_url: '',
+                        is_active: true,
+                        instructions: '',
+                        instructions_mm: '',
+                        sort_order: 0
+                    };
+                    this.showPaymentMethodModal = true;
+                },
+                
+                editPaymentMethod(method) {
+                    this.paymentMethodFormMethod = 'PUT';
+                    this.paymentMethodFormAction = `/payment-methods/${method.id}`;
+                    this.paymentMethodForm = {
+                        id: method.id,
+                        name: method.name,
+                        name_mm: method.name_mm || '',
+                        type: method.type,
+                        account_number: method.account_number,
+                        account_name: method.account_name,
+                        account_name_mm: method.account_name_mm || '',
+                        logo_url: method.logo_url || '',
+                        is_active: method.is_active,
+                        instructions: method.instructions || '',
+                        instructions_mm: method.instructions_mm || '',
+                        sort_order: method.sort_order || 0
+                    };
+                    this.showPaymentMethodModal = true;
+                },
+                
+                confirmDeleteStructure(structure) {
+                    this.deleteConfirmData = {
+                        title: '{{ __('finance.Delete Fee Structure') }}',
+                        message: '{{ __('finance.Are you sure you want to delete this fee structure? All associated invoices will also be deleted.') }}',
+                        formAction: `/student-fees/structures/${structure.id}`,
+                        itemName: `${structure.fee_type?.name || 'Fee'} - ${parseInt(structure.amount).toLocaleString()} MMK`
+                    };
+                    this.showDeleteConfirmModal = true;
+                },
+                
+                closeDeleteConfirm() {
+                    this.showDeleteConfirmModal = false;
+                },
+                
+                closeApproveConfirm() {
+                    this.showApproveConfirmModal = false;
+                },
+                
+                init() {
+                    console.log('studentFeeManager init called');
+                    // Listen for approve modal event
+                    window.addEventListener('open-approve-modal', (event) => {
+                        console.log('open-approve-modal event received', event.detail);
+                        this.$nextTick(() => {
+                            this.approveConfirmData = event.detail;
+                            this.showApproveConfirmModal = true;
+                            console.log('showApproveConfirmModal set to:', this.showApproveConfirmModal);
+                            console.log('approveConfirmData:', this.approveConfirmData);
+                        });
+                    });
+                },
+                
+                submitDelete() {
+                    const form = document.getElementById('deleteConfirmForm');
+                    form.submit();
                 }
             };
         }
@@ -1643,6 +2352,161 @@
             const modal = document.getElementById('rejectModal');
             modal.classList.add('hidden');
             document.getElementById('rejectReason').value = '';
+        }
+
+        // Payment Proof Modal Functions
+        async function viewPaymentProof(proofId) {
+            const modal = document.getElementById('paymentProofModal');
+            const content = document.getElementById('paymentProofContent');
+            
+            // Show modal with loading state
+            modal.classList.remove('hidden');
+            content.innerHTML = '<div class="flex items-center justify-center py-8"><i class="fas fa-spinner fa-spin fa-2x text-gray-400"></i></div>';
+            
+            try {
+                const response = await fetch(`/student-fees/payment-proofs/${proofId}/details`);
+                const result = await response.json();
+                
+                if (result.success) {
+                    const data = result.data;
+                    content.innerHTML = `
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <!-- Student Information -->
+                            <div class="space-y-3">
+                                <h4 class="font-semibold text-gray-900 dark:text-white border-b pb-2">{{ __('finance.Student Information') }}</h4>
+                                <div class="space-y-2 text-sm">
+                                    <div class="flex justify-between">
+                                        <span class="text-gray-600 dark:text-gray-400">{{ __('finance.Name') }}:</span>
+                                        <span class="font-medium text-gray-900 dark:text-gray-100">${data.student.name}</span>
+                                    </div>
+                                    <div class="flex justify-between">
+                                        <span class="text-gray-600 dark:text-gray-400">{{ __('finance.Student ID') }}:</span>
+                                        <span class="font-medium text-gray-900 dark:text-gray-100">${data.student.identifier}</span>
+                                    </div>
+                                    <div class="flex justify-between">
+                                        <span class="text-gray-600 dark:text-gray-400">{{ __('finance.Grade') }}:</span>
+                                        <span class="font-medium text-gray-900 dark:text-gray-100">${data.student.grade}</span>
+                                    </div>
+                                    <div class="flex justify-between">
+                                        <span class="text-gray-600 dark:text-gray-400">{{ __('finance.Class') }}:</span>
+                                        <span class="font-medium text-gray-900 dark:text-gray-100">${data.student.class}</span>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- Payment Information -->
+                            <div class="space-y-3">
+                                <h4 class="font-semibold text-gray-900 dark:text-white border-b pb-2">{{ __('finance.Payment Information') }}</h4>
+                                <div class="space-y-2 text-sm">
+                                    <div class="flex justify-between">
+                                        <span class="text-gray-600 dark:text-gray-400">{{ __('finance.Amount') }}:</span>
+                                        <span class="font-semibold text-lg text-gray-900 dark:text-gray-100">${Number(data.payment_amount).toLocaleString()} MMK</span>
+                                    </div>
+                                    <div class="flex justify-between">
+                                        <span class="text-gray-600 dark:text-gray-400">{{ __('finance.Months') }}:</span>
+                                        <span class="font-medium text-gray-900 dark:text-gray-100">${data.payment_months} {{ __('finance.month(s)') }}</span>
+                                    </div>
+                                    <div class="flex justify-between">
+                                        <span class="text-gray-600 dark:text-gray-400">{{ __('finance.Payment Date') }}:</span>
+                                        <span class="font-medium text-gray-900 dark:text-gray-100">${data.payment_date}</span>
+                                    </div>
+                                    <div class="flex justify-between">
+                                        <span class="text-gray-600 dark:text-gray-400">{{ __('finance.Method') }}:</span>
+                                        <span class="font-medium text-gray-900 dark:text-gray-100">${data.payment_method}</span>
+                                    </div>
+                                    <div class="flex justify-between">
+                                        <span class="text-gray-600 dark:text-gray-400">{{ __('finance.Submitted') }}:</span>
+                                        <span class="font-medium text-gray-900 dark:text-gray-100">${data.submitted_at}</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Notes -->
+                        ${data.notes ? `
+                        <div class="mt-4">
+                            <h4 class="font-semibold text-gray-900 dark:text-white mb-2">{{ __('finance.Notes') }}</h4>
+                            <p class="text-sm text-gray-600 dark:text-gray-400 bg-gray-50 dark:bg-gray-700 p-3 rounded-lg">${data.notes}</p>
+                        </div>
+                        ` : ''}
+                        
+                        <!-- Receipt Image -->
+                        ${data.receipt_image ? `
+                        <div class="mt-4">
+                            <h4 class="font-semibold text-gray-900 dark:text-white mb-2">{{ __('finance.Receipt Image') }}</h4>
+                            <div class="border border-gray-300 dark:border-gray-600 rounded-lg overflow-hidden">
+                                <img src="${data.receipt_image}" alt="Receipt" class="w-full h-auto cursor-pointer" onclick="window.open('${data.receipt_image}', '_blank')">
+                            </div>
+                            <p class="text-xs text-gray-500 dark:text-gray-400 mt-2">{{ __('finance.Click image to view full size') }}</p>
+                        </div>
+                        ` : ''}
+                        
+                        <!-- Action Buttons -->
+                        <div class="mt-6 flex justify-end gap-3 pt-4 border-t border-gray-200 dark:border-gray-700">
+                            <button type="button" 
+                                    onclick="closePaymentProofModal()"
+                                    class="px-4 py-2 bg-gray-200 hover:bg-gray-300 dark:bg-gray-700 dark:hover:bg-gray-600 text-gray-800 dark:text-gray-200 rounded-lg transition-colors">
+                                {{ __('finance.Cancel') }}
+                            </button>
+                            <button type="button" 
+                                    onclick="openRejectProofModal('${proofId}')"
+                                    class="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg transition-colors">
+                                <i class="fas fa-times mr-1"></i>
+                                {{ __('finance.Reject') }}
+                            </button>
+                            <button type="button"
+                                    onclick="openApproveProofModal('${proofId}', '${data.student.name}', '${parseInt(data.payment_amount).toLocaleString()} MMK', '${data.payment_date}')"
+                                    class="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg transition-colors">
+                                <i class="fas fa-check mr-1"></i>
+                                {{ __('finance.Approve') }}
+                            </button>
+                        </div>
+                    `;
+                } else {
+                    content.innerHTML = '<div class="text-center py-8 text-red-600">{{ __('finance.Failed to load payment proof details') }}</div>';
+                }
+            } catch (error) {
+                console.error('Error loading payment proof:', error);
+                content.innerHTML = '<div class="text-center py-8 text-red-600">{{ __('finance.Error loading payment proof details') }}</div>';
+            }
+        }
+
+        function closePaymentProofModal() {
+            const modal = document.getElementById('paymentProofModal');
+            modal.classList.add('hidden');
+        }
+
+        function openRejectProofModal(proofId) {
+            closePaymentProofModal();
+            const modal = document.getElementById('rejectProofModal');
+            const form = document.getElementById('rejectProofForm');
+            form.action = `/student-fees/payment-proofs/${proofId}/reject`;
+            modal.classList.remove('hidden');
+        }
+
+        function closeRejectProofModal() {
+            const modal = document.getElementById('rejectProofModal');
+            modal.classList.add('hidden');
+            document.getElementById('rejectProofReason').value = '';
+        }
+
+        function openApproveProofModal(proofId, studentName, amount, paymentDate) {
+            console.log('openApproveProofModal called', {proofId, studentName, amount, paymentDate});
+            closePaymentProofModal();
+            
+            console.log('Dispatching open-approve-modal event');
+            // Dispatch a custom event that Alpine can listen to
+            const event = new CustomEvent('open-approve-modal', {
+                detail: {
+                    proofId: proofId,
+                    studentName: studentName,
+                    amount: amount,
+                    paymentDate: paymentDate,
+                    formAction: `/student-fees/payment-proofs/${proofId}/approve`
+                }
+            });
+            window.dispatchEvent(event);
+            console.log('Event dispatched', event);
         }
     </script>
 
@@ -1682,4 +2546,155 @@
             </form>
         </div>
     </div>
+
+    <!-- Payment Proof Modal -->
+    <div id="paymentProofModal" class="hidden fixed inset-0 bg-gray-900 bg-opacity-50 overflow-y-auto h-full w-full z-50">
+        <div class="relative top-10 mx-auto p-5 border w-full max-w-4xl shadow-lg rounded-xl bg-white dark:bg-gray-800">
+            <div class="flex items-center justify-between mb-4">
+                <h3 class="text-lg font-semibold text-gray-900 dark:text-white">{{ __('finance.Payment Proof Details') }}</h3>
+                <button onclick="closePaymentProofModal()" class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            
+            <div id="paymentProofContent" class="space-y-4">
+                <!-- Content will be loaded dynamically -->
+                <div class="flex items-center justify-center py-8">
+                    <i class="fas fa-spinner fa-spin fa-2x text-gray-400"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Reject Payment Proof Modal -->
+    <div id="rejectProofModal" class="hidden fixed inset-0 bg-gray-900 bg-opacity-50 overflow-y-auto h-full w-full z-50">
+        <div class="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-xl bg-white dark:bg-gray-800">
+            <div class="flex items-center justify-between mb-4">
+                <h3 class="text-lg font-semibold text-gray-900 dark:text-white">{{ __('finance.Reject Payment Proof') }}</h3>
+                <button onclick="closeRejectProofModal()" class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <form id="rejectProofForm" method="POST">
+                @csrf
+                <div class="mb-4">
+                    <label for="rejectProofReason" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                        {{ __('finance.Reason for rejection') }} <span class="text-red-500">*</span>
+                    </label>
+                    <textarea id="rejectProofReason" 
+                              name="rejection_reason" 
+                              rows="4" 
+                              required
+                              class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
+                              placeholder="{{ __('finance.Enter reason for rejecting this payment proof...') }}"></textarea>
+                </div>
+                <div class="flex justify-end gap-3">
+                    <button type="button" 
+                            onclick="closeRejectProofModal()"
+                            class="px-4 py-2 bg-gray-200 hover:bg-gray-300 dark:bg-gray-700 dark:hover:bg-gray-600 text-gray-800 dark:text-gray-200 rounded-lg transition-colors">
+                        {{ __('finance.Cancel') }}
+                    </button>
+                    <button type="submit" 
+                            class="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg transition-colors">
+                        {{ __('finance.Reject') }}
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Invoice Payment History Modal -->
+    <div id="invoiceHistoryModal" class="hidden fixed inset-0 bg-gray-900 bg-opacity-50 overflow-y-auto h-full w-full z-50">
+        <div class="relative top-10 mx-auto p-5 border w-full max-w-4xl shadow-lg rounded-xl bg-white dark:bg-gray-800">
+            <div class="flex items-center justify-between mb-4">
+                <h3 class="text-lg font-semibold text-gray-900 dark:text-white">{{ __('finance.Invoice Payment History') }}</h3>
+                <button onclick="closeInvoiceHistoryModal()" class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            
+            <div id="invoiceHistoryContent" class="space-y-4">
+                <div class="flex items-center justify-center py-8">
+                    <i class="fas fa-spinner fa-spin fa-2x text-gray-400"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        async function showInvoiceHistory(invoiceId) {
+            const modal = document.getElementById('invoiceHistoryModal');
+            const content = document.getElementById('invoiceHistoryContent');
+            
+            modal.classList.remove('hidden');
+            content.innerHTML = '<div class="flex items-center justify-center py-8"><i class="fas fa-spinner fa-spin fa-2x text-gray-400"></i></div>';
+            
+            try {
+                const response = await fetch(`/student-fees/invoices/${invoiceId}/history`);
+                const result = await response.json();
+                
+                if (result.success) {
+                    const data = result.data;
+                    let html = `
+                        <div class="bg-gray-50 dark:bg-gray-900/50 p-4 rounded-lg mb-4">
+                            <h4 class="font-semibold text-gray-900 dark:text-white mb-2">{{ __('finance.Invoice Info') }}</h4>
+                            <div class="grid grid-cols-2 gap-3 text-sm">
+                                <div><span class="text-gray-600 dark:text-gray-400">{{ __('finance.Invoice Number') }}:</span> <span class="font-medium text-gray-900 dark:text-gray-100">${data.invoice.invoice_number}</span></div>
+                                <div><span class="text-gray-600 dark:text-gray-400">{{ __('finance.Amount') }}:</span> <span class="font-medium text-gray-900 dark:text-gray-100">${Number(data.invoice.total_amount).toLocaleString()} MMK</span></div>
+                                <div><span class="text-gray-600 dark:text-gray-400">{{ __('finance.Student') }}:</span> <span class="font-medium text-gray-900 dark:text-gray-100">${data.invoice.student_name}</span></div>
+                                <div><span class="text-gray-600 dark:text-gray-400">{{ __('finance.Month') }}:</span> <span class="font-medium text-gray-900 dark:text-gray-100">${data.invoice.month}</span></div>
+                            </div>
+                        </div>
+                    `;
+                    
+                    if (data.payment_proofs && data.payment_proofs.length > 0) {
+                        html += '<h4 class="font-semibold text-gray-900 dark:text-white mb-3">{{ __('finance.Payment Proof History') }}</h4><div class="space-y-3">';
+                        
+                        data.payment_proofs.forEach((proof, index) => {
+                            const statusColors = {
+                                'pending_verification': 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-300',
+                                'verified': 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300',
+                                'rejected': 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300'
+                            };
+                            
+                            html += `
+                                <div class="border border-gray-200 dark:border-gray-700 rounded-lg p-4">
+                                    <div class="flex items-start justify-between mb-3">
+                                        <div class="flex items-center gap-2">
+                                            <span class="text-sm font-medium text-gray-900 dark:text-white">#${index + 1}</span>
+                                            <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${statusColors[proof.status]}">${proof.status_label}</span>
+                                        </div>
+                                        <span class="text-xs text-gray-500 dark:text-gray-400">${proof.submitted_at}</span>
+                                    </div>
+                                    <div class="grid grid-cols-2 gap-2 text-sm">
+                                        <div><span class="text-gray-600 dark:text-gray-400">{{ __('finance.Amount') }}:</span> <span class="font-medium">${Number(proof.payment_amount).toLocaleString()} MMK</span></div>
+                                        <div><span class="text-gray-600 dark:text-gray-400">{{ __('finance.Method') }}:</span> <span class="font-medium">${proof.payment_method}</span></div>
+                                        <div><span class="text-gray-600 dark:text-gray-400">{{ __('finance.Payment Date') }}:</span> <span class="font-medium">${proof.payment_date}</span></div>
+                                        ${proof.verified_at ? `<div><span class="text-gray-600 dark:text-gray-400">{{ __('finance.Processed At') }}:</span> <span class="font-medium">${proof.verified_at}</span></div>` : ''}
+                                    </div>
+                                    ${proof.rejection_reason ? `<div class="mt-3 p-2 bg-red-50 dark:bg-red-900/20 rounded border border-red-200 dark:border-red-800"><span class="text-xs font-medium text-red-800 dark:text-red-300">{{ __('finance.Rejection Reason') }}:</span><p class="text-sm text-red-700 dark:text-red-400 mt-1">${proof.rejection_reason}</p></div>` : ''}
+                                    ${proof.notes ? `<div class="mt-2 text-sm text-gray-600 dark:text-gray-400"><span class="font-medium">{{ __('finance.Notes') }}:</span> ${proof.notes}</div>` : ''}
+                                </div>
+                            `;
+                        });
+                        
+                        html += '</div>';
+                    } else {
+                        html += '<div class="text-center py-8"><i class="fas fa-inbox text-4xl text-gray-300 dark:text-gray-600 mb-3"></i><p class="text-gray-500 dark:text-gray-400">{{ __('finance.No payment history for this invoice') }}</p></div>';
+                    }
+                    
+                    content.innerHTML = html;
+                } else {
+                    content.innerHTML = '<div class="text-center py-8 text-red-600">{{ __('finance.Failed to load payment history') }}</div>';
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                content.innerHTML = '<div class="text-center py-8 text-red-600">{{ __('finance.Error loading payment history') }}</div>';
+            }
+        }
+
+        function closeInvoiceHistoryModal() {
+            document.getElementById('invoiceHistoryModal').classList.add('hidden');
+        }
+    </script>
 </x-app-layout>

@@ -31,13 +31,13 @@ class MultiRoleUserSeeder extends Seeder
      * 
      * Creates Ko Nyein Chan who is:
      * - Teacher: Teaching English in Grade 1
-     * - Guardian: Has 3 students in Kindergarten A and 1 girl in Grade 2
+     * - Guardian: Has 3 students in Kindergarten A and 1 girl in Grade 2 Section A
      */
     public function run(): void
     {
         $this->command->info('🚀 Creating Multi-Role User: Ko Nyein Chan');
         $this->command->info('   Role 1: Teacher (English, Grade 1)');
-        $this->command->info('   Role 2: Guardian (3 kids in KG-A, 1 girl in Grade 2)');
+        $this->command->info('   Role 2: Guardian (3 kids in Kindergarten A, 1 girl in Grade 2-A)');
         $this->command->newLine();
 
         DB::beginTransaction();
@@ -240,11 +240,19 @@ class MultiRoleUserSeeder extends Seeder
     {
         $this->command->info('Creating students...');
 
-        // Find Kindergarten A
-        $kindergartenA = $this->findOrCreateClass('Kindergarten', 'A');
+        // Find existing Kindergarten A class
+        $kindergartenA = $this->findExistingClass('Kindergarten A');
+        if (!$kindergartenA) {
+            $this->command->error('❌ Kindergarten A class not found!');
+            throw new \Exception('Kindergarten A class not found');
+        }
         
-        // Find Grade 2
-        $grade2 = $this->findOrCreateClass('2', 'A');
+        // Find existing Grade 2 Section A class
+        $grade2A = $this->findExistingClass('Grade 2 A');
+        if (!$grade2A) {
+            $this->command->error('❌ Grade 2 A class not found!');
+            throw new \Exception('Grade 2 A class not found');
+        }
 
         // Create 3 students in Kindergarten A
         $kgStudents = [
@@ -264,54 +272,39 @@ class MultiRoleUserSeeder extends Seeder
             $this->command->info("  ✓ Created: {$studentData['name']} (Kindergarten A)");
         }
 
-        // Create 1 girl in Grade 2
+        // Create 1 girl in Grade 2 Section A
         $grade2Student = $this->createStudent(
             'Ma Su Su Hlaing',
             'female',
-            $grade2,
+            $grade2A,
             'G2-A-001'
         );
         $this->students[] = $grade2Student;
-        $this->command->info("  ✓ Created: Ma Su Su Hlaing (Grade 2A)");
+        $this->command->info("  ✓ Created: Ma Su Su Hlaing (Grade 2 Section A)");
 
         $this->command->info('✓ Created ' . count($this->students) . ' students');
     }
 
-    private function findOrCreateClass(string $gradeLevel, string $section): SchoolClass
+    private function findExistingClass(string $className, ?string $gradeLevel = null): ?SchoolClass
     {
-        // Find grade
-        $grade = Grade::where('level', $gradeLevel)
-            ->where('batch_id', $this->batch->id)
-            ->first();
+        $query = SchoolClass::where('name', $className)
+            ->where('batch_id', $this->batch->id);
 
-        if (!$grade) {
-            // Create grade if it doesn't exist
-            $gradeCategory = DB::table('grade_categories')->first();
+        if ($gradeLevel !== null) {
+            // Find grade first
+            $grade = Grade::where('level', $gradeLevel)
+                ->where('batch_id', $this->batch->id)
+                ->first();
             
-            $grade = Grade::create([
-                'id' => (string) Str::uuid(),
-                'level' => $gradeLevel,
-                'batch_id' => $this->batch->id,
-                'grade_category_id' => $gradeCategory ? $gradeCategory->id : null,
-                'price_per_month' => 50000,
-            ]);
-            $this->command->info("  ✓ Created Grade: $gradeLevel");
+            if ($grade) {
+                $query->where('grade_id', $grade->id);
+            }
         }
 
-        // Find or create class
-        $class = SchoolClass::where('grade_id', $grade->id)
-            ->where('name', $section)
-            ->where('batch_id', $this->batch->id)
-            ->first();
+        $class = $query->first();
 
-        if (!$class) {
-            $class = SchoolClass::create([
-                'id' => (string) Str::uuid(),
-                'grade_id' => $grade->id,
-                'name' => $section,
-                'batch_id' => $this->batch->id,
-            ]);
-            $this->command->info("  ✓ Created Class: Grade $gradeLevel Section $section");
+        if ($class) {
+            $this->command->info("  ✓ Found existing class: $className");
         }
 
         return $class;
@@ -348,10 +341,26 @@ class MultiRoleUserSeeder extends Seeder
         $studentId = 'STU-' . date('Y') . '-' . str_pad($existingCount + 1, 4, '0', STR_PAD_LEFT);
 
         // Create or update student profile
-        $studentProfile = StudentProfile::firstOrCreate(
-            ['user_id' => $studentUser->id],
-            [
+        $studentProfile = StudentProfile::where('user_id', $studentUser->id)->first();
+        
+        if ($studentProfile) {
+            // Update existing profile
+            $studentProfile->update([
+                'student_identifier' => $identifier,
+                'class_id' => $class->id,
+                'grade_id' => $class->grade_id,
+                'gender' => $gender,
+                'status' => 'active',
+                'father_name' => 'Ko Nyein Chan',
+                'father_phone_no' => $this->user->phone,
+                'father_occupation' => 'Teacher',
+                'emergency_contact_phone_no' => $this->user->phone,
+            ]);
+        } else {
+            // Create new profile
+            $studentProfile = StudentProfile::create([
                 'id' => (string) Str::uuid(),
+                'user_id' => $studentUser->id,
                 'student_id' => $studentId,
                 'student_identifier' => $identifier,
                 'class_id' => $class->id,
@@ -362,8 +371,8 @@ class MultiRoleUserSeeder extends Seeder
                 'father_phone_no' => $this->user->phone,
                 'father_occupation' => 'Teacher',
                 'emergency_contact_phone_no' => $this->user->phone,
-            ]
-        );
+            ]);
+        }
 
         // Link student to class
         $class->students()->syncWithoutDetaching([
@@ -416,7 +425,7 @@ class MultiRoleUserSeeder extends Seeder
         $this->command->info('   Password: password');
         $this->command->newLine();
 
-        $this->command->info('👨‍🏫 TEACHER ROLE:');
+        $this->command->info('�‍🏫 TEACHERM ROLE:');
         $this->command->info('   Employee ID: ' . $this->teacherProfile->employee_id);
         $this->command->info('   Position:    ' . $this->teacherProfile->position);
         $this->command->info('   Department:  ' . ($this->teacherProfile->department->name ?? 'N/A'));
@@ -431,12 +440,41 @@ class MultiRoleUserSeeder extends Seeder
 
         $this->command->info('👶 CHILDREN:');
         foreach ($this->students as $index => $student) {
-            $class = $student->classModel;
-            $grade = $class->grade;
-            $this->command->info('   ' . ($index + 1) . '. ' . $student->user->name);
-            $this->command->info('      Grade:  ' . $grade->level . ' - Section ' . $class->name);
-            $this->command->info('      Gender: ' . ucfirst($student->gender));
-            $this->command->info('      ID:     ' . $student->student_identifier);
+            // Reload student with relationships
+            $student = StudentProfile::with(['classModel.grade', 'user', 'grade'])->find($student->id);
+            
+            if ($student && $student->user) {
+                $this->command->info('   ' . ($index + 1) . '. ' . $student->user->name);
+                
+                // Try to get grade from classModel first, then from direct relationship
+                $grade = null;
+                $className = 'N/A';
+                
+                if ($student->classModel) {
+                    $className = $student->classModel->name;
+                    if ($student->classModel->grade) {
+                        $grade = $student->classModel->grade;
+                    }
+                }
+                
+                // Fallback to direct grade relationship
+                if (!$grade && $student->grade) {
+                    $grade = $student->grade;
+                }
+                
+                if ($grade) {
+                    $gradeDisplay = $grade->level == '0' ? 'Kindergarten' : 'Grade ' . $grade->level;
+                    $this->command->info('      Grade:  ' . $gradeDisplay . ' - Section ' . $className);
+                } else {
+                    $this->command->info('      Grade:  N/A - Section ' . $className);
+                }
+                
+                $this->command->info('      Gender: ' . ucfirst($student->gender));
+                $this->command->info('      ID:     ' . $student->student_identifier);
+            } else {
+                $this->command->info('   ' . ($index + 1) . '. Unknown Student');
+                $this->command->info('      Grade:  N/A');
+            }
         }
         $this->command->newLine();
 

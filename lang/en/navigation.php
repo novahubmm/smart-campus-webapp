@@ -19,6 +19,7 @@ return array(
     'Curriculum' => 'Curriculum',
     'Homework' => 'Homework',
     'Event Planner' => 'Event Planner',
+    'Event Planner' => 'Event Planner',
     'Announcements' => 'Announcements',
     'Time-table List' => 'Time-table List',
     'Time-table Planner' => 'Time-table Planner',

@@ -2,6 +2,7 @@
 
 namespace App\Http\Requests\Timetable;
 
+use App\Rules\TeacherNotDoubleBooked;
 use Illuminate\Foundation\Http\FormRequest;
 
 class UpdateTimetableRequest extends FormRequest
@@ -14,7 +15,9 @@ class UpdateTimetableRequest extends FormRequest
 
     public function rules(): array
     {
-        return [
+        $timetableId = $this->route('timetable')?->id;
+
+        $rules = [
             'batch_id' => ['required', 'uuid', 'exists:batches,id'],
             'grade_id' => ['required', 'uuid', 'exists:grades,id'],
             'class_id' => ['required', 'uuid', 'exists:classes,id'],
@@ -38,5 +41,20 @@ class UpdateTimetableRequest extends FormRequest
             'periods.*.room_id' => ['nullable', 'uuid', 'exists:rooms,id'],
             'periods.*.notes' => ['nullable', 'string'],
         ];
+
+        // Add teacher double-booking validation for each period
+        $periods = $this->input('periods', []);
+        foreach ($periods as $index => $period) {
+            if (!empty($period['teacher_profile_id']) && !empty($period['is_break']) === false) {
+                $rules["periods.{$index}.teacher_profile_id"][] = new TeacherNotDoubleBooked(
+                    $period['day_of_week'] ?? '',
+                    $period['starts_at'] ?? '',
+                    $period['ends_at'] ?? '',
+                    $timetableId
+                );
+            }
+        }
+
+        return $rules;
     }
 }

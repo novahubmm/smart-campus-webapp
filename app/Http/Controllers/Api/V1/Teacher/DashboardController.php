@@ -674,6 +674,13 @@ class DashboardController extends Controller
 
             $today = Carbon::today();
             $currentTime = Carbon::now();
+            
+            // Log for debugging
+            \Log::info('Full Schedule Debug', [
+                'today' => $today->format('Y-m-d'),
+                'current_time' => $currentTime->format('H:i:s'),
+                'day_name' => strtolower($today->format('l'))
+            ]);
 
             // Get stats
             $todayClasses = Period::where('teacher_profile_id', $teacherProfile->id)
@@ -762,12 +769,30 @@ class DashboardController extends Controller
                             $periodStart = Carbon::createFromFormat('H:i', $period->starts_at->format('H:i'));
                             $periodEnd = Carbon::createFromFormat('H:i', $period->ends_at->format('H:i'));
                             
-                            if ($nowTime->greaterThan($periodEnd)) {
+                            // Log for debugging
+                            \Log::info('Period Status Check', [
+                                'period_id' => $period->id,
+                                'period_day' => $periodDayName,
+                                'today_day' => $todayDayName,
+                                'now_time' => $nowTime->format('H:i'),
+                                'period_start' => $periodStart->format('H:i'),
+                                'period_end' => $periodEnd->format('H:i'),
+                                'is_after_end' => $nowTime->greaterThanOrEqualTo($periodEnd),
+                                'is_after_start' => $nowTime->greaterThanOrEqualTo($periodStart),
+                                'is_before_end' => $nowTime->lessThan($periodEnd)
+                            ]);
+                            
+                            if ($nowTime->greaterThanOrEqualTo($periodEnd)) {
                                 $status = 'completed';
-                            } elseif ($nowTime->between($periodStart, $periodEnd)) {
+                            } elseif ($nowTime->greaterThanOrEqualTo($periodStart) && $nowTime->lessThan($periodEnd)) {
                                 $status = 'ongoing';
                             }
                         }
+
+                        // Use green colors for ongoing status, otherwise use grade colors
+                        $colors = $status === 'ongoing' 
+                            ? ['text' => '#059669', 'border' => '#34D399', 'shadow' => '#10B981']
+                            : $gradeColors[$grade];
 
                         return [
                             'id' => $period->id,
@@ -778,7 +803,7 @@ class DashboardController extends Controller
                             'subject' => $period->subject?->name ?? 'Unknown Subject',
                             'room' => $period->room?->name ?? 'Unknown Room',
                             'status' => $status,
-                            'colors' => $gradeColors[$grade]
+                            'colors' => $colors
                         ];
                     })
                     ->sortBy('start_time')

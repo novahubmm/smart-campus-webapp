@@ -50,6 +50,7 @@ return array (
   'Daily Attendance' => 'Daily Attendance',
   'Daily Attendance (by period)' => 'Daily Attendance (by period)',
   'Daily Staff Attendance' => 'Daily Staff Attendance',
+  'Staff ID' => 'Staff ID',
   'Daily Student Attendance' => 'Daily Student Attendance',
   'Daily Teacher Attendance' => 'Daily Teacher Attendance',
   'Date' => 'Date',

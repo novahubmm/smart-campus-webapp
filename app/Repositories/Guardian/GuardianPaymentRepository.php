@@ -22,29 +22,42 @@ class GuardianPaymentRepository implements GuardianPaymentRepositoryInterface
             $academicYear = $currentYear . '-' . ($currentYear + 1);
         }
 
-        // Get fee structures for student's grade
-        $feeStructures = FeeStructure::where('grade_id', $student->grade_id)
-            ->where('status', true)
-            ->with('feeType')
+        // Get current month for invoices
+        $currentMonth = Carbon::now()->format('Y-m');
+
+        // Get unpaid invoices for the current month
+        $invoices = \App\Models\Invoice::where('student_id', $student->id)
+            ->where('month', $currentMonth)
+            ->where('status', 'unpaid')
+            ->with(['feeStructure.feeType'])
             ->get();
 
         $monthlyFees = [];
         $additionalFees = [];
 
-        foreach ($feeStructures as $structure) {
-            $feeType = $structure->feeType;
+        foreach ($invoices as $invoice) {
+            $feeStructure = $invoice->feeStructure;
+            $feeType = $feeStructure?->feeType;
             
+            if (!$feeStructure || !$feeType) {
+                continue;
+            }
+
             $feeItem = [
-                'id' => $structure->id,
+                'invoice_id' => $invoice->id,
+                'invoice_number' => $invoice->invoice_number,
+                'fee_structure_id' => $feeStructure->id,
                 'name' => $feeType->name ?? 'Fee',
                 'name_mm' => $feeType->name_mm ?? $feeType->name ?? 'ကြေး',
-                'amount' => (float) $structure->amount,
-                'removable' => $structure->frequency !== 'monthly',
+                'amount' => (float) $invoice->total_amount,
+                'removable' => !$feeType->is_mandatory,
                 'description' => $feeType->description ?? '',
                 'description_mm' => $feeType->description_mm ?? $feeType->description ?? '',
+                'due_date' => $invoice->due_date?->format('Y-m-d'),
+                'status' => $invoice->status,
             ];
 
-            if ($structure->frequency === 'monthly') {
+            if ($feeStructure->frequency === 'monthly') {
                 $monthlyFees[] = $feeItem;
             } else {
                 $additionalFees[] = $feeItem;
@@ -59,6 +72,7 @@ class GuardianPaymentRepository implements GuardianPaymentRepositoryInterface
             'grade' => $student->grade->name ?? 'N/A',
             'section' => $student->classModel->name ?? 'N/A',
             'academic_year' => $academicYear,
+            'current_month' => $currentMonth,
             'monthly_fees' => $monthlyFees,
             'additional_fees' => $additionalFees,
             'total_monthly' => $totalMonthly,
@@ -120,9 +134,15 @@ class GuardianPaymentRepository implements GuardianPaymentRepositoryInterface
             'payment_date' => $paymentData['payment_date'],
             'receipt_image' => $receiptPath,
             'notes' => $paymentData['notes'] ?? null,
-            'fee_ids' => $paymentData['fee_ids'] ?? [],
+            'fee_ids' => $paymentData['invoice_ids'] ?? [], // Store invoice_ids in fee_ids column
             'status' => 'pending_verification',
         ]);
+
+        // Update invoices to pending_verification status
+        if (!empty($paymentData['invoice_ids'])) {
+            \App\Models\Invoice::whereIn('id', $paymentData['invoice_ids'])
+                ->update(['status' => 'pending_verification']);
+        }
 
         $paymentMethod = PaymentMethod::find($paymentData['payment_method_id']);
 
@@ -136,7 +156,7 @@ class GuardianPaymentRepository implements GuardianPaymentRepositoryInterface
             'payment_details' => [
                 'student_id' => $student->id,
                 'student_name' => $student->user->name ?? 'N/A',
-                'fee_ids' => $paymentData['fee_ids'] ?? [],
+                'invoice_ids' => $paymentData['invoice_ids'] ?? [],
                 'payment_method' => $paymentMethod->name ?? 'N/A',
                 'payment_amount' => (float) $paymentData['payment_amount'],
                 'payment_months' => (int) $paymentData['payment_months'],
@@ -147,53 +167,40 @@ class GuardianPaymentRepository implements GuardianPaymentRepositoryInterface
 
     public function getPaymentOptions(): array
     {
+        // Get promotions from database
+        $promotions = \App\Models\PaymentPromotion::getAllActive();
+        
+        $options = $promotions->map(function ($promotion) {
+            $badge = null;
+            if ($promotion->discount_percent > 0) {
+                $badge = '-' . number_format($promotion->discount_percent, 0) . '%';
+            }
+            
+            return [
+                'months' => $promotion->months,
+                'discount_percent' => (float) $promotion->discount_percent,
+                'label' => $promotion->months . ($promotion->months == 1 ? ' month' : ' months'),
+                'label_mm' => $this->convertToMyanmarNumber($promotion->months) . ' လ',
+                'badge' => $badge,
+                'is_default' => $promotion->months === 1,
+            ];
+        })->toArray();
+
         return [
-            'options' => [
-                [
-                    'months' => 1,
-                    'discount_percent' => 0,
-                    'label' => '1 month',
-                    'label_mm' => '၁ လ',
-                    'badge' => null,
-                    'is_default' => true,
-                ],
-                [
-                    'months' => 2,
-                    'discount_percent' => 0,
-                    'label' => '2 months',
-                    'label_mm' => '၂ လ',
-                    'badge' => null,
-                    'is_default' => false,
-                ],
-                [
-                    'months' => 3,
-                    'discount_percent' => 2,
-                    'label' => '3 months',
-                    'label_mm' => '၃ လ',
-                    'badge' => '-2%',
-                    'is_default' => false,
-                ],
-                [
-                    'months' => 6,
-                    'discount_percent' => 5,
-                    'label' => '6 months',
-                    'label_mm' => '၆ လ',
-                    'badge' => '-5%',
-                    'is_default' => false,
-                ],
-                [
-                    'months' => 12,
-                    'discount_percent' => 10,
-                    'label' => '12 months',
-                    'label_mm' => '၁၂ လ',
-                    'badge' => '-10%',
-                    'is_default' => false,
-                ],
-            ],
+            'options' => $options,
             'default_months' => 1,
             'max_months' => 12,
             'currency' => 'MMK',
         ];
+    }
+
+    /**
+     * Convert number to Myanmar numerals
+     */
+    private function convertToMyanmarNumber(int $number): string
+    {
+        $myanmarNumerals = ['၀', '၁', '၂', '၃', '၄', '၅', '၆', '၇', '၈', '၉'];
+        return implode('', array_map(fn($digit) => $myanmarNumerals[$digit], str_split((string)$number)));
     }
 
     public function getPaymentHistory(StudentProfile $student, ?string $status = null, int $limit = 10, int $page = 1): array
@@ -219,7 +226,7 @@ class GuardianPaymentRepository implements GuardianPaymentRepositoryInterface
             ->paginate($limit, ['*'], 'page', $page);
 
         return [
-            'data' => $payments->items()->map(function ($payment) {
+            'data' => collect($payments->items())->map(function ($payment) {
                 return [
                     'id' => $payment->id,
                     'payment_date' => $payment->payment_date->format('Y-m-d'),
@@ -266,6 +273,60 @@ class GuardianPaymentRepository implements GuardianPaymentRepositoryInterface
         }
 
         throw new \Exception('Invalid image format');
+    }
+
+    public function getPaymentProofDetail(string $paymentProofId, StudentProfile $student): ?array
+    {
+        $proof = PaymentProof::where('id', $paymentProofId)
+            ->where('student_id', $student->id)
+            ->with(['paymentMethod'])
+            ->first();
+
+        if (!$proof) {
+            return null;
+        }
+
+        return [
+            'id' => $proof->id,
+            'student' => [
+                'id' => $student->id,
+                'name' => $student->user->name ?? 'N/A',
+                'student_id' => $student->student_identifier ?? $student->student_id,
+                'grade' => $student->grade->name ?? 'N/A',
+                'section' => $student->classModel->name ?? 'N/A',
+            ],
+            'payment_details' => [
+                'amount' => (float) $proof->payment_amount,
+                'months' => $proof->payment_months,
+                'payment_date' => $proof->payment_date->format('Y-m-d'),
+                'payment_method' => [
+                    'id' => $proof->paymentMethod->id ?? null,
+                    'name' => $proof->paymentMethod->name ?? 'N/A',
+                    'name_mm' => $proof->paymentMethod->name_mm ?? 'N/A',
+                    'type' => $proof->paymentMethod->type ?? null,
+                ],
+                'currency' => 'MMK',
+                'currency_symbol' => 'MMK',
+            ],
+            'fee_ids' => $proof->invoice_ids ?? $proof->fee_ids ?? [],
+            'invoice_ids' => $proof->invoice_ids ?? $proof->fee_ids ?? [],
+            'receipt_image' => $proof->receipt_image ? url(Storage::url($proof->receipt_image)) : null,
+            'notes' => $proof->notes,
+            'status' => $proof->status,
+            'status_mm' => $this->translateStatus($proof->status),
+            'status_label' => match($proof->status) {
+                'pending_verification' => 'Pending Verification',
+                'verified' => 'Approved',
+                'rejected' => 'Rejected',
+                default => 'Unknown'
+            },
+            'status_label_mm' => $this->translateStatus($proof->status),
+            'submitted_at' => $proof->created_at->toIso8601String(),
+            'verified_at' => $proof->verified_at?->toIso8601String(),
+            'verified_by' => $proof->verified_by,
+            'rejection_reason' => $proof->rejection_reason,
+            'rejection_reason_mm' => $proof->rejection_reason, // TODO: Add translation if needed
+        ];
     }
 
     private function translateStatus(string $status): string

@@ -21,6 +21,7 @@ return [
     'Due' => 'Due',
     'Filter by Period' => 'Filter by Period',
     'All Periods' => 'All Periods',
+    'View Detailed Attendance' => 'View Detailed Attendance',
     
     // Class Remark Form
     'Add Remark' => 'Add Remark',

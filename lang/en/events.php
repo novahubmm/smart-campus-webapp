@@ -92,6 +92,7 @@ return [
     'This Week' => 'This Week',
     'This Year' => 'This Year',
     'Today' => 'Today',
+    'Total Events' => 'Total Events',
     'Upcoming' => 'Upcoming',
     'Upcoming Events' => 'Upcoming Events',
     'Update' => 'Update',

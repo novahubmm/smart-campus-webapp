@@ -6,7 +6,7 @@ use App\Models\StudentProfile;
 
 interface GuardianTimetableRepositoryInterface
 {
-    public function getFullTimetable(StudentProfile $student): array;
+    public function getFullTimetable(StudentProfile $student, ?string $weekStartDate = null): array;
 
     public function getDayTimetable(StudentProfile $student, string $day): array;
 

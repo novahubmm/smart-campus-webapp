@@ -473,17 +473,29 @@ Route::prefix('v1')->group(function () {
                     Route::get('/pending', [GuardianFeeController::class, 'pending']);
                     Route::get('/summary', [GuardianFeeController::class, 'paymentSummary']);
                     Route::get('/payment-history', [GuardianFeeController::class, 'paymentHistory']);
-                    Route::get('/receipts/{payment_id}', [GuardianFeeController::class, 'receipt']);
-                    Route::get('/receipts/{payment_id}/download', [GuardianFeeController::class, 'downloadReceipt']);
+                    // OLD receipt routes - commented out, using PaymentController instead
+                    // Route::get('/receipts/{payment_id}', [GuardianFeeController::class, 'receipt']);
+                    // Route::get('/receipts/{payment_id}/download', [GuardianFeeController::class, 'downloadReceipt']);
                     
                     // NEW: Payment Screen APIs (MUST be before /{fee_id} to avoid route conflict)
                     Route::get('/structure', [\App\Http\Controllers\Api\V1\Guardian\PaymentController::class, 'feeStructure']);
                     Route::post('/payments', [\App\Http\Controllers\Api\V1\Guardian\PaymentController::class, 'submitPayment']);
                     
+                    // NEW: Payment Proof Receipt Detail (MUST be before /{fee_id})
+                    Route::get('/receipts/{payment_proof_id}', [\App\Http\Controllers\Api\V1\Guardian\PaymentController::class, 'paymentProofDetail']);
+                    
                     // Catch-all routes MUST be last
                     Route::get('/{fee_id}', [GuardianFeeController::class, 'show']);
                     Route::post('/{fee_id}/payment', [GuardianFeeController::class, 'initiatePayment']);
                 });
+
+                // Payment Methods & Options (Global)
+                Route::get('/payment-methods', [\App\Http\Controllers\Api\V1\Guardian\PaymentController::class, 'paymentMethods']);
+                Route::get('/payment-options', [\App\Http\Controllers\Api\V1\Guardian\PaymentController::class, 'paymentOptions']);
+
+                // Student-specific Payment History (RESTful)
+                Route::get('/fees/payment-history', [\App\Http\Controllers\Api\V1\Guardian\PaymentController::class, 'paymentHistory']);
+                Route::get('/fees/payment-proofs', [\App\Http\Controllers\Api\V1\Guardian\PaymentController::class, 'paymentProofs']);
 
                 // Leave Requests
                 Route::post('/leave-requests/bulk', [GuardianLeaveRequestController::class, 'bulkStore']);

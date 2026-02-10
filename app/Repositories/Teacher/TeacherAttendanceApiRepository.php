@@ -67,15 +67,40 @@ class TeacherAttendanceApiRepository implements TeacherAttendanceApiRepositoryIn
 
         $attendanceExists = $existingAttendance->isNotEmpty();
 
-        $students = $class->enrolledStudents->map(function ($student) use ($existingAttendance) {
+        // Get approved leave requests for this date
+        $studentUserIds = $class->enrolledStudents->pluck('user_id')->filter();
+        $approvedLeaves = \App\Models\LeaveRequest::where('user_type', 'student')
+            ->whereIn('user_id', $studentUserIds)
+            ->where('status', 'approved')
+            ->where('start_date', '<=', $dateObj)
+            ->where('end_date', '>=', $dateObj)
+            ->get()
+            ->keyBy('user_id');
+
+        $students = $class->enrolledStudents->map(function ($student) use ($existingAttendance, $approvedLeaves) {
             $attendance = $existingAttendance->get($student->id);
-            return [
+            $leave = $approvedLeaves->get($student->user_id);
+            
+            $studentData = [
                 'id' => $student->id,
                 'name' => $student->user?->name ?? 'Unknown',
                 'roll_no' => $student->student_id ?? $student->student_identifier ?? '',
                 'avatar' => avatar_url($student->photo_path, 'student'),
                 'status' => $attendance?->status ?? 'present',
+                'has_approved_leave' => $leave !== null,
             ];
+
+            // Add leave details if exists
+            if ($leave) {
+                $studentData['leave_info'] = [
+                    'leave_type' => $leave->leave_type,
+                    'start_date' => $leave->start_date->format('Y-m-d'),
+                    'end_date' => $leave->end_date->format('Y-m-d'),
+                    'reason' => $leave->reason,
+                ];
+            }
+
+            return $studentData;
         });
 
         $stats = [

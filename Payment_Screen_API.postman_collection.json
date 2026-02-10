@@ -1,218 +1,578 @@
 {
-  "info": {
-    "name": "Payment Screen API",
-    "description": "Complete Payment Screen API collection for SmartCampus Guardian App",
-    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
-  },
-  "variable": [
-    {
-      "key": "base_url",
-      "value": "http://192.168.100.114:8088/api/v1",
-      "type": "string"
-    },
-    {
-      "key": "access_token",
-      "value": "",
-      "type": "string"
-    },
-    {
-      "key": "student_id",
-      "value": "",
-      "type": "string"
-    }
-  ],
-  "item": [
-    {
-      "name": "1. Get Fee Structure",
-      "request": {
-        "method": "GET",
-        "header": [
-          {
-            "key": "Authorization",
-            "value": "Bearer {{access_token}}",
-            "type": "text"
-          },
-          {
-            "key": "Content-Type",
-            "value": "application/json",
-            "type": "text"
-          }
-        ],
-        "url": {
-          "raw": "{{base_url}}/guardian/students/{{student_id}}/fees/structure",
-          "host": ["{{base_url}}"],
-          "path": ["guardian", "students", "{{student_id}}", "fees", "structure"]
-        },
-        "description": "Get student-specific fee structure including monthly fees and additional fees."
-      },
-      "response": []
-    },
-    {
-      "name": "2. Get Payment Methods",
-      "request": {
-        "method": "GET",
-        "header": [
-          {
-            "key": "Authorization",
-            "value": "Bearer {{access_token}}",
-            "type": "text"
-          },
-          {
-            "key": "Content-Type",
-            "value": "application/json",
-            "type": "text"
-          }
-        ],
-        "url": {
-          "raw": "{{base_url}}/guardian/payment-methods?type=all&active_only=true",
-          "host": ["{{base_url}}"],
-          "path": ["guardian", "payment-methods"],
-          "query": [
-            {
-              "key": "type",
-              "value": "all",
-              "description": "Filter by type: bank, mobile_wallet, all"
-            },
-            {
-              "key": "active_only",
-              "value": "true",
-              "description": "Show only active methods"
-            }
-          ]
-        },
-        "description": "Get available payment methods (bank accounts, mobile wallets) for fee payment."
-      },
-      "response": []
-    },
-    {
-      "name": "3. Submit Payment",
-      "request": {
-        "method": "POST",
-        "header": [
-          {
-            "key": "Authorization",
-            "value": "Bearer {{access_token}}",
-            "type": "text"
-          },
-          {
-            "key": "Content-Type",
-            "value": "application/json",
-            "type": "text"
-          }
-        ],
-        "body": {
-          "mode": "raw",
-          "raw": "{\n  \"fee_ids\": [\"fee-monthly-1\", \"fee-add-1\"],\n  \"payment_method_id\": \"pm-1\",\n  \"payment_amount\": 135000,\n  \"payment_months\": 1,\n  \"payment_date\": \"2026-02-09\",\n  \"receipt_image\": \"data:image/jpeg;base64,/9j/4AAQSkZJRg...\",\n  \"notes\": \"Test payment via Postman\"\n}",
-          "options": {
-            "raw": {
-              "language": "json"
-            }
-          }
-        },
-        "url": {
-          "raw": "{{base_url}}/guardian/students/{{student_id}}/fees/payments",
-          "host": ["{{base_url}}"],
-          "path": ["guardian", "students", "{{student_id}}", "fees", "payments"]
-        },
-        "description": "Submit payment proof (receipt image) for fee payment. Receipt image should be base64 encoded."
-      },
-      "response": []
-    },
-    {
-      "name": "4. Get Payment Options",
-      "request": {
-        "method": "GET",
-        "header": [
-          {
-            "key": "Authorization",
-            "value": "Bearer {{access_token}}",
-            "type": "text"
-          },
-          {
-            "key": "Content-Type",
-            "value": "application/json",
-            "type": "text"
-          }
-        ],
-        "url": {
-          "raw": "{{base_url}}/guardian/payment-options",
-          "host": ["{{base_url}}"],
-          "path": ["guardian", "payment-options"]
-        },
-        "description": "Get available payment period options with discount rates (1, 2, 3, 6, 12 months)."
-      },
-      "response": []
-    },
-    {
-      "name": "5. Get Payment History",
-      "request": {
-        "method": "GET",
-        "header": [
-          {
-            "key": "Authorization",
-            "value": "Bearer {{access_token}}",
-            "type": "text"
-          },
-          {
-            "key": "Content-Type",
-            "value": "application/json",
-            "type": "text"
-          }
-        ],
-        "url": {
-          "raw": "{{base_url}}/guardian/students/{{student_id}}/fees/payment-history?status=all&limit=10&page=1",
-          "host": ["{{base_url}}"],
-          "path": ["guardian", "students", "{{student_id}}", "fees", "payment-history"],
-          "query": [
-            {
-              "key": "status",
-              "value": "all",
-              "description": "Filter by status: pending, verified, rejected, all"
-            },
-            {
-              "key": "limit",
-              "value": "10",
-              "description": "Number of records (1-50)"
-            },
-            {
-              "key": "page",
-              "value": "1",
-              "description": "Page number"
-            }
-          ]
-        },
-        "description": "Get payment history for a student with pagination."
-      },
-      "response": []
-    },
-    {
-      "name": "Auth - Guardian Login",
-      "request": {
-        "method": "POST",
-        "header": [
-          {
-            "key": "Content-Type",
-            "value": "application/json",
-            "type": "text"
-          }
-        ],
-        "body": {
-          "mode": "raw",
-          "raw": "{\n  \"identifier\": \"guardian@example.com\",\n  \"password\": \"password\"\n}",
-          "options": {
-            "raw": {
-              "language": "json"
-            }
-          }
-        },
-        "url": {
-          "raw": "{{base_url}}/guardian/auth/login",
-          "host": ["{{base_url}}"],
-          "path": ["guardian", "auth", "login"]
-        },
-        "description": "Login as guardian to get access token. Use the token in other requests."
-      },
-      "response": []
-    }
-  ]
+	"info": {
+		"_postman_id": "payment-screen-api-v1",
+		"name": "Payment Screen API",
+		"description": "Complete API collection for PaymentInstructionsScreen integration",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"_exporter_id": "payment-screen-v1"
+	},
+	"auth": {
+		"type": "bearer",
+		"bearer": [
+			{
+				"key": "token",
+				"value": "{{access_token}}",
+				"type": "string"
+			}
+		]
+	},
+	"variable": [
+		{
+			"key": "base_url",
+			"value": "http://192.168.100.114:8088/api/v1",
+			"type": "string"
+		},
+		{
+			"key": "access_token",
+			"value": "",
+			"type": "string"
+		},
+		{
+			"key": "student_id",
+			"value": "",
+			"type": "string"
+		},
+		{
+			"key": "payment_method_id",
+			"value": "",
+			"type": "string"
+		},
+		{
+			"key": "payment_id",
+			"value": "",
+			"type": "string"
+		}
+	],
+	"item": [
+		{
+			"name": "1. Authentication",
+			"item": [
+				{
+					"name": "Guardian Login",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"if (pm.response.code === 200) {",
+									"    var jsonData = pm.response.json();",
+									"    pm.environment.set('access_token', jsonData.data.access_token);",
+									"    pm.collectionVariables.set('access_token', jsonData.data.access_token);",
+									"    console.log('Access token saved:', jsonData.data.access_token);",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "noauth"
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"login\": \"guardian1\",\n    \"password\": \"password123\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/guardian/auth/login",
+							"host": ["{{base_url}}"],
+							"path": ["guardian", "auth", "login"]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get Guardian Students",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"if (pm.response.code === 200) {",
+									"    var jsonData = pm.response.json();",
+									"    if (jsonData.data && jsonData.data.length > 0) {",
+									"        pm.environment.set('student_id', jsonData.data[0].id);",
+									"        pm.collectionVariables.set('student_id', jsonData.data[0].id);",
+									"        console.log('Student ID saved:', jsonData.data[0].id);",
+									"    }",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/guardian/students",
+							"host": ["{{base_url}}"],
+							"path": ["guardian", "students"]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "2. Fee Structure",
+			"item": [
+				{
+					"name": "Get Fee Structure",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Status code is 200', function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test('Response has success field', function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData).to.have.property('success');",
+									"    pm.expect(jsonData.success).to.be.true;",
+									"});",
+									"",
+									"pm.test('Response has fee structure data', function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData.data).to.have.property('monthly_fees');",
+									"    pm.expect(jsonData.data).to.have.property('additional_fees');",
+									"    pm.expect(jsonData.data).to.have.property('total_monthly');",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/guardian/students/{{student_id}}/fees/structure",
+							"host": ["{{base_url}}"],
+							"path": ["guardian", "students", "{{student_id}}", "fees", "structure"]
+						},
+						"description": "Get student-specific fee structure including monthly fees and additional fees"
+					},
+					"response": []
+				},
+				{
+					"name": "Get Fee Structure (with Academic Year)",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/guardian/students/{{student_id}}/fees/structure?academic_year=2025-2026",
+							"host": ["{{base_url}}"],
+							"path": ["guardian", "students", "{{student_id}}", "fees", "structure"],
+							"query": [
+								{
+									"key": "academic_year",
+									"value": "2025-2026"
+								}
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "3. Payment Methods",
+			"item": [
+				{
+					"name": "Get All Payment Methods",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"if (pm.response.code === 200) {",
+									"    var jsonData = pm.response.json();",
+									"    if (jsonData.data && jsonData.data.methods && jsonData.data.methods.length > 0) {",
+									"        pm.environment.set('payment_method_id', jsonData.data.methods[0].id);",
+									"        pm.collectionVariables.set('payment_method_id', jsonData.data.methods[0].id);",
+									"        console.log('Payment Method ID saved:', jsonData.data.methods[0].id);",
+									"    }",
+									"}",
+									"",
+									"pm.test('Status code is 200', function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test('Response has payment methods', function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData.data).to.have.property('methods');",
+									"    pm.expect(jsonData.data.methods).to.be.an('array');",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/guardian/payment-methods",
+							"host": ["{{base_url}}"],
+							"path": ["guardian", "payment-methods"]
+						},
+						"description": "Get all available payment methods (banks and mobile wallets)"
+					},
+					"response": []
+				},
+				{
+					"name": "Get Bank Payment Methods",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/guardian/payment-methods?type=bank",
+							"host": ["{{base_url}}"],
+							"path": ["guardian", "payment-methods"],
+							"query": [
+								{
+									"key": "type",
+									"value": "bank"
+								}
+							]
+						},
+						"description": "Get only bank payment methods"
+					},
+					"response": []
+				},
+				{
+					"name": "Get Mobile Wallet Payment Methods",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/guardian/payment-methods?type=mobile_wallet",
+							"host": ["{{base_url}}"],
+							"path": ["guardian", "payment-methods"],
+							"query": [
+								{
+									"key": "type",
+									"value": "mobile_wallet"
+								}
+							]
+						},
+						"description": "Get only mobile wallet payment methods"
+					},
+					"response": []
+				},
+				{
+					"name": "Get Active Payment Methods Only",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/guardian/payment-methods?active_only=true",
+							"host": ["{{base_url}}"],
+							"path": ["guardian", "payment-methods"],
+							"query": [
+								{
+									"key": "active_only",
+									"value": "true"
+								}
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "4. Payment Options",
+			"item": [
+				{
+					"name": "Get Payment Options",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Status code is 200', function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test('Response has payment options', function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData.data).to.have.property('options');",
+									"    pm.expect(jsonData.data.options).to.be.an('array');",
+									"    pm.expect(jsonData.data.options.length).to.equal(5);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/guardian/payment-options",
+							"host": ["{{base_url}}"],
+							"path": ["guardian", "payment-options"]
+						},
+						"description": "Get available payment period options with discount rates"
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "5. Submit Payment",
+			"item": [
+				{
+					"name": "Submit Payment (1 Month)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"if (pm.response.code === 201) {",
+									"    var jsonData = pm.response.json();",
+									"    if (jsonData.data && jsonData.data.payment_id) {",
+									"        pm.environment.set('payment_id', jsonData.data.payment_id);",
+									"        pm.collectionVariables.set('payment_id', jsonData.data.payment_id);",
+									"        console.log('Payment ID saved:', jsonData.data.payment_id);",
+									"    }",
+									"}",
+									"",
+									"pm.test('Status code is 201', function () {",
+									"    pm.response.to.have.status(201);",
+									"});",
+									"",
+									"pm.test('Payment submitted successfully', function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData.success).to.be.true;",
+									"    pm.expect(jsonData.data).to.have.property('payment_id');",
+									"    pm.expect(jsonData.data.status).to.equal('pending_verification');",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"fee_ids\": [\"fee-monthly-1\", \"fee-add-1\"],\n    \"payment_method_id\": \"{{payment_method_id}}\",\n    \"payment_amount\": 135000,\n    \"payment_months\": 1,\n    \"payment_date\": \"2026-02-10\",\n    \"receipt_image\": \"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==\",\n    \"notes\": \"Payment via KBZ Bank transfer\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/guardian/students/{{student_id}}/fees/payments",
+							"host": ["{{base_url}}"],
+							"path": ["guardian", "students", "{{student_id}}", "fees", "payments"]
+						},
+						"description": "Submit payment proof for 1 month"
+					},
+					"response": []
+				},
+				{
+					"name": "Submit Payment (3 Months with Discount)",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"fee_ids\": [\"fee-monthly-1\"],\n    \"payment_method_id\": \"{{payment_method_id}}\",\n    \"payment_amount\": 352800,\n    \"payment_months\": 3,\n    \"payment_date\": \"2026-02-10\",\n    \"receipt_image\": \"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==\",\n    \"notes\": \"3 months payment with 2% discount\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/guardian/students/{{student_id}}/fees/payments",
+							"host": ["{{base_url}}"],
+							"path": ["guardian", "students", "{{student_id}}", "fees", "payments"]
+						},
+						"description": "Submit payment for 3 months (with 2% discount)"
+					},
+					"response": []
+				},
+				{
+					"name": "Submit Payment - Validation Error",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Status code is 400', function () {",
+									"    pm.response.to.have.status(400);",
+									"});",
+									"",
+									"pm.test('Validation error returned', function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData.success).to.be.false;",
+									"    pm.expect(jsonData.data).to.have.property('error_code');",
+									"    pm.expect(jsonData.data.error_code).to.equal('INVALID_PAYMENT_DATA');",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"fee_ids\": [],\n    \"payment_amount\": 0\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/guardian/students/{{student_id}}/fees/payments",
+							"host": ["{{base_url}}"],
+							"path": ["guardian", "students", "{{student_id}}", "fees", "payments"]
+						},
+						"description": "Test validation with missing required fields"
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "6. Payment History",
+			"item": [
+				{
+					"name": "Get Payment History",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Status code is 200', function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test('Response has payment history', function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData.data).to.have.property('data');",
+									"    pm.expect(jsonData.data).to.have.property('meta');",
+									"    pm.expect(jsonData.data.data).to.be.an('array');",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/guardian/students/{{student_id}}/fees/payment-history?limit=10&page=1",
+							"host": ["{{base_url}}"],
+							"path": ["guardian", "students", "{{student_id}}", "fees", "payment-history"],
+							"query": [
+								{
+									"key": "limit",
+									"value": "10"
+								},
+								{
+									"key": "page",
+									"value": "1"
+								}
+							]
+						},
+						"description": "Get payment history for a student"
+					},
+					"response": []
+				},
+				{
+					"name": "Get Pending Payments",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/guardian/students/{{student_id}}/fees/payment-history?status=pending&limit=10",
+							"host": ["{{base_url}}"],
+							"path": ["guardian", "students", "{{student_id}}", "fees", "payment-history"],
+							"query": [
+								{
+									"key": "status",
+									"value": "pending"
+								},
+								{
+									"key": "limit",
+									"value": "10"
+								}
+							]
+						},
+						"description": "Get only pending payments"
+					},
+					"response": []
+				},
+				{
+					"name": "Get Verified Payments",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/guardian/students/{{student_id}}/fees/payment-history?status=verified&limit=10",
+							"host": ["{{base_url}}"],
+							"path": ["guardian", "students", "{{student_id}}", "fees", "payment-history"],
+							"query": [
+								{
+									"key": "status",
+									"value": "verified"
+								},
+								{
+									"key": "limit",
+									"value": "10"
+								}
+							]
+						},
+						"description": "Get only verified payments"
+					},
+					"response": []
+				},
+				{
+					"name": "Get Rejected Payments",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/guardian/students/{{student_id}}/fees/payment-history?status=rejected&limit=10",
+							"host": ["{{base_url}}"],
+							"path": ["guardian", "students", "{{student_id}}", "fees", "payment-history"],
+							"query": [
+								{
+									"key": "status",
+									"value": "rejected"
+								},
+								{
+									"key": "limit",
+									"value": "10"
+								}
+							]
+						},
+						"description": "Get only rejected payments"
+					},
+					"response": []
+				}
+			]
+		}
+	]
 }

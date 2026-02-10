@@ -43,10 +43,20 @@ class CurriculumController extends Controller
     /**
      * Get Subject Curriculum
      * GET /api/v1/guardian/curriculum/subjects/{id}?student_id={student_id}
-     * GET /api/v1/guardian/students/{student_id}/curriculum/subjects/{id} (NEW)
+     * GET /api/v1/guardian/students/{student_id}/curriculum/subjects/{subject_id} (NEW)
      */
-    public function subjectCurriculum(Request $request, string $id, ?string $studentId = null): JsonResponse
+    public function subjectCurriculum(Request $request, ?string $studentId = null, ?string $subjectId = null): JsonResponse
     {
+        // Handle both route patterns
+        // Old: /curriculum/subjects/{id}?student_id={student_id} -> $studentId has subject_id, $subjectId is null
+        // New: /students/{student_id}/curriculum/subjects/{subject_id} -> both params populated
+        
+        if ($studentId && !$subjectId) {
+            // Old pattern: first param is actually subject_id
+            $subjectId = $studentId;
+            $studentId = null;
+        }
+
         $request->validate([
             'student_id' => $studentId ? 'nullable|string' : 'required|string',
         ]);
@@ -57,7 +67,7 @@ class CurriculumController extends Controller
                 return ApiResponse::error('Student not found or unauthorized', 404);
             }
 
-            $curriculum = $this->curriculumRepository->getSubjectCurriculum($id, $student);
+            $curriculum = $this->curriculumRepository->getSubjectCurriculum($subjectId, $student);
 
             return ApiResponse::success($curriculum);
         } catch (\Exception $e) {

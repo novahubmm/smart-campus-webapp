@@ -36,7 +36,7 @@ class GuardianAuthRepository implements GuardianAuthRepositoryInterface
         $guardianProfile = $user->guardianProfile;
         
         if (!$guardianProfile) {
-            return collect();
+            return new Collection();
         }
 
         return $guardianProfile->students()

@@ -18,6 +18,18 @@ Schedule::command('announcements:publish-scheduled')
     ->withoutOverlapping()
     ->runInBackground();
 
+// Generate monthly fees on the 1st of every month at 1:00 AM
+Schedule::command('fees:generate-monthly')
+    ->monthlyOn(1, '01:00')
+    ->withoutOverlapping()
+    ->runInBackground();
+
+// Mark overdue fees daily at 2:00 AM
+Schedule::command('fees:mark-overdue')
+    ->dailyAt('02:00')
+    ->withoutOverlapping()
+    ->runInBackground();
+
 Artisan::command('preflight:check {--quick : Skip database connectivity check}', function () {
     $results = [];
     $failed = 0;

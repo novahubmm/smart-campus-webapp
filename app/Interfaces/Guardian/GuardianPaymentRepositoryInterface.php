@@ -15,4 +15,6 @@ interface GuardianPaymentRepositoryInterface
     public function getPaymentOptions(): array;
     
     public function getPaymentHistory(StudentProfile $student, ?string $status = null, int $limit = 10, int $page = 1): array;
+    
+    public function getPaymentProofDetail(string $paymentProofId, StudentProfile $student): ?array;
 }

@@ -17,13 +17,14 @@ class TimetableController extends Controller
 
     /**
      * Get Full Timetable
-     * GET /api/v1/guardian/timetable?student_id={id}
-     * GET /api/v1/guardian/students/{student_id}/timetable (NEW)
+     * GET /api/v1/guardian/timetable?student_id={id}&week_start_date={date}
+     * GET /api/v1/guardian/students/{student_id}/timetable?week_start_date={date} (NEW)
      */
     public function index(Request $request, ?string $studentId = null): JsonResponse
     {
         $request->validate([
             'student_id' => $studentId ? 'nullable|string' : 'required|string',
+            'week_start_date' => 'nullable|date',
         ]);
 
         try {
@@ -32,7 +33,8 @@ class TimetableController extends Controller
                 return ApiResponse::error('Student not found or unauthorized', 404);
             }
 
-            $timetable = $this->timetableRepository->getFullTimetable($student);
+            $weekStartDate = $request->input('week_start_date');
+            $timetable = $this->timetableRepository->getFullTimetable($student, $weekStartDate);
 
             return ApiResponse::success($timetable);
         } catch (\Exception $e) {

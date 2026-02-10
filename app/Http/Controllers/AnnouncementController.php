@@ -33,7 +33,7 @@ class AnnouncementController extends Controller
         $announcementTypes = AnnouncementType::getActive();
 
         // Get events for linking
-        $events = \App\Models\Event::orderBy('start_date', 'desc')->get();
+        $events = \App\Models\Event::orderBy('start_date', 'desc')->where('status',true)->get();
 
         // Get grades for teacher/guardian targeting
         $grades = \App\Models\Grade::orderBy('level')->get();

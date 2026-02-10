@@ -6,6 +6,7 @@ use App\Interfaces\Guardian\GuardianExamRepositoryInterface;
 use App\Models\Exam;
 use App\Models\ExamMark;
 use App\Models\GradeSubject;
+use App\Models\Homework;
 use App\Models\StudentProfile;
 use App\Models\Subject;
 use Carbon\Carbon;
@@ -128,24 +129,78 @@ class GuardianExamRepository implements GuardianExamRepositoryInterface
             ->with(['subject', 'teacher.user'])
             ->get();
 
-        return $gradeSubjects->map(function ($gs) use ($student) {
+        $subjects = $gradeSubjects->map(function ($gs) use ($student) {
             $subject = $gs->subject;
             
-            // Get latest exam marks for this subject
-            $latestMark = ExamMark::where('student_id', $student->id)
+            if (!$subject) {
+                return null;
+            }
+
+            // Get curriculum progress
+            $chapters = \App\Models\CurriculumChapter::where('subject_id', $subject->id)
+                ->where(function ($query) use ($student) {
+                    $query->where('grade_id', $student->grade_id)
+                          ->orWhereNull('grade_id');
+                })
+                ->with(['topics.progress' => function ($q) use ($student) {
+                    $q->where('class_id', $student->class_id);
+                }])
+                ->get();
+
+            $totalChapters = $chapters->count();
+            $completedChapters = 0;
+
+            foreach ($chapters as $chapter) {
+                $chapterTotalTopics = $chapter->topics->count();
+                $chapterCompletedTopics = $chapter->topics->filter(function ($topic) {
+                    return $topic->progress->where('status', 'completed')->isNotEmpty();
+                })->count();
+
+                // Chapter is completed if all topics are completed
+                if ($chapterTotalTopics > 0 && $chapterCompletedTopics === $chapterTotalTopics) {
+                    $completedChapters++;
+                }
+            }
+
+            $progressPercentage = $totalChapters > 0 
+                ? round(($completedChapters / $totalChapters) * 100, 2)
+                : 0;
+
+            // Get weekly hours from timetable
+            $weeklyHours = \App\Models\Timetable::where('class_id', $student->class_id)
                 ->where('subject_id', $subject->id)
-                ->orderBy('created_at', 'desc')
-                ->first();
+                ->count();
+
+            // Generate color based on subject name
+            $colors = ['#2196F3', '#9C27B0', '#FF9800', '#4CAF50', '#F44336', '#00BCD4', '#FFC107', '#E91E63'];
+            $colorIndex = abs(crc32($subject->name)) % count($colors);
 
             return [
                 'id' => $subject->id,
                 'name' => $subject->name,
-                'icon' => $subject->icon ?? 'book',
-                'teacher' => $gs->teacher?->user?->name ?? 'N/A',
-                'current_marks' => $latestMark?->marks_obtained ?? 0,
-                'total_marks' => $latestMark?->exam?->total_marks ?? 100,
+                'name_mm' => $subject->name_mm ?? $subject->name,
+                'code' => $subject->code ?? strtoupper(substr($subject->name, 0, 3)) . '-' . ($student->grade?->name ?? '10'),
+                'teacher_id' => $gs->teacher?->id,
+                'teacher_name' => $gs->teacher?->user?->name ?? 'N/A',
+                'teacher_name_mm' => $gs->teacher?->user?->name_mm ?? $gs->teacher?->user?->name ?? 'N/A',
+                'teacher_phone' => $gs->teacher?->user?->phone,
+                'teacher_email' => $gs->teacher?->user?->email,
+                'color' => $colors[$colorIndex],
+                'icon' => $subject->icon ?? '📚',
+                'weekly_hours' => $weeklyHours,
+                'total_chapters' => $totalChapters,
+                'completed_chapters' => $completedChapters,
+                'progress_percentage' => $progressPercentage,
             ];
-        })->toArray();
+        })->filter()->values();
+
+        $totalWeeklyHours = $subjects->sum('weekly_hours');
+
+        return [
+            'subjects' => $subjects->toArray(),
+            'total_subjects' => $subjects->count(),
+            'total_weekly_hours' => $totalWeeklyHours,
+        ];
     }
 
     public function getSubjectDetail(string $subjectId, StudentProfile $student): array
@@ -280,8 +335,12 @@ class GuardianExamRepository implements GuardianExamRepositoryInterface
     {
         $subject = Subject::findOrFail($subjectId);
         
+        $gradeSubject = GradeSubject::where('grade_id', $student->grade_id)
+            ->where('subject_id', $subjectId)
+            ->with('teacher.user')
+            ->first();
+        
         // Get curriculum chapters for this subject
-        // Try grade-specific first, then fall back to general curriculum
         $chapters = \App\Models\CurriculumChapter::where('subject_id', $subjectId)
             ->where(function ($query) use ($student) {
                 $query->where('grade_id', $student->grade_id)
@@ -290,67 +349,134 @@ class GuardianExamRepository implements GuardianExamRepositoryInterface
             ->with(['topics' => function ($query) use ($student) {
                 $query->with(['progress' => function ($q) use ($student) {
                     $q->where('class_id', $student->class_id);
-                }]);
+                }])->orderBy('order');
             }])
             ->orderBy('order')
             ->get();
 
-        $curriculumData = $chapters->map(function ($chapter) {
+        $totalTopics = 0;
+        $completedTopics = 0;
+        $completedChapters = 0;
+
+        $curriculumData = $chapters->map(function ($chapter, $index) use ($student, &$totalTopics, &$completedTopics, &$completedChapters) {
             $topics = $chapter->topics->map(function ($topic) {
                 $progress = $topic->progress->first();
+                $status = $progress?->status ?? 'not_started';
+                
+                // Map status to match mobile app expectations
+                if ($status === 'not_started' || !$progress) {
+                    $status = 'upcoming';
+                }
                 
                 return [
-                    'id' => $topic->id,
-                    'title' => $topic->title,
+                    'id' => (string) $topic->id,
+                    'name' => $topic->title,
                     'order' => $topic->order,
-                    'status' => $progress?->status ?? 'not_started',
-                    'started_at' => $progress?->started_at?->format('Y-m-d'),
-                    'completed_at' => $progress?->completed_at?->format('Y-m-d'),
+                    'status' => $status,
+                    'duration' => '3 hours', // Default duration, can be added to database
                 ];
             });
 
-            // Calculate chapter progress
-            $totalTopics = $topics->count();
-            $completedTopics = $topics->where('status', 'completed')->count();
-            $inProgressTopics = $topics->where('status', 'in_progress')->count();
+            $chapterTotalTopics = $topics->count();
+            $chapterCompletedTopics = $topics->where('status', 'completed')->count();
+            $chapterInProgressTopics = $topics->where('status', 'in_progress')->count();
+            $chapterCurrentTopic = $topics->where('status', 'current')->first();
             
-            $progressPercentage = $totalTopics > 0 
-                ? round((($completedTopics + ($inProgressTopics * 0.5)) / $totalTopics) * 100, 1)
+            $totalTopics += $chapterTotalTopics;
+            $completedTopics += $chapterCompletedTopics;
+            
+            // Determine chapter status
+            $chapterStatus = 'not_started';
+            $currentTopicName = null;
+            
+            if ($chapterCompletedTopics === $chapterTotalTopics && $chapterTotalTopics > 0) {
+                $chapterStatus = 'completed';
+                $completedChapters++;
+            } elseif ($chapterCompletedTopics > 0 || $chapterInProgressTopics > 0 || $chapterCurrentTopic) {
+                $chapterStatus = 'in_progress';
+                $currentTopicName = $chapterCurrentTopic['name'] ?? null;
+            }
+            
+            $progressPercentage = $chapterTotalTopics > 0 
+                ? round(($chapterCompletedTopics / $chapterTotalTopics) * 100, 1)
                 : 0;
 
-            return [
-                'id' => $chapter->id,
+            // Get related items (exams and homework for this chapter)
+            $relatedItems = [];
+            
+            // Get exams related to this subject
+            $exams = ExamMark::where('student_id', $student->id)
+                ->where('subject_id', $chapter->subject_id)
+                ->with('exam')
+                ->orderBy('created_at', 'desc')
+                ->limit(2)
+                ->get();
+            
+            foreach ($exams as $examMark) {
+                if ($examMark->exam) {
+                    $totalMarks = $examMark->exam->total_marks ?? 100;
+                    $relatedItems[] = [
+                        'type' => 'exam',
+                        'id' => $examMark->exam->id,
+                        'title' => $examMark->exam->name,
+                        'score' => $examMark->marks_obtained . '/' . $totalMarks,
+                        'date' => $examMark->created_at->format('Y-m-d'),
+                    ];
+                }
+            }
+            
+            // Get homework related to this subject
+            $homework = \App\Models\Homework::where('subject_id', $chapter->subject_id)
+                ->where('class_id', $student->class_id)
+                ->orderBy('due_date', 'desc')
+                ->limit(2)
+                ->get();
+            
+            foreach ($homework as $hw) {
+                $relatedItems[] = [
+                    'type' => 'homework',
+                    'id' => $hw->id,
+                    'title' => $hw->title,
+                    'due_date' => $hw->due_date?->format('Y-m-d'),
+                ];
+            }
+
+            $chapterData = [
+                'id' => (string) $chapter->id,
+                'number' => $chapter->order,
                 'title' => $chapter->title,
-                'order' => $chapter->order,
-                'total_topics' => $totalTopics,
-                'completed_topics' => $completedTopics,
-                'in_progress_topics' => $inProgressTopics,
+                'description' => 'Chapter ' . $chapter->order . ' content',
+                'total_topics' => $chapterTotalTopics,
+                'completed_topics' => $chapterCompletedTopics,
                 'progress_percentage' => $progressPercentage,
-                'topics' => $topics->toArray(),
+                'status' => $chapterStatus,
+                'topics' => $topics->values()->toArray(),
+                'related_items' => $relatedItems,
             ];
+            
+            if ($currentTopicName) {
+                $chapterData['current_topic'] = $currentTopicName;
+            }
+            
+            return $chapterData;
         });
 
-        // Calculate overall progress
         $totalChapters = $curriculumData->count();
-        $totalTopics = $curriculumData->sum('total_topics');
-        $completedTopics = $curriculumData->sum('completed_topics');
-        $inProgressTopics = $curriculumData->sum('in_progress_topics');
-        
-        $overallProgress = $totalTopics > 0 
-            ? round((($completedTopics + ($inProgressTopics * 0.5)) / $totalTopics) * 100, 1)
+        $overallProgress = $totalChapters > 0 
+            ? round(($completedChapters / $totalChapters) * 100, 1)
             : 0;
 
         return [
-            'subject' => [
-                'id' => $subject->id,
-                'name' => $subject->name,
-            ],
-            'overall_progress' => $overallProgress,
+            'id' => $subject->id,
+            'name' => $subject->name,
+            'icon' => $subject->icon ?? '📚',
+            'teacher' => $gradeSubject?->teacher?->user?->name ?? 'N/A',
             'total_chapters' => $totalChapters,
+            'completed_chapters' => $completedChapters,
+            'progress_percentage' => $overallProgress,
             'total_topics' => $totalTopics,
             'completed_topics' => $completedTopics,
-            'in_progress_topics' => $inProgressTopics,
-            'chapters' => $curriculumData->toArray(),
+            'chapters' => $curriculumData->values()->toArray(),
         ];
     }
 

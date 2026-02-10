@@ -14,8 +14,10 @@ class FeeType extends Model
 
     protected $fillable = [
         'name',
+        'name_mm',
         'code',
         'description',
+        'description_mm',
         'is_mandatory',
         'status',
     ];

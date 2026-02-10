@@ -8,8 +8,8 @@ use App\Models\Timetable;
 
 class DemoTimetableSeeder extends DemoBaseSeeder
 {
-    // Track teacher assignments: teacher can only teach ONE class per day
-    private array $teacherDayAssignments = [];
+    // Track teacher assignments by time slot: [teacher_id][day][time_slot] = class_id
+    private array $teacherTimeSlotAssignments = [];
 
     public function run(Batch $batch, array $classes, array $subjects): array
     {
@@ -28,7 +28,7 @@ class DemoTimetableSeeder extends DemoBaseSeeder
         $days = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday'];
 
         // Reset teacher assignments
-        $this->teacherDayAssignments = [];
+        $this->teacherTimeSlotAssignments = [];
 
         // Store all periods for later use by homework/class record seeders
         $allPeriods = [];
@@ -73,16 +73,9 @@ class DemoTimetableSeeder extends DemoBaseSeeder
             })->toArray();
 
             foreach ($days as $day) {
-                // Find available subjects for this day (teacher not assigned to another class)
-                $availableSubjects = $this->getAvailableSubjectsForDay($subjectsArray, $day, $class->id);
-                
-                // If no subjects are available (all teachers busy), use all subjects anyway
-                // Teachers can teach multiple classes per day if needed
-                if (empty($availableSubjects)) {
-                    $availableSubjects = $subjectsArray;
-                }
-                
-                shuffle($availableSubjects);
+                // Shuffle subjects for variety
+                $shuffledSubjects = $subjectsArray;
+                shuffle($shuffledSubjects);
                 $subjectIndex = 0;
 
                 foreach ($periodTimes as $periodNumber => $periodData) {
@@ -102,15 +95,41 @@ class DemoTimetableSeeder extends DemoBaseSeeder
                         $periodAttributes['subject_id'] = null;
                         $periodAttributes['teacher_profile_id'] = null;
                     } else {
-                        $subjectData = $availableSubjects[$subjectIndex % count($availableSubjects)];
-                        $teacherId = $subjectData['teacher']->id ?? null;
+                        // Find an available teacher for this time slot
+                        $assignedTeacher = null;
+                        $assignedSubject = null;
+                        $attempts = 0;
+                        $maxAttempts = count($shuffledSubjects) * 2;
 
-                        $periodAttributes['subject_id'] = $subjectData['subject']->id;
-                        $periodAttributes['teacher_profile_id'] = $teacherId;
+                        while ($attempts < $maxAttempts) {
+                            $subjectData = $shuffledSubjects[$subjectIndex % count($shuffledSubjects)];
+                            $teacherId = $subjectData['teacher']->id ?? null;
 
-                        // Mark teacher as assigned to this class for this day
-                        if ($teacherId) {
-                            $this->markTeacherAssignedToClass($teacherId, $day, $class->id);
+                            // Check if teacher is available for this time slot
+                            if (!$teacherId || $this->isTeacherAvailableForTimeSlot($teacherId, $day, $startTime, $endTime)) {
+                                $assignedTeacher = $teacherId;
+                                $assignedSubject = $subjectData['subject'];
+                                break;
+                            }
+
+                            $subjectIndex++;
+                            $attempts++;
+                        }
+
+                        // If no available teacher found, assign anyway (fallback)
+                        if (!$assignedSubject) {
+                            $subjectData = $shuffledSubjects[0];
+                            $assignedTeacher = $subjectData['teacher']->id ?? null;
+                            $assignedSubject = $subjectData['subject'];
+                            $this->command->warn("  Warning: Teacher double-booking for {$class->name} on {$day} at {$startTime}");
+                        }
+
+                        $periodAttributes['subject_id'] = $assignedSubject->id;
+                        $periodAttributes['teacher_profile_id'] = $assignedTeacher;
+
+                        // Mark teacher as assigned to this time slot
+                        if ($assignedTeacher) {
+                            $this->markTeacherAssignedToTimeSlot($assignedTeacher, $day, $startTime, $endTime, $class->id);
                         }
                         
                         $subjectIndex++;
@@ -136,47 +155,59 @@ class DemoTimetableSeeder extends DemoBaseSeeder
     }
 
     /**
-     * Get subjects whose teachers are available for this day (not assigned to another class)
+     * Check if teacher is available for a specific time slot
      */
-    private function getAvailableSubjectsForDay(array $gradeSubjects, string $day, string $classId): array
-    {
-        $available = [];
-        foreach ($gradeSubjects as $subjectData) {
-            $teacherId = $subjectData['teacher']->id ?? null;
-            if (!$teacherId || $this->isTeacherAvailableForClass($teacherId, $day, $classId)) {
-                $available[] = $subjectData;
-            }
-        }
-        return $available;
-    }
-
-    /**
-     * Check if teacher is available for this class on this day
-     * Teacher can only teach ONE class per day
-     */
-    private function isTeacherAvailableForClass(?string $teacherId, string $day, string $classId): bool
+    private function isTeacherAvailableForTimeSlot(?string $teacherId, string $day, string $startTime, string $endTime): bool
     {
         if (!$teacherId) {
             return true;
         }
 
-        $key = "{$teacherId}_{$day}";
-        
-        // If teacher not assigned to any class this day, they're available
-        if (!isset($this->teacherDayAssignments[$key])) {
+        // Check if teacher has any assignments on this day
+        if (!isset($this->teacherTimeSlotAssignments[$teacherId][$day])) {
             return true;
         }
 
-        // If teacher is already assigned to THIS class, they're available
-        return $this->teacherDayAssignments[$key] === $classId;
+        // Check for time conflicts with existing assignments
+        foreach ($this->teacherTimeSlotAssignments[$teacherId][$day] as $slot) {
+            if ($this->timeOverlaps($startTime, $endTime, $slot['start'], $slot['end'])) {
+                return false; // Teacher is busy during this time
+            }
+        }
+
+        return true; // No conflicts found
     }
 
     /**
-     * Mark teacher as assigned to a specific class for a day
+     * Mark teacher as assigned to a specific time slot
      */
-    private function markTeacherAssignedToClass(string $teacherId, string $day, string $classId): void
+    private function markTeacherAssignedToTimeSlot(string $teacherId, string $day, string $startTime, string $endTime, string $classId): void
     {
-        $key = "{$teacherId}_{$day}";
-        $this->teacherDayAssignments[$key] = $classId;
+        if (!isset($this->teacherTimeSlotAssignments[$teacherId])) {
+            $this->teacherTimeSlotAssignments[$teacherId] = [];
+        }
+
+        if (!isset($this->teacherTimeSlotAssignments[$teacherId][$day])) {
+            $this->teacherTimeSlotAssignments[$teacherId][$day] = [];
+        }
+
+        $this->teacherTimeSlotAssignments[$teacherId][$day][] = [
+            'start' => $startTime,
+            'end' => $endTime,
+            'class_id' => $classId,
+        ];
+    }
+
+    /**
+     * Check if two time ranges overlap
+     */
+    private function timeOverlaps(string $startA, string $endA, string $startB, string $endB): bool
+    {
+        // Periods overlap if one starts before the other ends
+        // Consecutive periods (where endA == startB) are NOT overlapping
+        if ($endA <= $startB || $endB <= $startA) {
+            return false; // No overlap
+        }
+        return true; // Overlap detected
     }
 }

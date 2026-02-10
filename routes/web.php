@@ -382,6 +382,9 @@ Route::middleware(['auth', 'ensure.active'])->group(function () {
     Route::put('/student-fees/invoices/{invoice}', [\App\Http\Controllers\StudentFeeController::class, 'updateInvoice'])
         ->middleware('ensure.setup:finance')
         ->name('student-fees.invoices.update');
+    Route::delete('/student-fees/invoices/{invoice}', [\App\Http\Controllers\StudentFeeController::class, 'destroyInvoice'])
+        ->middleware('ensure.setup:finance')
+        ->name('student-fees.invoices.destroy');
     Route::post('/student-fees/payments', [\App\Http\Controllers\StudentFeeController::class, 'storePayment'])
         ->middleware('ensure.setup:finance')
         ->name('student-fees.payments.store');
@@ -391,9 +394,40 @@ Route::middleware(['auth', 'ensure.active'])->group(function () {
     Route::post('/student-fees/payments/{payment}/reject', [\App\Http\Controllers\StudentFeeController::class, 'rejectPayment'])
         ->middleware('ensure.setup:finance')
         ->name('student-fees.payments.reject');
+    Route::post('/student-fees/payment-proofs/{paymentProof}/approve', [\App\Http\Controllers\StudentFeeController::class, 'approvePaymentProof'])
+        ->middleware('ensure.setup:finance')
+        ->name('student-fees.payment-proofs.approve');
+    Route::post('/student-fees/payment-proofs/{paymentProof}/reject', [\App\Http\Controllers\StudentFeeController::class, 'rejectPaymentProof'])
+        ->middleware('ensure.setup:finance')
+        ->name('student-fees.payment-proofs.reject');
+    Route::get('/student-fees/payment-proofs/{paymentProof}/details', [\App\Http\Controllers\StudentFeeController::class, 'getPaymentProofDetails'])
+        ->middleware('ensure.setup:finance')
+        ->name('student-fees.payment-proofs.details');
+    Route::get('/student-fees/invoices/{invoice}/history', [\App\Http\Controllers\StudentFeeController::class, 'getInvoiceHistory'])
+        ->middleware('ensure.setup:finance')
+        ->name('student-fees.invoices.history');
+    Route::post('/student-fees/students/{student}/reinform', [\App\Http\Controllers\StudentFeeController::class, 'reinform'])
+        ->middleware('ensure.setup:finance')
+        ->name('student-fees.students.reinform');
     Route::put('/student-fees/grades/{grade}', [\App\Http\Controllers\StudentFeeController::class, 'updateGradeFee'])
         ->middleware('ensure.setup:finance')
         ->name('student-fees.grades.update');
+    
+    // Payment Promotions
+    Route::put('/student-fees/promotions/{promotion}', [\App\Http\Controllers\StudentFeeController::class, 'updatePromotion'])
+        ->middleware('ensure.setup:finance')
+        ->name('student-fees.promotions.update');
+    
+    // Payment Methods CRUD
+    Route::post('/payment-methods', [\App\Http\Controllers\StudentFeeController::class, 'storePaymentMethod'])
+        ->middleware('ensure.setup:finance')
+        ->name('payment-methods.store');
+    Route::put('/payment-methods/{paymentMethod}', [\App\Http\Controllers\StudentFeeController::class, 'updatePaymentMethod'])
+        ->middleware('ensure.setup:finance')
+        ->name('payment-methods.update');
+    Route::delete('/payment-methods/{paymentMethod}', [\App\Http\Controllers\StudentFeeController::class, 'destroyPaymentMethod'])
+        ->middleware('ensure.setup:finance')
+        ->name('payment-methods.destroy');
 
     Route::get('/salary-payroll', [SalaryPayrollController::class, 'index'])
         ->middleware('ensure.setup:finance')

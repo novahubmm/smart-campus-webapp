@@ -35,6 +35,7 @@ class PaymentProof extends Model
         'fee_ids' => 'array',
     ];
 
+    // Relationships
     public function student(): BelongsTo
     {
         return $this->belongsTo(StudentProfile::class, 'student_id');
@@ -50,6 +51,20 @@ class PaymentProof extends Model
         return $this->belongsTo(User::class, 'verified_by');
     }
 
+    public function invoices()
+    {
+        if (!$this->fee_ids || !is_array($this->fee_ids)) {
+            return collect();
+        }
+        return Invoice::whereIn('id', $this->fee_ids)->get();
+    }
+
+    public function payment(): \Illuminate\Database\Eloquent\Relations\HasOne
+    {
+        return $this->hasOne(Payment::class, 'payment_proof_id');
+    }
+
+    // Scopes
     public function scopePending($query)
     {
         return $query->where('status', 'pending_verification');
@@ -63,5 +78,30 @@ class PaymentProof extends Model
     public function scopeRejected($query)
     {
         return $query->where('status', 'rejected');
+    }
+
+    // Business Logic Methods
+    public function approve(string $adminId): void
+    {
+        $this->update([
+            'status' => 'verified',
+            'verified_by' => $adminId,
+            'verified_at' => now(),
+        ]);
+    }
+
+    public function reject(string $adminId, string $reason): void
+    {
+        $this->update([
+            'status' => 'rejected',
+            'verified_by' => $adminId,
+            'verified_at' => now(),
+            'rejection_reason' => $reason,
+        ]);
+    }
+
+    public function getInvoices()
+    {
+        return $this->invoices();
     }
 }

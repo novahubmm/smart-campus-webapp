@@ -8,6 +8,7 @@ return array(
     'All Status' => 'All Status',
     'All Types' => 'All Types',
     'Apply' => 'Apply',
+    'Withdrawn amount'  => 'Withdrawn amount',
     'Are you sure you want to process payment for' => 'Are you sure you want to process payment for',
     'Attendance' => 'Attendance',
     'Attendance Allowance' => 'Attendance Allowance',

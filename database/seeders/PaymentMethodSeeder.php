@@ -4,117 +4,120 @@ namespace Database\Seeders;
 
 use App\Models\PaymentMethod;
 use Illuminate\Database\Seeder;
-use Illuminate\Support\Str;
 
 class PaymentMethodSeeder extends Seeder
 {
+    /**
+     * Run the database seeds.
+     */
     public function run(): void
     {
-        $paymentMethods = [
+        $this->command->info('Seeding payment methods...');
+
+        $methods = [
             [
-                'id' => Str::uuid(),
                 'name' => 'KBZ Bank',
                 'name_mm' => 'KBZ ဘဏ်',
                 'type' => 'bank',
-                'account_number' => '01234567890123456',
-                'account_name' => 'SmartCampus School',
-                'account_name_mm' => 'SmartCampus ကျောင်း',
-                'logo_url' => '/images/payment-methods/kbz.png',
+                'account_number' => '1234567890123456',
+                'account_name' => 'Smart Campus School',
+                'account_name_mm' => 'Smart Campus ကျောင်း',
+                'logo_url' => "/images/payment-methods/kbz.png",
                 'is_active' => true,
-                'instructions' => 'Transfer to this account and upload receipt',
-                'instructions_mm' => 'ဒီ account ကို လွှဲပြီး ပြေစာ upload လုပ်ပါ',
+                'instructions' => 'Transfer to this account and upload the receipt.',
+                'instructions_mm' => 'ဒီ account ကို လွှဲပြီး ပြေစာ upload လုပ်ပါ။',
                 'sort_order' => 1,
             ],
             [
-                'id' => Str::uuid(),
                 'name' => 'AYA Bank',
                 'name_mm' => 'AYA ဘဏ်',
                 'type' => 'bank',
-                'account_number' => '98765432109876543',
-                'account_name' => 'SmartCampus School',
-                'account_name_mm' => 'SmartCampus ကျောင်း',
-                'logo_url' => '/images/payment-methods/aya.png',
+                'account_number' => '0987654321098765',
+                'account_name' => 'Smart Campus School',
+                'account_name_mm' => 'Smart Campus ကျောင်း',
+                'logo_url' => "/images/payment-methods/aya.png",
                 'is_active' => true,
-                'instructions' => 'Transfer to this account and upload receipt',
-                'instructions_mm' => 'ဒီ account ကို လွှဲပြီး ပြေစာ upload လုပ်ပါ',
+                'instructions' => 'Transfer to this account and upload the receipt.',
+                'instructions_mm' => 'ဒီ account ကို လွှဲပြီး ပြေစာ upload လုပ်ပါ။',
                 'sort_order' => 2,
             ],
             [
-                'id' => Str::uuid(),
                 'name' => 'CB Bank',
                 'name_mm' => 'CB ဘဏ်',
                 'type' => 'bank',
-                'account_number' => '11223344556677889',
-                'account_name' => 'SmartCampus School',
-                'account_name_mm' => 'SmartCampus ကျောင်း',
-                'logo_url' => '/images/payment-methods/cb.png',
+                'account_number' => '5555666677778888',
+                'account_name' => 'Smart Campus School',
+                'account_name_mm' => 'Smart Campus ကျောင်း',
+                'logo_url' => "/images/payment-methods/cb.png",
                 'is_active' => true,
-                'instructions' => 'Transfer to this account and upload receipt',
-                'instructions_mm' => 'ဒီ account ကို လွှဲပြီး ပြေစာ upload လုပ်ပါ',
+                'instructions' => 'Transfer to this account and upload the receipt.',
+                'instructions_mm' => 'ဒီ account ကို လွှဲပြီး ပြေစာ upload လုပ်ပါ။',
                 'sort_order' => 3,
             ],
             [
-                'id' => Str::uuid(),
-                'name' => 'KBZPay',
-                'name_mm' => 'KBZPay',
+                'name' => 'KBZ Pay',
+                'name_mm' => 'KBZ Pay',
                 'type' => 'mobile_wallet',
-                'account_number' => '09-123-456-789',
-                'account_name' => 'SmartCampus School',
-                'account_name_mm' => 'SmartCampus ကျောင်း',
-                'logo_url' => '/images/payment-methods/kbzpay.png',
+                'account_number' => '09123456789',
+                'account_name' => 'Smart Campus School',
+                'account_name_mm' => 'Smart Campus ကျောင်း',
+                'logo_url' => "/images/payment-methods/kbzpay.png",
                 'is_active' => true,
-                'instructions' => 'Send money to this number and upload screenshot',
-                'instructions_mm' => 'ဒီနံပါတ်ကို ပိုက်ဆံပို့ပြီး screenshot upload လုပ်ပါ',
+                'instructions' => 'Send payment to this number and upload the screenshot.',
+                'instructions_mm' => 'ဒီနံပါတ်ကို ငွေပို့ပြီး screenshot upload လုပ်ပါ။',
                 'sort_order' => 4,
             ],
             [
-                'id' => Str::uuid(),
-                'name' => 'Wave Pay',
-                'name_mm' => 'Wave Pay',
+                'name' => 'Wave Money',
+                'name_mm' => 'Wave Money',
                 'type' => 'mobile_wallet',
-                'account_number' => '09-987-654-321',
-                'account_name' => 'SmartCampus School',
-                'account_name_mm' => 'SmartCampus ကျောင်း',
-                'logo_url' => '/images/payment-methods/wavepay.png',
+                'account_number' => '09987654321',
+                'account_name' => 'Smart Campus School',
+                'account_name_mm' => 'Smart Campus ကျောင်း',
+                'logo_url' => "/images/payment-methods/wavemoney.png",
                 'is_active' => true,
-                'instructions' => 'Send money to this number and upload screenshot',
-                'instructions_mm' => 'ဒီနံပါတ်ကို ပိုက်ဆံပို့ပြီး screenshot upload လုပ်ပါ',
+                'instructions' => 'Send payment to this number and upload the screenshot.',
+                'instructions_mm' => 'ဒီနံပါတ်ကို ငွေပို့ပြီး screenshot upload လုပ်ပါ။',
                 'sort_order' => 5,
             ],
             [
-                'id' => Str::uuid(),
                 'name' => 'AYA Pay',
                 'name_mm' => 'AYA Pay',
                 'type' => 'mobile_wallet',
-                'account_number' => '09-111-222-333',
-                'account_name' => 'SmartCampus School',
-                'account_name_mm' => 'SmartCampus ကျောင်း',
-                'logo_url' => '/images/payment-methods/ayapay.png',
+                'account_number' => '09111222333',
+                'account_name' => 'Smart Campus School',
+                'account_name_mm' => 'Smart Campus ကျောင်း',
+                'logo_url' => "/images/payment-methods/ayapay.png",
                 'is_active' => true,
-                'instructions' => 'Send money to this number and upload screenshot',
-                'instructions_mm' => 'ဒီနံပါတ်ကို ပိုက်ဆံပို့ပြီး screenshot upload လုပ်ပါ',
+                'instructions' => 'Send payment to this number and upload the screenshot.',
+                'instructions_mm' => 'ဒီနံပါတ်ကို ငွေပို့ပြီး screenshot upload လုပ်ပါ။',
                 'sort_order' => 6,
             ],
             [
-                'id' => Str::uuid(),
                 'name' => 'CB Pay',
                 'name_mm' => 'CB Pay',
                 'type' => 'mobile_wallet',
-                'account_number' => '09-444-555-666',
-                'account_name' => 'SmartCampus School',
-                'account_name_mm' => 'SmartCampus ကျောင်း',
-                'logo_url' => '/images/payment-methods/cbpay.png',
+                'account_number' => '09444555666',
+                'account_name' => 'Smart Campus School',
+                'account_name_mm' => 'Smart Campus ကျောင်း',
+                'logo_url' => "/images/payment-methods/cbpay.png",
                 'is_active' => true,
-                'instructions' => 'Send money to this number and upload screenshot',
-                'instructions_mm' => 'ဒီနံပါတ်ကို ပိုက်ဆံပို့ပြီး screenshot upload လုပ်ပါ',
+                'instructions' => 'Send payment to this number and upload the screenshot.',
+                'instructions_mm' => 'ဒီနံပါတ်ကို ငွေပို့ပြီး screenshot upload လုပ်ပါ။',
                 'sort_order' => 7,
             ],
         ];
 
-        foreach ($paymentMethods as $method) {
-            PaymentMethod::create($method);
+        foreach ($methods as $method) {
+            PaymentMethod::updateOrCreate(
+                ['name' => $method['name']],
+                $method
+            );
+            $this->command->info("✓ Created/Updated: {$method['name']}");
         }
 
-        $this->command->info('Payment methods seeded successfully!');
+        $this->command->newLine();
+        $this->command->info('✓ Payment methods seeded successfully!');
+        $this->command->info('Total: ' . count($methods) . ' payment methods');
     }
 }

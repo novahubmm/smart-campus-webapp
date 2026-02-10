@@ -2,6 +2,7 @@
 
 namespace App\Http\Requests\Timetable;
 
+use App\Rules\TeacherNotDoubleBooked;
 use Illuminate\Foundation\Http\FormRequest;
 
 class StoreTimetableRequest extends FormRequest
@@ -16,7 +17,7 @@ class StoreTimetableRequest extends FormRequest
     {
         // Support both single timetable payload and multiple timetables[] payload.
         if ($this->has('timetables')) {
-            return [
+            $rules = [
                 'timetables' => ['required', 'array', 'min:1'],
                 'timetables.*.batch_id' => ['required', 'uuid', 'exists:batches,id'],
                 'timetables.*.grade_id' => ['required', 'uuid', 'exists:grades,id'],
@@ -41,9 +42,26 @@ class StoreTimetableRequest extends FormRequest
                 'timetables.*.periods.*.room_id' => ['nullable', 'uuid', 'exists:rooms,id'],
                 'timetables.*.periods.*.notes' => ['nullable', 'string'],
             ];
+
+            // Add teacher double-booking validation for each period
+            $timetables = $this->input('timetables', []);
+            foreach ($timetables as $tIndex => $timetable) {
+                $periods = $timetable['periods'] ?? [];
+                foreach ($periods as $pIndex => $period) {
+                    if (!empty($period['teacher_profile_id']) && !empty($period['is_break']) === false) {
+                        $rules["timetables.{$tIndex}.periods.{$pIndex}.teacher_profile_id"][] = new TeacherNotDoubleBooked(
+                            $period['day_of_week'] ?? '',
+                            $period['starts_at'] ?? '',
+                            $period['ends_at'] ?? ''
+                        );
+                    }
+                }
+            }
+
+            return $rules;
         }
 
-        return [
+        $rules = [
             'batch_id' => ['required', 'uuid', 'exists:batches,id'],
             'grade_id' => ['required', 'uuid', 'exists:grades,id'],
             'class_id' => ['required', 'uuid', 'exists:classes,id'],
@@ -67,5 +85,19 @@ class StoreTimetableRequest extends FormRequest
             'periods.*.room_id' => ['nullable', 'uuid', 'exists:rooms,id'],
             'periods.*.notes' => ['nullable', 'string'],
         ];
+
+        // Add teacher double-booking validation for each period
+        $periods = $this->input('periods', []);
+        foreach ($periods as $index => $period) {
+            if (!empty($period['teacher_profile_id']) && !empty($period['is_break']) === false) {
+                $rules["periods.{$index}.teacher_profile_id"][] = new TeacherNotDoubleBooked(
+                    $period['day_of_week'] ?? '',
+                    $period['starts_at'] ?? '',
+                    $period['ends_at'] ?? ''
+                );
+            }
+        }
+
+        return $rules;
     }
 }

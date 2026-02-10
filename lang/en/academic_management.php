@@ -27,6 +27,7 @@ return array(
     'confirm_delete' => 'Are you sure you want to delete this item? This action cannot be undone.',
     'Assign Teacher' => 'Assign Teacher',
     'Assigned Teachers' => 'Assigned Teachers',
+    'Assigned Classes' => 'Assigned Classes',
     'Back to Academic Management' => 'Back to Academic Management',
     'Back to Batch Details' => 'Back to Batch Details',
     'Back to Class Details' => 'Back to Class Details',
@@ -147,6 +148,7 @@ return array(
     'Return to this page anytime to reset' => 'Return to this page anytime to reset',
     'Room' => 'Room',
     'Room Details' => 'Room Details',
+    'Room Facilities' => 'Room Facilities',
     'Room Information' => 'Room Information',
     'Room Management' => 'Room Management',
     'Room Name' => 'Room Name',
@@ -231,7 +233,5 @@ return array(
     'e.g., Room 101' => 'e.g., Room 101',
     'months' => 'months',
     'students' => 'students',
-    'Type' => 'Type',
-    'Room Facilities' => 'Room Facilities',
-    'Assigned Classes' => 'Assigned Classes'
+    'Type' => 'Type'
 );
