@@ -117,6 +117,7 @@
     <div class="py-6 px-4 sm:px-6 lg:px-8 space-y-6 overflow-x-hidden" x-data="salaryPayrollManager()">
         <!-- Toast Notification -->
         <x-toast />
+        <x-alert-dialog />
 
         @if(session('success'))
             <x-alert-success :message="session('success')" />
@@ -504,7 +505,7 @@
     <script>
         function salaryPayrollManager() {
             return {
-                activeTab: 'management',
+                activeTab: new URLSearchParams(window.location.search).get('tab') || 'management',
                 showPayModal: false,
                 isSubmitting: false,
                 selectedEntry: null,
@@ -545,6 +546,13 @@
                 init() {
                     this.filteredEntries = [...this.allEntries];
                     this.filteredHistoryEntries = [...this.allHistoryEntries];
+                    
+                    // Watch for tab changes and update URL
+                    this.$watch('activeTab', (value) => {
+                        const url = new URL(window.location);
+                        url.searchParams.set('tab', value);
+                        window.history.pushState({}, '', url);
+                    });
                 },
 
                 // Management table pagination

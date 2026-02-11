@@ -85,4 +85,15 @@ class TeacherProfile extends Model
     {
         return $this->hasMany(SchoolClass::class, 'teacher_id');
     }
+
+    /**
+     * Get formatted display name with employee ID
+     * Format: Name [employee_id]
+     */
+    public function getDisplayNameAttribute()
+    {
+        $name = $this->user->name ?? 'Teacher';
+        return "{$name} [{$this->employee_id}]";
+    }
+
 }

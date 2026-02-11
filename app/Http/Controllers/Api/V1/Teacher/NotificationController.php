@@ -100,6 +100,7 @@ class NotificationController extends Controller
                     'message' => $data['message'] ?? '',
                     'data' => $data,
                     'is_read' => $notification->read_at !== null,
+                    'role' => 'teacher',
                     'read_at' => $notification->read_at?->toISOString(),
                     'created_at' => $notification->created_at->toISOString(),
                     'time_ago' => $notification->created_at->diffForHumans(),

@@ -34,8 +34,8 @@
                         grade_id: @js(old('grade_id')),
                         class_id: @js(old('class_id')),
                         starting_grade_at_school: @js(old('starting_grade_at_school')),
-                        current_grade: @js(old('current_grade')),
-                        current_class: @js(old('current_class')),
+                        previous_grade: @js(old('previous_grade')),
+                        previous_class: @js(old('previous_class')),
                         guardian_teacher: @js(old('guardian_teacher')),
                         assistant_teacher: @js(old('assistant_teacher')),
                         date_of_joining: @js(old('date_of_joining')),
@@ -48,12 +48,16 @@
                         address: @js(old('address')),
                         father_name: @js(old('father_name')),
                         father_nrc: @js(old('father_nrc')),
+                        father_religious: @js(old('father_religious')),
                         father_phone_no: @js(old('father_phone_no')),
                         father_occupation: @js(old('father_occupation')),
+                        father_address: @js(old('father_address')),
                         mother_name: @js(old('mother_name')),
                         mother_nrc: @js(old('mother_nrc')),
+                        mother_religious: @js(old('mother_religious')),
                         mother_phone_no: @js(old('mother_phone_no')),
                         mother_occupation: @js(old('mother_occupation')),
+                        mother_address: @js(old('mother_address')),
                         emergency_contact_phone_no: @js(old('emergency_contact_phone_no')),
                         in_school_relative_name: @js(old('in_school_relative_name')),
                         in_school_relative_grade: @js(old('in_school_relative_grade')),
@@ -75,11 +79,11 @@
                             this.step = Math.min(this.total, this.step + 1);
                         } else {
                             updateFieldErrorClasses(this.errors);
-                            showFormNotification('Please fill in all required fields before proceeding', 'error');
+                            showFormNotification('Please fill in the following required fields:', 'error', this.errors);
                         }
                     }
                 }">
-                    <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 space-y-4">
+                    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-4">
                         <div class="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl shadow-sm p-4 sm:p-5">
                             <div class="flex items-center justify-between gap-3">
                                 <div class="flex items-center gap-2 text-sm font-semibold text-gray-700 dark:text-gray-200">
@@ -150,7 +154,7 @@
                                             @error('phone')<p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>@enderror
                                         </div>
                                         <div>
-                                            <label class="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1">{{ __('student_profiles.NRC / ID') }} <span class="text-red-500">*</span></label>
+                                            <label class="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1">{{ __('student_profiles.NRC / ID') }}</label>
                                             <input type="text" name="nrc" x-model="form.nrc" :disabled="bindExisting" autocomplete="off" 
                                                    class="w-full rounded-lg border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-200 focus:border-indigo-500 focus:ring-indigo-500"
                                                    :class="errors.nrc ? 'field-error' : ''">

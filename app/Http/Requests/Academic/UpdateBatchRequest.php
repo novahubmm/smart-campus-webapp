@@ -17,15 +17,27 @@ class UpdateBatchRequest extends FormRequest
         $batchId = $this->route('id') ?? $this->route('batch');
 
         return [
-            'name' => [
-                'required',
-                'string',
-                'max:255',
-                Rule::unique('batches', 'name')->ignore($batchId),
-            ],
+            'name' => ['required', 'string', 'max:255'],
             'start_date' => ['required', 'date'],
             'end_date' => ['required', 'date', 'after:start_date'],
             'status' => ['sometimes', 'boolean'],
         ];
+    }
+
+    public function withValidator($validator)
+    {
+        $validator->after(function ($validator) {
+            $batchId = $this->route('id') ?? $this->route('batch');
+            
+            $query = \App\Models\Batch::where('name', $this->name);
+            
+            if ($batchId) {
+                $query->where('id', '!=', $batchId);
+            }
+            
+            if ($query->exists()) {
+                $validator->errors()->add('name', __('academic_management.duplicate_batch_error'));
+            }
+        });
     }
 }

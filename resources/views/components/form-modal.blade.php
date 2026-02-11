@@ -59,6 +59,39 @@
         if (modal) {
             modal.style.display = 'flex';
             document.body.style.overflow = 'hidden';
+            
+            // Reset form when opening
+            const form = modal.querySelector('form');
+            if (form) {
+                // Special handling for batch modal
+                if (modalId === 'batchModal') {
+                    // Use setTimeout to ensure DOM is ready
+                    setTimeout(() => {
+                        // Clear batch name
+                        const batchNameInput = form.querySelector('#batchName');
+                        if (batchNameInput) {
+                            batchNameInput.value = '';
+                        }
+                        
+                        // Set start date to today
+                        const startDateInput = form.querySelector('#batchStart');
+                        if (startDateInput) {
+                            const today = new Date();
+                            startDateInput.value = today.toISOString().split('T')[0];
+                        }
+                        
+                        // Set end date to tomorrow
+                        const endDateInput = form.querySelector('#batchEnd');
+                        if (endDateInput) {
+                            const tomorrow = new Date();
+                            tomorrow.setDate(tomorrow.getDate() + 1);
+                            endDateInput.value = tomorrow.toISOString().split('T')[0];
+                        }
+                    }, 0);
+                } else {
+                    form.reset();
+                }
+            }
         }
     };
     

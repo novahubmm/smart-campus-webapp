@@ -18,6 +18,7 @@ return [
     'Amount' => 'ပမာဏ',
     'Annual Profit & Loss' => 'နှစ်စဉ်အမြတ်နှင့်အရှုံး',
     'Apply' => 'အသုံးပြု',
+    'Are you sure you want to clear the fee for this grade?' => 'ဤအတန်းအတွက် ငွေကြေးကို ရှင်းလင်းလိုပါသလား?',
     'Auto-synced from student fee payments' => 'ကျောင်းလခများကို အလိုလျှောက်စနစ်ဖြင့်ထည့်သွင်းခြင်း',
     'Balance' => 'လက်ကျန်ငွေ',
     'Bank Transfer' => 'ဘဏ်လွှဲပြောင်း',
@@ -282,4 +283,5 @@ return [
     'Logo URL' => 'လိုဂို URL',
     'Relative path to logo image' => 'လိုဂိုပုံအတွက် လမ်းကြောင်း',
     'Sort Order' => 'စီစဉ်မှုအစီအစဉ်',
+    'Fee Categories' => 'အခြားကောက်ခံမှုများ'
 ];

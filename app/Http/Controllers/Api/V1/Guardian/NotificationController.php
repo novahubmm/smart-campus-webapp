@@ -16,13 +16,15 @@ class NotificationController extends Controller
 
     /**
      * Get Notifications
-     * GET /api/v1/guardian/notifications?category={category}&is_read={boolean}
+     * GET /api/v1/guardian/notifications?category={category}&is_read={boolean}&page={page}&per_page={per_page}
      */
     public function index(Request $request): JsonResponse
     {
         $request->validate([
             'category' => 'nullable|string',
             'is_read' => 'nullable|boolean',
+            'page' => 'nullable|integer|min:1',
+            'per_page' => 'nullable|integer|min:1|max:100',
         ]);
 
         try {
@@ -34,10 +36,36 @@ class NotificationController extends Controller
 
             $category = $request->input('category');
             $isRead = $request->has('is_read') ? $request->boolean('is_read') : null;
+            $perPage = $request->input('per_page', 20);
 
-            $notifications = $this->notificationRepository->getNotifications($guardianId, $category, $isRead);
+            $notifications = $this->notificationRepository->getNotifications($guardianId, $category, $isRead, $perPage);
 
-            return ApiResponse::success($notifications);
+            $notificationsData = $notifications->map(function ($notification) {
+                $data = $notification->data ?? [];
+                return [
+                    'id' => $notification->id,
+                    'type' => $data['type'] ?? $data['category'] ?? 'general',
+                    'title' => $data['title'] ?? 'Notification',
+                    'message' => $data['message'] ?? $data['body'] ?? '',
+                    'data' => $data,
+                    'is_read' => $notification->read_at !== null,
+                    'role' => 'guardian',
+                    'read_at' => $notification->read_at?->toISOString(),
+                    'created_at' => $notification->created_at->toISOString(),
+                    'time_ago' => $notification->created_at->diffForHumans(),
+                ];
+            });
+
+            return ApiResponse::success([
+                'notifications' => $notificationsData->toArray(),
+                'pagination' => [
+                    'current_page' => $notifications->currentPage(),
+                    'per_page' => $notifications->perPage(),
+                    'total' => $notifications->total(),
+                    'total_pages' => $notifications->lastPage(),
+                    'has_more' => $notifications->hasMorePages(),
+                ],
+            ]);
         } catch (\Exception $e) {
             return ApiResponse::error('Failed to retrieve notifications: ' . $e->getMessage(), 500);
         }

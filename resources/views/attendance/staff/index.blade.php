@@ -23,6 +23,7 @@
         'today' => $today,
         'currentMonth' => $currentMonth,
         'currentYear' => $currentYear,
+        'initialTab' => $initialTab,
     ]))" x-init="initPage()">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-6">
             <!-- View Toggle Tabs -->
@@ -465,7 +466,7 @@
                 today: config.today,
                 currentMonth: config.currentMonth,
                 currentYear: config.currentYear,
-                tab: 'daily',
+                tab: config.initialTab || 'monthly',
                 dailyDate: config.today,
                 dailyList: [],
                 filteredDailyList: [],
@@ -508,6 +509,14 @@
                     this.loadMonthly();
                     this.loadSummer();
                     this.loadAnnual();
+                },
+                init() {
+                    // Watch for tab changes and update URL
+                    this.$watch('tab', (value) => {
+                        const url = new URL(window.location);
+                        url.searchParams.set('tab', value);
+                        window.history.pushState({}, '', url);
+                    });
                 },
 
                 updateAcademicYear() {

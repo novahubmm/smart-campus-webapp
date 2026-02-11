@@ -33,6 +33,7 @@ class LeaveRequestController extends Controller
         return view('leave.requests.index', [
             'classes' => $classes,
             'today' => now()->toDateString(),
+            'initialTab' => request('tab', 'staff'),
         ]);
     }
 

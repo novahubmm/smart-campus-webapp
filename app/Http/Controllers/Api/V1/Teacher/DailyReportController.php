@@ -102,20 +102,29 @@ class DailyReportController extends Controller
 
     /**
      * Get available recipients for daily reports
-     * Only returns admin recipient
+     * Returns fixed admin recipient
      */
     public function recipients(Request $request): JsonResponse
     {
-        $recipients = DailyReportRecipient::active()
-            ->where('slug', 'admin')
-            ->ordered()
-            ->get()
-            ->map(fn($r) => [
-                'id' => $r->id,
-                'name' => $r->name,
-                'slug' => $r->slug,
-                'description' => $r->description,
+        // Get the first admin user
+        $adminUser = \App\Models\User::role('admin')->first();
+        
+        if (!$adminUser) {
+            // Fallback if no admin found
+            return response()->json([
+                'success' => true,
+                'data' => [],
             ]);
+        }
+
+        $recipients = [
+            [
+                'id' => $adminUser->id,
+                'name' => 'Admin',
+                'slug' => 'admin',
+                'description' => 'School Administration',
+            ]
+        ];
 
         return response()->json([
             'success' => true,

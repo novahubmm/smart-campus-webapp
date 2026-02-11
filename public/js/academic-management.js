@@ -6,6 +6,87 @@ function openModal(modalId) {
     if (modal) {
         modal.style.display = 'flex';
         document.body.style.overflow = 'hidden';
+        
+        // Reset form when opening
+        const form = modal.querySelector('form');
+        if (form) {
+            // Special handling for batch modal
+            if (modalId === 'batchModal') {
+                // Use setTimeout to ensure DOM is ready
+                setTimeout(() => {
+                    // Clear batch name
+                    const batchNameInput = form.querySelector('#batchName');
+                    if (batchNameInput) {
+                        batchNameInput.value = '';
+                    }
+                    
+                    // Set start date to today
+                    const startDateInput = form.querySelector('#batchStart');
+                    if (startDateInput) {
+                        const today = new Date();
+                        startDateInput.value = today.toISOString().split('T')[0];
+                    }
+                    
+                    // Set end date to tomorrow
+                    const endDateInput = form.querySelector('#batchEnd');
+                    if (endDateInput) {
+                        const tomorrow = new Date();
+                        tomorrow.setDate(tomorrow.getDate() + 1);
+                        endDateInput.value = tomorrow.toISOString().split('T')[0];
+                    }
+                }, 0);
+            } else {
+                form.reset();
+            }
+        }
+        
+        // Initialize Select2 for class modal teacher dropdown
+        if (modalId === 'classModal') {
+            setTimeout(() => {
+                // Check if jQuery and Select2 are available
+                if (typeof jQuery !== 'undefined' && typeof jQuery.fn.select2 !== 'undefined') {
+                    const teacherSelect = jQuery('#classTeacher');
+                    if (teacherSelect.length) {
+                        // Destroy existing Select2 if any
+                        if (teacherSelect.hasClass('select2-hidden-accessible')) {
+                            teacherSelect.select2('destroy');
+                        }
+                        
+                        // Initialize Select2
+                        teacherSelect.select2({
+                            width: '100%',
+                            dropdownParent: jQuery('#classModal'),
+                            placeholder: 'Select teacher',
+                            allowClear: true
+                        });
+                    }
+                }
+            }, 100);
+        }
+        
+        // Initialize Select2 for subject modal grades dropdown
+        if (modalId === 'subjectModal') {
+            setTimeout(() => {
+                // Check if jQuery and Select2 are available
+                if (typeof jQuery !== 'undefined' && typeof jQuery.fn.select2 !== 'undefined') {
+                    const gradesSelect = jQuery('#createSubjectGrades');
+                    if (gradesSelect.length) {
+                        // Destroy existing Select2 if any
+                        if (gradesSelect.hasClass('select2-hidden-accessible')) {
+                            gradesSelect.select2('destroy');
+                        }
+                        
+                        // Initialize Select2
+                        gradesSelect.select2({
+                            width: '100%',
+                            dropdownParent: jQuery('#subjectModal'),
+                            placeholder: 'Select grades',
+                            allowClear: true
+                        });
+                    }
+                }
+            }, 100);
+        }
     }
 }
 

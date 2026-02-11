@@ -20,4 +20,22 @@ class UpdateRoomRequest extends FormRequest
             'capacity' => ['nullable', 'integer', 'min:1'],
         ];
     }
+
+    public function withValidator($validator)
+    {
+        $validator->after(function ($validator) {
+            $roomId = $this->route('id') ?? $this->route('room');
+            
+            $query = \App\Models\Room::where('name', $this->name)
+                ->where('building', $this->building);
+            
+            if ($roomId) {
+                $query->where('id', '!=', $roomId);
+            }
+            
+            if ($query->exists()) {
+                $validator->errors()->add('name', __('academic_management.duplicate_room_error'));
+            }
+        });
+    }
 }

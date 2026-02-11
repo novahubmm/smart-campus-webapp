@@ -12,7 +12,7 @@
     <meta name="apple-mobile-web-app-title" content="Smart Campus">
     
     <!-- Favicon -->
-    <link rel="icon" type="image/svg+xml" href="{{ asset('smart-campus-browser-tab.svg') }}">
+    <link rel="icon" type="image/jpeg" href="{{ asset('school-logo.jpg') }}">
     
     <!-- PWA Manifest -->
     <link rel="manifest" href="{{ asset('manifest.json') }}">

@@ -26,7 +26,7 @@
         id="batchStart" 
         name="start_date" 
         class="w-full rounded-lg border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200 focus:border-blue-500 focus:ring-blue-500"
-        value="{{ old('start_date', optional($batch->start_date)->format('Y-m-d')) }}"
+        value="{{ old('start_date', $batch ? optional($batch->start_date)->format('Y-m-d') : '') }}"
         required>
     @error('start_date')
         <p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>
@@ -42,7 +42,7 @@
         id="batchEnd" 
         name="end_date" 
         class="w-full rounded-lg border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200 focus:border-blue-500 focus:ring-blue-500"
-        value="{{ old('end_date', optional($batch->end_date)->format('Y-m-d')) }}"
+        value="{{ old('end_date', $batch ? optional($batch->end_date)->format('Y-m-d') : '') }}"
         required>
     @error('end_date')
         <p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>

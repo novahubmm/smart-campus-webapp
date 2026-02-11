@@ -75,11 +75,14 @@ class TimetableController extends Controller
      * GET /api/v1/guardian/classes/{id}?student_id={student_id}
      * GET /api/v1/guardian/students/{student_id}/class-info (NEW)
      */
-    public function classInfo(Request $request, ?string $id = null, ?string $studentId = null): JsonResponse
+    public function classInfo(Request $request, ?string $studentId = null): JsonResponse
     {
-        $request->validate([
-            'student_id' => $studentId ? 'nullable|string' : 'required|string',
-        ]);
+        // If studentId is in URL, don't require it in query params
+        if (!$studentId) {
+            $request->validate([
+                'student_id' => 'required|string',
+            ]);
+        }
 
         try {
             $student = $this->getAuthorizedStudent($request, $studentId);
@@ -102,9 +105,12 @@ class TimetableController extends Controller
      */
     public function detailedClassInfo(Request $request, ?string $studentId = null): JsonResponse
     {
-        $request->validate([
-            'student_id' => $studentId ? 'nullable|string' : 'required|string',
-        ]);
+        // If studentId is in URL, don't require it in query params
+        if (!$studentId) {
+            $request->validate([
+                'student_id' => 'required|string',
+            ]);
+        }
 
         try {
             $student = $this->getAuthorizedStudent($request, $studentId);
@@ -127,9 +133,12 @@ class TimetableController extends Controller
      */
     public function classTeachers(Request $request, ?string $studentId = null): JsonResponse
     {
-        $request->validate([
-            'student_id' => $studentId ? 'nullable|string' : 'required|string',
-        ]);
+        // If studentId is in URL, don't require it in query params
+        if (!$studentId) {
+            $request->validate([
+                'student_id' => 'required|string',
+            ]);
+        }
 
         try {
             $student = $this->getAuthorizedStudent($request, $studentId);
@@ -152,9 +161,12 @@ class TimetableController extends Controller
      */
     public function classStatistics(Request $request, ?string $studentId = null): JsonResponse
     {
-        $request->validate([
-            'student_id' => $studentId ? 'nullable|string' : 'required|string',
-        ]);
+        // If studentId is in URL, don't require it in query params
+        if (!$studentId) {
+            $request->validate([
+                'student_id' => 'required|string',
+            ]);
+        }
 
         try {
             $student = $this->getAuthorizedStudent($request, $studentId);

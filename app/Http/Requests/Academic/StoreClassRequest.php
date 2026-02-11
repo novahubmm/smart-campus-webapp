@@ -19,12 +19,24 @@ class StoreClassRequest extends FormRequest
                 'required',
                 'string',
                 'max:255',
-                Rule::unique('classes', 'name')->where(fn ($query) => $query->where('grade_id', $this->input('grade_id'))),
             ],
             'grade_id' => ['required', 'uuid', 'exists:grades,id'],
             'batch_id' => ['nullable', 'uuid', 'exists:batches,id'],
             'teacher_id' => ['nullable', 'uuid', 'exists:teacher_profiles,id'],
             'room_id' => ['nullable', 'uuid', 'exists:rooms,id'],
         ];
+    }
+
+    public function withValidator($validator)
+    {
+        $validator->after(function ($validator) {
+            $exists = \App\Models\SchoolClass::where('grade_id', $this->grade_id)
+                ->where('name', $this->name)
+                ->exists();
+
+            if ($exists) {
+                $validator->errors()->add('name', __('academic_management.duplicate_class_error'));
+            }
+        });
     }
 }

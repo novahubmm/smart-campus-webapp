@@ -14,14 +14,24 @@ class RuleCategory extends Model
 
     protected $fillable = [
         'title',
+        'title_mm',
         'description',
+        'description_mm',
         'icon',
         'icon_color',
         'icon_bg_color',
+        'icon_background_color',
+        'priority',
+        'is_active',
+    ];
+
+    protected $casts = [
+        'priority' => 'integer',
+        'is_active' => 'boolean',
     ];
 
     public function rules(): HasMany
     {
-        return $this->hasMany(SchoolRule::class)->orderBy('sort_order');
+        return $this->hasMany(SchoolRule::class, 'rule_category_id')->orderBy('sort_order');
     }
 }

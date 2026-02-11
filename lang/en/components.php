@@ -45,6 +45,11 @@ return [
     'Fri' => 'FRI',
     'Sat' => 'SAT',
     'Sun' => 'SUN',
+    'OK' => 'OK',
+    'Success' => 'Success',
+    'Error' => 'Error',
+    'Warning' => 'Warning',
+    'Information' => 'Information',
 
 
 ];

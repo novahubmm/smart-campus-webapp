@@ -2,7 +2,7 @@
     @php
         $setting = optional(\App\Models\Setting::first());
         $schoolLogo = $setting->school_logo_path;
-        $logoUrl = $schoolLogo ? asset('storage/'.$schoolLogo) : asset('smart-campus-logo.svg');
+        $logoUrl = $schoolLogo ? asset('storage/'.$schoolLogo) : asset('school-logo.jpg');
     @endphp
     <div class="flex items-center justify-between px-4 h-[80px] border-b border-gray-200 dark:border-gray-800">
         <a href="{{ route('dashboard') }}" class="flex items-center gap-2">
@@ -55,9 +55,9 @@
                 @can('manage academic management')
                     <x-nav-link :href="route('ongoing-class.index')" label="{{ __('navigation.Ongoing Class') }}" icon="fas fa-chalkboard" :active="(bool) request()->routeIs('ongoing-class.*')" />
                 @endcan
-                @can('manage academic management')
+                <!-- @can('manage academic management')
                     <x-nav-link :href="route('homework.index')" label="{{ __('navigation.Homework') }}" icon="fas fa-tasks" :active="(bool) request()->routeIs('homework.*')" />
-                @endcan
+                @endcan -->
             </div>
             @endcan
 
@@ -96,13 +96,13 @@
                     <x-nav-link :href="route('time-table.create')" label="{{ __('navigation.Time-table Planner') }}" icon="fas fa-calendar-plus" :active="(bool) request()->routeIs('time-table.create')" />
                 @endcan
                 @can('manage time-table planner')
-                    <x-nav-link :href="route('time-table.index')" label="{{ __('navigation.Time-table List') }}" icon="fas fa-list" :active="(bool) request()->routeIs('time-table.index', 'time-table.edit')" />
+                    <x-nav-link :href="route('time-table.index')" label="{{ __('navigation.Time-table List') }}" icon="fas fa-list" :active="(bool) (request()->routeIs('time-table.index', 'time-table.edit') || request()->is('time-table/class/*/versions'))" />
                 @endcan
                 @can('collect student attendance')
-                    <x-nav-link :href="route('student-attendance.create')" label="{{ __('navigation.Collect Attendance') }}" icon="fas fa-clipboard-check" :active="(bool) request()->routeIs('student-attendance.create')" />
+                    <x-nav-link :href="route('student-attendance.create')" label="{{ __('navigation.Collect Attendance') }}" icon="fas fa-clipboard-check" :active="(bool) (request()->routeIs('student-attendance.create') || request()->is('attendance/collect-attendance/*'))" />
                 @endcan
                 @can('manage student attendance')
-                    <x-nav-link :href="route('student-attendance.index')" label="{{ __('navigation.Student Attendance') }}" icon="fas fa-user-graduate" :active="(bool) request()->routeIs('student-attendance.index')" />
+                    <x-nav-link :href="route('student-attendance.index')" label="{{ __('navigation.Student Attendance') }}" icon="fas fa-user-graduate" :active="(bool) (request()->routeIs('student-attendance.index') || request()->is('attendance/students/class/*'))" />
                 @endcan
                 @can('manage teacher attendance')
                     <x-nav-link :href="route('teacher-attendance.index')" label="{{ __('navigation.Teacher Attendance') }}" icon="fas fa-chalkboard-teacher" :active="(bool) request()->routeIs('teacher-attendance.*')" />
@@ -168,7 +168,7 @@
                     <x-nav-link :href="route('users.index')" label="{{ __('navigation.User Management') }}" icon="fas fa-users" :active="(bool) request()->routeIs('users.*')" />
                 @endcan
                 @can('manage school settings')
-                    <x-nav-link :href="route('rules.index')" label="{{ __('navigation.Rules') }}" icon="fas fa-calendar-alt" :active="(bool) request()->routeIs('rules.*')" />
+                    <x-nav-link :href="route('rules.index')" label="{{ __('navigation.Rules') }}" icon="fas fa-calendar-alt" :active="(bool) (request()->routeIs('rules.*') || request()->is('rules/*'))" />
                 @endcan
                 @can('manage user activity logs')
                     <x-nav-link :href="route('user-activity-logs.index')" label="{{ __('navigation.User Activity Logs') }}" icon="fas fa-chart-line" :active="(bool) request()->routeIs('user-activity-logs.*')" />
@@ -179,7 +179,7 @@
             <div class="space-y-2">
                 <p class="text-[10px] font-semibold tracking-[0.18em] text-gray-500 dark:text-gray-400 uppercase px-3">{{ __('navigation.Reports') }}</p>
                 @can('generate reports')
-                    <x-nav-link :href="route('reports.index')" label="{{ __('navigation.Report Centre') }}" icon="fas fa-file-alt" :active="(bool) request()->routeIs('reports.generate')" />
+                    <x-nav-link :href="route('reports.index')" label="{{ __('navigation.Report Centre') }}" icon="fas fa-file-alt" :active="(bool) (request()->routeIs('reports.*') || request()->is('reports') || request()->is('reports/incoming/*'))" />
                 @endcan
             </div>
             @endcan

@@ -29,8 +29,18 @@ class GuardianStudentRepository implements GuardianStudentRepositoryInterface
             'blood_group' => $student->blood_type,
             'gender' => $student->gender,
             'address' => $student->address,
+            'previous_grade' => $student->previous_grade,
+            'previous_class' => $student->previous_class,
             'father_name' => $student->father_name,
+            'father_nrc' => $student->father_nrc,
+            'father_religious' => $student->father_religious,
+            'father_occupation' => $student->father_occupation,
+            'father_address' => $student->father_address,
             'mother_name' => $student->mother_name,
+            'mother_nrc' => $student->mother_nrc,
+            'mother_religious' => $student->mother_religious,
+            'mother_occupation' => $student->mother_occupation,
+            'mother_address' => $student->mother_address,
             'emergency_contact' => $student->emergency_contact_phone_no,
         ];
     }
@@ -414,4 +424,415 @@ class GuardianStudentRepository implements GuardianStudentRepositoryInterface
         if ($percentage >= 40) return 'D';
         return 'F';
     }
+
+    /**
+     * Get Subject Performance for Profile Screen
+     */
+    public function getSubjectPerformance(StudentProfile $student): array
+    {
+        // Get all subjects for the student's class
+        $subjects = \App\Models\Subject::whereHas('grades', function($q) use ($student) {
+            $q->where('grade_id', $student->grade_id);
+        })->get();
+
+        $subjectData = [];
+        
+        foreach ($subjects as $subject) {
+            // Get latest exam marks for this subject
+            $latestMark = \App\Models\ExamMark::where('student_id', $student->id)
+                ->where('subject_id', $subject->id)
+                ->latest('created_at')
+                ->first();
+
+            if ($latestMark) {
+                $percentage = ($latestMark->marks_obtained / $latestMark->total_marks) * 100;
+                $grade = $this->calculateGrade($percentage);
+                
+                // Get rank in class for this subject
+                $rank = \App\Models\ExamMark::where('subject_id', $subject->id)
+                    ->where('exam_id', $latestMark->exam_id)
+                    ->whereHas('student', function($q) use ($student) {
+                        $q->where('class_id', $student->class_id);
+                    })
+                    ->selectRaw('student_id, (marks_obtained / total_marks * 100) as percentage')
+                    ->orderByDesc('percentage')
+                    ->get()
+                    ->search(function($item) use ($student) {
+                        return $item->student_id === $student->id;
+                    }) + 1;
+
+                $totalStudents = \App\Models\StudentProfile::where('class_id', $student->class_id)->count();
+
+                $subjectData[] = [
+                    'id' => $subject->id,
+                    'name' => $subject->name,
+                    'name_mm' => $subject->name, // Add Myanmar translation if available
+                    'grade' => $grade,
+                    'grade_color' => $this->getGradeColor($grade),
+                    'percentage' => round($percentage, 1),
+                    'rank' => $rank,
+                    'total_students' => $totalStudents,
+                ];
+            }
+        }
+
+        return ['subjects' => $subjectData];
+    }
+
+    /**
+     * Get Progress Tracking (GPA & Rank History)
+     */
+    public function getProgressTracking(StudentProfile $student, int $months = 6): array
+    {
+        $startDate = now()->subMonths($months);
+        
+        // Get exam history
+        $exams = \App\Models\Exam::where('created_at', '>=', $startDate)
+            ->orderBy('created_at')
+            ->get();
+
+        $gpaHistory = [];
+        $rankHistory = [];
+        $currentGpa = 0;
+        $previousGpa = 0;
+        $currentRank = 0;
+        $previousRank = 0;
+
+        foreach ($exams as $index => $exam) {
+            $marks = \App\Models\ExamMark::where('exam_id', $exam->id)
+                ->where('student_id', $student->id)
+                ->get();
+
+            if ($marks->isNotEmpty()) {
+                $totalPercentage = $marks->sum(function($mark) {
+                    return ($mark->marks_obtained / $mark->total_marks) * 100;
+                });
+                $gpa = ($totalPercentage / $marks->count()) / 25; // Convert to 4.0 scale
+
+                // Calculate rank
+                $allStudentScores = \App\Models\ExamMark::where('exam_id', $exam->id)
+                    ->whereHas('student', function($q) use ($student) {
+                        $q->where('class_id', $student->class_id);
+                    })
+                    ->selectRaw('student_id, SUM(marks_obtained) as total_marks')
+                    ->groupBy('student_id')
+                    ->orderByDesc('total_marks')
+                    ->get();
+
+                $rank = $allStudentScores->search(function($item) use ($student) {
+                    return $item->student_id === $student->id;
+                }) + 1;
+
+                $date = $exam->created_at->format('Y-m');
+                $label = $exam->created_at->format('M Y');
+
+                $gpaHistory[] = [
+                    'date' => $date,
+                    'value' => round($gpa, 2),
+                    'label' => $label,
+                ];
+
+                $rankHistory[] = [
+                    'date' => $date,
+                    'value' => $rank,
+                    'label' => $label,
+                ];
+
+                if ($index === count($exams) - 1) {
+                    $currentGpa = round($gpa, 2);
+                    $currentRank = $rank;
+                } elseif ($index === count($exams) - 2) {
+                    $previousGpa = round($gpa, 2);
+                    $previousRank = $rank;
+                }
+            }
+        }
+
+        return [
+            'gpa_history' => $gpaHistory,
+            'rank_history' => $rankHistory,
+            'current_gpa' => $currentGpa,
+            'previous_gpa' => $previousGpa,
+            'current_rank' => $currentRank,
+            'previous_rank' => $previousRank,
+        ];
+    }
+
+    /**
+     * Get Comparison Data (Student vs Class Average)
+     */
+    public function getComparisonData(StudentProfile $student): array
+    {
+        // Get latest exam
+        $latestExam = \App\Models\Exam::latest()->first();
+        
+        if (!$latestExam) {
+            return [
+                'gpa_comparison' => ['student_value' => 0, 'class_average' => 0, 'label' => 'GPA'],
+                'avg_score_comparison' => ['student_value' => 0, 'class_average' => 0, 'label' => 'Average Score'],
+                'subject_comparisons' => [],
+            ];
+        }
+
+        // Get student marks
+        $studentMarks = \App\Models\ExamMark::where('exam_id', $latestExam->id)
+            ->where('student_id', $student->id)
+            ->get();
+
+        // Calculate student GPA and average
+        $studentTotalPercentage = $studentMarks->sum(function($mark) {
+            return ($mark->marks_obtained / $mark->total_marks) * 100;
+        });
+        $studentGpa = $studentMarks->count() > 0 ? ($studentTotalPercentage / $studentMarks->count()) / 25 : 0;
+        $studentAvgScore = $studentMarks->count() > 0 ? $studentTotalPercentage / $studentMarks->count() : 0;
+
+        // Get class average
+        $classMarks = \App\Models\ExamMark::where('exam_id', $latestExam->id)
+            ->whereHas('student', function($q) use ($student) {
+                $q->where('class_id', $student->class_id);
+            })
+            ->get();
+
+        $classTotalPercentage = $classMarks->sum(function($mark) {
+            return ($mark->marks_obtained / $mark->total_marks) * 100;
+        });
+        $classGpa = $classMarks->count() > 0 ? ($classTotalPercentage / $classMarks->count()) / 25 : 0;
+        $classAvgScore = $classMarks->count() > 0 ? $classTotalPercentage / $classMarks->count() : 0;
+
+        // Subject comparisons
+        $subjectComparisons = [];
+        foreach ($studentMarks as $mark) {
+            $subject = $mark->subject;
+            $studentScore = ($mark->marks_obtained / $mark->total_marks) * 100;
+
+            // Get class average for this subject
+            $subjectClassMarks = \App\Models\ExamMark::where('exam_id', $latestExam->id)
+                ->where('subject_id', $mark->subject_id)
+                ->whereHas('student', function($q) use ($student) {
+                    $q->where('class_id', $student->class_id);
+                })
+                ->get();
+
+            $subjectClassAvg = $subjectClassMarks->avg(function($m) {
+                return ($m->marks_obtained / $m->total_marks) * 100;
+            });
+
+            $indicator = 'neutral';
+            if ($studentScore > $subjectClassAvg + 2) {
+                $indicator = 'positive';
+            } elseif ($studentScore < $subjectClassAvg - 2) {
+                $indicator = 'needs_improvement';
+            }
+
+            $subjectComparisons[] = [
+                'subject_id' => $subject->id,
+                'subject_name' => $subject->name,
+                'subject_name_mm' => $subject->name,
+                'student_score' => round($studentScore, 1),
+                'class_average' => round($subjectClassAvg, 1),
+                'indicator' => $indicator,
+            ];
+        }
+
+        return [
+            'gpa_comparison' => [
+                'student_value' => round($studentGpa, 2),
+                'class_average' => round($classGpa, 2),
+                'label' => 'GPA',
+            ],
+            'avg_score_comparison' => [
+                'student_value' => round($studentAvgScore, 1),
+                'class_average' => round($classAvgScore, 1),
+                'label' => 'Average Score',
+            ],
+            'subject_comparisons' => $subjectComparisons,
+        ];
+    }
+
+    /**
+     * Get Attendance Summary for Profile Screen
+     */
+    public function getAttendanceSummary(StudentProfile $student, int $months = 3): array
+    {
+        $startDate = now()->subMonths($months)->startOfMonth();
+        
+        $attendanceRecords = \App\Models\StudentAttendance::where('student_id', $student->id)
+            ->where('date', '>=', $startDate)
+            ->get();
+
+        $totalDays = $attendanceRecords->count();
+        $totalPresent = $attendanceRecords->where('status', 'present')->count();
+        $overallPercentage = $totalDays > 0 ? ($totalPresent / $totalDays) * 100 : 0;
+
+        // Monthly breakdown
+        $monthlyBreakdown = [];
+        for ($i = 0; $i < $months; $i++) {
+            $monthStart = now()->subMonths($i)->startOfMonth();
+            $monthEnd = now()->subMonths($i)->endOfMonth();
+
+            $monthRecords = $attendanceRecords->whereBetween('date', [$monthStart, $monthEnd]);
+            $monthTotal = $monthRecords->count();
+            $monthPresent = $monthRecords->where('status', 'present')->count();
+            $monthPercentage = $monthTotal > 0 ? ($monthPresent / $monthTotal) * 100 : 0;
+
+            $monthlyBreakdown[] = [
+                'month' => $monthStart->format('M'),
+                'month_mm' => $this->getMonthNameMM($monthStart->format('m')),
+                'year' => $monthStart->year,
+                'percentage' => round($monthPercentage, 1),
+                'present' => $monthPresent,
+                'total' => $monthTotal,
+            ];
+        }
+
+        return [
+            'overall_percentage' => round($overallPercentage, 1),
+            'total_present' => $totalPresent,
+            'total_days' => $totalDays,
+            'monthly_breakdown' => array_reverse($monthlyBreakdown),
+        ];
+    }
+
+    /**
+     * Get Rankings & Exam History for Profile Screen
+     */
+    public function getRankingsData(StudentProfile $student): array
+    {
+        // Get current rankings
+        $latestExam = \App\Models\Exam::latest()->first();
+        
+        $currentClassRank = 0;
+        $currentGradeRank = 0;
+        $totalStudentsInClass = \App\Models\StudentProfile::where('class_id', $student->class_id)->count();
+        $totalStudentsInGrade = \App\Models\StudentProfile::where('grade_id', $student->grade_id)->count();
+
+        if ($latestExam) {
+            // Calculate class rank
+            $classRankings = \App\Models\ExamMark::where('exam_id', $latestExam->id)
+                ->whereHas('student', function($q) use ($student) {
+                    $q->where('class_id', $student->class_id);
+                })
+                ->selectRaw('student_id, SUM(marks_obtained) as total_marks')
+                ->groupBy('student_id')
+                ->orderByDesc('total_marks')
+                ->get();
+
+            $currentClassRank = $classRankings->search(function($item) use ($student) {
+                return $item->student_id === $student->id;
+            }) + 1;
+
+            // Calculate grade rank
+            $gradeRankings = \App\Models\ExamMark::where('exam_id', $latestExam->id)
+                ->whereHas('student', function($q) use ($student) {
+                    $q->where('grade_id', $student->grade_id);
+                })
+                ->selectRaw('student_id, SUM(marks_obtained) as total_marks')
+                ->groupBy('student_id')
+                ->orderByDesc('total_marks')
+                ->get();
+
+            $currentGradeRank = $gradeRankings->search(function($item) use ($student) {
+                return $item->student_id === $student->id;
+            }) + 1;
+        }
+
+        // Get exam history
+        $exams = \App\Models\Exam::latest()->take(5)->get();
+        $examHistory = [];
+
+        foreach ($exams as $exam) {
+            $marks = \App\Models\ExamMark::where('exam_id', $exam->id)
+                ->where('student_id', $student->id)
+                ->get();
+
+            if ($marks->isNotEmpty()) {
+                $totalScore = $marks->sum('marks_obtained');
+                $maxScore = $marks->sum('total_marks');
+                $percentage = $maxScore > 0 ? ($totalScore / $maxScore) * 100 : 0;
+
+                // Calculate ranks for this exam
+                $classRankings = \App\Models\ExamMark::where('exam_id', $exam->id)
+                    ->whereHas('student', function($q) use ($student) {
+                        $q->where('class_id', $student->class_id);
+                    })
+                    ->selectRaw('student_id, SUM(marks_obtained) as total_marks')
+                    ->groupBy('student_id')
+                    ->orderByDesc('total_marks')
+                    ->get();
+
+                $classRank = $classRankings->search(function($item) use ($student) {
+                    return $item->student_id === $student->id;
+                }) + 1;
+
+                $gradeRankings = \App\Models\ExamMark::where('exam_id', $exam->id)
+                    ->whereHas('student', function($q) use ($student) {
+                        $q->where('grade_id', $student->grade_id);
+                    })
+                    ->selectRaw('student_id, SUM(marks_obtained) as total_marks')
+                    ->groupBy('student_id')
+                    ->orderByDesc('total_marks')
+                    ->get();
+
+                $gradeRank = $gradeRankings->search(function($item) use ($student) {
+                    return $item->student_id === $student->id;
+                }) + 1;
+
+                $examHistory[] = [
+                    'id' => $exam->id,
+                    'name' => $exam->name,
+                    'name_mm' => $exam->name,
+                    'date' => $exam->exam_date ? $exam->exam_date->format('Y-m-d') : $exam->created_at->format('Y-m-d'),
+                    'total_score' => $totalScore,
+                    'max_score' => $maxScore,
+                    'percentage' => round($percentage, 1),
+                    'class_rank' => $classRank,
+                    'grade_rank' => $gradeRank,
+                ];
+            }
+        }
+
+        return [
+            'current_class_rank' => $currentClassRank,
+            'total_students_in_class' => $totalStudentsInClass,
+            'current_grade_rank' => $currentGradeRank,
+            'total_students_in_grade' => $totalStudentsInGrade,
+            'exam_history' => $examHistory,
+        ];
+    }
+
+    private function getGradeColor(string $grade): string
+    {
+        $colors = [
+            'A+' => '#26A69A',
+            'A' => '#26A69A',
+            'B+' => '#7E57C2',
+            'B' => '#7E57C2',
+            'C' => '#FFA726',
+            'D' => '#EF5350',
+            'F' => '#EF5350',
+        ];
+
+        return $colors[$grade] ?? '#9E9E9E';
+    }
+
+    private function getMonthNameMM(string $month): string
+    {
+        $months = [
+            '01' => 'ဇန်နဝါရီ',
+            '02' => 'ဖေဖော်ဝါရီ',
+            '03' => 'မတ်',
+            '04' => 'ဧပြီ',
+            '05' => 'မေ',
+            '06' => 'ဇွန်',
+            '07' => 'ဇူလိုင်',
+            '08' => 'သြဂုတ်',
+            '09' => 'စက်တင်ဘာ',
+            '10' => 'အောက်တိုဘာ',
+            '11' => 'နိုဝင်ဘာ',
+            '12' => 'ဒီဇင်ဘာ',
+        ];
+
+        return $months[$month] ?? '';
+    }
 }
+

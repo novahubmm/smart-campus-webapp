@@ -49,7 +49,7 @@
             }
         }
     }">
-        <div class="py-6 px-4 sm:px-6 lg:px-8 space-y-4">
+        <div class="max-w-7xl mx-auto py-6 px-4 sm:px-6 lg:px-8 space-y-4">
             <div class="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl shadow-sm p-4 sm:p-5">
                 <div class="flex items-center justify-between gap-3">
                     <div class="flex items-center gap-2 text-sm font-semibold text-gray-700 dark:text-gray-200">

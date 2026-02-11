@@ -28,4 +28,17 @@ class StoreEventRequest extends FormRequest
             'status' => ['sometimes', 'boolean'],
         ];
     }
+
+    public function withValidator($validator)
+    {
+        $validator->after(function ($validator) {
+            $exists = \App\Models\Event::where('title', $this->title)
+                ->where('start_date', $this->start_date)
+                ->exists();
+
+            if ($exists) {
+                $validator->errors()->add('title', __('academic_management.duplicate_event_error'));
+            }
+        });
+    }
 }

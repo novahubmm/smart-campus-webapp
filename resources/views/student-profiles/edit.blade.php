@@ -77,7 +77,7 @@
             }
         }
     }">
-        <div class="py-6 px-4 sm:px-6 lg:px-8 space-y-4">
+        <div class="max-w-7xl mx-auto py-6 px-4 sm:px-6 lg:px-8 space-y-4">
             <div class="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl shadow-sm p-4 sm:p-5">
                 <div class="flex items-center justify-between gap-3">
                     <div class="flex items-center gap-2 text-sm font-semibold text-gray-700 dark:text-gray-200">
@@ -160,7 +160,7 @@
                                 @error('phone')<p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>@enderror
                             </div>
                             <div>
-                                <label class="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1">{{ __('student_profiles.NRC / ID') }} <span class="text-red-500">*</span></label>
+                                <label class="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1">{{ __('student_profiles.NRC / ID') }}</label>
                                 <input type="text" name="nrc" x-model="form.nrc" autocomplete="off" 
                                        class="w-full rounded-lg border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-200 focus:border-indigo-500 focus:ring-indigo-500"
                                        :class="errors.nrc ? 'field-error' : ''">

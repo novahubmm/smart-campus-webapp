@@ -88,6 +88,7 @@ return [
     'Mark as Resolved' => 'Mark as Resolved',
     'Back to List' => 'Back to List',
     'Back to Reports' => 'Back to Reports',
+    'Appreciation' => 'Appreciation',
 
     // Confirmations
     'Are you sure you want to delete this report?' => 'Are you sure you want to delete this report?',

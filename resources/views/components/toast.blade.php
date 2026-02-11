@@ -36,92 +36,28 @@
     }
 @endphp
 
-<!-- Toast Container -->
-<div id="toastContainer" class="fixed top-5 right-5 z-[10000] flex flex-col gap-3 pointer-events-none"></div>
-
 @once
 <script>
-    // Toast notification system - matching blade_prototype style
-    function showToast(message, type = 'info') {
-        const container = document.getElementById('toastContainer');
-        if (!container) return;
-
-        const colors = {
-            success: { bg: '#10b981', border: '#059669' },
-            error: { bg: '#ef4444', border: '#dc2626' },
-            warning: { bg: '#f59e0b', border: '#d97706' },
-            info: { bg: '#3b82f6', border: '#2563eb' }
-        };
-
-        const icons = {
-            success: 'fa-check-circle',
-            error: 'fa-exclamation-circle',
-            warning: 'fa-exclamation-triangle',
-            info: 'fa-info-circle'
-        };
-
-        const color = colors[type] || colors.info;
-        const icon = icons[type] || icons.info;
-
-        const toast = document.createElement('div');
-        toast.className = 'toast-item pointer-events-auto';
-        toast.style.cssText = `
-            background: white;
-            border-radius: 8px;
-            padding: 12px 16px;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            min-width: 280px;
-            max-width: 400px;
-            border-left: 4px solid ${color.border};
-            animation: slideIn 0.3s ease-out;
-        `;
-
-        toast.innerHTML = `
-            <div style="width: 24px; height: 24px; display: flex; align-items: center; justify-content: center; border-radius: 50%; background: ${color.bg}20; color: ${color.bg}; flex-shrink: 0;">
-                <i class="fas ${icon}" style="font-size: 12px;"></i>
-            </div>
-            <div style="flex: 1; font-size: 14px; color: #1f2937; line-height: 1.4;">${message}</div>
-            <button onclick="this.parentElement.remove()" style="background: none; border: none; color: #9ca3af; cursor: pointer; padding: 4px; display: flex; align-items: center; justify-content: center;">
-                <i class="fas fa-times" style="font-size: 12px;"></i>
-            </button>
-        `;
-
-        container.appendChild(toast);
-
-        // Auto remove after 4 seconds
-        setTimeout(() => {
-            toast.style.animation = 'slideOut 0.3s ease-out forwards';
-            setTimeout(() => toast.remove(), 300);
-        }, 4000);
+    // Alert dialog notification system - replaces toast with centered modal
+    function showToast(message, type = 'info', title = null) {
+        // Dispatch alert-show event to trigger the alert dialog
+        window.dispatchEvent(new CustomEvent('alert-show', {
+            detail: {
+                message: message,
+                text: message, // Support both message and text
+                type: type,
+                title: title
+            }
+        }));
     }
 
-    // Add CSS animations
-    if (!document.getElementById('toast-styles')) {
-        const style = document.createElement('style');
-        style.id = 'toast-styles';
-        style.textContent = `
-            @keyframes slideIn {
-                from { transform: translateX(100%); opacity: 0; }
-                to { transform: translateX(0); opacity: 1; }
-            }
-            @keyframes slideOut {
-                from { transform: translateX(0); opacity: 1; }
-                to { transform: translateX(100%); opacity: 0; }
-            }
-        `;
-        document.head.appendChild(style);
-    }
-
-    // Show initial toasts from session
+    // Show initial messages from session
     document.addEventListener('DOMContentLoaded', function() {
         const initialMessages = @json($messages);
         initialMessages.forEach(function(msg, index) {
             setTimeout(function() {
                 showToast(msg.text, msg.type);
-            }, index * 100);
+            }, index * 300); // Stagger by 300ms to avoid overlapping dialogs
         });
     });
 
@@ -131,8 +67,12 @@
         if (toastListenerAdded) return;
         toastListenerAdded = true;
         window.addEventListener('toast', (event) => {
-            if (event.detail && event.detail.text) {
-                showToast(event.detail.text, event.detail.type || 'info');
+            if (event.detail && (event.detail.text || event.detail.message)) {
+                showToast(
+                    event.detail.text || event.detail.message, 
+                    event.detail.type || 'info',
+                    event.detail.title || null
+                );
             }
         });
     }

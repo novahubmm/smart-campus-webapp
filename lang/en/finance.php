@@ -335,6 +335,7 @@ return [
     'View Payment History' => 'View Payment History',
     'Send payment reminder to guardian?' => 'Send payment reminder to guardian?',
     'Send Reminder' => 'Send Reminder',
+    'Fee Categories' => 'Fee Categories'
 
 ];
 

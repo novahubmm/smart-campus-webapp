@@ -149,6 +149,7 @@ class SendAnnouncementNotifications implements ShouldQueue
             'announcement_id' => $this->announcement->id,
             'priority' => $this->announcement->priority ?? 'medium',
             'type' => 'announcement',
+            'role' => $role, // Add role to notification data
         ];
 
         // Create database notifications and collect FCM tokens

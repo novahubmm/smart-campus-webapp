@@ -18,13 +18,13 @@
         @endauth
 
         <!-- Favicon - Load immediately -->
-        <link rel="preload" href="{{ asset('smart-campus-browser-tab.svg') }}" as="image" type="image/svg+xml">
-        <link rel="icon" type="image/svg+xml" href="{{ asset('smart-campus-browser-tab.svg') }}">
-        <link rel="icon" type="image/png" sizes="16x16" href="{{ asset('smart-campus-browser-tab.svg') }}">
-        <link rel="icon" type="image/png" sizes="32x32" href="{{ asset('smart-campus-browser-tab.svg') }}">
-        <link rel="icon" type="image/png" sizes="48x48" href="{{ asset('smart-campus-browser-tab.svg') }}">
-        <link rel="icon" type="image/png" sizes="64x64" href="{{ asset('smart-campus-browser-tab.svg') }}">
-        <link rel="alternate icon" href="{{ asset('favicon.ico') }}">
+        <link rel="preload" href="{{ asset('school-logo.jpg') }}" as="image" type="image/jpeg">
+        <link rel="icon" type="image/jpeg" href="{{ asset('school-logo.jpg') }}">
+        <link rel="icon" type="image/png" sizes="16x16" href="{{ asset('school-logo.jpg') }}">
+        <link rel="icon" type="image/png" sizes="32x32" href="{{ asset('school-logo.jpg') }}">
+        <link rel="icon" type="image/png" sizes="48x48" href="{{ asset('school-logo.jpg') }}">
+        <link rel="icon" type="image/png" sizes="64x64" href="{{ asset('school-logo.jpg') }}">
+        <link rel="alternate icon" href="{{ asset('school-logo.jpg') }}">
 
         @auth
             <meta name="user-role" content="{{ Auth::user()->getRoleNames()->first() }}">
@@ -183,6 +183,7 @@
 
         @auth
             <x-confirm-dialog />
+            <x-alert-dialog />
         @endauth
 
         @stack('scripts')

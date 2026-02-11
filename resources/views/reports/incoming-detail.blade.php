@@ -10,7 +10,7 @@
     </x-slot>
 
     <div class="py-6 sm:py-10">
-        <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 space-y-6">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-6">
             <x-back-link 
                 :href="route('reports.index', ['tab' => $report->direction === 'outgoing' ? 'outgoing' : 'incoming'])"
                 :text="__('report.Back to Reports')"

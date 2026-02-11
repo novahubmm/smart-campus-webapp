@@ -23,21 +23,14 @@
         'classes' => $classes,
         'today' => $today,
         'csrf' => csrf_token(),
+        'initialTab' => $initialTab,
     ]))" x-init="initPage()">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-6">
             <!-- View Toggle Tabs -->
-            <div class="flex flex-wrap gap-2 border-b-2 border-gray-200 dark:border-gray-700">
-                <button type="button" class="inline-flex items-center gap-2 px-6 py-3 text-sm font-semibold border-b-3 transition-all"
-                    :class="tab === 'staff' ? 'text-blue-600 border-blue-600' : 'text-gray-500 dark:text-gray-400 border-transparent hover:text-blue-500 hover:bg-gray-50 dark:hover:bg-gray-800'"
-                    @click="tab = 'staff'">
-                    <i class="fas fa-users-cog"></i>{{ __('leave.Staff / Teacher Leaves') }}
-                </button>
-                <button type="button" class="inline-flex items-center gap-2 px-6 py-3 text-sm font-semibold border-b-3 transition-all"
-                    :class="tab === 'student' ? 'text-blue-600 border-blue-600' : 'text-gray-500 dark:text-gray-400 border-transparent hover:text-blue-500 hover:bg-gray-50 dark:hover:bg-gray-800'"
-                    @click="tab = 'student'">
-                    <i class="fas fa-user-graduate"></i>{{ __('leave.Student Leaves') }}
-                </button>
-            </div>
+            <x-academic-tabs :tabs="[
+                'staff' => __('leave.Staff / Teacher Leaves'),
+                'student' => __('leave.Student Leaves'),
+            ]" activeTab="tab" />
 
             <!-- Staff / Teacher Tab -->
             <div x-show="tab === 'staff'" x-cloak class="space-y-6">
@@ -413,7 +406,7 @@
                 classes: config.classes || [],
                 today: config.today,
                 csrf: config.csrf,
-                tab: 'staff',
+                tab: config.initialTab || 'staff',
                 staffRole: '',
                 staffSearch: '',
                 staffPending: [],
@@ -447,6 +440,14 @@
                     this.loadStaffHistory();
                     this.loadStudentPending();
                     this.loadStudentHistory();
+                },
+                init() {
+                    // Watch for tab changes and update URL
+                    this.$watch('tab', (value) => {
+                        const url = new URL(window.location);
+                        url.searchParams.set('tab', value);
+                        window.history.pushState({}, '', url);
+                    });
                 },
 
                 loadStaffPending() {

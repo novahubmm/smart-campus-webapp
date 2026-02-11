@@ -642,13 +642,20 @@
     <script>
         function financeManager() {
             return {
-                activeTab: 'income',
+                activeTab: new URLSearchParams(window.location.search).get('tab') || 'income',
                 showToast: false,
                 toastMessage: '',
                 toastType: 'success',
                 showIncomeModal: false,
                 showExpenseModal: false,
                 init() {
+                    // Watch for tab changes and update URL
+                    this.$watch('activeTab', (value) => {
+                        const url = new URL(window.location);
+                        url.searchParams.set('tab', value);
+                        window.history.pushState({}, '', url);
+                    });
+                    
                     @if(session('status'))
                     this.showNotification('{{ session('status') }}', 'success');
                     @endif

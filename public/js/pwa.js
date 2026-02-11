@@ -139,28 +139,17 @@ window.addEventListener('offline', () => {
   showToast('You are offline. Some features may be limited.', 'warning');
 });
 
-// Toast notification helper
+// Toast notification helper - uses alert dialog instead of toast
 function showToast(message, type = 'info') {
-  // Create toast element
-  const toast = document.createElement('div');
-  toast.className = `pwa-toast pwa-toast-${type}`;
-  toast.textContent = message;
-
-  // Add to body
-  document.body.appendChild(toast);
-
-  // Show toast
-  setTimeout(() => {
-    toast.classList.add('show');
-  }, 100);
-
-  // Hide and remove after 3 seconds
-  setTimeout(() => {
-    toast.classList.remove('show');
-    setTimeout(() => {
-      document.body.removeChild(toast);
-    }, 300);
-  }, 3000);
+  // Dispatch alert-show event to trigger the alert dialog
+  if (typeof window !== 'undefined') {
+    window.dispatchEvent(new CustomEvent('alert-show', {
+      detail: {
+        message: message,
+        type: type
+      }
+    }));
+  }
 }
 
 // Check if currently offline on page load

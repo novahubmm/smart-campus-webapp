@@ -22,6 +22,7 @@
         'grades' => $grades,
         'today' => $today,
         'csrf' => csrf_token(),
+        'initialTab' => $initialTab,
     ]))" x-init="initPage()">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-6">
             <!-- View Toggle Tabs -->
@@ -249,7 +250,7 @@
     <script>
         function attendancePage(config) {
             return {
-                tab: 'class',
+                tab: config.initialTab || 'class',
                 routes: config.routes,
                 classes: config.classes,
                 grades: config.grades,
@@ -273,6 +274,14 @@
                 initPage() {
                     this.loadSummary();
                     this.loadStudents();
+                },
+                init() {
+                    // Watch for tab changes and update URL
+                    this.$watch('tab', (value) => {
+                        const url = new URL(window.location);
+                        url.searchParams.set('tab', value);
+                        window.history.pushState({}, '', url);
+                    });
                 },
                 setTodaySummary() {
                     this.summaryDate = config.today;

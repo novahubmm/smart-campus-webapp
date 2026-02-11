@@ -22,8 +22,8 @@
         <title>{{ config('app.name', 'Smart Campus') }}</title>
 
         <!-- Favicon -->
-        <link rel="icon" type="image/svg+xml" href="{{ asset('smart-campus-browser-tab.svg') }}">
-        <link rel="alternate icon" href="{{ asset('smart-campus-browser-tab.svg') }}">
+        <link rel="icon" type="image/jpeg" href="{{ asset('school-logo.jpg') }}">
+        <link rel="alternate icon" href="{{ asset('school-logo.jpg') }}">
 
         <!-- Fonts - with Google Fonts fallback -->
         <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -158,6 +158,7 @@
 
         @auth
             <x-confirm-dialog />
+            <x-alert-dialog />
         @endauth
     </body>
 </html>

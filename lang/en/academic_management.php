@@ -233,5 +233,15 @@ return array(
     'e.g., Room 101' => 'e.g., Room 101',
     'months' => 'months',
     'students' => 'students',
-    'Type' => 'Type'
+    'Type' => 'Type',
+    'e.g., 2025-2026' => 'e.g., 2025-2026',
+    'Select Batch' => 'Select Batch',
+    'Select Subject Type' => 'Select Subject Type',
+    'duplicate_grade_error' => 'A grade with this level and category already exists in the selected batch.',
+    'duplicate_class_error' => 'A class with this name already exists in the selected grade.',
+    'duplicate_batch_error' => 'A batch with this name already exists.',
+    'duplicate_subject_error' => 'A subject with this code already exists.',
+    'duplicate_room_error' => 'A room with this name already exists in the same building.',
+    'duplicate_exam_error' => 'An exam with this name already exists for the selected grade and class.',
+    'duplicate_event_error' => 'An event with this title already exists on the same date.',
 );
