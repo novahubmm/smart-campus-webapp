@@ -37,6 +37,11 @@
             "type": "string"
         },
         {
+            "key": "class_id",
+            "value": "1",
+            "type": "string"
+        },
+        {
             "key": "exam_id",
             "value": "1",
             "type": "string"
@@ -582,34 +587,170 @@
                     }
                 },
                 {
-                    "name": "Assign Homework",
-                    "request": {
-                        "method": "POST",
-                        "header": [
-                            {
-                                "key": "Content-Type",
-                                "value": "application/json"
-                            },
-                            {
-                                "key": "Accept",
-                                "value": "application/json"
+                    "name": "Teacher Homework",
+                    "item": [
+                        {
+                            "name": "Get Homework List",
+                            "request": {
+                                "method": "GET",
+                                "header": [
+                                    {
+                                        "key": "Accept",
+                                        "value": "application/json"
+                                    }
+                                ],
+                                "url": {
+                                    "raw": "{{base_url}}/teacher/homework?status=active&class_id=&subject_id=",
+                                    "host": [
+                                        "{{base_url}}"
+                                    ],
+                                    "path": [
+                                        "teacher",
+                                        "homework"
+                                    ],
+                                    "query": [
+                                        {
+                                            "key": "status",
+                                            "value": "active",
+                                            "description": "Filter by status: all, active, completed"
+                                        },
+                                        {
+                                            "key": "class_id",
+                                            "value": "",
+                                            "description": "Filter by class ID (optional)"
+                                        },
+                                        {
+                                            "key": "subject_id",
+                                            "value": "",
+                                            "description": "Filter by subject ID (optional)"
+                                        }
+                                    ]
+                                },
+                                "description": "Get all homework assigned by the teacher with optional filters"
                             }
-                        ],
-                        "body": {
-                            "mode": "raw",
-                            "raw": "{\n    \"title\": \"Math Exercise 5.2\",\n    \"description\": \"Complete all problems from page 45-47\",\n    \"subject_id\": 1,\n    \"class_id\": 1,\n    \"due_date\": \"2026-02-10\",\n    \"instructions\": \"Show all working steps\"\n}"
                         },
-                        "url": {
-                            "raw": "{{base_url}}/teacher/homework",
-                            "host": [
-                                "{{base_url}}"
-                            ],
-                            "path": [
-                                "teacher",
-                                "homework"
-                            ]
+                        {
+                            "name": "Create Homework",
+                            "request": {
+                                "method": "POST",
+                                "header": [
+                                    {
+                                        "key": "Content-Type",
+                                        "value": "application/json"
+                                    },
+                                    {
+                                        "key": "Accept",
+                                        "value": "application/json"
+                                    }
+                                ],
+                                "body": {
+                                    "mode": "raw",
+                                    "raw": "{\n    \"title\": \"Math Assignment Chapter 5\",\n    \"description\": \"Complete exercises 1-10 on page 45\",\n    \"class_id\": \"{{class_id}}\",\n    \"subject_id\": \"{{subject_id}}\",\n    \"due_date\": \"2026-02-18\",\n    \"priority\": \"high\"\n}"
+                                },
+                                "url": {
+                                    "raw": "{{base_url}}/teacher/homework",
+                                    "host": [
+                                        "{{base_url}}"
+                                    ],
+                                    "path": [
+                                        "teacher",
+                                        "homework"
+                                    ]
+                                },
+                                "description": "Create new homework assignment. Priority: low, medium, high"
+                            }
+                        },
+                        {
+                            "name": "Get Homework Detail",
+                            "request": {
+                                "method": "GET",
+                                "header": [
+                                    {
+                                        "key": "Accept",
+                                        "value": "application/json"
+                                    }
+                                ],
+                                "url": {
+                                    "raw": "{{base_url}}/teacher/homework/{{homework_id}}",
+                                    "host": [
+                                        "{{base_url}}"
+                                    ],
+                                    "path": [
+                                        "teacher",
+                                        "homework",
+                                        "{{homework_id}}"
+                                    ]
+                                },
+                                "description": "Get detailed homework information including all students and their submission status"
+                            }
+                        },
+                        {
+                            "name": "Collect Homework",
+                            "request": {
+                                "method": "POST",
+                                "header": [
+                                    {
+                                        "key": "Content-Type",
+                                        "value": "application/json"
+                                    },
+                                    {
+                                        "key": "Accept",
+                                        "value": "application/json"
+                                    }
+                                ],
+                                "body": {
+                                    "mode": "raw",
+                                    "raw": "{\n    \"student_id\": \"{{student_id}}\"\n}"
+                                },
+                                "url": {
+                                    "raw": "{{base_url}}/teacher/homework/{{homework_id}}/collect",
+                                    "host": [
+                                        "{{base_url}}"
+                                    ],
+                                    "path": [
+                                        "teacher",
+                                        "homework",
+                                        "{{homework_id}}",
+                                        "collect"
+                                    ]
+                                },
+                                "description": "Mark a student's homework as collected/submitted"
+                            }
+                        },
+                        {
+                            "name": "Uncollect Homework",
+                            "request": {
+                                "method": "POST",
+                                "header": [
+                                    {
+                                        "key": "Content-Type",
+                                        "value": "application/json"
+                                    },
+                                    {
+                                        "key": "Accept",
+                                        "value": "application/json"
+                                    }
+                                ],
+                                "body": {
+                                    "mode": "raw",
+                                    "raw": "{\n    \"student_id\": \"{{student_id}}\"\n}"
+                                },
+                                "url": {
+                                    "raw": "{{base_url}}/teacher/homework/{{homework_id}}/uncollect",
+                                    "host": [
+                                        "{{base_url}}"
+                                    ],
+                                    "path": [
+                                        "teacher",
+                                        "homework",
+                                        "{{homework_id}}",
+                                        "uncollect"
+                                    ]
+                                },
+                                "description": "Revert a student's homework status from submitted back to pending"
+                            }
                         }
-                    }
+                    ]
                 }
             ]
         },
@@ -1169,6 +1310,37 @@
                                 },
                                 {
                                     "name": "Get Class Info (RESTful)",
+                                    "event": [
+                                        {
+                                            "listen": "test",
+                                            "script": {
+                                                "exec": [
+                                                    "pm.test('Status code is 200', function () {",
+                                                    "    pm.response.to.have.status(200);",
+                                                    "});",
+                                                    "",
+                                                    "pm.test('Response has success field', function () {",
+                                                    "    const response = pm.response.json();",
+                                                    "    pm.expect(response).to.have.property('success', true);",
+                                                    "});",
+                                                    "",
+                                                    "pm.test('Response contains class info data', function () {",
+                                                    "    const response = pm.response.json();",
+                                                    "    pm.expect(response.data).to.have.property('class_id');",
+                                                    "    pm.expect(response.data).to.have.property('grade_code');",
+                                                    "    pm.expect(response.data).to.have.property('grade_name');",
+                                                    "    pm.expect(response.data).to.have.property('academic_year');",
+                                                    "    pm.expect(response.data).to.have.property('location');",
+                                                    "    pm.expect(response.data).to.have.property('student_count');",
+                                                    "    pm.expect(response.data).to.have.property('class_teacher_name');",
+                                                    "});",
+                                                    "",
+                                                    "console.log('✓ Class Info:', pm.response.json().data.grade_name);"
+                                                ],
+                                                "type": "text/javascript"
+                                            }
+                                        }
+                                    ],
                                     "request": {
                                         "method": "GET",
                                         "header": [
@@ -1178,7 +1350,7 @@
                                             }
                                         ],
                                         "url": {
-                                            "raw": "{{base_url}}/guardian/students/{{student_id}}/class-info",
+                                            "raw": "{{base_url}}/guardian/students/{{student_id}}/class",
                                             "host": [
                                                 "{{base_url}}"
                                             ],
@@ -1186,14 +1358,36 @@
                                                 "guardian",
                                                 "students",
                                                 "{{student_id}}",
-                                                "class-info"
+                                                "class"
                                             ]
                                         },
-                                        "description": "Get basic class information"
+                                        "description": "Get basic class information including grade, section, location, and class teacher"
                                     }
                                 },
                                 {
                                     "name": "Get Detailed Class Info (RESTful)",
+                                    "event": [
+                                        {
+                                            "listen": "test",
+                                            "script": {
+                                                "exec": [
+                                                    "pm.test('Status code is 200', function () {",
+                                                    "    pm.response.to.have.status(200);",
+                                                    "});",
+                                                    "",
+                                                    "pm.test('Response contains detailed class info', function () {",
+                                                    "    const response = pm.response.json();",
+                                                    "    pm.expect(response.data).to.have.property('id');",
+                                                    "    pm.expect(response.data).to.have.property('class_name');",
+                                                    "    pm.expect(response.data).to.have.property('subjects');",
+                                                    "    pm.expect(response.data).to.have.property('teachers');",
+                                                    "    pm.expect(response.data).to.have.property('statistics');",
+                                                    "});"
+                                                ],
+                                                "type": "text/javascript"
+                                            }
+                                        }
+                                    ],
                                     "request": {
                                         "method": "GET",
                                         "header": [
@@ -1203,7 +1397,7 @@
                                             }
                                         ],
                                         "url": {
-                                            "raw": "{{base_url}}/guardian/students/{{student_id}}/class-details",
+                                            "raw": "{{base_url}}/guardian/students/{{student_id}}/class/details",
                                             "host": [
                                                 "{{base_url}}"
                                             ],
@@ -1211,14 +1405,53 @@
                                                 "guardian",
                                                 "students",
                                                 "{{student_id}}",
-                                                "class-details"
+                                                "class",
+                                                "details"
                                             ]
                                         },
-                                        "description": "Get detailed class information with students and teachers"
+                                        "description": "Get detailed class information with students, teachers, and statistics"
                                     }
                                 },
                                 {
                                     "name": "Get Class Teachers (RESTful)",
+                                    "event": [
+                                        {
+                                            "listen": "test",
+                                            "script": {
+                                                "exec": [
+                                                    "pm.test('Status code is 200', function () {",
+                                                    "    pm.response.to.have.status(200);",
+                                                    "});",
+                                                    "",
+                                                    "pm.test('Response contains teachers data', function () {",
+                                                    "    const response = pm.response.json();",
+                                                    "    pm.expect(response.data).to.have.property('class_teacher');",
+                                                    "    pm.expect(response.data).to.have.property('subject_teachers');",
+                                                    "    pm.expect(response.data).to.have.property('total_teachers');",
+                                                    "});",
+                                                    "",
+                                                    "pm.test('Class teacher has required fields', function () {",
+                                                    "    const response = pm.response.json();",
+                                                    "    if (response.data.class_teacher) {",
+                                                    "        const teacher = response.data.class_teacher;",
+                                                    "        pm.expect(teacher).to.have.property('id');",
+                                                    "        pm.expect(teacher).to.have.property('name');",
+                                                    "        pm.expect(teacher).to.have.property('name_mm');",
+                                                    "        pm.expect(teacher).to.have.property('role');",
+                                                    "        pm.expect(teacher).to.have.property('phone');",
+                                                    "        pm.expect(teacher).to.have.property('email');",
+                                                    "        pm.expect(teacher).to.have.property('subjects');",
+                                                    "        pm.expect(teacher).to.have.property('is_class_teacher', true);",
+                                                    "    }",
+                                                    "});",
+                                                    "",
+                                                    "const response = pm.response.json();",
+                                                    "console.log('✓ Total Teachers:', response.data.total_teachers);"
+                                                ],
+                                                "type": "text/javascript"
+                                            }
+                                        }
+                                    ],
                                     "request": {
                                         "method": "GET",
                                         "header": [
@@ -1228,7 +1461,7 @@
                                             }
                                         ],
                                         "url": {
-                                            "raw": "{{base_url}}/guardian/students/{{student_id}}/class-teachers",
+                                            "raw": "{{base_url}}/guardian/students/{{student_id}}/class/teachers",
                                             "host": [
                                                 "{{base_url}}"
                                             ],
@@ -1236,14 +1469,46 @@
                                                 "guardian",
                                                 "students",
                                                 "{{student_id}}",
-                                                "class-teachers"
+                                                "class",
+                                                "teachers"
                                             ]
                                         },
-                                        "description": "Get list of class teachers"
+                                        "description": "Get all teachers teaching this class (class teacher + subject teachers)"
                                     }
                                 },
                                 {
                                     "name": "Get Class Statistics (RESTful)",
+                                    "event": [
+                                        {
+                                            "listen": "test",
+                                            "script": {
+                                                "exec": [
+                                                    "pm.test('Status code is 200', function () {",
+                                                    "    pm.response.to.have.status(200);",
+                                                    "});",
+                                                    "",
+                                                    "pm.test('Response contains statistics data', function () {",
+                                                    "    const response = pm.response.json();",
+                                                    "    pm.expect(response.data).to.have.property('class_id');",
+                                                    "    pm.expect(response.data).to.have.property('grade_code');",
+                                                    "    pm.expect(response.data).to.have.property('total_students');",
+                                                    "    pm.expect(response.data).to.have.property('male_students');",
+                                                    "    pm.expect(response.data).to.have.property('female_students');",
+                                                    "    pm.expect(response.data).to.have.property('average_attendance');",
+                                                    "    pm.expect(response.data).to.have.property('average_performance');",
+                                                    "    pm.expect(response.data).to.have.property('top_performers');",
+                                                    "    pm.expect(response.data).to.have.property('subject_performance');",
+                                                    "});",
+                                                    "",
+                                                    "const response = pm.response.json();",
+                                                    "console.log('✓ Total Students:', response.data.total_students);",
+                                                    "console.log('✓ Average Attendance:', response.data.average_attendance + '%');",
+                                                    "console.log('✓ Average Performance:', response.data.average_performance + '%');"
+                                                ],
+                                                "type": "text/javascript"
+                                            }
+                                        }
+                                    ],
                                     "request": {
                                         "method": "GET",
                                         "header": [
@@ -1253,7 +1518,7 @@
                                             }
                                         ],
                                         "url": {
-                                            "raw": "{{base_url}}/guardian/students/{{student_id}}/class-statistics",
+                                            "raw": "{{base_url}}/guardian/students/{{student_id}}/class/statistics",
                                             "host": [
                                                 "{{base_url}}"
                                             ],
@@ -1261,10 +1526,11 @@
                                                 "guardian",
                                                 "students",
                                                 "{{student_id}}",
-                                                "class-statistics"
+                                                "class",
+                                                "statistics"
                                             ]
                                         },
-                                        "description": "Get class performance statistics"
+                                        "description": "Get class statistics including attendance, performance, and rankings"
                                     }
                                 }
                             ]

@@ -319,4 +319,74 @@ class HomeworkController extends Controller
             ], 500);
         }
     }
+
+    /**
+     * Uncollect Homework (Mark student as pending)
+     * POST /api/v1/teacher/homework/{id}/uncollect
+     */
+    public function uncollect(Request $request, $id): JsonResponse
+    {
+        try {
+            $user = Auth::user();
+            $teacherProfile = TeacherProfile::where('user_id', $user->id)->first();
+
+            if (!$teacherProfile) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Teacher profile not found'
+                ], 404);
+            }
+
+            $homework = Homework::where('id', $id)
+                ->where('teacher_id', $teacherProfile->id)
+                ->first();
+
+            if (!$homework) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Homework not found'
+                ], 404);
+            }
+
+            $validator = Validator::make($request->all(), [
+                'student_id' => 'required|exists:student_profiles,id',
+            ]);
+
+            if ($validator->fails()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Validation failed',
+                    'errors' => $validator->errors()
+                ], 422);
+            }
+
+            $submission = HomeworkSubmission::where('homework_id', $homework->id)
+                ->where('student_id', $request->student_id)
+                ->first();
+
+            if ($submission) {
+                $submission->status = 'pending';
+                $submission->submitted_at = null;
+                $submission->save();
+            }
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Homework uncollected successfully',
+                'data' => [
+                    'student_id' => $request->student_id,
+                    'status' => 'pending',
+                    'submitted_at' => null,
+                ]
+            ]);
+
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to uncollect homework',
+                'error' => $e->getMessage()
+            ], 500);
+        }
+    }
+
 }

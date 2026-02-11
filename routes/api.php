@@ -302,6 +302,7 @@ Route::prefix('v1')->group(function () {
             Route::post('/homework', [TeacherHomeworkController::class, 'store']);
             Route::get('/homework/{id}', [TeacherHomeworkController::class, 'show']);
             Route::post('/homework/{id}/collect', [TeacherHomeworkController::class, 'collect']);
+            Route::post('/homework/{id}/uncollect', [TeacherHomeworkController::class, 'uncollect']);
 
             // Announcements
             Route::get('/announcements', [TeacherAnnouncementController::class, 'index']);

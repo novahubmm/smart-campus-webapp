@@ -15,35 +15,50 @@ class GuardianTimetableRepository implements GuardianTimetableRepositoryInterfac
     public function getFullTimetable(StudentProfile $student, ?string $weekStartDate = null): array
     {
         $weekStart = $weekStartDate ? Carbon::parse($weekStartDate)->startOfWeek() : Carbon::now()->startOfWeek();
-        $weekEnd = $weekStart->copy()->endOfWeek()->subDays(2); // Friday
+        $weekEnd = $weekStart->copy()->endOfWeek()->subDays(1); // Saturday
 
         $schedule = [];
+        $totalClasses = 0;
+        
         foreach ($this->days as $day) {
-            $schedule[$day] = $this->getDayTimetableFormatted($student, $day);
+            $daySchedule = $this->getDayTimetableFormatted($student, $day);
+            $schedule[$day] = $daySchedule;
+            $totalClasses += count($daySchedule);
         }
 
-        // Get break times
+        // Get break times with IDs and duration
         $breakTimes = [
             [
+                'id' => 'break-1',
+                'type' => 'break',
                 'name' => 'Morning Break',
                 'name_mm' => 'နံနက်အနားယူချိန်',
-                'start_time' => '09:30',
-                'end_time' => '09:45',
+                'start_time' => '09:45',
+                'end_time' => '10:00',
+                'duration_minutes' => 15,
             ],
             [
+                'id' => 'lunch-1',
+                'type' => 'lunch',
                 'name' => 'Lunch Break',
                 'name_mm' => 'နေ့လည်စာစားချိန်',
-                'start_time' => '12:00',
-                'end_time' => '13:00',
+                'start_time' => '12:15',
+                'end_time' => '13:15',
+                'duration_minutes' => 60,
             ],
         ];
 
         return [
+            'student_id' => $student->id,
+            'student_name' => $student->user?->name ?? 'N/A',
+            'grade' => $student->grade?->name ?? 'N/A',
+            'section' => $student->classModel?->section ?? 'N/A',
             'week_start_date' => $weekStart->format('Y-m-d'),
             'week_end_date' => $weekEnd->format('Y-m-d'),
             'schedule' => $schedule,
-            'total_periods_per_day' => 8,
             'break_times' => $breakTimes,
+            'total_periods_per_day' => 8,
+            'total_classes_this_week' => $totalClasses,
         ];
     }
 
@@ -59,43 +74,51 @@ class GuardianTimetableRepository implements GuardianTimetableRepositoryInterfac
         $periodNumber = 1;
 
         foreach ($timetables as $timetable) {
-            // Generate color based on subject
-            $colors = ['#2196F3', '#9C27B0', '#FF9800', '#4CAF50', '#F44336', '#00BCD4'];
-            $colorIndex = $timetable->subject ? abs(crc32($timetable->subject->name)) % count($colors) : 0;
-
             $periods[] = [
+                'id' => $timetable->id,
                 'period' => $periodNumber++,
+                'subject_id' => $timetable->subject?->id,
+                'subject' => $timetable->subject?->name ?? 'N/A',
+                'subject_mm' => $timetable->subject?->name_mm ?? $timetable->subject?->name ?? 'N/A',
+                'teacher_id' => $timetable->teacher?->id,
+                'teacher' => $timetable->teacher?->user?->name ?? 'N/A',
+                'teacher_mm' => $timetable->teacher?->user?->name_mm ?? $timetable->teacher?->user?->name ?? 'N/A',
+                'teacher_phone' => $timetable->teacher?->user?->phone ?? '',
+                'teacher_email' => $timetable->teacher?->user?->email ?? '',
                 'start_time' => Carbon::parse($timetable->start_time)->format('H:i'),
                 'end_time' => Carbon::parse($timetable->end_time)->format('H:i'),
-                'subject_id' => $timetable->subject?->id,
-                'subject_name' => $timetable->subject?->name ?? 'N/A',
-                'subject_name_mm' => $timetable->subject?->name_mm ?? $timetable->subject?->name ?? 'N/A',
-                'teacher_name' => $timetable->teacher?->user?->name ?? 'N/A',
-                'teacher_name_mm' => $timetable->teacher?->user?->name_mm ?? $timetable->teacher?->user?->name ?? 'N/A',
                 'room' => $timetable->room?->name ?? 'Room ' . ($timetable->room_id ?? 'TBA'),
-                'color' => $colors[$colorIndex],
-                'is_break' => false,
+                'room_mm' => $timetable->room?->name ?? 'အခန်း ' . ($timetable->room_id ?? 'TBA'),
+                'status' => $this->getClassStatus($timetable),
+                'substitute_teacher' => null,
+                'substitute_teacher_mm' => null,
+                'swapped_with' => null,
+                'original_time' => null,
+                'note' => $timetable->note ?? null,
+                'note_mm' => $timetable->note ?? null,
             ];
-
-            // Add break after 3rd period (09:30)
-            if ($periodNumber === 4) {
-                $periods[] = [
-                    'period' => $periodNumber++,
-                    'start_time' => '09:30',
-                    'end_time' => '09:45',
-                    'subject_id' => null,
-                    'subject_name' => 'Break',
-                    'subject_name_mm' => 'အနားယူချိန်',
-                    'teacher_name' => null,
-                    'teacher_name_mm' => null,
-                    'room' => null,
-                    'color' => '#E0E0E0',
-                    'is_break' => true,
-                ];
-            }
         }
 
         return $periods;
+    }
+
+    private function getClassStatus(Timetable $timetable): string
+    {
+        // Check if class is cancelled, substituted, or swapped
+        // For now, return 'normal' - can be extended based on your business logic
+        if ($timetable->is_cancelled ?? false) {
+            return 'cancelled';
+        }
+        
+        if ($timetable->substitute_teacher_id ?? false) {
+            return 'substitute';
+        }
+        
+        if ($timetable->swapped_with_id ?? false) {
+            return 'swapped';
+        }
+        
+        return 'normal';
     }
 
     public function getDayTimetable(StudentProfile $student, string $day): array
