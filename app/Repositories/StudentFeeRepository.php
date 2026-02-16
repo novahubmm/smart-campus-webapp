@@ -63,7 +63,7 @@ class StudentFeeRepository implements StudentFeeRepositoryInterface
     public function listPayments(FeeFilterData $filter): LengthAwarePaginator
     {
         $query = Payment::query()
-            ->with(['student.grade', 'collectedBy'])
+            ->with(['student.grade', 'student.classModel', 'student.guardians.user', 'collectedBy'])
             ->latest('payment_date');
 
         if ($filter->month && $filter->month !== 'all') {

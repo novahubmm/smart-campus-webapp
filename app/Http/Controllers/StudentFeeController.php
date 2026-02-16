@@ -72,7 +72,8 @@ class StudentFeeController extends Controller
             'student.user', 
             'student.grade', 
             'student.classModel', 
-            'feeStructure.feeType'
+            'feeStructure.feeType',
+            'items.feeType'  // Load invoice items with fee types
         ])
         ->where(function ($query) use ($rejectedProofInvoiceIds) {
             // Include invoices that are unpaid or sent
@@ -134,6 +135,33 @@ class StudentFeeController extends Controller
                 });
             });
 
+        // Transform payments to include computed attributes for receipt display
+        $payments->getCollection()->transform(function ($payment) {
+            // Add guardian name
+            $payment->guardian_name = $payment->student?->guardians?->first()?->user?->name ?? 'N/A';
+            
+            // Add class name
+            $className = '-';
+            if ($payment->student?->grade && $payment->student?->classModel) {
+                $gradeLevel = $payment->student->grade->level;
+                $classNameRaw = $payment->student->classModel->name;
+                
+                // Extract section from class name
+                $section = \App\Helpers\SectionHelper::extractSection($classNameRaw);
+                
+                // Format with grade level and section
+                $className = \App\Helpers\GradeHelper::formatClassName($gradeLevel, $section);
+                
+                // Fallback to raw class name if formatting fails
+                if (empty($className)) {
+                    $className = $classNameRaw;
+                }
+            }
+            $payment->class_name = $className;
+            
+            return $payment;
+        });
+        
         $feeTypes = FeeType::select('id', 'name')->orderBy('name')->get();
         $grades = Grade::orderBy('level')->get();
         $batches = Batch::select('id', 'name')->orderBy('name')->get();
@@ -505,7 +533,17 @@ class StudentFeeController extends Controller
             if ($payment->student?->grade && $payment->student?->classModel) {
                 $gradeLevel = $payment->student->grade->level;
                 $classNameRaw = $payment->student->classModel->name;
-                $className = \App\Helpers\GradeHelper::formatClassName($classNameRaw, $gradeLevel);
+                
+                // Extract section from class name (e.g., "Kindergarten A" -> "A")
+                $section = \App\Helpers\SectionHelper::extractSection($classNameRaw);
+                
+                // Format with grade level and section
+                $className = \App\Helpers\GradeHelper::formatClassName($gradeLevel, $section);
+                
+                // Fallback to raw class name if formatting fails
+                if (empty($className)) {
+                    $className = $classNameRaw;
+                }
             }
             
             return response()->json([

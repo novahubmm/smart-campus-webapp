@@ -258,7 +258,7 @@ class MultiRoleUserSeeder extends Seeder
         $kgStudents = [
             ['name' => 'Maung Aung Aung', 'gender' => 'male', 'identifier' => 'KG-A-001'],
             ['name' => 'Maung Kyaw Kyaw', 'gender' => 'male', 'identifier' => 'KG-A-002'],
-            ['name' => 'Ma Thida Win', 'gender' => 'female', 'identifier' => 'KG-A-003'],
+            ['name' => 'Ma Nyein Nyein', 'gender' => 'female', 'identifier' => 'KG-A-003'],
         ];
 
         foreach ($kgStudents as $index => $studentData) {

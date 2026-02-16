@@ -311,7 +311,8 @@
                                 @forelse($unpaidInvoices as $index => $invoice)
                                     @php
                                         $student = $invoice->student;
-                                        $feeType = $invoice->feeStructure?->feeType;
+                                        // Get fee type from feeStructure or from first invoice item
+                                        $feeType = $invoice->feeStructure?->feeType ?? $invoice->items->first()?->feeType;
                                         $hasRejectedProof = isset($rejectedProofsByInvoice[$invoice->id]);
                                         $rejectedProof = $hasRejectedProof ? $rejectedProofsByInvoice[$invoice->id] : null;
                                     @endphp
@@ -2193,12 +2194,13 @@
                 },
                 
                 openReceiptModal(payment) {
-                    // Get guardian name (first guardian)
-                    const guardianName = payment.student?.guardians?.[0]?.user?.name || 'N/A';
+                    // Use pre-computed attributes if available (from payment history)
+                    // Otherwise compute from nested relationships (for new payments)
+                    const guardianName = payment.guardian_name || payment.student?.guardians?.[0]?.user?.name || 'N/A';
                     
-                    // Get class name
-                    let className = '-';
-                    if (payment.student?.grade && payment.student?.classModel) {
+                    let className = payment.class_name || '-';
+                    // If not pre-computed, try to compute from relationships
+                    if (className === '-' && payment.student?.grade && payment.student?.classModel) {
                         const gradeLevel = payment.student.grade.level;
                         const classNameRaw = payment.student.classModel.name;
                         // Format class name using the helper
@@ -2459,27 +2461,28 @@
                                 <div class="signature-section">
                                     <div class="signature-box">
                                         <div class="signature-label">(ပေးသွင်းသူ)</div>
-                                        <div class="signature-line">အမည် ${guardianName}</div>
-                                        <div class="signature-line">လက်မှတ် _____________</div>
+                                        <div class="signature-line">အမည် ${guardianName || '-----------------------'}</div>
+                                        <div class="signature-line">လက်မှတ် -----------------------</div>
                                     </div>
                                     <div class="signature-box">
                                         <div class="signature-label">(ငွေလက်ခံသူ)</div>
-                                        <div class="signature-line">အမည် ${this.receiptData.receptionist_name || '_____________'}</div>
-                                        <div class="signature-line">လက်မှတ် _____________</div>
+                                        <div class="signature-line">အမည် ${this.receiptData.receptionist_name || '-----------------------'}</div>
+                                        <div class="signature-line">လက်မှတ် -----------------------</div>
                                     </div>
                                 </div>
                                 
                                 <div class="line">
-                                    မှတ်ချက် ${paymentNotes || '_____________________________________________'}
+                                    မှတ်ချက် ${paymentNotes || '---------------------------------------------------------------------------'}
                                 </div>
                                 
                                 <div class="note-section">
+                                   <div class="separator">
+                                        _____________________________________________________________________________________________________________
+                                    </div>
                                     <div class="note">
                                         မည်သည့်အကြောင်းနှင့်ဖြစ်စေ ပေးသွင်းပြီးသောအခကြေးငွေကို ပြန်လည်ထုတ်ပေးမည်မဟုတ်ပါ။
                                     </div>
-                                    <div class="separator">
-                                        ------------------------------------------------------------------------------------------------
-                                    </div>
+                                 
                                     <div class="contact">
                                         ဖုန်း - ၀၉ - ၄၄၃၀၈၉၆၅၆၊ ၀၉ - ၇၉၇၃၅၃၃၄၆၊၀၉-၆၈၈၉၈၉၆၅၆။ Hot Line : ၄၀၉၃၀၈၃၆၀၈
                                     </div>

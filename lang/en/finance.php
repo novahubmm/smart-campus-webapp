@@ -335,7 +335,10 @@ return [
     'View Payment History' => 'View Payment History',
     'Send payment reminder to guardian?' => 'Send payment reminder to guardian?',
     'Send Reminder' => 'Send Reminder',
-    'Fee Categories' => 'Fee Categories'
+    'Fee Categories' => 'Fee Categories',
+
+    'No unpaid invoices found.' => 'No unpaid invoices found.',
+    'Optional' => 'Optional',
 
 ];
 
