@@ -15,8 +15,8 @@ class SettingSeeder extends Seeder
         Setting::firstOrCreate(
             ['id' => '00000000-0000-0000-0000-000000000001'],
             [
-                'school_name' => 'Smart Campus School',
-                'school_email' => 'info@smartcampus.test',
+                'school_name' => 'Yar Khinn Shin Thar School',
+                'school_email' => 'info@yarkhinshinthar.com',
                 'school_phone' => '+95 9 000 000 000',
                 'school_address' => 'Your school address here',
                 'school_website' => 'Website',

@@ -372,6 +372,7 @@ class DemoDataSeeder extends Seeder
                 ['user_id' => $user->id],
                 [
                     'student_identifier' => 'STU' . date('Y') . str_pad($i, 4, '0', STR_PAD_LEFT),
+                    'student_id' => 'STU' . date('Y') . str_pad($i, 4, '0', STR_PAD_LEFT),
                     'grade_id' => $grade->id,
                     'class_id' => $class->id,
                     'date_of_joining' => $this->startDate->copy()->subMonths(rand(0, 12)),
