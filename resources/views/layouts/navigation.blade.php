@@ -2,11 +2,22 @@
     @php
         $setting = optional(\App\Models\Setting::first());
         $schoolLogo = $setting->school_logo_path;
-        $logoUrl = $schoolLogo ? asset('storage/'.$schoolLogo) : asset('school-logo.jpg');
+        $logoUrl = $schoolLogo ? asset('storage/'.$schoolLogo) : asset('school-logo.png');
+        $schoolName = $setting->school_name ?? 'Smart Campus';
+        
+        // Generate short name from school name (take first letter of each word, max 4 letters)
+        $shortName = '';
+        if ($setting->school_code) {
+            $shortName = $setting->school_code;
+        } else {
+            $words = preg_split('/\s+/', $schoolName);
+            $shortName = strtoupper(implode('', array_map(fn($word) => mb_substr($word, 0, 1), array_slice($words, 0, 4))));
+        }
     @endphp
     <div class="flex items-center justify-between px-4 h-[80px] border-b border-gray-200 dark:border-gray-800">
-        <a href="{{ route('dashboard') }}" class="flex items-center gap-2">
+        <a href="{{ route('dashboard') }}" class="flex items-center gap-3">
             <img src="{{ $logoUrl }}" alt="Smart Campus" class="h-[50px] w-auto">
+            <span class="text-xl font-bold text-gray-800 dark:text-white tracking-tight">{{ $shortName }}</span>
         </a>
 
         <!-- Collapse Button -->
