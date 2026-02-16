@@ -2055,11 +2055,15 @@
                                 payment_number: data.payment.payment_number || '',
                                 student_name: data.payment.student_name || '-',
                                 student_id: data.payment.student_id || '-',
+                                class_name: data.payment.class_name || '-',
+                                guardian_name: data.payment.guardian_name || 'N/A',
                                 amount: parseInt(data.payment.amount || 0).toLocaleString(),
                                 payment_method: (data.payment.payment_method || '').replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase()),
                                 payment_date: data.payment.payment_date || '-',
                                 receptionist_id: data.payment.receptionist_id || '',
-                                receptionist_name: data.payment.receptionist_name || ''
+                                receptionist_name: data.payment.receptionist_name || '',
+                                ferry_fee: data.payment.ferry_fee || '0',
+                                notes: data.payment.notes || ''
                             };
                             this.showReceiptModal = true;
                         } else {
@@ -2189,15 +2193,31 @@
                 },
                 
                 openReceiptModal(payment) {
+                    // Get guardian name (first guardian)
+                    const guardianName = payment.student?.guardians?.[0]?.user?.name || 'N/A';
+                    
+                    // Get class name
+                    let className = '-';
+                    if (payment.student?.grade && payment.student?.classModel) {
+                        const gradeLevel = payment.student.grade.level;
+                        const classNameRaw = payment.student.classModel.name;
+                        // Format class name using the helper
+                        className = window.formatClassName ? window.formatClassName(classNameRaw, gradeLevel) : classNameRaw;
+                    }
+                    
                     this.receiptData = {
                         payment_number: payment.payment_number || '',
                         student_name: payment.student?.user?.name || '-',
                         student_id: payment.student?.student_identifier || '-',
+                        class_name: className,
+                        guardian_name: guardianName,
                         amount: parseInt(payment.amount || 0).toLocaleString(),
                         payment_method: (payment.payment_method || '').replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase()),
                         payment_date: payment.payment_date ? new Date(payment.payment_date).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' }) : '-',
                         receptionist_id: payment.receptionist_id || '',
-                        receptionist_name: payment.receptionist_name || ''
+                        receptionist_name: payment.receptionist_name || '',
+                        ferry_fee: payment.ferry_fee || '0',
+                        notes: payment.notes || ''
                     };
                     this.showReceiptModal = true;
                 },
@@ -2211,7 +2231,7 @@
                     const printWindow = window.open('', '_blank');
                     
                     // Get school info from settings
-                    const schoolLogo = '{{ asset("images/school-logo.png") }}';
+                    const schoolLogo = '{{ asset("images/school-logo.jpg") }}';
                     
                     // Helper function to convert numbers to Myanmar words
                     function numberToMyanmarWords(num) {
@@ -2269,22 +2289,38 @@
                     const amountNum = parseInt(this.receiptData.amount.replace(/,/g, ''));
                     const amountInWords = numberToMyanmarWords(amountNum);
                     
-                    // Get current date in Myanmar format
-                    const today = new Date();
-                    const day = today.getDate();
-                    const month = today.getMonth() + 1;
-                    const year = today.getFullYear();
+                    // Get month names in Myanmar
+                    const monthNamesMM = ['ဇန်နဝါရီ', 'ဖေဖော်ဝါရီ', 'မတ်', 'ဧပြီ', 'မေ', 'ဇွန်', 'ဇူလိုင်', 'သြဂုတ်', 'စက်တင်ဘာ', 'အောက်တိုဘာ', 'နိုဝင်ဘာ', 'ဒီဇင်ဘာ'];
+                    const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+                    
+                    // Format date as 11/Feb/2026
+                    const paymentDate = this.receiptData.payment_date || '';
+                    let formattedDate = '';
+                    let invoiceMonthMM = '';
+                    if (paymentDate) {
+                        const dateObj = new Date(paymentDate);
+                        const day = dateObj.getDate();
+                        const monthIndex = dateObj.getMonth();
+                        const month = monthNames[monthIndex];
+                        const year = dateObj.getFullYear();
+                        formattedDate = `${day}/${month}/${year}`;
+                        invoiceMonthMM = monthNamesMM[monthIndex];
+                    }
+                    
+                    const studentClass = this.receiptData.class_name || '-';
+                    const guardianName = this.receiptData.guardian_name || 'N/A';
+                    const paymentNotes = this.receiptData.notes || '';
                     
                     printWindow.document.write(`
                         <!DOCTYPE html>
                         <html>
                         <head>
-                            <title></title>
+                            <title>Receipt</title>
                             <meta charset="UTF-8">
                             <style>
                                 @page { 
                                     size: A5 landscape;
-                                    margin: 0;
+                                    margin: 0.3in;
                                 }
                                 * {
                                     margin: 0;
@@ -2296,118 +2332,124 @@
                                     height: 148mm;
                                     margin: 0;
                                     padding: 0;
-                                    overflow: hidden;
                                 }
                                 body { 
                                     font-family: 'Myanmar3', 'Pyidaungsu', Arial, sans-serif; 
                                     background: #90EE90;
-                                    padding: 8mm 15mm 8mm 20mm;
-                                    font-size: 10.5pt;
-                                    line-height: 1.6;
+                                    padding: 0.3in;
+                                    font-size: 9.5pt;
+                                    line-height: 1.4;
                                 }
-                                .logo {
-                                    text-align: center;
+                                .header {
+                                    display: flex;
+                                    align-items: flex-start;
                                     margin-bottom: 2mm;
                                 }
+                                .logo {
+                                    width: 20mm;
+                                    flex-shrink: 0;
+                                    margin-right: 3mm;
+                                }
                                 .logo img {
-                                    width: 16mm;
-                                    height: auto;
+                                    width: 20mm;
+                                    height: 20mm;
+                                    display: block;
+                                }
+                                .header-text {
+                                    flex: 1;
+                                    text-align: center;
                                 }
                                 .school-name {
-                                    text-align: center;
-                                    font-size: 15pt;
+                                    font-size: 20pt;
                                     font-weight: bold;
-                                    margin-bottom: 3mm;
+                                    margin-bottom: 1mm;
                                 }
                                 .invoice-no {
-                                    text-align: center;
-                                    font-size: 10pt;
-                                    margin-bottom: 4mm;
+                                    font-size: 15pt;
+                                    margin-bottom: 2mm;
                                 }
                                 .content {
-                                    font-size: 10.5pt;
-                                    line-height: 1.7;
+                                    font-size: 12pt;
+                                    line-height: 1.5;
                                 }
                                 .line {
-                                    margin: 2mm 0;
+                                    margin: 1.5mm 0;
+                                    text-align: justify;
+                                    text-justify: inter-word;
                                 }
                                 .signature-section {
                                     display: flex;
                                     justify-content: space-between;
-                                    margin-top: 5mm;
-                                    padding-top: 2mm;
+                                    margin-top: 2mm;
                                 }
                                 .signature-box {
                                     text-align: center;
                                     flex: 1;
+                                    font-size: 12pt;
+                                }
+                                .signature-label {
+                                    margin-bottom: 25mm;
                                 }
                                 .signature-line {
-                                    border-bottom: 1px solid #000;
-                                    margin: 1mm 5mm;
-                                    padding-top: 8mm;
+                                    margin: 1.5mm 0;
+                                    font-size: 12pt;
+                                }
+                                .note-section {
+                                    margin-top: 2mm;
+                                    padding-top: 1mm;
+                                    text-align: justify;
                                 }
                                 .note {
                                     text-align: center;
-                                    font-size: 8.5pt;
-                                    margin-top: 4mm;
-                                    padding-top: 2mm;
-                                    border-top: 1px dashed #000;
+                                    font-size: 10pt;
+                                    margin-bottom: 1mm;
                                 }
                                 .separator {
                                     text-align: center;
-                                    margin: 2mm 0;
-                                    font-size: 11pt;
+                                    margin: 1mm 0;
+                                    font-size: 9pt;
                                 }
                                 .contact {
                                     text-align: center;
-                                    font-size: 8.5pt;
-                                    margin-top: 2mm;
+                                    font-size: 10pt;
                                 }
                                 @media print {
                                     html, body {
                                         width: 210mm;
                                         height: 148mm;
-                                        margin: 0 !important;
-                                        padding: 0 !important;
-                                        overflow: hidden;
                                     }
                                     body { 
                                         background: #90EE90;
                                         -webkit-print-color-adjust: exact;
                                         print-color-adjust: exact;
-                                        padding: 8mm 15mm 8mm 20mm;
                                     }
                                     @page {
                                         size: A5 landscape;
-                                        margin: 0;
+                                        margin: 0.3in;
                                     }
                                 }
                             </style>
                         </head>
                         <body>
-                            <div class="logo">
-                                <img src="${schoolLogo}" alt="Logo" onerror="this.style.display='none'">
-                            </div>
-                            
-                            <div class="school-name">
-                                ယာခင်းရှင်သာ ကိုယ်ပိုင်အထက်တန်းကျောင်း
-                            </div>
-                            
-                            <div class="invoice-no">
-                                No. ${this.receiptData.payment_number}
+                            <div class="header">
+                                <div class="logo">
+                                    <img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ccircle cx='50' cy='50' r='45' fill='%234CAF50'/%3E%3Ctext x='50' y='60' font-size='40' text-anchor='middle' fill='white' font-family='Arial'%3EYKST%3C/text%3E%3C/svg%3E" alt="Logo">
+                                </div>
+                                <div class="header-text">
+                                    <div class="school-name">
+                                        ယာခင်းရှင်သာ ကိုယ်ပိုင်အထက်တန်းကျောင်း
+                                    </div>
+                                    <div class="invoice-no">
+                                        No. ${this.receiptData.payment_number}
+                                    </div>
+                                </div>
                             </div>
                             
                             <div class="content">
                                 <div class="line">
-                                    ကျောင်းသား/သူအမည် ${this.receiptData.student_name} &nbsp;&nbsp; တန်းခွဲ ${this.receiptData.grade || '___________'}
-                                </div>
-                                
-                                <div class="line">
-                                    ကျောင်းလခပေးသွင်းသည့် ${this.receiptData.invoice_month || '___________'} လအတွက် ကျောင်းလခ ${this.receiptData.amount} ကျပ်
-                                </div>
-                                
-                                <div class="line">
-                                    (စာဖြင့်) ${amountInWords} ကျပ်တိတိနှင့် ${day}/${month}/${year} နေ့တွင် လက်ခံရပါသည်။
+                                    ကျောင်းသား/သူအမည် ${this.receiptData.student_name} &nbsp;&nbsp;&nbsp; တန်းခွဲ ${studentClass}
+                                    ကျောင်းလခပေးသွင်းသည့် ${invoiceMonthMM} လအတွက် ကျောင်းလခ ${this.receiptData.amount} ကျပ်
+                                    (စာဖြင့်) ${amountInWords} ကျပ်တိတိနှင့် ${formattedDate} နေ့တွင် လက်ခံရပါသည်။
                                 </div>
                                 
                                 <div class="line">
@@ -2416,27 +2458,31 @@
                                 
                                 <div class="signature-section">
                                     <div class="signature-box">
-                                        <div>မှတ်ချက် (ပေးသွင်းသူ)</div>
-                                        <div class="signature-line">အမည် _____________</div>
+                                        <div class="signature-label">(ပေးသွင်းသူ)</div>
+                                        <div class="signature-line">အမည် ${guardianName}</div>
                                         <div class="signature-line">လက်မှတ် _____________</div>
                                     </div>
                                     <div class="signature-box">
-                                        <div>(ငွေလက်ခံသူ)</div>
-                                        <div class="signature-line">အမည် _____________</div>
+                                        <div class="signature-label">(ငွေလက်ခံသူ)</div>
+                                        <div class="signature-line">အမည် ${this.receiptData.receptionist_name || '_____________'}</div>
                                         <div class="signature-line">လက်မှတ် _____________</div>
                                     </div>
                                 </div>
                                 
-                                <div class="note">
-                                    မည်သည့်အကြောင်းနှင့်ဖြစ်စေ ပေးသွင်းပြီးသောအခကြေးငွေကို ပြန်လည်ထုတ်ပေးမည်မဟုတ်ပါ။
+                                <div class="line">
+                                    မှတ်ချက် ${paymentNotes || '_____________________________________________'}
                                 </div>
                                 
-                                <div class="separator">
-                                    --------------------------------
-                                </div>
-                                
-                                <div class="contact">
-                                    ဖုန်း - ၀၉ - ၄၄၃၀၈၉၆၅၆၊ ၀၉ - ၇၉၇၃၅၃၃၄၆၊၀၉-၆၈၈၉၈၉၆၅၆။ Hot Line : ၄၀၉၃၀၈၃၆၀၈
+                                <div class="note-section">
+                                    <div class="note">
+                                        မည်သည့်အကြောင်းနှင့်ဖြစ်စေ ပေးသွင်းပြီးသောအခကြေးငွေကို ပြန်လည်ထုတ်ပေးမည်မဟုတ်ပါ။
+                                    </div>
+                                    <div class="separator">
+                                        ------------------------------------------------------------------------------------------------
+                                    </div>
+                                    <div class="contact">
+                                        ဖုန်း - ၀၉ - ၄၄၃၀၈၉၆၅၆၊ ၀၉ - ၇၉၇၃၅၃၃၄၆၊၀၉-၆၈၈၉၈၉၆၅၆။ Hot Line : ၄၀၉၃၀၈၃၆၀၈
+                                    </div>
                                 </div>
                             </div>
                         </body>

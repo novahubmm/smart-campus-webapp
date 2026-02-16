@@ -492,11 +492,22 @@ class StudentFeeController extends Controller
         $payment = $this->service->createPayment($data);
 
         // Load relationships for receipt
-        $payment->load('student.user');
+        $payment->load('student.user', 'student.guardians.user', 'student.grade', 'student.classModel');
 
         $this->logCreate('FeePayment', $payment->id, "Payment: {$payment->payment_number}");
 
         if ($request->expectsJson() || $request->ajax()) {
+            // Get guardian name (first guardian)
+            $guardianName = $payment->student?->guardians?->first()?->user?->name ?? '';
+            
+            // Get class name
+            $className = '';
+            if ($payment->student?->grade && $payment->student?->classModel) {
+                $gradeLevel = $payment->student->grade->level;
+                $classNameRaw = $payment->student->classModel->name;
+                $className = \App\Helpers\GradeHelper::formatClassName($classNameRaw, $gradeLevel);
+            }
+            
             return response()->json([
                 'success' => true,
                 'message' => __('Payment recorded.'),
@@ -504,11 +515,15 @@ class StudentFeeController extends Controller
                     'payment_number' => $payment->payment_number,
                     'student_name' => $payment->student?->user?->name ?? '-',
                     'student_id' => $payment->student?->student_identifier ?? '-',
+                    'class_name' => $className ?: '-',
+                    'guardian_name' => $guardianName ?: 'N/A',
                     'amount' => $payment->amount,
                     'payment_method' => $payment->payment_method,
                     'payment_date' => $payment->payment_date?->format('M j, Y'),
                     'receptionist_id' => $payment->receptionist_id,
                     'receptionist_name' => $payment->receptionist_name,
+                    'ferry_fee' => $payment->ferry_fee ?? '0',
+                    'notes' => $payment->notes ?? '',
                 ],
             ]);
         }
@@ -579,6 +594,18 @@ class StudentFeeController extends Controller
         $validated = $request->validate([
             'price_per_month' => ['required', 'numeric', 'min:0'],
         ]);
+
+        // Check if trying to clear the fee (set to 0)
+        if ($validated['price_per_month'] == 0) {
+            // Count how many grades currently have fees set
+            $gradesWithFees = Grade::where('price_per_month', '>', 0)->count();
+            
+            // If this is the only grade with a fee, prevent clearing it
+            if ($gradesWithFees <= 1 && $grade->price_per_month > 0) {
+                return redirect()->route('student-fees.index')
+                    ->with('error', __('finance.Please set at least one grade fee'));
+            }
+        }
 
         $grade->update(['price_per_month' => $validated['price_per_month']]);
 
