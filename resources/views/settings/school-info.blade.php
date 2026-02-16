@@ -39,19 +39,25 @@
                                 @error('school_name')<p class="text-sm text-red-600 mt-1">{{ $message }}</p>@enderror
                             </div>
                             <div>
-                                <label class="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1">{{ __('settings.School Email') }}</label>
-                                <input type="email" name="school_email" value="{{ old('school_email', $setting?->school_email) }}"
+                                <label class="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1">{{ __('settings.School Name (Myanmar)') }}</label>
+                                <input type="text" name="school_name_mm" value="{{ old('school_name_mm', $setting?->school_name_mm) }}"
                                        class="w-full px-4 py-2.5 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
-                                @error('school_email')<p class="text-sm text-red-600 mt-1">{{ $message }}</p>@enderror
+                                @error('school_name_mm')<p class="text-sm text-red-600 mt-1">{{ $message }}</p>@enderror
                             </div>
                         </div>
 
-                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
                             <div>
-                                <label class="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1">{{ __('settings.School Phone') }}</label>
-                                <input type="text" name="school_phone" value="{{ old('school_phone', $setting?->school_phone) }}"
+                                <label class="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1">{{ __('settings.School Code') }}</label>
+                                <input type="text" name="school_code" value="{{ old('school_code', $setting?->school_code) }}"
                                        class="w-full px-4 py-2.5 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
-                                @error('school_phone')<p class="text-sm text-red-600 mt-1">{{ $message }}</p>@enderror
+                                @error('school_code')<p class="text-sm text-red-600 mt-1">{{ $message }}</p>@enderror
+                            </div>
+                            <div>
+                                <label class="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1">{{ __('settings.Established Year') }}</label>
+                                <input type="number" name="established_year" value="{{ old('established_year', $setting?->established_year) }}" min="1800" max="{{ date('Y') }}"
+                                       class="w-full px-4 py-2.5 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                                @error('established_year')<p class="text-sm text-red-600 mt-1">{{ $message }}</p>@enderror
                             </div>
                             <div>
                                 <label class="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1">{{ __('settings.Principal') }}</label>
@@ -60,6 +66,36 @@
                                 @error('principal_name')<p class="text-sm text-red-600 mt-1">{{ $message }}</p>@enderror
                             </div>
                         </div>
+
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1">{{ __('settings.Motto') }}</label>
+                                <input type="text" name="motto" value="{{ old('motto', $setting?->motto) }}"
+                                       class="w-full px-4 py-2.5 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                                @error('motto')<p class="text-sm text-red-600 mt-1">{{ $message }}</p>@enderror
+                            </div>
+                            <div>
+                                <label class="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1">{{ __('settings.Motto (Myanmar)') }}</label>
+                                <input type="text" name="motto_mm" value="{{ old('motto_mm', $setting?->motto_mm) }}"
+                                       class="w-full px-4 py-2.5 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                                @error('motto_mm')<p class="text-sm text-red-600 mt-1">{{ $message }}</p>@enderror
+                            </div>
+                        </div>
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1">{{ __('settings.School Email') }}</label>
+                                <input type="email" name="school_email" value="{{ old('school_email', $setting?->school_email) }}"
+                                       class="w-full px-4 py-2.5 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                                @error('school_email')<p class="text-sm text-red-600 mt-1">{{ $message }}</p>@enderror
+                            </div>
+                            <div>
+                                <label class="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1">{{ __('settings.School Phone') }}</label>
+                                <input type="text" name="school_phone" value="{{ old('school_phone', $setting?->school_phone) }}"
+                                       class="w-full px-4 py-2.5 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                                @error('school_phone')<p class="text-sm text-red-600 mt-1">{{ $message }}</p>@enderror
+                            </div>
+                        </div>
+
                         <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                             <div>
                                 <label class="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1">{{ __('settings.Website') }}</label>
@@ -75,11 +111,64 @@
                                       class="w-full px-4 py-2.5 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500">{{ old('school_address', $setting?->school_address) }}</textarea>
                             @error('school_address')<p class="text-sm text-red-600 mt-1">{{ $message }}</p>@enderror
                         </div>
+
                         <div>
                             <label class="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1">{{ __('settings.About Us') }}</label>
                             <textarea name="school_about_us" rows="3"
                                       class="w-full px-4 py-2.5 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500">{{ old('school_about_us', $setting?->school_about_us) }}</textarea>
                             @error('school_about_us')<p class="text-sm text-red-600 mt-1">{{ $message }}</p>@enderror
+                        </div>
+
+                        <div>
+                            <label class="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1">{{ __('settings.About Us (Myanmar)') }}</label>
+                            <textarea name="school_about_us_mm" rows="3"
+                                      class="w-full px-4 py-2.5 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500">{{ old('school_about_us_mm', $setting?->school_about_us_mm) }}</textarea>
+                            @error('school_about_us_mm')<p class="text-sm text-red-600 mt-1">{{ $message }}</p>@enderror
+                        </div>
+
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1">{{ __('settings.Vision') }}</label>
+                                <textarea name="vision" rows="2"
+                                          class="w-full px-4 py-2.5 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500">{{ old('vision', $setting?->vision) }}</textarea>
+                                @error('vision')<p class="text-sm text-red-600 mt-1">{{ $message }}</p>@enderror
+                            </div>
+                            <div>
+                                <label class="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1">{{ __('settings.Vision (Myanmar)') }}</label>
+                                <textarea name="vision_mm" rows="2"
+                                          class="w-full px-4 py-2.5 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500">{{ old('vision_mm', $setting?->vision_mm) }}</textarea>
+                                @error('vision_mm')<p class="text-sm text-red-600 mt-1">{{ $message }}</p>@enderror
+                            </div>
+                        </div>
+
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1">{{ __('settings.Mission') }}</label>
+                                <textarea name="mission" rows="2"
+                                          class="w-full px-4 py-2.5 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500">{{ old('mission', $setting?->mission) }}</textarea>
+                                @error('mission')<p class="text-sm text-red-600 mt-1">{{ $message }}</p>@enderror
+                            </div>
+                            <div>
+                                <label class="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1">{{ __('settings.Mission (Myanmar)') }}</label>
+                                <textarea name="mission_mm" rows="2"
+                                          class="w-full px-4 py-2.5 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500">{{ old('mission_mm', $setting?->mission_mm) }}</textarea>
+                                @error('mission_mm')<p class="text-sm text-red-600 mt-1">{{ $message }}</p>@enderror
+                            </div>
+                        </div>
+
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1">{{ __('settings.Pass Rate (%)') }}</label>
+                                <input type="number" name="pass_rate" value="{{ old('pass_rate', $setting?->pass_rate) }}" min="0" max="100" step="0.1"
+                                       class="w-full px-4 py-2.5 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                                @error('pass_rate')<p class="text-sm text-red-600 mt-1">{{ $message }}</p>@enderror
+                            </div>
+                            <div>
+                                <label class="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1">{{ __('settings.Average Attendance (%)') }}</label>
+                                <input type="number" name="average_attendance" value="{{ old('average_attendance', $setting?->average_attendance) }}" min="0" max="100" step="0.1"
+                                       class="w-full px-4 py-2.5 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                                @error('average_attendance')<p class="text-sm text-red-600 mt-1">{{ $message }}</p>@enderror
+                            </div>
                         </div>
                     </div>
 
@@ -90,6 +179,82 @@
                         </a>
                         <button type="submit" class="px-4 py-2 text-sm font-semibold text-white bg-blue-600 rounded-lg hover:bg-blue-700 shadow-sm">
                             {{ __('settings.Save Changes') }}
+                        </button>
+                    </div>
+                </form>
+            </div>
+
+            <!-- Social Media Section -->
+            <div class="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl overflow-hidden">
+                <div class="px-6 py-4 border-b border-gray-200 dark:border-gray-700">
+                    <h3 class="text-lg font-bold text-gray-900 dark:text-white flex items-center gap-2">
+                        <i class="fas fa-share-nodes text-blue-600"></i>
+                        {{ __('settings.Social Media Links') }}
+                    </h3>
+                    <p class="text-sm text-gray-500 dark:text-gray-400">{{ __('settings.Add your school social media profiles.') }}</p>
+                </div>
+
+                <form method="POST" action="{{ route('settings.school-info.update') }}">
+                    @csrf
+
+                    <div class="p-6 space-y-4">
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1">
+                                    <i class="fab fa-facebook text-blue-600 mr-1"></i>
+                                    {{ __('settings.Facebook') }}
+                                </label>
+                                <input type="text" name="social_facebook" value="{{ old('social_facebook', $setting?->social_facebook) }}" placeholder="https://facebook.com/yourschool"
+                                       class="w-full px-4 py-2.5 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                                @error('social_facebook')<p class="text-sm text-red-600 mt-1">{{ $message }}</p>@enderror
+                            </div>
+                            <div>
+                                <label class="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1">
+                                    <i class="fab fa-twitter text-sky-500 mr-1"></i>
+                                    {{ __('settings.Twitter') }}
+                                </label>
+                                <input type="text" name="social_twitter" value="{{ old('social_twitter', $setting?->social_twitter) }}" placeholder="https://twitter.com/yourschool"
+                                       class="w-full px-4 py-2.5 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                                @error('social_twitter')<p class="text-sm text-red-600 mt-1">{{ $message }}</p>@enderror
+                            </div>
+                        </div>
+
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1">
+                                    <i class="fab fa-instagram text-pink-600 mr-1"></i>
+                                    {{ __('settings.Instagram') }}
+                                </label>
+                                <input type="text" name="social_instagram" value="{{ old('social_instagram', $setting?->social_instagram) }}" placeholder="https://instagram.com/yourschool"
+                                       class="w-full px-4 py-2.5 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                                @error('social_instagram')<p class="text-sm text-red-600 mt-1">{{ $message }}</p>@enderror
+                            </div>
+                            <div>
+                                <label class="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1">
+                                    <i class="fab fa-youtube text-red-600 mr-1"></i>
+                                    {{ __('settings.YouTube') }}
+                                </label>
+                                <input type="text" name="social_youtube" value="{{ old('social_youtube', $setting?->social_youtube) }}" placeholder="https://youtube.com/yourschool"
+                                       class="w-full px-4 py-2.5 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                                @error('social_youtube')<p class="text-sm text-red-600 mt-1">{{ $message }}</p>@enderror
+                            </div>
+                        </div>
+
+                        <div>
+                            <label class="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1">
+                                <i class="fab fa-linkedin text-blue-700 mr-1"></i>
+                                {{ __('settings.LinkedIn') }}
+                            </label>
+                            <input type="text" name="social_linkedin" value="{{ old('social_linkedin', $setting?->social_linkedin) }}" placeholder="https://linkedin.com/company/yourschool"
+                                   class="w-full px-4 py-2.5 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                            @error('social_linkedin')<p class="text-sm text-red-600 mt-1">{{ $message }}</p>@enderror
+                        </div>
+                    </div>
+
+                    <!-- Form Actions -->
+                    <div class="px-6 py-4 border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/50 flex justify-end gap-3">
+                        <button type="submit" class="px-4 py-2 text-sm font-semibold text-white bg-blue-600 rounded-lg hover:bg-blue-700 shadow-sm">
+                            <i class="fas fa-save mr-2"></i>{{ __('settings.Save Social Media') }}
                         </button>
                     </div>
                 </form>

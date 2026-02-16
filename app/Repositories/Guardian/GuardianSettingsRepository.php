@@ -93,12 +93,12 @@ class GuardianSettingsRepository implements GuardianSettingsRepositoryInterface
         $aboutInfo = [
             'description' => $setting->school_about_us ?? 'Khinn Shin Thar High School is a leading educational institution committed to excellence in education.',
             'description_mm' => 'ခင်ရှင်သာ အထက်တန်းကျောင်းသည် ထိပ်တန်းပညာရေးအဖွဲ့အစည်း ဖြစ်ပါသည်။',
-            'vision' => 'To be the premier educational institution providing world-class education.',
-            'vision_mm' => 'ထိပ်တန်းပညာရေးအဖွဲ့အစည်း ဖြစ်လာရန်',
-            'mission' => 'To provide quality education and nurture future leaders.',
-            'mission_mm' => 'အရည်အသွေးမြင့် ပညာရေး ပေးအပ်ရန်',
-            'values' => ['Excellence', 'Integrity', 'Innovation', 'Respect', 'Responsibility'],
-            'values_mm' => ['ထူးချွန်မှု', 'သမာဓိ', 'ဆန်းသစ်မှု', 'လေးစား', 'တာဝန်ယူမှု'],
+            'vision' => $setting->vision ?? 'To be the premier educational institution providing world-class education.',
+            'vision_mm' => $setting->vision_mm ?? 'ထိပ်တန်းပညာရေးအဖွဲ့အစည်း ဖြစ်လာရန်',
+            'mission' => $setting->mission ?? 'To provide quality education and nurture future leaders.',
+            'mission_mm' => $setting->mission_mm ?? 'အရည်အသွေးမြင့် ပညာရေး ပေးအပ်ရန်',
+            'values' => $setting->values ?? ['Excellence', 'Integrity', 'Innovation', 'Respect', 'Responsibility'],
+            'values_mm' => $setting->values_mm ?? ['ထူးချွန်မှု', 'သမာဓိ', 'ဆန်းသစ်မှု', 'လေးစား', 'တာဝန်ယူမှု'],
         ];
 
         // Build facilities list
@@ -205,26 +205,26 @@ class GuardianSettingsRepository implements GuardianSettingsRepositoryInterface
 
         // Build social media
         $socialMedia = [
-            'facebook' => 'https://facebook.com/smartcampus',
-            'twitter' => 'https://twitter.com/smartcampus',
-            'instagram' => 'https://instagram.com/smartcampus',
-            'youtube' => 'https://youtube.com/smartcampus',
+            'facebook' => $setting->social_facebook ?? 'https://facebook.com/smartcampus',
+            'twitter' => $setting->social_twitter ?? 'https://twitter.com/smartcampus',
+            'instagram' => $setting->social_instagram ?? 'https://instagram.com/smartcampus',
+            'youtube' => $setting->social_youtube ?? 'https://youtube.com/smartcampus',
         ];
 
         return [
             'school_id' => $setting->id ?? '019c45b4-d7b1-73b5-b03c-b1cff25f05d7',
             'school_name' => $setting->school_name ?? 'Khinn Shin Thar High School',
-            'school_name_mm' => 'ခင်ရှင်သာ အထက်တန်းကျောင်း',
-            'school_code' => 'SCHS-001',
+            'school_name_mm' => $setting->school_name_mm ?? 'ခင်ရှင်သာ အထက်တန်းကျောင်း',
+            'school_code' => $setting->school_code ?? 'SCHS-001',
             'logo_url' => $setting->school_logo_path ? url($setting->school_logo_path) : url('/school-logo.jpg'),
-            'established_year' => 1995,
-            'motto' => 'Excellence in Education',
-            'motto_mm' => 'ပညာရေးတွင် ထူးချွန်မှု',
+            'established_year' => $setting->established_year ?? 1995,
+            'motto' => $setting->motto ?? 'Excellence in Education',
+            'motto_mm' => $setting->motto_mm ?? 'ပညာရေးတွင် ထူးချွန်မှု',
             'contact' => $contactInfo,
             'about' => $aboutInfo,
             'facilities' => $facilitiesList,
             'statistics' => $statistics,
-            'accreditations' => $accreditations,
+            'accreditations' => $setting->accreditations ?? $accreditations,
             'social_media' => $socialMedia,
         ];
     }
