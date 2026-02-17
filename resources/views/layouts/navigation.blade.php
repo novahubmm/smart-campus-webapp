@@ -236,6 +236,19 @@
                 @endcan
             </div>
             @endcan
+            @role('system_admin')
+            <div class="space-y-2">
+                <p class="text-[10px] font-semibold tracking-[0.18em] text-gray-500 dark:text-gray-400 uppercase px-3">{{ __('navigation.System Administration') }}</p>
+                <x-nav-link :href="route('system-admin.features.index')" label="{{ __('navigation.Feature Flags') }}" icon="fas fa-toggle-on" :active="(bool) request()->routeIs('system-admin.features.*')" />
+                <x-nav-link :href="route('system-admin.feedback.index')" label="{{ __('navigation.Feedback Management') }}" icon="fas fa-comments" :active="(bool) request()->routeIs('system-admin.feedback.*')" />
+                @can('manage roles')
+                    <x-nav-link :href="route('roles.index')" label="{{ __('navigation.Roles') }}" icon="fas fa-user-shield" :active="(bool) request()->routeIs('roles.*')" />
+                @endcan
+                @can('manage permissions')
+                    <x-nav-link :href="route('permissions.index')" label="{{ __('navigation.Permissions') }}" icon="fas fa-lock" :active="(bool) request()->routeIs('permissions.*')" />
+                @endcan
+            </div>
+            @endrole
     </nav>
 </aside>
 

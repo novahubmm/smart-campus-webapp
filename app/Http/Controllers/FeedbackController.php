@@ -9,12 +9,6 @@ use Illuminate\View\View;
 
 class FeedbackController extends Controller
 {
-    public function __construct()
-    {
-        $this->middleware('auth');
-        $this->middleware('role:system_admin')->only(['index', 'show', 'update']);
-    }
-
     /**
      * Display feedback list (system admin only)
      */
