@@ -1,8 +1,8 @@
 <aside class="fixed left-0 top-0 h-screen bg-white dark:bg-gray-950 border-r border-gray-200 dark:border-gray-800 shadow-lg transition-all duration-300 z-50" x-show="!sidebarCollapsed" x-transition:enter="transition ease-out duration-300" x-transition:enter-start="opacity-0" x-transition:enter-end="opacity-100" x-transition:leave="transition ease-in duration-300" x-transition:leave-start="opacity-100" x-transition:leave-end="opacity-0" style="width: 256px;">
     @php
         $setting = optional(\App\Models\Setting::first());
-        $schoolLogo = $setting->school_logo_path;
-        $logoUrl = $schoolLogo ? asset('storage/'.$schoolLogo) : asset('school-logo.png');
+        $schoolLogo = $setting->school_short_logo_path ?: $setting->school_logo_path;
+        $logoUrl = $schoolLogo ? asset('storage/'.$schoolLogo) : asset('logo_short.png');
         $schoolName = $setting->school_name ?? 'Smart Campus';
         
         // Generate short name from school name (take first letter of each word, max 4 letters)
@@ -33,6 +33,8 @@
             @php
                 $setting = optional(\App\Models\Setting::first());
                 $needsSetup = !($setting->setup_completed_school_info && $setting->setup_completed_academic && $setting->setup_completed_event_and_announcements && $setting->setup_completed_time_table_and_attendance && $setting->setup_completed_finance);
+                $featureService = app(\App\Services\FeatureService::class);
+                $isSystemAdmin = auth()->user() && auth()->user()->hasRole('system_admin');
             @endphp
             @if($needsSetup)
                 <div class="space-y-2">
@@ -57,18 +59,26 @@
                         <x-nav-link :href="route('academic-setup.index')" label="{{ __('navigation.Setup') }}" icon="fas fa-magic" :active="(bool) request()->routeIs('academic-setup.*')" />
                     @endif
                 @endcan
-                @can('manage academic management')
-                    <x-nav-link :href="route('academic-management.index')" label="{{ __('navigation.Academic Management') }}" icon="fas fa-graduation-cap" :active="(bool) request()->routeIs('academic-management.*')" />
-                @endcan
-                @can('manage exam database')
-                    <x-nav-link :href="route('exams.index')" label="{{ __('navigation.Exam Database') }}" icon="fas fa-clipboard-list" :active="(bool) request()->routeIs('exams.*')" />
-                @endcan
-                @can('manage academic management')
-                    <x-nav-link :href="route('ongoing-class.index')" label="{{ __('navigation.Ongoing Class') }}" icon="fas fa-chalkboard" :active="(bool) request()->routeIs('ongoing-class.*')" />
-                @endcan
-                <!-- @can('manage academic management')
-                    <x-nav-link :href="route('homework.index')" label="{{ __('navigation.Homework') }}" icon="fas fa-tasks" :active="(bool) request()->routeIs('homework.*')" />
-                @endcan -->
+                @if($featureService->isEnabled('curriculum'))
+                    @can('manage academic management')
+                        <x-nav-link :href="route('academic-management.index')" label="{{ __('navigation.Academic Management') }}" icon="fas fa-graduation-cap" :active="(bool) request()->routeIs('academic-management.*')" />
+                    @endcan
+                @endif
+                @if($featureService->isEnabled('exams'))
+                    @can('manage exam database')
+                        <x-nav-link :href="route('exams.index')" label="{{ __('navigation.Exam Database') }}" icon="fas fa-clipboard-list" :active="(bool) request()->routeIs('exams.*')" />
+                    @endcan
+                @endif
+                @if($featureService->isEnabled('curriculum'))
+                    @can('manage academic management')
+                        <x-nav-link :href="route('ongoing-class.index')" label="{{ __('navigation.Ongoing Class') }}" icon="fas fa-chalkboard" :active="(bool) request()->routeIs('ongoing-class.*')" />
+                    @endcan
+                @endif
+                @if($featureService->isEnabled('homework'))
+                    @can('manage academic management')
+                        <x-nav-link :href="route('homework.index')" label="{{ __('navigation.Homework') }}" icon="fas fa-tasks" :active="(bool) request()->routeIs('homework.*')" />
+                    @endcan
+                @endif
             </div>
             @endcan
 
@@ -84,10 +94,14 @@
                     @endif
                 @endcan
                 @can('manage event planner')
-                    <x-nav-link :href="route('events.index')" label="{{ __('navigation.Event Planner') }}" icon="fas fa-calendar" :active="(bool) request()->routeIs('events.*')" />
+                    @if($featureService->isEnabled('events'))
+                        <x-nav-link :href="route('events.index')" label="{{ __('navigation.Event Planner') }}" icon="fas fa-calendar" :active="(bool) request()->routeIs('events.*')" />
+                    @endif
                 @endcan
                 @can('manage announcements')
-                    <x-nav-link :href="route('announcements.index')" label="{{ __('navigation.Announcements') }}" icon="fas fa-bell" :active="(bool) request()->routeIs('announcements.*')" />
+                    @if($featureService->isEnabled('announcements'))
+                        <x-nav-link :href="route('announcements.index')" label="{{ __('navigation.Announcements') }}" icon="fas fa-bell" :active="(bool) request()->routeIs('announcements.*')" />
+                    @endif
                 @endcan
             </div>
             @endcan
@@ -103,31 +117,37 @@
                     @endif
                 @endcan
 
-                @can('manage time-table planner')
-                    <x-nav-link :href="route('time-table.create')" label="{{ __('navigation.Time-table Planner') }}" icon="fas fa-calendar-plus" :active="(bool) request()->routeIs('time-table.create')" />
-                @endcan
-                @can('manage time-table planner')
-                    <x-nav-link :href="route('time-table.index')" label="{{ __('navigation.Time-table List') }}" icon="fas fa-list" :active="(bool) (request()->routeIs('time-table.index', 'time-table.edit') || request()->is('time-table/class/*/versions'))" />
-                @endcan
-                @can('collect student attendance')
-                    <x-nav-link :href="route('student-attendance.create')" label="{{ __('navigation.Collect Attendance') }}" icon="fas fa-clipboard-check" :active="(bool) (request()->routeIs('student-attendance.create') || request()->is('attendance/collect-attendance/*'))" />
-                @endcan
-                @can('manage student attendance')
-                    <x-nav-link :href="route('student-attendance.index')" label="{{ __('navigation.Student Attendance') }}" icon="fas fa-user-graduate" :active="(bool) (request()->routeIs('student-attendance.index') || request()->is('attendance/students/class/*'))" />
-                @endcan
-                @can('manage teacher attendance')
-                    <x-nav-link :href="route('teacher-attendance.index')" label="{{ __('navigation.Teacher Attendance') }}" icon="fas fa-chalkboard-teacher" :active="(bool) request()->routeIs('teacher-attendance.*')" />
-                @endcan
-                @can('manage staff attendance')
-                    <x-nav-link :href="route('staff-attendance.index')" label="{{ __('navigation.Staff Attendance') }}" icon="fas fa-users-cog" :active="(bool) request()->routeIs('staff-attendance.*')" />
-                @endcan
-                @can('manage leave requests')
-                    <x-nav-link :href="route('leave-requests.index')" label="{{ __('navigation.Leave Requests') }}" icon="fas fa-calendar-times" :active="(bool) request()->routeIs('leave-requests.index')" />
-                    <x-nav-link :href="route('leave-requests.apply-for-other')" label="{{ __('navigation.Leave Requests For Other') }}" icon="fas fa-calendar-alt" :active="(bool) request()->routeIs('leave-requests.apply-for-other')" />
-                @endcan
-                @can('apply leave requests')
-                    <x-nav-link :href="route('leave-requests.apply')" label="{{ __('navigation.Apply Leave Requests') }}" icon="fas fa-calendar-alt" :active="(bool) request()->routeIs('leave-requests.apply')" />
-                @endcan
+                @if($featureService->isEnabled('timetable'))
+                    @can('manage time-table planner')
+                        <x-nav-link :href="route('time-table.create')" label="{{ __('navigation.Time-table Planner') }}" icon="fas fa-calendar-plus" :active="(bool) request()->routeIs('time-table.create')" />
+                    @endcan
+                    @can('manage time-table planner')
+                        <x-nav-link :href="route('time-table.index')" label="{{ __('navigation.Time-table List') }}" icon="fas fa-list" :active="(bool) (request()->routeIs('time-table.index', 'time-table.edit') || request()->is('time-table/class/*/versions'))" />
+                    @endcan
+                @endif
+                @if($featureService->isEnabled('attendance'))
+                    @can('collect student attendance')
+                        <x-nav-link :href="route('student-attendance.create')" label="{{ __('navigation.Collect Attendance') }}" icon="fas fa-clipboard-check" :active="(bool) (request()->routeIs('student-attendance.create') || request()->is('attendance/collect-attendance/*'))" />
+                    @endcan
+                    @can('manage student attendance')
+                        <x-nav-link :href="route('student-attendance.index')" label="{{ __('navigation.Student Attendance') }}" icon="fas fa-user-graduate" :active="(bool) (request()->routeIs('student-attendance.index') || request()->is('attendance/students/class/*'))" />
+                    @endcan
+                    @can('manage teacher attendance')
+                        <x-nav-link :href="route('teacher-attendance.index')" label="{{ __('navigation.Teacher Attendance') }}" icon="fas fa-chalkboard-teacher" :active="(bool) request()->routeIs('teacher-attendance.*')" />
+                    @endcan
+                    @can('manage staff attendance')
+                        <x-nav-link :href="route('staff-attendance.index')" label="{{ __('navigation.Staff Attendance') }}" icon="fas fa-users-cog" :active="(bool) request()->routeIs('staff-attendance.*')" />
+                    @endcan
+                @endif
+                @if($featureService->isEnabled('leave_requests'))
+                    @can('manage leave requests')
+                        <x-nav-link :href="route('leave-requests.index')" label="{{ __('navigation.Leave Requests') }}" icon="fas fa-calendar-times" :active="(bool) request()->routeIs('leave-requests.index')" />
+                        <x-nav-link :href="route('leave-requests.apply-for-other')" label="{{ __('navigation.Leave Requests For Other') }}" icon="fas fa-calendar-alt" :active="(bool) request()->routeIs('leave-requests.apply-for-other')" />
+                    @endcan
+                    @can('apply leave requests')
+                        <x-nav-link :href="route('leave-requests.apply')" label="{{ __('navigation.Apply Leave Requests') }}" icon="fas fa-calendar-alt" :active="(bool) request()->routeIs('leave-requests.apply')" />
+                    @endcan
+                @endif
             </div>
             @endcan
             @can('view departments and profiles')
@@ -157,15 +177,19 @@
                         <x-nav-link :href="route('finance-setup.index')" label="{{ __('navigation.Setup') }}" icon="fas fa-cog" :active="(bool) request()->routeIs('finance-setup.*')" />
                     @endif
                 @endcan
-                @can('manage student fees')
-                    <x-nav-link :href="route('student-fees.index')" label="{{ __('navigation.Student Fee') }}" icon="fas fa-file-invoice-dollar" :active="(bool) request()->routeIs('student-fees.*')" />
-                @endcan
-                @can('manage salary and payroll')
-                    <x-nav-link :href="route('salary-payroll.index')" label="{{ __('navigation.Salary and Payroll') }}" icon="fas fa-money-check-alt" :active="(bool) request()->routeIs('salary-payroll.*')" />
-                @endcan
-                @can('manage finance transactions')
-                    <x-nav-link :href="route('finance.index')" label="{{ __('navigation.Finance') }}" icon="fas fa-dollar-sign" :active="(bool) request()->routeIs('finance.*')" />
-                @endcan
+                @if($featureService->isEnabled('fees'))
+                    @can('manage student fees')
+                        <x-nav-link :href="route('student-fees.index')" label="{{ __('navigation.Student Fee') }}" icon="fas fa-file-invoice-dollar" :active="(bool) request()->routeIs('student-fees.*')" />
+                    @endcan
+                @endif
+                @if($featureService->isEnabled('payroll'))
+                    @can('manage salary and payroll')
+                        <x-nav-link :href="route('salary-payroll.index')" label="{{ __('navigation.Salary and Payroll') }}" icon="fas fa-money-check-alt" :active="(bool) request()->routeIs('salary-payroll.*')" />
+                    @endcan
+                    @can('manage finance transactions')
+                        <x-nav-link :href="route('finance.index')" label="{{ __('navigation.Finance') }}" icon="fas fa-dollar-sign" :active="(bool) request()->routeIs('finance.*')" />
+                    @endcan
+                @endif
             </div>
             @endcan
 
@@ -178,22 +202,26 @@
                 @can('manage users')
                     <x-nav-link :href="route('users.index')" label="{{ __('navigation.User Management') }}" icon="fas fa-users" :active="(bool) request()->routeIs('users.*')" />
                 @endcan
-                @can('manage school settings')
-                    <x-nav-link :href="route('rules.index')" label="{{ __('navigation.Rules') }}" icon="fas fa-calendar-alt" :active="(bool) (request()->routeIs('rules.*') || request()->is('rules/*'))" />
-                @endcan
+                @if($featureService->isEnabled('rules'))
+                    @can('manage school settings')
+                        <x-nav-link :href="route('rules.index')" label="{{ __('navigation.Rules') }}" icon="fas fa-calendar-alt" :active="(bool) (request()->routeIs('rules.*') || request()->is('rules/*'))" />
+                    @endcan
+                @endif
                 @can('manage user activity logs')
                     <x-nav-link :href="route('user-activity-logs.index')" label="{{ __('navigation.User Activity Logs') }}" icon="fas fa-chart-line" :active="(bool) request()->routeIs('user-activity-logs.*')" />
                 @endcan
             </div>
             @endcan
-            @can('view reports')
-            <div class="space-y-2">
-                <p class="text-[10px] font-semibold tracking-[0.18em] text-gray-500 dark:text-gray-400 uppercase px-3">{{ __('navigation.Reports') }}</p>
-                @can('generate reports')
-                    <x-nav-link :href="route('reports.index')" label="{{ __('navigation.Report Centre') }}" icon="fas fa-file-alt" :active="(bool) (request()->routeIs('reports.*') || request()->is('reports') || request()->is('reports/incoming/*'))" />
+            @if($featureService->isEnabled('reports'))
+                @can('view reports')
+                <div class="space-y-2">
+                    <p class="text-[10px] font-semibold tracking-[0.18em] text-gray-500 dark:text-gray-400 uppercase px-3">{{ __('navigation.Reports') }}</p>
+                    @can('generate reports')
+                        <x-nav-link :href="route('reports.index')" label="{{ __('navigation.Report Centre') }}" icon="fas fa-file-alt" :active="(bool) (request()->routeIs('reports.*') || request()->is('reports') || request()->is('reports/incoming/*'))" />
+                    @endcan
+                </div>
                 @endcan
-            </div>
-            @endcan
+            @endif
             @can('view communication and support')
             <div class="space-y-2">
                 <p class="text-[10px] font-semibold tracking-[0.18em] text-gray-500 dark:text-gray-400 uppercase px-3">{{ __('navigation.Communication & Support') }}</p>
@@ -222,12 +250,15 @@
                         <span class="truncate">{{ __('navigation.My Notifications') }}</span>
                     </a>
                 @endrole
-                <x-nav-link :href="route('feedback.index')" label="{{ __('navigation.Submit Feedback') }}" icon="fas fa-comment-dots" :active="(bool) request()->routeIs('feedback.*')" />
+                <x-nav-link :href="route('feedback.create')" label="{{ __('navigation.Submit Feedback') }}" icon="fas fa-comment-dots" :active="(bool) request()->routeIs('feedback.*')" />
             </div>
             @endcan
-            @can('view system management')
+
+            @role('system_admin')
             <div class="space-y-2">
-                <p class="text-[10px] font-semibold tracking-[0.18em] text-gray-500 dark:text-gray-400 uppercase px-3">{{ __('navigation.System') }}</p>
+                <p class="text-[10px] font-semibold tracking-[0.18em] text-gray-500 dark:text-gray-400 uppercase px-3">{{ __('navigation.System Administration') }}</p>
+                <x-nav-link :href="route('system-admin.features.index')" label="{{ __('navigation.Feature Flags') }}" icon="fas fa-toggle-on" :active="(bool) request()->routeIs('system-admin.features.*')" />
+                <x-nav-link :href="route('system-admin.feedback.index')" label="{{ __('navigation.Feedback Management') }}" icon="fas fa-comments" :active="(bool) request()->routeIs('system-admin.feedback.*')" />
                 @can('manage roles')
                     <x-nav-link :href="route('roles.index')" label="{{ __('navigation.Roles') }}" icon="fas fa-user-shield" :active="(bool) request()->routeIs('roles.*')" />
                 @endcan
@@ -235,7 +266,7 @@
                     <x-nav-link :href="route('permissions.index')" label="{{ __('navigation.Permissions') }}" icon="fas fa-lock" :active="(bool) request()->routeIs('permissions.*')" />
                 @endcan
             </div>
-            @endcan
+            @endrole
     </nav>
 </aside>
 

@@ -160,7 +160,7 @@ Route::middleware(['auth', 'ensure.active'])->group(function () {
     Route::post('/student-remarks', [\App\Http\Controllers\StudentRemarkController::class, 'store'])->name('student-remarks.store');
 
     // Homework Management
-    Route::prefix('homework')->middleware(['ensure.setup:academic'])->name('homework.')->group(function () {
+    Route::prefix('homework')->middleware(['ensure.setup:academic', 'feature:homework'])->name('homework.')->group(function () {
         Route::get('/', [\App\Http\Controllers\HomeworkController::class, 'index'])->name('index');
         Route::get('/create', [\App\Http\Controllers\HomeworkController::class, 'index'])->name('create');
         Route::post('/', [\App\Http\Controllers\HomeworkController::class, 'store'])->name('store');
@@ -197,12 +197,12 @@ Route::middleware(['auth', 'ensure.active'])->group(function () {
     // Announcement management routes (admin only)
     Route::resource('announcements', \App\Http\Controllers\AnnouncementController::class)
         ->only(['index', 'store', 'update', 'destroy'])
-        ->middleware(['ensure.setup:events', 'can:manage announcements']);
+        ->middleware(['ensure.setup:events', 'can:manage announcements', 'feature:announcements']);
     
     // Announcement view route (accessible to staff for viewing from notifications)
     Route::get('/announcements/{announcement}', [\App\Http\Controllers\AnnouncementController::class, 'show'])
         ->name('announcements.show')
-        ->middleware('ensure.setup:events');
+        ->middleware(['ensure.setup:events', 'feature:announcements']);
 
     Route::get('/time-table-attendance-setup', [\App\Http\Controllers\TimeTableAttendanceSetupController::class, 'index'])
         ->middleware('setup.locked')
@@ -577,6 +577,24 @@ Route::middleware(['auth', 'ensure.active'])->group(function () {
             'hideBottomNav' => true
         ]);
     })->name('pwa.notifications');
+});
+
+// System Admin Routes
+Route::middleware(['auth', 'ensure.active', 'role:system_admin'])->prefix('system-admin')->name('system-admin.')->group(function () {
+    // Feature Flag Management
+    Route::get('/features', [\App\Http\Controllers\FeatureFlagController::class, 'index'])->name('features.index');
+    Route::post('/features', [\App\Http\Controllers\FeatureFlagController::class, 'update'])->name('features.update');
+    
+    // Feedback Management
+    Route::get('/feedback', [\App\Http\Controllers\FeedbackController::class, 'index'])->name('feedback.index');
+    Route::get('/feedback/{feedback}', [\App\Http\Controllers\FeedbackController::class, 'show'])->name('feedback.show');
+    Route::put('/feedback/{feedback}', [\App\Http\Controllers\FeedbackController::class, 'update'])->name('feedback.update');
+});
+
+// Public Feedback Routes
+Route::middleware(['auth'])->group(function () {
+    Route::get('/feedback', [\App\Http\Controllers\FeedbackController::class, 'create'])->name('feedback.create');
+    Route::post('/feedback', [\App\Http\Controllers\FeedbackController::class, 'store'])->name('feedback.store');
 });
 
 require __DIR__ . '/auth.php';

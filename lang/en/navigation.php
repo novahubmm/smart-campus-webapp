@@ -47,4 +47,8 @@ return array(
     'Roles' => 'Roles',
     'Permissions' => 'Permissions',
     'Rules' => 'Rules',
+    'System Administration' => 'System Administration',
+    'Feature Flags' => 'Feature Flags',
+    'Feedback Management' => 'Feedback Management',
+    'My Notifications' => 'My Notifications',
 );

@@ -26,6 +26,7 @@ return Application::configure(basePath: dirname(__DIR__))
             'setup.locked' => \App\Http\Middleware\RedirectIfSetupComplete::class,
             'control_api_auth' => \App\Http\Middleware\ControlApiAuth::class,
             'role_based' => \App\Http\Middleware\RoleBasedAccess::class,
+            'feature' => \App\Http\Middleware\CheckFeatureEnabled::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {

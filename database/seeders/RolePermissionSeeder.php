@@ -29,13 +29,15 @@ class RolePermissionSeeder extends Seeder
         });
 
         // Create roles from RoleEnum
+        $systemAdminRole = Role::firstOrCreate(['name' => RoleEnum::SYSTEM_ADMIN->value], ['id' => (string) Str::uuid(), 'guard_name' => 'web']);
         $adminRole = Role::firstOrCreate(['name' => RoleEnum::ADMIN->value], ['id' => (string) Str::uuid(), 'guard_name' => 'web']);
         $staffRole = Role::firstOrCreate(['name' => RoleEnum::STAFF->value], ['id' => (string) Str::uuid(), 'guard_name' => 'web']);
         $teacherRole = Role::firstOrCreate(['name' => RoleEnum::TEACHER->value], ['id' => (string) Str::uuid(), 'guard_name' => 'web']);
         $studentRole = Role::firstOrCreate(['name' => RoleEnum::STUDENT->value], ['id' => (string) Str::uuid(), 'guard_name' => 'web']);
         $guardianRole = Role::firstOrCreate(['name' => RoleEnum::GUARDIAN->value], ['id' => (string) Str::uuid(), 'guard_name' => 'web']);
 
-        // Assign all permissions to admin
+        // Assign all permissions to system_admin and admin
+        $systemAdminRole->permissions()->sync($permissions->pluck('id'));
         $adminRole->permissions()->sync($permissions->pluck('id'));
 
         // Assign scoped permissions to staff/teacher/student/guardian

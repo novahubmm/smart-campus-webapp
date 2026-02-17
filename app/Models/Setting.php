@@ -65,6 +65,7 @@ class Setting extends Model
         'tuition_fee_by_grade',
         'maintenance_mode',
         'maintenance_message',
+        'enabled_features',
         // Working hours settings
         'office_start_time',
         'office_end_time',
@@ -100,6 +101,7 @@ class Setting extends Model
         'values' => 'array',
         'values_mm' => 'array',
         'accreditations' => 'array',
+        'enabled_features' => 'array',
         // Working hours casts
         'office_break_duration_minutes' => 'integer',
         'required_working_hours' => 'decimal:2',

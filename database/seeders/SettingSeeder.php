@@ -36,6 +36,22 @@ class SettingSeeder extends Seeder
                 'school_start_time' => '08:00',
                 'school_end_time' => '13:30',
                 'week_days' => ['monday', 'tuesday', 'wednesday', 'thursday', 'friday'],
+                // Enable all features by default
+                'enabled_features' => [
+                    'announcements',
+                    'attendance',
+                    'timetable',
+                    'exams',
+                    'homework',
+                    'fees',
+                    'payroll',
+                    'reports',
+                    'events',
+                    'leave_requests',
+                    'daily_reports',
+                    'curriculum',
+                    'rules',
+                ],
             ]
         );
 
