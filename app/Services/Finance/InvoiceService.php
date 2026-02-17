@@ -3,6 +3,7 @@
 namespace App\Services\Finance;
 
 use App\Models\FeeStructure;
+use App\Models\FeeType;
 use App\Models\Invoice;
 use App\Models\StudentProfile;
 use App\Repositories\Finance\InvoiceRepository;
@@ -95,6 +96,38 @@ class InvoiceService
             'next_counter' => $invoiceCounter,
         ];
 
+        // Ensure grade monthly price is represented as a FeeStructure so it can be invoiced
+        $grade = $student->grade()->first();
+        if ($grade && ! empty($grade->price_per_month) && $grade->price_per_month > 0) {
+            // Find or create a FeeType for tuition
+            $tuitionType = FeeType::where('code', 'tuition')->orWhere('name', 'Tuition')->first();
+            if (! $tuitionType) {
+                $tuitionType = FeeType::create([
+                    'name' => 'Tuition',
+                    'code' => 'tuition',
+                    'status' => true,
+                    'is_mandatory' => true,
+                ]);
+            }
+
+            // Ensure a monthly FeeStructure exists for this grade and tuition fee type
+            $existingTuitionStructure = FeeStructure::where('grade_id', $grade->id)
+                ->where('fee_type_id', $tuitionType->id)
+                ->whereIn('frequency', ['monthly', 'month'])
+                ->first();
+
+            if (! $existingTuitionStructure) {
+                FeeStructure::create([
+                    'grade_id' => $grade->id,
+                    'batch_id' => $grade->batch_id,
+                    'fee_type_id' => $tuitionType->id,
+                    'amount' => $grade->price_per_month,
+                    'frequency' => 'monthly',
+                    'status' => true,
+                ]);
+            }
+        }
+
         // Get active fee structures for this student's grade
         $feeStructures = FeeStructure::where('grade_id', $student->grade_id)
             ->where('status', true)
@@ -135,31 +168,54 @@ class InvoiceService
             $invoiceNumber = $this->generateInvoiceNumber($invoiceCounter);
             $dueDate = now()->addDays(30); // 30 days from now
 
-            $invoice = $this->invoiceRepo->create([
-                'invoice_number' => $invoiceNumber,
-                'student_id' => $student->id,
-                'fee_structure_id' => $structure->id,
-                'invoice_date' => now(),
-                'due_date' => $dueDate,
-                'month' => $month,
-                'academic_year' => $academicYear,
-                'subtotal' => $structure->amount,
-                'discount' => 0,
-                'total_amount' => $structure->amount,
-                'paid_amount' => 0,
-                'balance' => $structure->amount,
-                'status' => 'unpaid',
-                'created_by' => auth()->id(),
-            ]);
+            // Attempt to create invoice, retrying with incremented sequence if invoice_number collides
+            $attempt = 0;
+            $maxAttempts = 10;
+            $created = false;
+            while (! $created && $attempt < $maxAttempts) {
+                try {
+                    $invoice = $this->invoiceRepo->create([
+                        'invoice_number' => $invoiceNumber,
+                        'student_id' => $student->id,
+                        'fee_structure_id' => $structure->id,
+                        'invoice_date' => now(),
+                        'due_date' => $dueDate,
+                        'month' => $month,
+                        'academic_year' => $academicYear,
+                        'subtotal' => $structure->amount,
+                        'discount' => 0,
+                        'total_amount' => $structure->amount,
+                        'paid_amount' => 0,
+                        'balance' => $structure->amount,
+                        'status' => 'unpaid',
+                        'created_by' => auth()->id(),
+                    ]);
 
-            $stats['created']++;
-            $stats['next_counter'] = ++$invoiceCounter;
+                    $stats['created']++;
+                    $stats['next_counter'] = ++$invoiceCounter;
 
-            Log::info('Invoice created', [
-                'invoice_id' => $invoice->id,
-                'student_id' => $student->id,
-                'amount' => $structure->amount,
-            ]);
+                    Log::info('Invoice created', [
+                        'invoice_id' => $invoice->id,
+                        'student_id' => $student->id,
+                        'amount' => $structure->amount,
+                    ]);
+
+                    $created = true;
+                } catch (\Exception $e) {
+                    // If unique constraint on invoice_number, increment counter and retry
+                    $attempt++;
+                    $invoiceCounter++;
+                    $invoiceNumber = $this->generateInvoiceNumber($invoiceCounter);
+                    if ($attempt >= $maxAttempts) {
+                        Log::error('Failed to create invoice after retries', [
+                            'student_id' => $student->id,
+                            'fee_structure_id' => $structure->id,
+                            'error' => $e->getMessage(),
+                        ]);
+                        throw $e;
+                    }
+                }
+            }
         }
 
         return $stats;

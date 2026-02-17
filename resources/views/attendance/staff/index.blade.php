@@ -551,7 +551,8 @@
                         });
                 },
 
-                filterDailyList() {
+                filterDailyList(resetPage = true) {
+                    const previousPage = this.dailyCurrentPage;
                     const q = this.dailySearch.toLowerCase().trim();
                     if (!q) {
                         this.filteredDailyList = this.dailyList;
@@ -562,7 +563,8 @@
                                    (row.department && row.department.toLowerCase().includes(q));
                         });
                     }
-                    this.dailyCurrentPage = 1;
+                    const totalPages = Math.ceil(this.filteredDailyList.length / this.perPage) || 1;
+                    this.dailyCurrentPage = resetPage ? 1 : Math.min(Math.max(previousPage, 1), totalPages);
                 },
 
                 computeDailyStats() {
@@ -768,7 +770,7 @@
                             row.start_time = data.start_time;
                             row.end_time = data.end_time;
                         }
-                        this.filterDailyList();
+                        this.filterDailyList(false);
                         this.computeDailyStats();
                     })
                     .catch(err => console.error('Failed to save attendance:', err));

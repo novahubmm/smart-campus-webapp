@@ -2,9 +2,9 @@
 
 namespace Database\Seeders;
 
-use App\Models\Event;
-use App\Models\User;
 use Illuminate\Database\Seeder;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 
 class DatabaseSeeder extends Seeder
 {
@@ -13,24 +13,32 @@ class DatabaseSeeder extends Seeder
      */
     public function run(): void
     {
+        $this->clearData();
+
         $this->call([
             RolePermissionSeeder::class,
-            // AdminUserSeeder::class,
             SettingSeeder::class,
-            RuleCategorySeeder::class,
-            SchoolRuleSeeder::class,
-            // DepartmentSeeder::class,
-            // KeyContactSeeder::class,
-            FacilitySeeder::class,
-            GradeCategorySeeder::class,
-            SubjectTypeSeeder::class,
-            // EventSeeder::class,
-            ExamTypeSeeder::class,
-            AnnouncementTypeSeeder::class,
-            DemoReadySeeder::class,
+            OneGradeDemoReadySeeder::class,
             MultiRoleUserSeeder::class,
-            FeeCategorySeeder::class,
-            // ClassRecordsSeeder::class,
         ]);
+    }
+
+    private function clearData(): void
+    {
+        $this->command?->warn('Clearing existing data...');
+
+        Schema::disableForeignKeyConstraints();
+
+        try {
+            foreach (Schema::getTableListing(null, false) as $table) {
+                if ($table === 'migrations') {
+                    continue;
+                }
+
+                DB::table($table)->truncate();
+            }
+        } finally {
+            Schema::enableForeignKeyConstraints();
+        }
     }
 }
