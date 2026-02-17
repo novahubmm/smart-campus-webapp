@@ -2,64 +2,93 @@
 
 namespace App\Http\Controllers;
 
-use App\Services\ControlPanelService;
-use App\Traits\LogsActivity;
+use App\Models\Feedback;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Auth;
+use Illuminate\Http\RedirectResponse;
+use Illuminate\View\View;
 
 class FeedbackController extends Controller
 {
-    use LogsActivity;
-
-    private ControlPanelService $controlPanelService;
-
-    public function __construct(ControlPanelService $controlPanelService)
+    public function __construct()
     {
-        $this->controlPanelService = $controlPanelService;
+        $this->middleware('auth');
+        $this->middleware('role:system_admin')->only(['index', 'show', 'update']);
     }
 
     /**
-     * Show the feedback form
+     * Display feedback list (system admin only)
      */
-    public function index()
+    public function index(): View
     {
-        return view('feedback.index');
+        $feedbacks = Feedback::with('user')
+            ->orderBy('created_at', 'desc')
+            ->paginate(20);
+
+        return view('system-admin.feedback.index', compact('feedbacks'));
     }
 
     /**
-     * Submit feedback from web interface
+     * Display single feedback (system admin only)
      */
-    public function store(Request $request)
+    public function show(Feedback $feedback): View
+    {
+        $feedback->load('user');
+        return view('system-admin.feedback.show', compact('feedback'));
+    }
+
+    /**
+     * Update feedback status (system admin only)
+     */
+    public function update(Request $request, Feedback $feedback): RedirectResponse
     {
         $request->validate([
-            'title' => 'required|string|max:255',
-            'message' => 'required|string|max:2000',
-            'category' => 'required|in:bug,feature,improvement,question,other',
-            'priority' => 'required|in:low,normal,high,urgent'
+            'status' => 'required|in:pending,reviewed,resolved,closed',
+            'admin_notes' => 'nullable|string',
         ]);
 
-        $user = Auth::user();
-        
-        // Prepare feedback data
-        $feedbackData = [
-            'title' => $request->input('title'),
-            'message' => $request->input('message'),
-            'category' => $request->input('category'),
-            'priority' => $request->input('priority'),
-            'source' => 'web',
-            'user_name' => $user->name,
-            'user_email' => $user->email,
-            'user_role' => $user->getRoleNames()->first() ?? 'user',
-        ];
+        $feedback->update([
+            'status' => $request->status,
+            'admin_notes' => $request->admin_notes,
+        ]);
 
-        // Send directly to Control Panel (no local storage)
-        $sent = $this->controlPanelService->sendFeedback($feedbackData);
+        return redirect()->route('system-admin.feedback.show', $feedback)
+            ->with('success', 'Feedback updated successfully');
+    }
 
-        if ($sent) {
-            $this->logCreate('Feedback', $user->id, $request->input('title'));
-            return redirect()->back()->with('success', 'Your feedback has been submitted successfully. Thank you!');
-        } else {
-            return redirect()->back()->with('error', 'Unable to submit feedback at this time. Please try again later or contact your administrator.');
-        }
+    /**
+     * Submit feedback form (public)
+     */
+    public function create(): View
+    {
+        return view('feedback.create');
+    }
+
+    /**
+     * Store feedback (public)
+     */
+    public function store(Request $request): RedirectResponse
+    {
+        $request->validate([
+            'name' => 'required|string|max:255',
+            'email' => 'required|email|max:255',
+            'phone' => 'nullable|string|max:20',
+            'subject' => 'required|string|max:255',
+            'message' => 'required|string',
+            'type' => 'required|in:bug,feature_request,general,complaint,suggestion',
+        ]);
+
+        Feedback::create([
+            'user_id' => auth()->id(),
+            'name' => $request->name,
+            'email' => $request->email,
+            'phone' => $request->phone,
+            'subject' => $request->subject,
+            'message' => $request->message,
+            'type' => $request->type,
+            'status' => 'pending',
+        ]);
+
+        return redirect()->route('feedback.create')
+            ->with('success', 'Thank you for your feedback! We will review it soon.');
     }
 }

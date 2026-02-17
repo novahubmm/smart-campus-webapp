@@ -579,4 +579,22 @@ Route::middleware(['auth', 'ensure.active'])->group(function () {
     })->name('pwa.notifications');
 });
 
+// System Admin Routes
+Route::middleware(['auth', 'ensure.active', 'role:system_admin'])->prefix('system-admin')->name('system-admin.')->group(function () {
+    // Feature Flag Management
+    Route::get('/features', [\App\Http\Controllers\FeatureFlagController::class, 'index'])->name('features.index');
+    Route::post('/features', [\App\Http\Controllers\FeatureFlagController::class, 'update'])->name('features.update');
+    
+    // Feedback Management
+    Route::get('/feedback', [\App\Http\Controllers\FeedbackController::class, 'index'])->name('feedback.index');
+    Route::get('/feedback/{feedback}', [\App\Http\Controllers\FeedbackController::class, 'show'])->name('feedback.show');
+    Route::put('/feedback/{feedback}', [\App\Http\Controllers\FeedbackController::class, 'update'])->name('feedback.update');
+});
+
+// Public Feedback Routes
+Route::middleware(['auth'])->group(function () {
+    Route::get('/feedback', [\App\Http\Controllers\FeedbackController::class, 'create'])->name('feedback.create');
+    Route::post('/feedback', [\App\Http\Controllers\FeedbackController::class, 'store'])->name('feedback.store');
+});
+
 require __DIR__ . '/auth.php';
