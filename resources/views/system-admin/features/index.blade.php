@@ -1,3 +1,24 @@
+@php
+function getFeatureIcon($key) {
+    return match($key) {
+        'announcements' => 'bullhorn',
+        'attendance' => 'clipboard-check',
+        'timetable' => 'calendar-alt',
+        'exams' => 'graduation-cap',
+        'homework' => 'book',
+        'fees' => 'dollar-sign',
+        'payroll' => 'money-check-alt',
+        'reports' => 'chart-bar',
+        'events' => 'calendar-day',
+        'leave_requests' => 'user-clock',
+        'daily_reports' => 'file-alt',
+        'curriculum' => 'book-open',
+        'rules' => 'gavel',
+        default => 'cog'
+    };
+}
+@endphp
+
 <x-app-layout>
     <x-slot name="header">
         <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
@@ -38,7 +59,7 @@
                                 <div class="flex items-center justify-between p-4 bg-gray-50 dark:bg-gray-700/50 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition">
                                     <div class="flex items-center gap-3">
                                         <div class="flex items-center justify-center w-10 h-10 rounded-lg bg-white dark:bg-gray-800 shadow-sm">
-                                            <i class="fas fa-{{ $this->getFeatureIcon($key) }} text-gray-600 dark:text-gray-400"></i>
+                                            <i class="fas fa-{{ getFeatureIcon($key) }} text-gray-600 dark:text-gray-400"></i>
                                         </div>
                                         <div>
                                             <label for="feature_{{ $key }}" class="text-sm font-medium text-gray-900 dark:text-white cursor-pointer">
@@ -89,25 +110,4 @@
             </div>
         </div>
     </div>
-
-    @php
-    function getFeatureIcon($key) {
-        return match($key) {
-            'announcements' => 'bullhorn',
-            'attendance' => 'clipboard-check',
-            'timetable' => 'calendar-alt',
-            'exams' => 'graduation-cap',
-            'homework' => 'book',
-            'fees' => 'dollar-sign',
-            'payroll' => 'money-check-alt',
-            'reports' => 'chart-bar',
-            'events' => 'calendar-day',
-            'leave_requests' => 'user-clock',
-            'daily_reports' => 'file-alt',
-            'curriculum' => 'book-open',
-            'rules' => 'gavel',
-            default => 'cog'
-        };
-    }
-    @endphp
 </x-app-layout>
