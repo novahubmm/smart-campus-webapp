@@ -33,6 +33,8 @@
             @php
                 $setting = optional(\App\Models\Setting::first());
                 $needsSetup = !($setting->setup_completed_school_info && $setting->setup_completed_academic && $setting->setup_completed_event_and_announcements && $setting->setup_completed_time_table_and_attendance && $setting->setup_completed_finance);
+                $featureService = app(\App\Services\FeatureService::class);
+                $isSystemAdmin = auth()->user() && auth()->user()->hasRole('system_admin');
             @endphp
             @if($needsSetup)
                 <div class="space-y-2">
@@ -222,7 +224,7 @@
                         <span class="truncate">{{ __('navigation.My Notifications') }}</span>
                     </a>
                 @endrole
-                <x-nav-link :href="route('feedback.index')" label="{{ __('navigation.Submit Feedback') }}" icon="fas fa-comment-dots" :active="(bool) request()->routeIs('feedback.*')" />
+                <x-nav-link :href="route('feedback.create')" label="{{ __('navigation.Submit Feedback') }}" icon="fas fa-comment-dots" :active="(bool) request()->routeIs('feedback.*')" />
             </div>
             @endcan
             @can('view system management')
