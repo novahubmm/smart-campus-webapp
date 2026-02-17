@@ -11,13 +11,24 @@ class FeatureService
      */
     public function isEnabled(string $feature): bool
     {
-        $setting = Setting::first();
-        
-        if (!$setting || !$setting->enabled_features) {
-            // If no settings or no features configured, enable all by default
+        // System admin bypasses feature checks
+        if (auth()->check() && auth()->user()->hasRole('system_admin')) {
             return true;
         }
 
+        $setting = Setting::first();
+        
+        if (!$setting) {
+            // If no settings exist, enable all by default
+            return true;
+        }
+
+        // If enabled_features is null or not set, enable all by default
+        if ($setting->enabled_features === null) {
+            return true;
+        }
+
+        // If enabled_features is an array (even empty), check if feature is in it
         return in_array($feature, $setting->enabled_features);
     }
 
@@ -27,6 +38,12 @@ class FeatureService
     public function getEnabledFeatures(): array
     {
         $setting = Setting::first();
+        
+        // If no setting or enabled_features is null, return all features as enabled
+        if (!$setting || $setting->enabled_features === null) {
+            return array_keys($this->getAvailableFeatures());
+        }
+        
         return $setting->enabled_features ?? [];
     }
 

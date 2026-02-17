@@ -160,7 +160,7 @@ Route::middleware(['auth', 'ensure.active'])->group(function () {
     Route::post('/student-remarks', [\App\Http\Controllers\StudentRemarkController::class, 'store'])->name('student-remarks.store');
 
     // Homework Management
-    Route::prefix('homework')->middleware(['ensure.setup:academic'])->name('homework.')->group(function () {
+    Route::prefix('homework')->middleware(['ensure.setup:academic', 'feature:homework'])->name('homework.')->group(function () {
         Route::get('/', [\App\Http\Controllers\HomeworkController::class, 'index'])->name('index');
         Route::get('/create', [\App\Http\Controllers\HomeworkController::class, 'index'])->name('create');
         Route::post('/', [\App\Http\Controllers\HomeworkController::class, 'store'])->name('store');

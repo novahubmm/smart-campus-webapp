@@ -298,11 +298,13 @@ Route::prefix('v1')->group(function () {
             Route::get('/attendance/history/{id}', [TeacherAttendanceController::class, 'historyDetail']);
 
             // Homework
-            Route::get('/homework', [TeacherHomeworkController::class, 'index']);
-            Route::post('/homework', [TeacherHomeworkController::class, 'store']);
-            Route::get('/homework/{id}', [TeacherHomeworkController::class, 'show']);
-            Route::post('/homework/{id}/collect', [TeacherHomeworkController::class, 'collect']);
-            Route::post('/homework/{id}/uncollect', [TeacherHomeworkController::class, 'uncollect']);
+            Route::middleware('feature:homework')->group(function () {
+                Route::get('/homework', [TeacherHomeworkController::class, 'index']);
+                Route::post('/homework', [TeacherHomeworkController::class, 'store']);
+                Route::get('/homework/{id}', [TeacherHomeworkController::class, 'show']);
+                Route::post('/homework/{id}/collect', [TeacherHomeworkController::class, 'collect']);
+                Route::post('/homework/{id}/uncollect', [TeacherHomeworkController::class, 'uncollect']);
+            });
 
             // Announcements
             Route::middleware('feature:announcements')->group(function () {
@@ -447,13 +449,15 @@ Route::prefix('v1')->group(function () {
                 Route::get('/subjects/{subject_id}/curriculum', [GuardianExamController::class, 'subjectCurriculum']);
 
                 // Homework
-                Route::get('/homework', [GuardianHomeworkController::class, 'index']);
-                Route::get('/homework/stats', [GuardianHomeworkController::class, 'stats']);
-                Route::get('/homework/upcoming', [GuardianHomeworkController::class, 'upcoming']);
-                Route::get('/upcoming-homework', [GuardianDashboardController::class, 'upcomingHomework']);
-                Route::get('/homework/{homework_id}', [GuardianHomeworkController::class, 'show']);
-                Route::post('/homework/{homework_id}/submit', [GuardianHomeworkController::class, 'submit']);
-                Route::put('/homework/{homework_id}/status', [GuardianHomeworkController::class, 'updateStatus']);
+                Route::middleware('feature:homework')->group(function () {
+                    Route::get('/homework', [GuardianHomeworkController::class, 'index']);
+                    Route::get('/homework/stats', [GuardianHomeworkController::class, 'stats']);
+                    Route::get('/homework/upcoming', [GuardianHomeworkController::class, 'upcoming']);
+                    Route::get('/upcoming-homework', [GuardianDashboardController::class, 'upcomingHomework']);
+                    Route::get('/homework/{homework_id}', [GuardianHomeworkController::class, 'show']);
+                    Route::post('/homework/{homework_id}/submit', [GuardianHomeworkController::class, 'submit']);
+                    Route::put('/homework/{homework_id}/status', [GuardianHomeworkController::class, 'updateStatus']);
+                });
 
                 // Timetable & Schedule
                 Route::get('/timetable', [GuardianTimetableController::class, 'index']);
