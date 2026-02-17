@@ -18,13 +18,17 @@
         @endauth
 
         <!-- Favicon - Load immediately -->
-        <link rel="preload" href="{{ asset('school-logo.png') }}" as="image" type="image/jpeg">
-        <link rel="icon" type="image/jpeg" href="{{ asset('school-logo.png') }}">
-        <link rel="icon" type="image/png" sizes="16x16" href="{{ asset('school-logo.png') }}">
-        <link rel="icon" type="image/png" sizes="32x32" href="{{ asset('school-logo.png') }}">
-        <link rel="icon" type="image/png" sizes="48x48" href="{{ asset('school-logo.png') }}">
-        <link rel="icon" type="image/png" sizes="64x64" href="{{ asset('school-logo.png') }}">
-        <link rel="alternate icon" href="{{ asset('school-logo.png') }}">
+        @php
+            $faviconPath = optional(\App\Models\Setting::first())->school_short_logo_path;
+            $faviconUrl = $faviconPath ? asset('storage/'.$faviconPath) : asset('logo_short.png');
+        @endphp
+        <link rel="preload" href="{{ $faviconUrl }}" as="image">
+        <link rel="icon" href="{{ $faviconUrl }}">
+        <link rel="icon" type="image/png" sizes="16x16" href="{{ $faviconUrl }}">
+        <link rel="icon" type="image/png" sizes="32x32" href="{{ $faviconUrl }}">
+        <link rel="icon" type="image/png" sizes="48x48" href="{{ $faviconUrl }}">
+        <link rel="icon" type="image/png" sizes="64x64" href="{{ $faviconUrl }}">
+        <link rel="alternate icon" href="{{ $faviconUrl }}">
 
         @auth
             <meta name="user-role" content="{{ Auth::user()->getRoleNames()->first() }}">

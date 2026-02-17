@@ -1,8 +1,8 @@
 <aside class="fixed left-0 top-0 h-screen bg-white dark:bg-gray-950 border-r border-gray-200 dark:border-gray-800 shadow-lg transition-all duration-300 z-50" x-show="!sidebarCollapsed" x-transition:enter="transition ease-out duration-300" x-transition:enter-start="opacity-0" x-transition:enter-end="opacity-100" x-transition:leave="transition ease-in duration-300" x-transition:leave-start="opacity-100" x-transition:leave-end="opacity-0" style="width: 256px;">
     @php
         $setting = optional(\App\Models\Setting::first());
-        $schoolLogo = $setting->school_logo_path;
-        $logoUrl = $schoolLogo ? asset('storage/'.$schoolLogo) : asset('school-logo.png');
+        $schoolLogo = $setting->school_short_logo_path ?: $setting->school_logo_path;
+        $logoUrl = $schoolLogo ? asset('storage/'.$schoolLogo) : asset('logo_short.png');
         $schoolName = $setting->school_name ?? 'Smart Campus';
         
         // Generate short name from school name (take first letter of each word, max 4 letters)

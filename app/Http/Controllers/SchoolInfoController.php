@@ -65,9 +65,36 @@ class SchoolInfoController extends Controller
             'accreditations.*.name_mm' => ['nullable', 'string', 'max:255'],
             'accreditations.*.year' => ['nullable', 'integer', 'min:1800', 'max:' . date('Y')],
             'accreditations.*.certificate_url' => ['nullable', 'string', 'max:500'],
+            'school_short_logo' => ['nullable', 'image', 'mimes:png,jpg,jpeg,svg', 'max:2048'],
+            'school_logo' => ['nullable', 'image', 'mimes:png,jpg,jpeg,svg', 'max:2048'],
         ]);
 
         $setting = Setting::firstOrCreate(['id' => '00000000-0000-0000-0000-000000000001']);
+
+        // Handle logo uploads - only for system admin
+        if (auth()->user()->hasRole('system_admin')) {
+            // Handle short logo upload (for favicon and navigation)
+            if ($request->hasFile('school_short_logo')) {
+                // Delete old logo if exists
+                if ($setting->school_short_logo_path && \Storage::disk('public')->exists($setting->school_short_logo_path)) {
+                    \Storage::disk('public')->delete($setting->school_short_logo_path);
+                }
+                
+                $path = $request->file('school_short_logo')->store('logos', 'public');
+                $validated['school_short_logo_path'] = $path;
+            }
+
+            // Handle long logo upload (for dashboard and banner)
+            if ($request->hasFile('school_logo')) {
+                // Delete old logo if exists
+                if ($setting->school_logo_path && \Storage::disk('public')->exists($setting->school_logo_path)) {
+                    \Storage::disk('public')->delete($setting->school_logo_path);
+                }
+                
+                $path = $request->file('school_logo')->store('logos', 'public');
+                $validated['school_logo_path'] = $path;
+            }
+        }
 
         $setting->update($validated + ['setup_completed_school_info' => true]);
 

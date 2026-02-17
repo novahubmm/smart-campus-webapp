@@ -26,11 +26,41 @@
                     <p class="text-sm text-gray-500 dark:text-gray-400">{{ __('settings.Update the school brand, contact, and address details.') }}</p>
                 </div>
 
-                <form method="POST" action="{{ route('settings.school-info.update') }}">
+                <form method="POST" action="{{ route('settings.school-info.update') }}" enctype="multipart/form-data">
                     @csrf
 
                     <!-- Form Fields -->
                     <div class="p-6 space-y-5">
+                        @if(auth()->user()->hasRole('system_admin'))
+                        <!-- Logo Upload Section - System Admin Only -->
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 pb-4 border-b border-gray-200 dark:border-gray-700">
+                            <div>
+                                <label class="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">{{ __('settings.Short Logo') }}</label>
+                                <p class="text-xs text-gray-500 dark:text-gray-400 mb-2">{{ __('settings.Used for favicon and navigation (recommended: square, 512x512px)') }}</p>
+                                @if($setting?->school_short_logo_path)
+                                    <div class="mb-2">
+                                        <img src="{{ asset('storage/'.$setting->school_short_logo_path) }}" alt="Short Logo" class="h-16 w-16 object-contain border border-gray-300 dark:border-gray-600 rounded-lg p-2 bg-white dark:bg-gray-700">
+                                    </div>
+                                @endif
+                                <input type="file" name="school_short_logo" accept="image/png,image/jpeg,image/jpg,image/svg+xml"
+                                       class="w-full px-4 py-2.5 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                                @error('school_short_logo')<p class="text-sm text-red-600 mt-1">{{ $message }}</p>@enderror
+                            </div>
+                            <div>
+                                <label class="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">{{ __('settings.Banner Logo') }}</label>
+                                <p class="text-xs text-gray-500 dark:text-gray-400 mb-2">{{ __('settings.Used for dashboard and headers (recommended: wide, 1200x400px)') }}</p>
+                                @if($setting?->school_logo_path)
+                                    <div class="mb-2">
+                                        <img src="{{ asset('storage/'.$setting->school_logo_path) }}" alt="Banner Logo" class="h-16 w-auto object-contain border border-gray-300 dark:border-gray-600 rounded-lg p-2 bg-white dark:bg-gray-700">
+                                    </div>
+                                @endif
+                                <input type="file" name="school_logo" accept="image/png,image/jpeg,image/jpg,image/svg+xml"
+                                       class="w-full px-4 py-2.5 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                                @error('school_logo')<p class="text-sm text-red-600 mt-1">{{ $message }}</p>@enderror
+                            </div>
+                        </div>
+                        @endif
+
                         <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                             <div>
                                 <label class="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1">{{ __('settings.School Name') }}</label>

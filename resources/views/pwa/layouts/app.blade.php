@@ -12,7 +12,11 @@
     <meta name="apple-mobile-web-app-title" content="Smart Campus">
     
     <!-- Favicon -->
-    <link rel="icon" type="image/jpeg" href="{{ asset('school-logo.png') }}">
+    @php
+        $faviconPath = optional(\App\Models\Setting::first())->school_short_logo_path;
+        $faviconUrl = $faviconPath ? asset('storage/'.$faviconPath) : asset('logo_short.png');
+    @endphp
+    <link rel="icon" href="{{ $faviconUrl }}">
     
     <!-- PWA Manifest -->
     <link rel="manifest" href="{{ asset('manifest.json') }}">

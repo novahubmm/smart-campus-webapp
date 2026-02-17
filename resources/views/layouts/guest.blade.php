@@ -10,8 +10,12 @@
         <title>{{ config('app.name', 'Smart Campus') }}</title>
 
         <!-- Favicon -->
-        <link rel="icon" type="image/jpeg" href="{{ asset('school-logo.png') }}">
-        <link rel="alternate icon" href="{{ asset('school-logo.png') }}">
+        @php
+            $faviconPath = optional(\App\Models\Setting::first())->school_short_logo_path;
+            $faviconUrl = $faviconPath ? asset('storage/'.$faviconPath) : asset('logo_short.png');
+        @endphp
+        <link rel="icon" href="{{ $faviconUrl }}">
+        <link rel="alternate icon" href="{{ $faviconUrl }}">
 
         <!-- Fonts -->
         <link rel="preconnect" href="https://fonts.bunny.net">
