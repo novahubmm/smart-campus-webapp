@@ -113,21 +113,43 @@ class DemoAttendanceSeeder extends DemoBaseSeeder
     {
         $this->command->info('Creating Teacher Attendance...');
 
-        // Status enum is: present, absent, leave
-        $statuses = ['present', 'absent', 'leave'];
-        $weights = [90, 3, 7];
+        // Status enum is: present, absent, leave, half_day
+        $statuses = ['present', 'absent', 'leave', 'half_day'];
+        $weights = [88, 3, 7, 2];
         $workingDays = $this->getWorkingDaysArray();
 
         foreach ($workingDays as $date) {
-            foreach ($teacherProfiles as $teacher) {
-                TeacherAttendance::create([
-                    'teacher_id' => $teacher->id,
+            foreach ($teacherProfiles as $teacherProfile) {
+                $status = $this->getWeightedStatus($statuses, $weights);
+                
+                // Use user_id from teacher profile
+                $teacherId = $teacherProfile->user_id;
+                
+                // Generate attendance data
+                $attendanceData = [
+                    'id' => 'TA-' . $date->format('Ymd') . '-' . substr($teacherId, 0, 8),
+                    'teacher_id' => $teacherId,
                     'date' => $date,
-                    'status' => $this->getWeightedStatus($statuses, $weights),
-                    'marked_by' => $adminUser->id,
-                    'start_time' => '07:45',
-                    'end_time' => '15:00',
-                ]);
+                    'day_of_week' => $date->format('l'),
+                    'status' => $status,
+                ];
+                
+                // Add check-in/out times for present and half_day status
+                if (in_array($status, ['present', 'half_day'])) {
+                    $attendanceData['check_in_time'] = '07:45:00';
+                    $attendanceData['check_out_time'] = $status === 'half_day' ? '12:00:00' : '15:00:00';
+                    $attendanceData['check_in_timestamp'] = $date->format('Y-m-d') . ' 07:45:00';
+                    $attendanceData['check_out_timestamp'] = $date->format('Y-m-d') . ' ' . ($status === 'half_day' ? '12:00:00' : '15:00:00');
+                    $attendanceData['working_hours_decimal'] = $status === 'half_day' ? 4.25 : 7.25;
+                }
+                
+                // Add leave type for leave status
+                if ($status === 'leave') {
+                    $leaveTypes = ['sick', 'casual', 'emergency'];
+                    $attendanceData['leave_type'] = $leaveTypes[array_rand($leaveTypes)];
+                }
+                
+                TeacherAttendance::create($attendanceData);
             }
         }
     }

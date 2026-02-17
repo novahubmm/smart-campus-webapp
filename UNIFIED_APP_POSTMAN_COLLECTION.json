@@ -758,6 +758,33 @@
             "name": "Guardian Specific",
             "item": [
                 {
+                    "name": "Get School Info (Public)",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/guardian/school-info",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "guardian",
+                                "school-info"
+                            ]
+                        },
+                        "description": "Get comprehensive school information including contact, facilities, statistics, and more. No authentication required."
+                    }
+                },
+                {
                     "name": "RESTful Endpoints (NEW)",
                     "description": "New RESTful URL structure with student_id in path. Use these for new development.",
                     "item": [
@@ -2664,6 +2691,232 @@
                                     }
                                 }
                             ]
+                        },
+                        {
+                            "name": "Student Profile",
+                            "item": [
+                                {
+                                    "name": "Get Profile Overview",
+                                    "request": {
+                                        "method": "GET",
+                                        "header": [
+                                            {
+                                                "key": "Accept",
+                                                "value": "application/json"
+                                            }
+                                        ],
+                                        "url": {
+                                            "raw": "{{base_url}}/guardian/students/{{student_id}}/profile",
+                                            "host": [
+                                                "{{base_url}}"
+                                            ],
+                                            "path": [
+                                                "guardian",
+                                                "students",
+                                                "{{student_id}}",
+                                                "profile"
+                                            ]
+                                        },
+                                        "description": "Get student profile overview with badges and basic information"
+                                    }
+                                },
+                                {
+                                    "name": "Get Academic Summary",
+                                    "request": {
+                                        "method": "GET",
+                                        "header": [
+                                            {
+                                                "key": "Accept",
+                                                "value": "application/json"
+                                            }
+                                        ],
+                                        "url": {
+                                            "raw": "{{base_url}}/guardian/students/{{student_id}}/profile/academic-summary",
+                                            "host": [
+                                                "{{base_url}}"
+                                            ],
+                                            "path": [
+                                                "guardian",
+                                                "students",
+                                                "{{student_id}}",
+                                                "profile",
+                                                "academic-summary"
+                                            ]
+                                        },
+                                        "description": "Get academic summary including GPA, scores, and rankings"
+                                    }
+                                },
+                                {
+                                    "name": "Get Subject Performance",
+                                    "request": {
+                                        "method": "GET",
+                                        "header": [
+                                            {
+                                                "key": "Accept",
+                                                "value": "application/json"
+                                            }
+                                        ],
+                                        "url": {
+                                            "raw": "{{base_url}}/guardian/students/{{student_id}}/profile/subject-performance",
+                                            "host": [
+                                                "{{base_url}}"
+                                            ],
+                                            "path": [
+                                                "guardian",
+                                                "students",
+                                                "{{student_id}}",
+                                                "profile",
+                                                "subject-performance"
+                                            ]
+                                        },
+                                        "description": "Get performance details for all subjects"
+                                    }
+                                },
+                                {
+                                    "name": "Get Progress Tracking",
+                                    "request": {
+                                        "method": "GET",
+                                        "header": [
+                                            {
+                                                "key": "Accept",
+                                                "value": "application/json"
+                                            }
+                                        ],
+                                        "url": {
+                                            "raw": "{{base_url}}/guardian/students/{{student_id}}/profile/progress-tracking?months=6",
+                                            "host": [
+                                                "{{base_url}}"
+                                            ],
+                                            "path": [
+                                                "guardian",
+                                                "students",
+                                                "{{student_id}}",
+                                                "profile",
+                                                "progress-tracking"
+                                            ],
+                                            "query": [
+                                                {
+                                                    "key": "months",
+                                                    "value": "6",
+                                                    "description": "Number of months to retrieve"
+                                                }
+                                            ]
+                                        },
+                                        "description": "Get GPA and rank history for progress tracking charts"
+                                    }
+                                },
+                                {
+                                    "name": "Get Comparison Data",
+                                    "request": {
+                                        "method": "GET",
+                                        "header": [
+                                            {
+                                                "key": "Accept",
+                                                "value": "application/json"
+                                            }
+                                        ],
+                                        "url": {
+                                            "raw": "{{base_url}}/guardian/students/{{student_id}}/profile/comparison",
+                                            "host": [
+                                                "{{base_url}}"
+                                            ],
+                                            "path": [
+                                                "guardian",
+                                                "students",
+                                                "{{student_id}}",
+                                                "profile",
+                                                "comparison"
+                                            ]
+                                        },
+                                        "description": "Get student performance comparison with class average"
+                                    }
+                                },
+                                {
+                                    "name": "Get Attendance Summary",
+                                    "request": {
+                                        "method": "GET",
+                                        "header": [
+                                            {
+                                                "key": "Accept",
+                                                "value": "application/json"
+                                            }
+                                        ],
+                                        "url": {
+                                            "raw": "{{base_url}}/guardian/students/{{student_id}}/profile/attendance-summary?months=3",
+                                            "host": [
+                                                "{{base_url}}"
+                                            ],
+                                            "path": [
+                                                "guardian",
+                                                "students",
+                                                "{{student_id}}",
+                                                "profile",
+                                                "attendance-summary"
+                                            ],
+                                            "query": [
+                                                {
+                                                    "key": "months",
+                                                    "value": "3",
+                                                    "description": "Number of months to retrieve"
+                                                }
+                                            ]
+                                        },
+                                        "description": "Get attendance summary with monthly breakdown"
+                                    }
+                                },
+                                {
+                                    "name": "Get Rankings & Exam History",
+                                    "request": {
+                                        "method": "GET",
+                                        "header": [
+                                            {
+                                                "key": "Accept",
+                                                "value": "application/json"
+                                            }
+                                        ],
+                                        "url": {
+                                            "raw": "{{base_url}}/guardian/students/{{student_id}}/profile/rankings",
+                                            "host": [
+                                                "{{base_url}}"
+                                            ],
+                                            "path": [
+                                                "guardian",
+                                                "students",
+                                                "{{student_id}}",
+                                                "profile",
+                                                "rankings"
+                                            ]
+                                        },
+                                        "description": "Get current rankings and exam history"
+                                    }
+                                },
+                                {
+                                    "name": "Get Achievement Badges",
+                                    "request": {
+                                        "method": "GET",
+                                        "header": [
+                                            {
+                                                "key": "Accept",
+                                                "value": "application/json"
+                                            }
+                                        ],
+                                        "url": {
+                                            "raw": "{{base_url}}/guardian/students/{{student_id}}/profile/achievements",
+                                            "host": [
+                                                "{{base_url}}"
+                                            ],
+                                            "path": [
+                                                "guardian",
+                                                "students",
+                                                "{{student_id}}",
+                                                "profile",
+                                                "achievements"
+                                            ]
+                                        },
+                                        "description": "Get achievement badges with locked/unlocked status"
+                                    }
+                                }
+                            ]
                         }
                     ]
                 },
@@ -2687,7 +2940,7 @@
                                 "students"
                             ]
                         },
-                        "description": "\u26a0\ufe0f DEPRECATED - Use RESTful endpoint instead. Get guardian's children/wards"
+                        "description": "⚠️ DEPRECATED - Use RESTful endpoint instead. Get guardian's children/wards"
                     }
                 },
                 {
@@ -2724,7 +2977,7 @@
                                 }
                             ]
                         },
-                        "description": "\u26a0\ufe0f DEPRECATED - Use RESTful endpoint instead"
+                        "description": "⚠️ DEPRECATED - Use RESTful endpoint instead"
                     }
                 },
                 {
@@ -2757,7 +3010,7 @@
                                 }
                             ]
                         },
-                        "description": "\u26a0\ufe0f DEPRECATED - Use RESTful endpoint instead"
+                        "description": "⚠️ DEPRECATED - Use RESTful endpoint instead"
                     }
                 },
                 {
@@ -2788,7 +3041,7 @@
                                 "leave-requests"
                             ]
                         },
-                        "description": "\u26a0\ufe0f DEPRECATED - Use RESTful endpoint instead"
+                        "description": "⚠️ DEPRECATED - Use RESTful endpoint instead"
                     }
                 },
                 {
@@ -2817,7 +3070,7 @@
                                 }
                             ]
                         },
-                        "description": "\u26a0\ufe0f DEPRECATED - Use RESTful endpoint instead"
+                        "description": "⚠️ DEPRECATED - Use RESTful endpoint instead"
                     }
                 },
                 {
@@ -2846,7 +3099,7 @@
                                 }
                             ]
                         },
-                        "description": "\u26a0\ufe0f DEPRECATED - Use RESTful endpoint instead. Get all exams for student"
+                        "description": "⚠️ DEPRECATED - Use RESTful endpoint instead. Get all exams for student"
                     }
                 },
                 {
@@ -2881,7 +3134,7 @@
                                 }
                             ]
                         },
-                        "description": "\u26a0\ufe0f DEPRECATED - Use RESTful endpoint instead. Get exam performance trends with analysis"
+                        "description": "⚠️ DEPRECATED - Use RESTful endpoint instead. Get exam performance trends with analysis"
                     }
                 },
                 {
@@ -2911,7 +3164,7 @@
                                 }
                             ]
                         },
-                        "description": "\u26a0\ufe0f DEPRECATED - Use RESTful endpoint instead. Get upcoming exams with countdown"
+                        "description": "⚠️ DEPRECATED - Use RESTful endpoint instead. Get upcoming exams with countdown"
                     }
                 },
                 {
@@ -2945,7 +3198,7 @@
                                 }
                             ]
                         },
-                        "description": "\u26a0\ufe0f DEPRECATED - Use RESTful endpoint instead. Get past exams with results"
+                        "description": "⚠️ DEPRECATED - Use RESTful endpoint instead. Get past exams with results"
                     }
                 },
                 {
@@ -2977,7 +3230,7 @@
                                 "compare"
                             ]
                         },
-                        "description": "\u26a0\ufe0f DEPRECATED - Use RESTful endpoint instead. Compare multiple exams side-by-side"
+                        "description": "⚠️ DEPRECATED - Use RESTful endpoint instead. Compare multiple exams side-by-side"
                     }
                 },
                 {
@@ -3008,7 +3261,7 @@
                                 }
                             ]
                         },
-                        "description": "\u26a0\ufe0f DEPRECATED - Use RESTful endpoint instead. Get GPA trends over time"
+                        "description": "⚠️ DEPRECATED - Use RESTful endpoint instead. Get GPA trends over time"
                     }
                 },
                 {
@@ -3033,7 +3286,7 @@
                                 "performance-analysis"
                             ]
                         },
-                        "description": "\u26a0\ufe0f DEPRECATED - Use RESTful endpoint instead. Get comprehensive performance analysis"
+                        "description": "⚠️ DEPRECATED - Use RESTful endpoint instead. Get comprehensive performance analysis"
                     }
                 },
                 {
@@ -3058,7 +3311,7 @@
                                 "subject-strengths-weaknesses"
                             ]
                         },
-                        "description": "\u26a0\ufe0f DEPRECATED - Use RESTful endpoint instead. Get top strengths and weaknesses by subject"
+                        "description": "⚠️ DEPRECATED - Use RESTful endpoint instead. Get top strengths and weaknesses by subject"
                     }
                 },
                 {
@@ -3083,7 +3336,7 @@
                                 "badges"
                             ]
                         },
-                        "description": "\u26a0\ufe0f DEPRECATED - Use RESTful endpoint instead. Get earned academic badges"
+                        "description": "⚠️ DEPRECATED - Use RESTful endpoint instead. Get earned academic badges"
                     }
                 },
                 {
@@ -3114,7 +3367,7 @@
                                 }
                             ]
                         },
-                        "description": "\u26a0\ufe0f DEPRECATED - Use RESTful endpoint instead. Get payment receipt details"
+                        "description": "⚠️ DEPRECATED - Use RESTful endpoint instead. Get payment receipt details"
                     }
                 },
                 {
@@ -3146,7 +3399,7 @@
                                 }
                             ]
                         },
-                        "description": "\u26a0\ufe0f DEPRECATED - Use RESTful endpoint instead. Get receipt download URL"
+                        "description": "⚠️ DEPRECATED - Use RESTful endpoint instead. Get receipt download URL"
                     }
                 },
                 {
@@ -3180,7 +3433,7 @@
                                 }
                             ]
                         },
-                        "description": "\u26a0\ufe0f DEPRECATED - Use RESTful endpoint instead. Get yearly payment summary"
+                        "description": "⚠️ DEPRECATED - Use RESTful endpoint instead. Get yearly payment summary"
                     }
                 },
                 {
@@ -3209,7 +3462,7 @@
                                 }
                             ]
                         },
-                        "description": "\u26a0\ufe0f DEPRECATED - Use RESTful endpoint instead. Get comprehensive class information"
+                        "description": "⚠️ DEPRECATED - Use RESTful endpoint instead. Get comprehensive class information"
                     }
                 },
                 {
@@ -3238,7 +3491,7 @@
                                 }
                             ]
                         },
-                        "description": "\u26a0\ufe0f DEPRECATED - Use RESTful endpoint instead. Get all teachers teaching the class"
+                        "description": "⚠️ DEPRECATED - Use RESTful endpoint instead. Get all teachers teaching the class"
                     }
                 },
                 {
@@ -3267,7 +3520,7 @@
                                 }
                             ]
                         },
-                        "description": "\u26a0\ufe0f DEPRECATED - Use RESTful endpoint instead. Get class statistics"
+                        "description": "⚠️ DEPRECATED - Use RESTful endpoint instead. Get class statistics"
                     }
                 }
             ]
@@ -3333,6 +3586,44 @@
                 },
                 {
                     "name": "Get School Rules",
+                    "event": [
+                        {
+                            "listen": "test",
+                            "script": {
+                                "exec": [
+                                    "pm.test('Status code is 200', function () {",
+                                    "    pm.response.to.have.status(200);",
+                                    "});",
+                                    "",
+                                    "pm.test('Response has success field', function () {",
+                                    "    const response = pm.response.json();",
+                                    "    pm.expect(response).to.have.property('success', true);",
+                                    "});",
+                                    "",
+                                    "pm.test('Response contains rules data', function () {",
+                                    "    const response = pm.response.json();",
+                                    "    pm.expect(response.data).to.have.property('categories');",
+                                    "    pm.expect(response.data).to.have.property('total_categories');",
+                                    "    pm.expect(response.data).to.have.property('total_rules');",
+                                    "});",
+                                    "",
+                                    "pm.test('Categories have Myanmar language support', function () {",
+                                    "    const response = pm.response.json();",
+                                    "    if (response.data.categories && response.data.categories.length > 0) {",
+                                    "        const category = response.data.categories[0];",
+                                    "        pm.expect(category).to.have.property('title_mm');",
+                                    "        pm.expect(category).to.have.property('description_mm');",
+                                    "    }",
+                                    "});",
+                                    "",
+                                    "const response = pm.response.json();",
+                                    "console.log('✓ Total Categories:', response.data.total_categories);",
+                                    "console.log('✓ Total Rules:', response.data.total_rules);"
+                                ],
+                                "type": "text/javascript"
+                            }
+                        }
+                    ],
                     "request": {
                         "method": "GET",
                         "header": [
@@ -3342,15 +3633,17 @@
                             }
                         ],
                         "url": {
-                            "raw": "{{base_url}}/{{user_type}}/rules",
+                            "raw": "{{base_url}}/guardian/school/rules",
                             "host": [
                                 "{{base_url}}"
                             ],
                             "path": [
-                                "{{user_type}}",
+                                "guardian",
+                                "school",
                                 "rules"
                             ]
-                        }
+                        },
+                        "description": "Get all school rules organized by categories with Myanmar language support. Returns categories with rules, icons, colors, and severity levels."
                     }
                 }
             ]

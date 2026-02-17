@@ -53,6 +53,7 @@ class StaffAttendanceController extends Controller
             'today' => now()->toDateString(),
             'currentMonth' => now()->format('Y-m'),
             'currentYear' => now()->year,
+            'initialTab' => request('tab', 'monthly'),
         ]);
     }
 

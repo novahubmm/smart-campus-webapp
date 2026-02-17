@@ -20,4 +20,17 @@ class StoreRoomRequest extends FormRequest
             'capacity' => ['nullable', 'integer', 'min:1'],
         ];
     }
+
+    public function withValidator($validator)
+    {
+        $validator->after(function ($validator) {
+            $exists = \App\Models\Room::where('name', $this->name)
+                ->where('building', $this->building)
+                ->exists();
+
+            if ($exists) {
+                $validator->errors()->add('name', __('academic_management.duplicate_room_error'));
+            }
+        });
+    }
 }

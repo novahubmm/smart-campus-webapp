@@ -28,4 +28,22 @@ class UpdateEventRequest extends FormRequest
             'status' => ['sometimes', 'boolean'],
         ];
     }
+
+    public function withValidator($validator)
+    {
+        $validator->after(function ($validator) {
+            $eventId = $this->route('id') ?? $this->route('event');
+            
+            $query = \App\Models\Event::where('title', $this->title)
+                ->where('start_date', $this->start_date);
+            
+            if ($eventId) {
+                $query->where('id', '!=', $eventId);
+            }
+            
+            if ($query->exists()) {
+                $validator->errors()->add('title', __('academic_management.duplicate_event_error'));
+            }
+        });
+    }
 }

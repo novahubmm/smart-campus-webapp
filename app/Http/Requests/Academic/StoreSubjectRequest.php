@@ -15,7 +15,7 @@ class StoreSubjectRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'code' => ['required', 'string', 'max:50', Rule::unique('subjects', 'code')],
+            'code' => ['required', 'string', 'max:50'],
             'name' => ['required', 'string', 'max:255'],
             'subject_type_id' => ['nullable', 'uuid', 'exists:subject_types,id'],
             'icon' => ['nullable', 'string', 'max:100'],
@@ -24,5 +24,16 @@ class StoreSubjectRequest extends FormRequest
             'grade_ids' => ['required', 'array', 'min:1'],
             'grade_ids.*' => ['uuid', 'exists:grades,id'],
         ];
+    }
+
+    public function withValidator($validator)
+    {
+        $validator->after(function ($validator) {
+            $exists = \App\Models\Subject::where('code', $this->code)->exists();
+
+            if ($exists) {
+                $validator->errors()->add('code', __('academic_management.duplicate_subject_error'));
+            }
+        });
     }
 }

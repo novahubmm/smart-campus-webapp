@@ -22,29 +22,85 @@ class TeacherAttendanceController extends Controller
         $validated = $request->validate([
             'teacher_id' => ['required', 'exists:teacher_profiles,id'],
             'date' => ['required', 'date'],
-            'status' => ['nullable', 'string', 'in:present,absent,late,excused,off,holiday'],
-            'start_time' => ['nullable', 'string'],
-            'end_time' => ['nullable', 'string'],
+            'status' => ['nullable', 'string', 'in:present,absent,late,excused,off,holiday,leave,half_day,half-day'],
+            'start_time' => ['nullable', 'date_format:H:i'],
+            'end_time' => ['nullable', 'date_format:H:i'],
             'remark' => ['nullable', 'string'],
         ]);
 
-        $attendance = TeacherAttendance::updateOrCreate(
-            [
-                'teacher_id' => $validated['teacher_id'],
-                'date' => $validated['date'],
-            ],
-            [
-                'status' => $validated['status'],
-                'start_time' => $validated['start_time'],
-                'end_time' => $validated['end_time'],
-                'remark' => $validated['remark'] ?? null,
-                'marked_by' => auth()->id(),
-            ]
-        );
+        $teacher = TeacherProfile::query()
+            ->select(['id', 'user_id'])
+            ->findOrFail($validated['teacher_id']);
+
+        $attendance = TeacherAttendance::query()
+            ->where('teacher_id', $teacher->user_id)
+            ->whereDate('date', $validated['date'])
+            ->first();
+
+        if (! $attendance) {
+            $attendance = new TeacherAttendance();
+            $attendance->id = TeacherAttendance::generateId($validated['date']);
+            $attendance->teacher_id = $teacher->user_id;
+            $attendance->date = $validated['date'];
+        }
+
+        $status = $this->normalizeStatusForStorage($validated['status'] ?? $attendance->status);
+        $startTime = $validated['start_time'] ?? null;
+        $endTime = $validated['end_time'] ?? null;
+
+        $checkInTime = $startTime ? Carbon::createFromFormat('H:i', $startTime)->format('H:i:s') : null;
+        $checkOutTime = $endTime ? Carbon::createFromFormat('H:i', $endTime)->format('H:i:s') : null;
+
+        $attendance->day_of_week = Carbon::parse($validated['date'])->format('l');
+        $attendance->status = $status ?: 'present';
+        $attendance->check_in_time = $checkInTime;
+        $attendance->check_out_time = $checkOutTime;
+        $attendance->check_in_timestamp = $checkInTime ? Carbon::parse($validated['date'] . ' ' . $checkInTime) : null;
+        $attendance->check_out_timestamp = $checkOutTime ? Carbon::parse($validated['date'] . ' ' . $checkOutTime) : null;
+        $attendance->working_hours_decimal = TeacherAttendance::calculateWorkingHours($checkInTime, $checkOutTime) ?: null;
+        $attendance->remarks = $validated['remark'] ?? $attendance->remarks;
+        $attendance->save();
 
         $this->logActivity('create', 'TeacherAttendance', $attendance->id, "Saved teacher attendance for {$validated['date']}");
 
-        return response()->json(['success' => true, 'data' => $attendance]);
+        return response()->json([
+            'success' => true,
+            'data' => [
+                'id' => $attendance->id,
+                'teacher_id' => $teacher->id,
+                'date' => Carbon::parse($attendance->date)->toDateString(),
+                'status' => $this->normalizeStatusForUi($attendance->status),
+                'start_time' => $attendance->check_in_time ? substr($attendance->check_in_time, 0, 5) : null,
+                'end_time' => $attendance->check_out_time ? substr($attendance->check_out_time, 0, 5) : null,
+                'remark' => $attendance->remarks,
+            ],
+        ]);
+    }
+
+    private function normalizeStatusForStorage(?string $status): ?string
+    {
+        if (! $status) {
+            return null;
+        }
+
+        return match ($status) {
+            'excused', 'off', 'holiday' => 'leave',
+            'late', 'half_day', 'half-day' => 'half_day',
+            default => $status,
+        };
+    }
+
+    private function normalizeStatusForUi(?string $status): ?string
+    {
+        if (! $status) {
+            return null;
+        }
+
+        return match ($status) {
+            'leave' => 'excused',
+            'half_day' => 'late',
+            default => $status,
+        };
     }
 
     public function index(): View
@@ -53,6 +109,7 @@ class TeacherAttendanceController extends Controller
             'today' => now()->toDateString(),
             'currentMonth' => now()->format('Y-m'),
             'currentYear' => now()->year,
+            'initialTab' => request('tab', 'monthly'),
         ]);
     }
 

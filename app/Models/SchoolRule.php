@@ -14,6 +14,10 @@ class SchoolRule extends Model
 
     protected $fillable = [
         'rule_category_id',
+        'title',
+        'title_mm',
+        'description',
+        'description_mm',
         'sort_order',
         'text',
         'severity',

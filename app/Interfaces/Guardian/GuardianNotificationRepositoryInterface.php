@@ -4,7 +4,7 @@ namespace App\Interfaces\Guardian;
 
 interface GuardianNotificationRepositoryInterface
 {
-    public function getNotifications(string $guardianId, ?string $category = null, ?bool $isRead = null): array;
+    public function getNotifications(string $guardianId, ?string $category = null, ?bool $isRead = null, int $perPage = 20);
 
     public function getUnreadCount(string $guardianId): int;
 

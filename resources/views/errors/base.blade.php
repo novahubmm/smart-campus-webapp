@@ -58,6 +58,7 @@
         </div>
 
         <x-toast />
+        <x-alert-dialog />
     </div>
 </body>
 </html>

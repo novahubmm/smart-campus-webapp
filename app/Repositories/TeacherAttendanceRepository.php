@@ -19,17 +19,17 @@ class TeacherAttendanceRepository implements TeacherAttendanceRepositoryInterfac
         $attendance = TeacherAttendance::whereDate('date', $date)->get()->keyBy('teacher_id');
 
         return $teachers->map(function (TeacherProfile $teacher) use ($attendance) {
-            $row = $attendance[$teacher->id] ?? null;
+            $row = $attendance[$teacher->user_id] ?? null;
             return [
                 'id' => $teacher->id,
                 'name' => $teacher->user?->name ?? '—',
                 'employee_id' => $teacher->employee_id,
                 'department' => $teacher->department?->name ?? '—',
-                'status' => $row?->status ?? null,
-                'remark' => $row?->remark,
-                'start_time' => $row?->start_time,
-                'end_time' => $row?->end_time,
-                'marked_by' => $row?->markedByUser?->name,
+                'status' => $this->normalizeStatusForUi($row?->status),
+                'remark' => $row?->remarks,
+                'start_time' => $this->formatTime($row?->check_in_time),
+                'end_time' => $this->formatTime($row?->check_out_time),
+                'marked_by' => null,
             ];
         });
     }
@@ -51,7 +51,7 @@ class TeacherAttendanceRepository implements TeacherAttendanceRepositoryInterfac
             ->groupBy('teacher_id');
 
         return $teachers->map(function (TeacherProfile $teacher) use ($attendance) {
-            $rows = $attendance[$teacher->id] ?? collect();
+            $rows = $attendance[$teacher->user_id] ?? collect();
             $counts = $this->countStatuses($rows);
             $total = array_sum($counts);
             $presentEquivalent = ($counts['present'] ?? 0) + ($counts['late'] ?? 0);
@@ -73,7 +73,7 @@ class TeacherAttendanceRepository implements TeacherAttendanceRepositoryInterfac
     {
         $teacher = TeacherProfile::with(['user', 'department'])->findOrFail($teacherId);
 
-        $attendance = TeacherAttendance::where('teacher_id', $teacherId)
+        $attendance = TeacherAttendance::where('teacher_id', $teacher->user_id)
             ->whereBetween('date', [$start->toDateString(), $end->toDateString()])
             ->orderBy('date')
             ->get();
@@ -87,10 +87,10 @@ class TeacherAttendanceRepository implements TeacherAttendanceRepositoryInterfac
             $first = $items->first();
             return [
                 'date' => $date,
-                'status' => $first->status,
-                'remark' => $first->remark,
-                'start_time' => $first->start_time,
-                'end_time' => $first->end_time,
+                'status' => $this->normalizeStatusForUi($first->status),
+                'remark' => $first->remarks,
+                'start_time' => $this->formatTime($first->check_in_time),
+                'end_time' => $this->formatTime($first->check_out_time),
             ];
         })->values();
 
@@ -118,11 +118,33 @@ class TeacherAttendanceRepository implements TeacherAttendanceRepositoryInterfac
     {
         $counts = array_fill_keys(self::STATUSES, 0);
         foreach ($rows as $row) {
-            $status = $row->status ?? null;
+            $status = $this->normalizeStatusForUi($row->status ?? null);
             if (array_key_exists($status, $counts)) {
                 $counts[$status]++;
             }
         }
         return $counts;
+    }
+
+    private function normalizeStatusForUi(?string $status): ?string
+    {
+        if (! $status) {
+            return null;
+        }
+
+        return match ($status) {
+            'leave' => 'excused',
+            'half_day' => 'late',
+            default => $status,
+        };
+    }
+
+    private function formatTime(?string $time): ?string
+    {
+        if (! $time) {
+            return null;
+        }
+
+        return substr($time, 0, 5);
     }
 }

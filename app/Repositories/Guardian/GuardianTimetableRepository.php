@@ -64,42 +64,56 @@ class GuardianTimetableRepository implements GuardianTimetableRepositoryInterfac
 
     private function getDayTimetableFormatted(StudentProfile $student, string $day): array
     {
-        $timetables = Timetable::where('class_id', $student->class_id)
-            ->where('day', $day)
+        if (!$student->class_id) {
+            return [];
+        }
+
+        // Get the active timetable for the student's class
+        $timetable = Timetable::where('class_id', $student->class_id)
+            ->where('is_active', true)
+            ->first();
+
+        if (!$timetable) {
+            return [];
+        }
+
+        // Get periods for the specific day
+        $periods = $timetable->periods()
+            ->where('day_of_week', $day)
+            ->where('is_break', false)
             ->with(['subject', 'teacher.user', 'room'])
-            ->orderBy('start_time')
+            ->orderBy('period_number')
             ->get();
 
-        $periods = [];
-        $periodNumber = 1;
+        $formattedPeriods = [];
 
-        foreach ($timetables as $timetable) {
-            $periods[] = [
-                'id' => $timetable->id,
-                'period' => $periodNumber++,
-                'subject_id' => $timetable->subject?->id,
-                'subject' => $timetable->subject?->name ?? 'N/A',
-                'subject_mm' => $timetable->subject?->name_mm ?? $timetable->subject?->name ?? 'N/A',
-                'teacher_id' => $timetable->teacher?->id,
-                'teacher' => $timetable->teacher?->user?->name ?? 'N/A',
-                'teacher_mm' => $timetable->teacher?->user?->name_mm ?? $timetable->teacher?->user?->name ?? 'N/A',
-                'teacher_phone' => $timetable->teacher?->user?->phone ?? '',
-                'teacher_email' => $timetable->teacher?->user?->email ?? '',
-                'start_time' => Carbon::parse($timetable->start_time)->format('H:i'),
-                'end_time' => Carbon::parse($timetable->end_time)->format('H:i'),
-                'room' => $timetable->room?->name ?? 'Room ' . ($timetable->room_id ?? 'TBA'),
-                'room_mm' => $timetable->room?->name ?? 'အခန်း ' . ($timetable->room_id ?? 'TBA'),
-                'status' => $this->getClassStatus($timetable),
+        foreach ($periods as $period) {
+            $formattedPeriods[] = [
+                'id' => $period->id,
+                'period' => $period->period_number,
+                'subject_id' => $period->subject?->id,
+                'subject' => $period->subject?->name ?? 'N/A',
+                'subject_mm' => $period->subject?->name ?? 'N/A',
+                'teacher_id' => $period->teacher?->id,
+                'teacher' => $period->teacher?->user?->name ?? 'N/A',
+                'teacher_mm' => $period->teacher?->user?->name ?? 'N/A',
+                'teacher_phone' => $period->teacher?->user?->phone ?? '',
+                'teacher_email' => $period->teacher?->user?->email ?? '',
+                'start_time' => $period->starts_at ? Carbon::parse($period->starts_at)->format('H:i') : '00:00',
+                'end_time' => $period->ends_at ? Carbon::parse($period->ends_at)->format('H:i') : '00:00',
+                'room' => $period->room?->name ?? 'Room TBA',
+                'room_mm' => 'အခန်း ' . ($period->room?->name ?? 'TBA'),
+                'status' => 'normal',
                 'substitute_teacher' => null,
                 'substitute_teacher_mm' => null,
                 'swapped_with' => null,
                 'original_time' => null,
-                'note' => $timetable->note ?? null,
-                'note_mm' => $timetable->note ?? null,
+                'note' => $period->notes ?? null,
+                'note_mm' => $period->notes ?? null,
             ];
         }
 
-        return $periods;
+        return $formattedPeriods;
     }
 
     private function getClassStatus(Timetable $timetable): string
@@ -174,8 +188,10 @@ class GuardianTimetableRepository implements GuardianTimetableRepositoryInterfac
             ];
         }
 
-        // Get academic year
-        $academicYear = \App\Models\AcademicYear::where('is_current', true)->first();
+        // Get academic year (batch)
+        $academicYear = \App\Models\Batch::where('status', true)
+            ->orderBy('start_date', 'desc')
+            ->first();
         
         // Parse building and room from room field
         $building = 'N/A';
@@ -276,19 +292,32 @@ class GuardianTimetableRepository implements GuardianTimetableRepositoryInterfac
     {
         $class = SchoolClass::with(['teacher.user'])->find($student->class_id);
         
-        $gradeSubjects = \App\Models\GradeSubject::where('grade_id', $student->grade_id)
-            ->with(['subject', 'teacher.user', 'teacher.department'])
+        // Get all subjects for this grade
+        $gradeSubjectIds = \App\Models\GradeSubject::where('grade_id', $student->grade_id)
+            ->pluck('subject_id');
+
+        // Get all teachers teaching these subjects (from subject_teacher pivot table)
+        $subjectTeacherData = \DB::table('subject_teacher')
+            ->whereIn('subject_id', $gradeSubjectIds)
             ->get();
+
+        // Group subjects by teacher
+        $teacherSubjectsMap = [];
+        foreach ($subjectTeacherData as $st) {
+            if (!isset($teacherSubjectsMap[$st->teacher_profile_id])) {
+                $teacherSubjectsMap[$st->teacher_profile_id] = [];
+            }
+            $teacherSubjectsMap[$st->teacher_profile_id][] = $st->subject_id;
+        }
 
         // Get class teacher
         $classTeacher = null;
         if ($class && $class->teacher) {
-            $teacherSubjects = $gradeSubjects
-                ->where('teacher_id', $class->teacher->id)
-                ->pluck('subject.name')
-                ->filter()
-                ->values()
-                ->toArray();
+            $teacherSubjects = [];
+            if (isset($teacherSubjectsMap[$class->teacher->id])) {
+                $subjects = \App\Models\Subject::whereIn('id', $teacherSubjectsMap[$class->teacher->id])->get();
+                $teacherSubjects = $subjects->pluck('name')->toArray();
+            }
 
             $classTeacher = [
                 'id' => $class->teacher->id,
@@ -307,38 +336,39 @@ class GuardianTimetableRepository implements GuardianTimetableRepositoryInterfac
         }
 
         // Get subject teachers (excluding class teacher)
-        $subjectTeachers = $gradeSubjects
-            ->filter(function ($gs) use ($class) {
-                return $gs->teacher && (!$class || !$class->teacher || $gs->teacher->id !== $class->teacher->id);
-            })
-            ->unique('teacher_id')
-            ->map(function ($gs) use ($gradeSubjects) {
-                $teacherSubjects = $gradeSubjects
-                    ->where('teacher_id', $gs->teacher->id)
-                    ->pluck('subject.name')
-                    ->filter()
-                    ->values()
-                    ->toArray();
+        $subjectTeachers = [];
+        $classTeacherId = $class && $class->teacher ? $class->teacher->id : null;
+        
+        foreach ($teacherSubjectsMap as $teacherId => $subjectIds) {
+            // Skip class teacher
+            if ($teacherId === $classTeacherId) {
+                continue;
+            }
 
-                $primarySubject = $teacherSubjects[0] ?? 'Teacher';
-                
-                return [
-                    'id' => $gs->teacher->id,
-                    'name' => $gs->teacher->user?->name ?? 'N/A',
-                    'name_mm' => $gs->teacher->user?->name_mm ?? $gs->teacher->user?->name ?? 'N/A',
-                    'role' => $primarySubject . ' Teacher',
-                    'role_mm' => $primarySubject . ' ဆရာ',
-                    'phone' => $gs->teacher->user?->phone,
-                    'email' => $gs->teacher->user?->email,
-                    'photo' => $gs->teacher->photo_path 
-                        ? asset($gs->teacher->photo_path) 
-                        : null,
-                    'subjects' => $teacherSubjects,
-                    'is_class_teacher' => false,
-                ];
-            })
-            ->values()
-            ->toArray();
+            $teacher = \App\Models\TeacherProfile::with('user')->find($teacherId);
+            if (!$teacher) {
+                continue;
+            }
+
+            $subjects = \App\Models\Subject::whereIn('id', $subjectIds)->get();
+            $teacherSubjects = $subjects->pluck('name')->toArray();
+            $primarySubject = $teacherSubjects[0] ?? 'Teacher';
+
+            $subjectTeachers[] = [
+                'id' => $teacher->id,
+                'name' => $teacher->user?->name ?? 'N/A',
+                'name_mm' => $teacher->user?->name_mm ?? $teacher->user?->name ?? 'N/A',
+                'role' => $primarySubject . ' Teacher',
+                'role_mm' => $primarySubject . ' ဆရာ',
+                'phone' => $teacher->user?->phone,
+                'email' => $teacher->user?->email,
+                'photo' => $teacher->photo_path 
+                    ? asset($teacher->photo_path) 
+                    : null,
+                'subjects' => $teacherSubjects,
+                'is_class_teacher' => false,
+            ];
+        }
 
         $totalTeachers = ($classTeacher ? 1 : 0) + count($subjectTeachers);
 

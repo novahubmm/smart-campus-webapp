@@ -16,52 +16,11 @@ class FeeCategorySeeder extends Seeder
 
         $categories = [
             [
-                'name' => 'Tuition Fee',
-                'code' => 'TUITION',
-                'description' => 'Monthly tuition fee for regular classes',
-                'is_mandatory' => true,
-                'status' => true,
-            ],
-            [
-                'name' => 'Library Fee',
-                'code' => 'LIBRARY',
-                'description' => 'Access to library resources and books',
-                'is_mandatory' => false,
-                'status' => true,
-            ],
-            [
-                'name' => 'Lab Fee',
-                'code' => 'LAB',
-                'description' => 'Science and computer lab usage fee',
-                'is_mandatory' => false,
-                'status' => true,
-            ],
-            [
-                'name' => 'Sports Fee',
-                'code' => 'SPORTS',
-                'description' => 'Sports facilities and equipment fee',
-                'is_mandatory' => false,
-                'status' => true,
-            ],
-            [
                 'name' => 'Transportation Fee',
+                'name_mm' => 'ယာဉ်စီးခ',
                 'code' => 'TRANSPORT',
-                'description' => 'School bus transportation fee',
-                'is_mandatory' => false,
-                'status' => true,
-            ],
-            [
-                'name' => 'Exam Fee',
-                'code' => 'EXAM',
-                'description' => 'Examination and assessment fee',
-                'is_mandatory' => true,
-                'status' => true,
-            ],
-            [
-                'name' => 'Activity Fee',
-                'code' => 'ACTIVITY',
-                'description' => 'Extra-curricular activities fee',
-                'is_mandatory' => false,
+                'description' => 'Monthly school bus transportation fee for students',
+                'is_mandatory' => true,  // Changed to true for YKST
                 'status' => true,
             ],
         ];

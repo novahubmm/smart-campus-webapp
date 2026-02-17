@@ -384,6 +384,9 @@ Route::prefix('v1')->group(function () {
 
     // Guardian App API Routes
     Route::prefix('guardian')->group(function () {
+        // Public School Info endpoint (no authentication required)
+        Route::get('/school-info', [GuardianSettingsController::class, 'schoolInfo']);
+        
         Route::get('/school/info', [SchoolController::class, 'info']);
         Route::get('/rules', [RulesController::class, 'index']);
         Route::get('/rules/{ruleCategory}', [RulesController::class, 'show']);
@@ -458,15 +461,23 @@ Route::prefix('v1')->group(function () {
 
                 // Class Information
                 Route::get('/class', [GuardianTimetableController::class, 'classInfo']);
+                Route::get('/class-info', [GuardianTimetableController::class, 'classInfo']); // Alias
+                Route::get('/class/timetable', [GuardianTimetableController::class, 'index']); // Alias for timetable
                 Route::get('/class/details', [GuardianTimetableController::class, 'detailedClassInfo']);
                 Route::get('/class/teachers', [GuardianTimetableController::class, 'classTeachers']);
+                Route::get('/class-teachers', [GuardianTimetableController::class, 'classTeachers']); // Alias
                 Route::get('/class/statistics', [GuardianTimetableController::class, 'classStatistics']);
 
                 // Announcements
                 Route::get('/announcements', [GuardianAnnouncementController::class, 'index']);
                 Route::get('/announcements/recent', [GuardianDashboardController::class, 'recentAnnouncements']);
+                Route::get('/announcements/calendar', [GuardianAnnouncementController::class, 'calendar']);
+                Route::post('/announcements/mark-all-read', [GuardianAnnouncementController::class, 'markAllAsRead']);
                 Route::get('/announcements/{announcement_id}', [GuardianAnnouncementController::class, 'show']);
                 Route::post('/announcements/{announcement_id}/read', [GuardianAnnouncementController::class, 'markAsRead']);
+                Route::put('/announcements/{announcement_id}/unread', [GuardianAnnouncementController::class, 'markAsUnread']);
+                Route::put('/announcements/{announcement_id}/pin', [GuardianAnnouncementController::class, 'pinAnnouncement']);
+                Route::put('/announcements/{announcement_id}/unpin', [GuardianAnnouncementController::class, 'unpinAnnouncement']);
 
                 // Fees & Payments
                 Route::prefix('fees')->group(function () {
@@ -534,6 +545,13 @@ Route::prefix('v1')->group(function () {
                 // Student Profile
                 Route::get('/profile', [GuardianStudentController::class, 'profile']);
                 Route::get('/profile/academic-data', [GuardianStudentController::class, 'academicSummary']);
+                Route::get('/profile/academic-summary', [GuardianStudentController::class, 'academicSummary']);
+                Route::get('/profile/subject-performance', [GuardianStudentController::class, 'subjectPerformance']);
+                Route::get('/profile/progress-tracking', [GuardianStudentController::class, 'progressTracking']);
+                Route::get('/profile/comparison', [GuardianStudentController::class, 'comparisonData']);
+                Route::get('/profile/attendance-summary', [GuardianStudentController::class, 'attendanceSummary']);
+                Route::get('/profile/rankings', [GuardianStudentController::class, 'rankingsData']);
+                Route::get('/profile/achievements', [GuardianStudentController::class, 'achievements']);
                 Route::get('/rankings', [GuardianStudentController::class, 'rankings']);
                 Route::get('/achievements', [GuardianStudentController::class, 'achievements']);
 
@@ -625,9 +643,13 @@ Route::prefix('v1')->group(function () {
 
             // Announcements (Old)
             Route::get('/announcements', [GuardianAnnouncementController::class, 'index']);
+            Route::get('/announcements/calendar', [GuardianAnnouncementController::class, 'calendar']);
+            Route::post('/announcements/mark-all-read', [GuardianAnnouncementController::class, 'markAllAsRead']);
             Route::get('/announcements/{id}', [GuardianAnnouncementController::class, 'show']);
             Route::post('/announcements/{id}/read', [GuardianAnnouncementController::class, 'markAsRead']);
-            Route::post('/announcements/mark-all-read', [GuardianAnnouncementController::class, 'markAllAsRead']);
+            Route::put('/announcements/{id}/unread', [GuardianAnnouncementController::class, 'markAsUnread']);
+            Route::put('/announcements/{id}/pin', [GuardianAnnouncementController::class, 'pinAnnouncement']);
+            Route::put('/announcements/{id}/unpin', [GuardianAnnouncementController::class, 'unpinAnnouncement']);
 
             // Fees & Payments (Old)
             Route::prefix('fees')->group(function () {

@@ -8,7 +8,7 @@ use App\Models\Setting;
 
 class GuardianNotificationRepository implements GuardianNotificationRepositoryInterface
 {
-    public function getNotifications(string $guardianId, ?string $category = null, ?bool $isRead = null): array
+    public function getNotifications(string $guardianId, ?string $category = null, ?bool $isRead = null, int $perPage = 20)
     {
         $query = Notification::where('notifiable_id', $guardianId)
             ->where('notifiable_type', 'App\\Models\\GuardianProfile');
@@ -25,22 +25,7 @@ class GuardianNotificationRepository implements GuardianNotificationRepositoryIn
             }
         }
 
-        $notifications = $query->orderBy('created_at', 'desc')->get();
-
-        return $notifications->map(function ($notification) {
-            $data = $notification->data ?? [];
-
-            return [
-                'id' => $notification->id,
-                'title' => $data['title'] ?? 'Notification',
-                'message' => $data['message'] ?? $data['body'] ?? '',
-                'category' => $data['category'] ?? 'general',
-                'priority' => $data['priority'] ?? 'normal',
-                'is_read' => $notification->read_at !== null,
-                'navigation_action' => $data['navigation_action'] ?? null,
-                'created_at' => $notification->created_at->toISOString(),
-            ];
-        })->toArray();
+        return $query->orderBy('created_at', 'desc')->paginate($perPage);
     }
 
     public function getUnreadCount(string $guardianId): int

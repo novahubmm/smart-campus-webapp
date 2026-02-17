@@ -234,7 +234,7 @@
                                     <option value="">{{ __('report.Choose a teacher...') }}</option>
                                     @foreach($teachers as $teacher)
                                         @if($teacher->user)
-                                            <option value="{{ $teacher->user->id }}">{{ $teacher->user->name }}</option>
+                                            <option value="{{ $teacher->user->id }}">{{ $teacher->user->name }} [{{ $teacher->employee_id }}]</option>
                                         @endif
                                     @endforeach
                                 </select>

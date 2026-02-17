@@ -59,9 +59,9 @@ class DemoDataSeeder extends Seeder
         $this->createClasses();
         
         // Create people
-        $this->createTeachers(20);
-        $this->createStaff(20);
-        $this->createStudents(200);
+        $this->createTeachers(3);
+        $this->createStaff(2);
+        $this->createStudents(1);
         
         // Assign teachers to subjects and classes
         $this->assignTeachersToSubjects();
@@ -154,7 +154,7 @@ class DemoDataSeeder extends Seeder
             6 => $middleCategory->id,
         ];
 
-        for ($level = 1; $level <= 6; $level++) {
+        for ($level = 1; $level <= 2; $level++) {
             $this->grades[$level] = Grade::firstOrCreate(
                 ['level' => $level, 'batch_id' => $this->batch->id],
                 [
@@ -372,6 +372,7 @@ class DemoDataSeeder extends Seeder
                 ['user_id' => $user->id],
                 [
                     'student_identifier' => 'STU' . date('Y') . str_pad($i, 4, '0', STR_PAD_LEFT),
+                    'student_id' => 'STU' . date('Y') . str_pad($i, 4, '0', STR_PAD_LEFT),
                     'grade_id' => $grade->id,
                     'class_id' => $class->id,
                     'date_of_joining' => $this->startDate->copy()->subMonths(rand(0, 12)),

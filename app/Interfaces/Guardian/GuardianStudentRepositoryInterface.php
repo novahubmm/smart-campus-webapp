@@ -38,4 +38,15 @@ interface GuardianStudentRepositoryInterface
     public function getSubjectStrengthsWeaknesses(StudentProfile $student): array;
 
     public function getAcademicBadges(StudentProfile $student): array;
+
+    // Profile Screen specific methods
+    public function getSubjectPerformance(StudentProfile $student): array;
+
+    public function getProgressTracking(StudentProfile $student, int $months = 6): array;
+
+    public function getComparisonData(StudentProfile $student): array;
+
+    public function getAttendanceSummary(StudentProfile $student, int $months = 3): array;
+
+    public function getRankingsData(StudentProfile $student): array;
 }

@@ -113,11 +113,19 @@
                             </tr>
                             <tr>
                                 <th class="w-48 px-4 py-3 text-left font-semibold text-gray-600 dark:text-gray-400 bg-gray-50 dark:bg-gray-900/50">{{ __('student_profiles.Current Grade') }}</th>
-                                <td class="px-4 py-3 text-gray-900 dark:text-gray-100">{{ $studentProfile->grade?->name ?? $studentProfile->current_grade ?? '—' }}</td>
+                                <td class="px-4 py-3 text-gray-900 dark:text-gray-100">{{ $studentProfile->grade?->name ?? '—' }}</td>
                             </tr>
                             <tr>
                                 <th class="w-48 px-4 py-3 text-left font-semibold text-gray-600 dark:text-gray-400 bg-gray-50 dark:bg-gray-900/50">{{ __('student_profiles.Current Class') }}</th>
-                                <td class="px-4 py-3 text-gray-900 dark:text-gray-100">{{ $studentProfile->classModel?->name ?? $studentProfile->current_class ?? '—' }}</td>
+                                <td class="px-4 py-3 text-gray-900 dark:text-gray-100">{{ $studentProfile->classModel?->name ?? '—' }}</td>
+                            </tr>
+                            <tr>
+                                <th class="w-48 px-4 py-3 text-left font-semibold text-gray-600 dark:text-gray-400 bg-gray-50 dark:bg-gray-900/50">{{ __('student_profiles.Previous Grade') }}</th>
+                                <td class="px-4 py-3 text-gray-900 dark:text-gray-100">{{ $studentProfile->previous_grade ?? '—' }}</td>
+                            </tr>
+                            <tr>
+                                <th class="w-48 px-4 py-3 text-left font-semibold text-gray-600 dark:text-gray-400 bg-gray-50 dark:bg-gray-900/50">{{ __('student_profiles.Previous Class') }}</th>
+                                <td class="px-4 py-3 text-gray-900 dark:text-gray-100">{{ $studentProfile->previous_class ?? '—' }}</td>
                             </tr>
                             <tr>
                                 <th class="w-48 px-4 py-3 text-left font-semibold text-gray-600 dark:text-gray-400 bg-gray-50 dark:bg-gray-900/50">{{ __('student_profiles.Guardian Teacher') }}</th>
@@ -164,8 +172,16 @@
                                 <td class="px-4 py-3 text-gray-900 dark:text-gray-100">{{ $studentProfile->father_phone_no ?? '—' }}</td>
                             </tr>
                             <tr>
+                                <th class="w-48 px-4 py-3 text-left font-semibold text-gray-600 dark:text-gray-400 bg-gray-50 dark:bg-gray-900/50">{{ __('student_profiles.Father Religious') }}</th>
+                                <td class="px-4 py-3 text-gray-900 dark:text-gray-100">{{ $studentProfile->father_religious ?? '—' }}</td>
+                            </tr>
+                            <tr>
                                 <th class="w-48 px-4 py-3 text-left font-semibold text-gray-600 dark:text-gray-400 bg-gray-50 dark:bg-gray-900/50">{{ __('student_profiles.Father Occupation') }}</th>
                                 <td class="px-4 py-3 text-gray-900 dark:text-gray-100">{{ $studentProfile->father_occupation ?? '—' }}</td>
+                            </tr>
+                            <tr>
+                                <th class="w-48 px-4 py-3 text-left font-semibold text-gray-600 dark:text-gray-400 bg-gray-50 dark:bg-gray-900/50">{{ __('student_profiles.Father Address') }}</th>
+                                <td class="px-4 py-3 text-gray-900 dark:text-gray-100">{{ $studentProfile->father_address ?? '—' }}</td>
                             </tr>
                             <tr>
                                 <th class="w-48 px-4 py-3 text-left font-semibold text-gray-600 dark:text-gray-400 bg-gray-50 dark:bg-gray-900/50">{{ __('student_profiles.Mother name') }}</th>
@@ -180,8 +196,16 @@
                                 <td class="px-4 py-3 text-gray-900 dark:text-gray-100">{{ $studentProfile->mother_phone_no ?? '—' }}</td>
                             </tr>
                             <tr>
+                                <th class="w-48 px-4 py-3 text-left font-semibold text-gray-600 dark:text-gray-400 bg-gray-50 dark:bg-gray-900/50">{{ __('student_profiles.Mother Religious') }}</th>
+                                <td class="px-4 py-3 text-gray-900 dark:text-gray-100">{{ $studentProfile->mother_religious ?? '—' }}</td>
+                            </tr>
+                            <tr>
                                 <th class="w-48 px-4 py-3 text-left font-semibold text-gray-600 dark:text-gray-400 bg-gray-50 dark:bg-gray-900/50">{{ __('student_profiles.Mother Occupation') }}</th>
                                 <td class="px-4 py-3 text-gray-900 dark:text-gray-100">{{ $studentProfile->mother_occupation ?? '—' }}</td>
+                            </tr>
+                            <tr>
+                                <th class="w-48 px-4 py-3 text-left font-semibold text-gray-600 dark:text-gray-400 bg-gray-50 dark:bg-gray-900/50">{{ __('student_profiles.Mother Address') }}</th>
+                                <td class="px-4 py-3 text-gray-900 dark:text-gray-100">{{ $studentProfile->mother_address ?? '—' }}</td>
                             </tr>
                             <tr>
                                 <th class="w-48 px-4 py-3 text-left font-semibold text-gray-600 dark:text-gray-400 bg-gray-50 dark:bg-gray-900/50">{{ __('student_profiles.Emergency contact ph no.') }}</th>

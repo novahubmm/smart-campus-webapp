@@ -47,6 +47,7 @@ class StudentAttendanceController extends Controller
             'classes' => $classes,
             'grades' => $grades,
             'today' => now()->toDateString(),
+            'initialTab' => request('tab', 'class'),
         ]);
     }
 

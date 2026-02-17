@@ -41,4 +41,9 @@ return array(
     'Teacher' => 'Teacher',
     'User Management' => 'User Management',
     'User Profile' => 'User Profile',
+    'Reset Password' => 'Reset Password',
+    'Reset password for' => 'Reset password for',
+    'New Password' => 'New Password',
+    'Enter new password' => 'Enter new password',
+    'Confirm new password' => 'Confirm new password',
 );

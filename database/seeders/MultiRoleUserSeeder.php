@@ -31,13 +31,13 @@ class MultiRoleUserSeeder extends Seeder
      * 
      * Creates Ko Nyein Chan who is:
      * - Teacher: Teaching English in Grade 1
-     * - Guardian: Has 3 students in Kindergarten A and 1 girl in Grade 2 Section A
+     * - Guardian: Has 3 students in Kindergarten A and 1 girl in Kindergarten B
      */
     public function run(): void
     {
         $this->command->info('🚀 Creating Multi-Role User: Ko Nyein Chan');
         $this->command->info('   Role 1: Teacher (English, Grade 1)');
-        $this->command->info('   Role 2: Guardian (3 kids in Kindergarten A, 1 girl in Grade 2-A)');
+        $this->command->info('   Role 2: Guardian (3 kids in Kindergarten A, 1 girl in Kindergarten B)');
         $this->command->newLine();
 
         DB::beginTransaction();
@@ -247,18 +247,18 @@ class MultiRoleUserSeeder extends Seeder
             throw new \Exception('Kindergarten A class not found');
         }
         
-        // Find existing Grade 2 Section A class
-        $grade2A = $this->findExistingClass('Grade 2 A');
-        if (!$grade2A) {
-            $this->command->error('❌ Grade 2 A class not found!');
-            throw new \Exception('Grade 2 A class not found');
+        // Find existing Kindergarten B class
+        $kindergartenB = $this->findExistingClass('Kindergarten B');
+        if (!$kindergartenB) {
+            $this->command->error('❌ Kindergarten B class not found!');
+            throw new \Exception('Kindergarten B class not found');
         }
 
         // Create 3 students in Kindergarten A
         $kgStudents = [
             ['name' => 'Maung Aung Aung', 'gender' => 'male', 'identifier' => 'KG-A-001'],
             ['name' => 'Maung Kyaw Kyaw', 'gender' => 'male', 'identifier' => 'KG-A-002'],
-            ['name' => 'Ma Thida Win', 'gender' => 'female', 'identifier' => 'KG-A-003'],
+            ['name' => 'Ma Nyein Nyein', 'gender' => 'female', 'identifier' => 'KG-A-003'],
         ];
 
         foreach ($kgStudents as $index => $studentData) {
@@ -272,15 +272,15 @@ class MultiRoleUserSeeder extends Seeder
             $this->command->info("  ✓ Created: {$studentData['name']} (Kindergarten A)");
         }
 
-        // Create 1 girl in Grade 2 Section A
-        $grade2Student = $this->createStudent(
+        // Create 1 girl in Kindergarten B
+        $kindergartenBStudent = $this->createStudent(
             'Ma Su Su Hlaing',
             'female',
-            $grade2A,
-            'G2-A-001'
+            $kindergartenB,
+            'KG-B-001'
         );
-        $this->students[] = $grade2Student;
-        $this->command->info("  ✓ Created: Ma Su Su Hlaing (Grade 2 Section A)");
+        $this->students[] = $kindergartenBStudent;
+        $this->command->info("  ✓ Created: Ma Su Su Hlaing (Kindergarten B)");
 
         $this->command->info('✓ Created ' . count($this->students) . ' students');
     }

@@ -13,7 +13,6 @@
         name="batch_id" 
         class="w-full rounded-lg border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200 focus:border-blue-500 focus:ring-blue-500"
         required>
-        <option value="">{{ __('academic_management.Select Batch') }}</option>
         @foreach($batches as $batch)
             <option value="{{ $batch->id }}" {{ old('batch_id', $grade->batch_id ?? '') == $batch->id ? 'selected' : '' }}>
                 {{ $batch->name }}
@@ -34,7 +33,6 @@
         name="level" 
         class="w-full rounded-lg border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200 focus:border-blue-500 focus:ring-blue-500"
         required>
-        <option value="">{{ __('academic_management.Grade Level') }}</option>
         @foreach(range(0, 12) as $level)
             <option value="{{ $level }}" {{ (string) old('level', $grade->level ?? '') === (string) $level ? 'selected' : '' }}>
                 {{ $level }}
@@ -55,7 +53,6 @@
         name="grade_category_id" 
         class="w-full rounded-lg border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200 focus:border-blue-500 focus:ring-blue-500"
         required>
-        <option value="">{{ __('academic_management.Select Grade Category') }}</option>
         @foreach($gradeCategories as $category)
             <option value="{{ $category->id }}" {{ old('grade_category_id', $grade->grade_category_id ?? '') == $category->id ? 'selected' : '' }}>
                 {{ $category->name }}

@@ -676,38 +676,9 @@
             };
         }
 
-        // Initialize Select2 for create subject modal
+        // Initialize Select2 - handled in academic-management.js
         $(document).ready(function() {
-            // Store the original openModal function
-            const originalOpenModal = window.openModal;
-            
-            // Override openModal to initialize Select2 when modal opens
-            window.openModal = function(modalId) {
-                // Call original function first
-                originalOpenModal(modalId);
-                
-                // If it's the create subject modal, initialize Select2
-                if (modalId === 'subjectModal') {
-                    setTimeout(function() {
-                        // Destroy existing Select2 if any
-                        if ($('#createSubjectGrades').hasClass('select2-hidden-accessible')) {
-                            $('#createSubjectGrades').select2('destroy');
-                        }
-                        
-                        try {
-                            // Initialize Select2
-                            $('#createSubjectGrades').select2({
-                                width: 'resolve',
-                                placeholder: '{{ __('academic_management.Select grades') }}',
-                                allowClear: true,
-                                dropdownParent: $('#subjectModal')
-                            });
-                        } catch (error) {
-                            // Silent fail
-                        }
-                    }, 150);
-                }
-            };
+            console.log('Academic Management page loaded');
         });
     </script>
 </x-app-layout>

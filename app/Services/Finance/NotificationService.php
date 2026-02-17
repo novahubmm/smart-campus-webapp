@@ -48,7 +48,7 @@ class NotificationService
     /**
      * Send reinform notification to guardian
      */
-    public function sendReinformNotification(int $studentId, Collection $unpaidInvoices): void
+    public function sendReinformNotification(string $studentId, Collection $unpaidInvoices): void
     {
         $student = StudentProfile::with('user')->find($studentId);
         if (!$student) {

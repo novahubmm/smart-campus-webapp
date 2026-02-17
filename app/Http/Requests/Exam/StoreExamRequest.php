@@ -35,4 +35,18 @@ class StoreExamRequest extends FormRequest
             'schedules.*.passing_marks' => ['nullable', 'numeric', 'min:0'],
         ];
     }
+
+    public function withValidator($validator)
+    {
+        $validator->after(function ($validator) {
+            $exists = \App\Models\Exam::where('name', $this->name)
+                ->where('grade_id', $this->grade_id)
+                ->where('class_id', $this->class_id)
+                ->exists();
+
+            if ($exists) {
+                $validator->errors()->add('name', __('academic_management.duplicate_exam_error'));
+            }
+        });
+    }
 }

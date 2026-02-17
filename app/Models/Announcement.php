@@ -56,4 +56,9 @@ class Announcement extends Model
     {
         return $this->belongsTo(AnnouncementType::class);
     }
+
+    public function interactions()
+    {
+        return $this->hasMany(GuardianAnnouncementInteraction::class, 'announcement_id');
+    }
 }

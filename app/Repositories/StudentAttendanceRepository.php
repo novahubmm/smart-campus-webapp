@@ -21,9 +21,12 @@ class StudentAttendanceRepository implements StudentAttendanceRepositoryInterfac
     {
         $classes = SchoolClass::query()
             ->with('grade')
+            ->leftJoin('grades', 'classes.grade_id', '=', 'grades.id')
             ->when($classId, fn($q) => $q->where('id', $classId))
             ->when($gradeId, fn($q) => $q->where('grade_id', $gradeId))
-            ->orderBy('name')
+            ->orderByRaw('CASE WHEN grades.level IS NULL THEN 999 ELSE grades.level END')
+            ->orderBy('classes.name')
+            ->select('classes.*')
             ->get();
 
         if ($classes->isEmpty()) {
@@ -38,7 +41,7 @@ class StudentAttendanceRepository implements StudentAttendanceRepositoryInterfac
             $q->where(function ($query) use ($dayKey, $shortDayKey) {
                 $query->where('day_of_week', $dayKey)
                     ->orWhere('day_of_week', $shortDayKey);
-            })->orderBy('period_number');
+            })->where('is_break', false)->orderBy('period_number');
         }])->whereIn('class_id', $classIds)->latest('updated_at')->get()->keyBy('class_id');
 
         $studentsCounts = StudentProfile::selectRaw('class_id, count(*) as total')
@@ -49,6 +52,7 @@ class StudentAttendanceRepository implements StudentAttendanceRepositoryInterfac
         $attendance = StudentAttendance::select(
             'student_attendance.student_id',
             'student_attendance.period_id',
+            'student_attendance.period_number',
             'student_attendance.status',
             'student_attendance.updated_at',
             'sp.class_id'
@@ -58,34 +62,37 @@ class StudentAttendanceRepository implements StudentAttendanceRepositoryInterfac
             ->whereIn('sp.class_id', $classIds)
             ->get();
 
-        $attendanceMap = [];
+        $attendanceByPeriodId = [];
+        $attendanceByPeriodNumber = [];
         $totalsByClass = [];
         $latestByClass = [];
-        $attendanceByClassNoPeriod = []; // For attendance without period_id
-        
+
         foreach ($attendance as $row) {
             if ($row->period_id) {
-                $attendanceMap[$row->class_id][$row->period_id][$row->status] = ($attendanceMap[$row->class_id][$row->period_id][$row->status] ?? 0) + 1;
-            } else {
-                // Attendance without period - count per class
-                $attendanceByClassNoPeriod[$row->class_id][$row->status] = ($attendanceByClassNoPeriod[$row->class_id][$row->status] ?? 0) + 1;
+                $attendanceByPeriodId[$row->class_id][$row->period_id][$row->status] = ($attendanceByPeriodId[$row->class_id][$row->period_id][$row->status] ?? 0) + 1;
             }
+
+            if (!is_null($row->period_number)) {
+                $attendanceByPeriodNumber[$row->class_id][$row->period_number][$row->status] = ($attendanceByPeriodNumber[$row->class_id][$row->period_number][$row->status] ?? 0) + 1;
+            }
+
             $totalsByClass[$row->class_id][$row->status] = ($totalsByClass[$row->class_id][$row->status] ?? 0) + 1;
             $latestByClass[$row->class_id] = isset($latestByClass[$row->class_id])
                 ? $row->updated_at->max($latestByClass[$row->class_id])
                 : $row->updated_at;
         }
 
-        return $classes->map(function (SchoolClass $class) use ($studentsCounts, $timetables, $attendanceMap, $latestByClass, $totalsByClass, $attendanceByClassNoPeriod) {
+        return $classes->map(function (SchoolClass $class) use ($studentsCounts, $timetables, $attendanceByPeriodId, $attendanceByPeriodNumber, $latestByClass, $totalsByClass) {
             $totalStudents = (int) ($studentsCounts[$class->id] ?? 0);
             $periods = $timetables[$class->id]->periods ?? collect();
             $classTotals = $totalsByClass[$class->id] ?? [];
-            $noPeriodAttendance = $attendanceByClassNoPeriod[$class->id] ?? [];
 
             // If there are periods in timetable, show period-based summary
             if ($periods->isNotEmpty()) {
-                $periodSummaries = $periods->map(function (Period $period) use ($attendanceMap, $class, $totalStudents) {
-                    $counts = $attendanceMap[$class->id][$period->id] ?? [];
+                $periodSummaries = $periods->map(function (Period $period) use ($attendanceByPeriodId, $attendanceByPeriodNumber, $class, $totalStudents) {
+                    $countsByPeriodId = $attendanceByPeriodId[$class->id][$period->id] ?? [];
+                    $countsByPeriodNumber = $attendanceByPeriodNumber[$class->id][$period->period_number] ?? [];
+                    $counts = !empty($countsByPeriodId) ? $countsByPeriodId : $countsByPeriodNumber;
                     $present = $counts['present'] ?? 0;
                     $totalMarked = array_sum($counts);
                     $presentPct = $totalStudents > 0 ? round(($present / max($totalStudents, 1)) * 100) : 0;
@@ -275,8 +282,11 @@ class StudentAttendanceRepository implements StudentAttendanceRepositoryInterfac
         $attendanceWithPeriod = $attendanceRecords->whereNotNull('period_id');
         $attendanceWithoutPeriod = $attendanceRecords->whereNull('period_id');
 
-        // Group by period for those with period_id
-        $attendanceByPeriod = $attendanceWithPeriod->groupBy('period_id');
+        // Group by both period ID and period number for compatibility across collection modes
+        $attendanceByPeriodId = $attendanceWithPeriod->groupBy('period_id');
+        $attendanceByPeriodNumber = $attendanceRecords
+            ->whereNotNull('period_number')
+            ->groupBy('period_number');
 
         // Calculate today's percentage for each student
         $studentTodayPct = [];
@@ -290,8 +300,12 @@ class StudentAttendanceRepository implements StudentAttendanceRepositoryInterfac
         // If there are periods in timetable, show period-based view
         if ($periods->isNotEmpty()) {
             return [
-                'periods' => $periods->map(function ($period) use ($attendanceByPeriod, $students, $studentTodayPct) {
-                    $periodAttendance = $attendanceByPeriod->get($period->id, collect());
+                'periods' => $periods->map(function ($period) use ($attendanceByPeriodId, $attendanceByPeriodNumber, $students, $studentTodayPct) {
+                    $periodAttendance = $attendanceByPeriodId->get($period->id, collect());
+
+                    if ($periodAttendance->isEmpty()) {
+                        $periodAttendance = $attendanceByPeriodNumber->get($period->period_number, collect());
+                    }
 
                     $presentCount = $periodAttendance->where('status', 'present')->count();
                     $absentCount = $periodAttendance->where('status', 'absent')->count();

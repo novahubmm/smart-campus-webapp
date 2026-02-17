@@ -23,6 +23,7 @@
         'today' => $today,
         'currentMonth' => $currentMonth,
         'currentYear' => $currentYear,
+        'initialTab' => $initialTab,
     ]))" x-init="initPage()">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-6">
             <!-- View Toggle Tabs -->
@@ -465,7 +466,7 @@
                 today: config.today,
                 currentMonth: config.currentMonth,
                 currentYear: config.currentYear,
-                tab: 'daily',
+                tab: config.initialTab || 'monthly',
                 dailyDate: config.today,
                 dailyList: [],
                 filteredDailyList: [],
@@ -509,6 +510,14 @@
                     this.loadSummer();
                     this.loadAnnual();
                 },
+                init() {
+                    // Watch for tab changes and update URL
+                    this.$watch('tab', (value) => {
+                        const url = new URL(window.location);
+                        url.searchParams.set('tab', value);
+                        window.history.pushState({}, '', url);
+                    });
+                },
 
                 updateAcademicYear() {
                     const year = parseInt(this.monthFilter.split('-')[0]);
@@ -542,7 +551,8 @@
                         });
                 },
 
-                filterDailyList() {
+                filterDailyList(resetPage = true) {
+                    const previousPage = this.dailyCurrentPage;
                     const q = this.dailySearch.toLowerCase().trim();
                     if (!q) {
                         this.filteredDailyList = this.dailyList;
@@ -553,7 +563,8 @@
                                    (row.department && row.department.toLowerCase().includes(q));
                         });
                     }
-                    this.dailyCurrentPage = 1;
+                    const totalPages = Math.ceil(this.filteredDailyList.length / this.perPage) || 1;
+                    this.dailyCurrentPage = resetPage ? 1 : Math.min(Math.max(previousPage, 1), totalPages);
                 },
 
                 computeDailyStats() {
@@ -759,7 +770,7 @@
                             row.start_time = data.start_time;
                             row.end_time = data.end_time;
                         }
-                        this.filterDailyList();
+                        this.filterDailyList(false);
                         this.computeDailyStats();
                     })
                     .catch(err => console.error('Failed to save attendance:', err));

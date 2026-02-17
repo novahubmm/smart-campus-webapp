@@ -38,4 +38,9 @@ return array(
     'Teacher' => 'ဆရာ',
     'User Management' => 'အသုံးပြုသူစီမံခန့်ခွဲမှု',
     'User Profile' => 'အသုံးပြုသူကိုယ်ရေးအချက်အလက်',
+    'Reset Password' => 'စကားဝှက်ပြန်လည်သတ်မှတ်',
+    'Reset password for' => 'စကားဝှက်ပြန်လည်သတ်မှတ်ရန်',
+    'New Password' => 'စကားဝှက်အသစ်',
+    'Enter new password' => 'စကားဝှက်အသစ်ထည့်သွင်းပါ',
+    'Confirm new password' => 'စကားဝှက်အသစ်အတည်ပြုပါ',
 );

@@ -292,8 +292,9 @@
                     </div>
 
                     <!-- Invoices Fee Table -->
-                    <div class="student-fee-table-wrapper">
-                        <table class="divide-y divide-gray-200 dark:divide-gray-700 student-fee-table">
+                    <!-- Table Header with Scrollbar -->
+                    <div class="student-fee-table-wrapper" id="headerTableWrapper">
+                        <table class="divide-y divide-gray-200 dark:divide-gray-700 student-fee-table" id="headerTable">
                             <thead class="bg-gray-50 dark:bg-gray-700">
                                 <tr>
                                     <th class="fee-sticky-col fee-sticky-col-1 px-4 py-3 text-left text-xs font-semibold text-gray-600 dark:text-gray-300 whitespace-nowrap bg-gray-50 dark:bg-gray-700">{{ __('finance.No.') }}</th>
@@ -307,11 +308,18 @@
                                     <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 dark:text-gray-300 whitespace-nowrap">{{ __('finance.Actions') }}</th>
                                 </tr>
                             </thead>
+                        </table>
+                    </div>
+
+                    <!-- Table Body with Scrollbar -->
+                    <div class="student-fee-table-wrapper" id="mainTableWrapper" style="overflow-y: visible;">
+                        <table class="divide-y divide-gray-200 dark:divide-gray-700 student-fee-table" id="mainTable">
                             <tbody class="divide-y divide-gray-200 dark:divide-gray-700">
                                 @forelse($unpaidInvoices as $index => $invoice)
                                     @php
                                         $student = $invoice->student;
-                                        $feeType = $invoice->feeStructure?->feeType;
+                                        // Get fee type from feeStructure or from first invoice item
+                                        $feeType = $invoice->feeStructure?->feeType ?? $invoice->items->first()?->feeType;
                                         $hasRejectedProof = isset($rejectedProofsByInvoice[$invoice->id]);
                                         $rejectedProof = $hasRejectedProof ? $rejectedProofsByInvoice[$invoice->id] : null;
                                     @endphp
@@ -359,9 +367,10 @@
                                                         title="{{ __('finance.View Payment History') }}">
                                                     <i class="fas fa-history"></i>
                                                 </button>
-                                                <form method="POST" action="{{ route('student-fees.students.reinform', $student) }}" class="inline">
+                                                <form method="POST" action="{{ route('student-fees.students.reinform', $student) }}" class="inline" id="reminder-form-{{ $student->id }}">
                                                     @csrf
-                                                    <button type="submit" class="action-btn" title="{{ __('finance.Send Reminder') }}" onclick="return confirm('{{ __('finance.Send payment reminder to guardian?') }}')">
+                                                    <button type="button" class="action-btn" title="{{ __('finance.Send Reminder') }}" 
+                                                        onclick="confirmAction('{{ route('student-fees.students.reinform', $student) }}', '{{ __('finance.Send Reminder') }}', '{{ __('finance.Send payment reminder to guardian?') }}', '{{ __('finance.Send Reminder') }}')">
                                                         <i class="fas fa-bell"></i>
                                                     </button>
                                                 </form>
@@ -641,7 +650,16 @@
                                                     <i class="fas fa-edit"></i>
                                                 </button>
                                                 @if($gradeFee > 0)
-                                                    <button type="button" class="action-btn delete" @click="clearGradeFee('{{ $grade->id }}')" title="{{ __('finance.Clear Fee') }}">
+                                                    <button type="button" 
+                                                            class="action-btn delete" 
+                                                            @click.prevent="$dispatch('confirm-show', {
+                                                                title: '{{ __('finance.Clear Fee') }}',
+                                                                message: '{{ __('finance.Are you sure you want to clear the fee for this grade?') }}',
+                                                                confirmText: '{{ __('finance.Clear') }}',
+                                                                cancelText: '{{ __('finance.Cancel') }}',
+                                                                onConfirm: () => clearGradeFee('{{ $grade->id }}')
+                                                            })"
+                                                            title="{{ __('finance.Clear Fee') }}">
                                                         <i class="fas fa-trash"></i>
                                                     </button>
                                                 @endif
@@ -1892,7 +1910,7 @@
     <script>
         function studentFeeManager() {
             return {
-                activeTab: 'invoice',
+                activeTab: new URLSearchParams(window.location.search).get('tab') || 'invoice',
                 showPaymentModal: false,
                 showStructureModal: false,
                 showCategoryModal: false,
@@ -2046,11 +2064,15 @@
                                 payment_number: data.payment.payment_number || '',
                                 student_name: data.payment.student_name || '-',
                                 student_id: data.payment.student_id || '-',
+                                class_name: data.payment.class_name || '-',
+                                guardian_name: data.payment.guardian_name || 'N/A',
                                 amount: parseInt(data.payment.amount || 0).toLocaleString(),
                                 payment_method: (data.payment.payment_method || '').replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase()),
                                 payment_date: data.payment.payment_date || '-',
                                 receptionist_id: data.payment.receptionist_id || '',
-                                receptionist_name: data.payment.receptionist_name || ''
+                                receptionist_name: data.payment.receptionist_name || '',
+                                ferry_fee: data.payment.ferry_fee || '0',
+                                notes: data.payment.notes || ''
                             };
                             this.showReceiptModal = true;
                         } else {
@@ -2153,44 +2175,59 @@
                 },
                 
                 clearGradeFee(gradeId) {
-                    if (confirm('{{ __('finance.Are you sure you want to clear the fee for this grade?') }}')) {
-                        const form = document.createElement('form');
-                        form.method = 'POST';
-                        form.action = '{{ url('student-fees/grades') }}/' + gradeId;
-                        
-                        const csrf = document.createElement('input');
-                        csrf.type = 'hidden';
-                        csrf.name = '_token';
-                        csrf.value = '{{ csrf_token() }}';
-                        form.appendChild(csrf);
-                        
-                        const method = document.createElement('input');
-                        method.type = 'hidden';
-                        method.name = '_method';
-                        method.value = 'PUT';
-                        form.appendChild(method);
-                        
-                        const price = document.createElement('input');
-                        price.type = 'hidden';
-                        price.name = 'price_per_month';
-                        price.value = '0';
-                        form.appendChild(price);
-                        
-                        document.body.appendChild(form);
-                        form.submit();
-                    }
+                    const form = document.createElement('form');
+                    form.method = 'POST';
+                    form.action = '{{ url('student-fees/grades') }}/' + gradeId;
+                    
+                    const csrf = document.createElement('input');
+                    csrf.type = 'hidden';
+                    csrf.name = '_token';
+                    csrf.value = '{{ csrf_token() }}';
+                    form.appendChild(csrf);
+                    
+                    const method = document.createElement('input');
+                    method.type = 'hidden';
+                    method.name = '_method';
+                    method.value = 'PUT';
+                    form.appendChild(method);
+                    
+                    const price = document.createElement('input');
+                    price.type = 'hidden';
+                    price.name = 'price_per_month';
+                    price.value = '0';
+                    form.appendChild(price);
+                    
+                    document.body.appendChild(form);
+                    form.submit();
                 },
                 
                 openReceiptModal(payment) {
+                    // Use pre-computed attributes if available (from payment history)
+                    // Otherwise compute from nested relationships (for new payments)
+                    const guardianName = payment.guardian_name || payment.student?.guardians?.[0]?.user?.name || 'N/A';
+                    
+                    let className = payment.class_name || '-';
+                    // If not pre-computed, try to compute from relationships
+                    if (className === '-' && payment.student?.grade && payment.student?.classModel) {
+                        const gradeLevel = payment.student.grade.level;
+                        const classNameRaw = payment.student.classModel.name;
+                        // Format class name using the helper
+                        className = window.formatClassName ? window.formatClassName(classNameRaw, gradeLevel) : classNameRaw;
+                    }
+                    
                     this.receiptData = {
                         payment_number: payment.payment_number || '',
                         student_name: payment.student?.user?.name || '-',
                         student_id: payment.student?.student_identifier || '-',
+                        class_name: className,
+                        guardian_name: guardianName,
                         amount: parseInt(payment.amount || 0).toLocaleString(),
                         payment_method: (payment.payment_method || '').replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase()),
                         payment_date: payment.payment_date ? new Date(payment.payment_date).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' }) : '-',
                         receptionist_id: payment.receptionist_id || '',
-                        receptionist_name: payment.receptionist_name || ''
+                        receptionist_name: payment.receptionist_name || '',
+                        ferry_fee: payment.ferry_fee || '0',
+                        notes: payment.notes || ''
                     };
                     this.showReceiptModal = true;
                 },
@@ -2202,63 +2239,273 @@
                 
                 printReceipt() {
                     const printWindow = window.open('', '_blank');
+                    
+                    // Get school info from settings
+                    const schoolLogo = '{{ asset("images/school-logo.png") }}';
+                    
+                    // Helper function to convert numbers to Myanmar words
+                    function numberToMyanmarWords(num) {
+                        const ones = ['', 'တစ်', 'နှစ်', 'သုံး', 'လေး', 'ငါး', 'ခြောက်', 'ခုနစ်', 'ရှစ်', 'ကိုး'];
+                        const tens = ['', 'ဆယ်', 'နှစ်ဆယ်', 'သုံးဆယ်', 'လေးဆယ်', 'ငါးဆယ်', 'ခြောက်ဆယ်', 'ခုနစ်ဆယ်', 'ရှစ်ဆယ်', 'ကိုးဆယ်'];
+                        
+                        if (num === 0) return 'သုည';
+                        
+                        let result = '';
+                        
+                        // Lakhs (သိန်း)
+                        if (num >= 100000) {
+                            const lakhs = Math.floor(num / 100000);
+                            result += ones[lakhs] + 'သိန်း';
+                            num %= 100000;
+                        }
+                        
+                        // Ten thousands (သောင်း)
+                        if (num >= 10000) {
+                            const tenThousands = Math.floor(num / 10000);
+                            result += ones[tenThousands] + 'သောင်း';
+                            num %= 10000;
+                        }
+                        
+                        // Thousands (ထောင်)
+                        if (num >= 1000) {
+                            const thousands = Math.floor(num / 1000);
+                            result += ones[thousands] + 'ထောင်';
+                            num %= 1000;
+                        }
+                        
+                        // Hundreds (ရာ)
+                        if (num >= 100) {
+                            const hundreds = Math.floor(num / 100);
+                            result += ones[hundreds] + 'ရာ';
+                            num %= 100;
+                        }
+                        
+                        // Tens
+                        if (num >= 10) {
+                            const tensDigit = Math.floor(num / 10);
+                            result += tens[tensDigit];
+                            num %= 10;
+                        }
+                        
+                        // Ones
+                        if (num > 0) {
+                            result += ones[num];
+                        }
+                        
+                        return result;
+                    }
+                    
+                    // Convert amount to Myanmar words
+                    const amountNum = parseInt(this.receiptData.amount.replace(/,/g, ''));
+                    const amountInWords = numberToMyanmarWords(amountNum);
+                    
+                    // Get month names in Myanmar
+                    const monthNamesMM = ['ဇန်နဝါရီ', 'ဖေဖော်ဝါရီ', 'မတ်', 'ဧပြီ', 'မေ', 'ဇွန်', 'ဇူလိုင်', 'သြဂုတ်', 'စက်တင်ဘာ', 'အောက်တိုဘာ', 'နိုဝင်ဘာ', 'ဒီဇင်ဘာ'];
+                    const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+                    
+                    // Format date as 11/Feb/2026
+                    const paymentDate = this.receiptData.payment_date || '';
+                    let formattedDate = '';
+                    let invoiceMonthMM = '';
+                    if (paymentDate) {
+                        const dateObj = new Date(paymentDate);
+                        const day = dateObj.getDate();
+                        const monthIndex = dateObj.getMonth();
+                        const month = monthNames[monthIndex];
+                        const year = dateObj.getFullYear();
+                        formattedDate = `${day}/${month}/${year}`;
+                        invoiceMonthMM = monthNamesMM[monthIndex];
+                    }
+                    
+                    const studentClass = this.receiptData.class_name || '-';
+                    const guardianName = this.receiptData.guardian_name || 'N/A';
+                    const paymentNotes = this.receiptData.notes || '';
+                    
                     printWindow.document.write(`
+                        <!DOCTYPE html>
                         <html>
                         <head>
-                            <title>Payment Receipt - ${this.receiptData.payment_number}</title>
+                            <title>Receipt</title>
+                            <meta charset="UTF-8">
                             <style>
-                                body { font-family: Arial, sans-serif; margin: 20px; }
-                                .receipt-header { text-align: center; margin-bottom: 30px; border-bottom: 2px solid #333; padding-bottom: 20px; }
-                                .receipt-header h2 { margin: 0 0 10px 0; }
-                                .receipt-details { margin: 20px 0; }
-                                .receipt-row { display: flex; justify-content: space-between; margin: 10px 0; padding: 8px 0; border-bottom: 1px solid #eee; }
-                                .receipt-label { font-weight: bold; color: #666; }
-                                .receipt-value { color: #333; }
-                                .amount { font-size: 18px; font-weight: bold; color: #16a34a; }
-                                .footer { text-align: center; margin-top: 40px; color: #666; font-size: 12px; }
+                                @page { 
+                                    size: A5 landscape;
+                                    margin: 0.3in;
+                                }
+                                * {
+                                    margin: 0;
+                                    padding: 0;
+                                    box-sizing: border-box;
+                                }
+                                html, body { 
+                                    width: 210mm;
+                                    height: 148mm;
+                                    margin: 0;
+                                    padding: 0;
+                                }
+                                body { 
+                                    font-family: 'Myanmar3', 'Pyidaungsu', Arial, sans-serif; 
+                                    background: #90EE90;
+                                    padding: 0.3in;
+                                    font-size: 9.5pt;
+                                    line-height: 1.4;
+                                }
+                                .header {
+                                    display: flex;
+                                    align-items: flex-start;
+                                    margin-bottom: 2mm;
+                                }
+                                .logo {
+                                    width: 20mm;
+                                    flex-shrink: 0;
+                                    margin-right: 3mm;
+                                }
+                                .logo img {
+                                    width: 20mm;
+                                    height: 20mm;
+                                    display: block;
+                                }
+                                .header-text {
+                                    flex: 1;
+                                    text-align: center;
+                                }
+                                .school-name {
+                                    font-size: 20pt;
+                                    font-weight: bold;
+                                    margin-bottom: 1mm;
+                                }
+                                .invoice-no {
+                                    font-size: 15pt;
+                                    margin-bottom: 2mm;
+                                }
+                                .content {
+                                    font-size: 12pt;
+                                    line-height: 1.5;
+                                }
+                                .line {
+                                    margin: 1.5mm 0;
+                                    text-align: justify;
+                                    text-justify: inter-word;
+                                }
+                                .signature-section {
+                                    display: flex;
+                                    justify-content: space-between;
+                                    margin-top: 2mm;
+                                }
+                                .signature-box {
+                                    text-align: center;
+                                    flex: 1;
+                                    font-size: 12pt;
+                                }
+                                .signature-label {
+                                    margin-bottom: 25mm;
+                                }
+                                .signature-line {
+                                    margin: 1.5mm 0;
+                                    font-size: 12pt;
+                                }
+                                .note-section {
+                                    margin-top: 2mm;
+                                    padding-top: 1mm;
+                                    text-align: justify;
+                                }
+                                .note {
+                                    text-align: center;
+                                    font-size: 10pt;
+                                    margin-bottom: 1mm;
+                                }
+                                .separator {
+                                    text-align: center;
+                                    margin: 1mm 0;
+                                    font-size: 9pt;
+                                }
+                                .contact {
+                                    text-align: center;
+                                    font-size: 10pt;
+                                }
+                                @media print {
+                                    html, body {
+                                        width: 210mm;
+                                        height: 148mm;
+                                    }
+                                    body { 
+                                        background: #90EE90;
+                                        -webkit-print-color-adjust: exact;
+                                        print-color-adjust: exact;
+                                    }
+                                    @page {
+                                        size: A5 landscape;
+                                        margin: 0.3in;
+                                    }
+                                }
                             </style>
                         </head>
                         <body>
-                            <div class="receipt-header">
-                                <h2>Payment Receipt</h2>
-                                <p>Smart Campus Platform</p>
+                            <div class="header">
+                                <div class="logo">
+                                    <img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ccircle cx='50' cy='50' r='45' fill='%234CAF50'/%3E%3Ctext x='50' y='60' font-size='40' text-anchor='middle' fill='white' font-family='Arial'%3EYKST%3C/text%3E%3C/svg%3E" alt="Logo">
+                                </div>
+                                <div class="header-text">
+                                    <div class="school-name">
+                                        ယာခင်းရှင်သာ ကိုယ်ပိုင်အထက်တန်းကျောင်း
+                                    </div>
+                                    <div class="invoice-no">
+                                        No. ${this.receiptData.payment_number}
+                                    </div>
+                                </div>
                             </div>
-                            <div class="receipt-details">
-                                <div class="receipt-row">
-                                    <span class="receipt-label">Receipt Number:</span>
-                                    <span class="receipt-value">${this.receiptData.payment_number}</span>
+                            
+                            <div class="content">
+                                <div class="line">
+                                    ကျောင်းသား/သူအမည် ${this.receiptData.student_name} &nbsp;&nbsp;&nbsp; တန်းခွဲ ${studentClass}
+                                    ကျောင်းလခပေးသွင်းသည့် ${invoiceMonthMM} လအတွက် ကျောင်းလခ ${this.receiptData.amount} ကျပ်
+                                    (စာဖြင့်) ${amountInWords} ကျပ်တိတိနှင့် ${formattedDate} နေ့တွင် လက်ခံရပါသည်။
                                 </div>
-                                <div class="receipt-row">
-                                    <span class="receipt-label">Student Name:</span>
-                                    <span class="receipt-value">${this.receiptData.student_name}</span>
+                                
+                                <div class="line">
+                                    (ကျောင်းဖယ်ရီ ${this.receiptData.ferry_fee || '0'} ကျပ် (စာဖြင့်) ${this.receiptData.ferry_fee ? numberToMyanmarWords(parseInt(this.receiptData.ferry_fee)) : 'သုည'} ကျပ်တိတိ)
                                 </div>
-                                <div class="receipt-row">
-                                    <span class="receipt-label">Student ID:</span>
-                                    <span class="receipt-value">${this.receiptData.student_id}</span>
+                                
+                                <div class="signature-section">
+                                    <div class="signature-box">
+                                        <div class="signature-label">(ပေးသွင်းသူ)</div>
+                                        <div class="signature-line">အမည် ${guardianName || '-----------------------'}</div>
+                                        <div class="signature-line">လက်မှတ် -----------------------</div>
+                                    </div>
+                                    <div class="signature-box">
+                                        <div class="signature-label">(ငွေလက်ခံသူ)</div>
+                                        <div class="signature-line">အမည် ${this.receiptData.receptionist_name || '-----------------------'}</div>
+                                        <div class="signature-line">လက်မှတ် -----------------------</div>
+                                    </div>
                                 </div>
-                                <div class="receipt-row">
-                                    <span class="receipt-label">Amount:</span>
-                                    <span class="receipt-value amount">${this.receiptData.amount} MMK</span>
+                                
+                                <div class="line">
+                                    မှတ်ချက် ${paymentNotes || '---------------------------------------------------------------------------'}
                                 </div>
-                                <div class="receipt-row">
-                                    <span class="receipt-label">Payment Method:</span>
-                                    <span class="receipt-value">${this.receiptData.payment_method}</span>
+                                
+                                <div class="note-section">
+                                   <div class="separator">
+                                        _____________________________________________________________________________________________________________
+                                    </div>
+                                    <div class="note">
+                                        မည်သည့်အကြောင်းနှင့်ဖြစ်စေ ပေးသွင်းပြီးသောအခကြေးငွေကို ပြန်လည်ထုတ်ပေးမည်မဟုတ်ပါ။
+                                    </div>
+                                 
+                                    <div class="contact">
+                                        ဖုန်း - ၀၉ - ၄၄၃၀၈၉၆၅၆၊ ၀၉ - ၇၉၇၃၅၃၃၄၆၊၀၉-၆၈၈၉၈၉၆၅၆။ Hot Line : ၄၀၉၃၀၈၃၆၀၈
+                                    </div>
                                 </div>
-                                <div class="receipt-row">
-                                    <span class="receipt-label">Payment Date:</span>
-                                    <span class="receipt-value">${this.receiptData.payment_date}</span>
-                                </div>
-                                ${this.receiptData.receptionist_id ? `<div class="receipt-row"><span class="receipt-label">Receptionist ID:</span><span class="receipt-value">${this.receiptData.receptionist_id}</span></div>` : ''}
-                                ${this.receiptData.receptionist_name ? `<div class="receipt-row"><span class="receipt-label">Receptionist Name:</span><span class="receipt-value">${this.receiptData.receptionist_name}</span></div>` : ''}
-                            </div>
-                            <div class="footer">
-                                <p>Thank you for your payment!</p>
                             </div>
                         </body>
                         </html>
                     `);
                     printWindow.document.close();
-                    printWindow.print();
+                    
+                    // Wait for content to load, then print with no headers/footers
+                    setTimeout(() => {
+                        printWindow.focus();
+                        printWindow.print();
+                    }, 500);
                 },
                 
                 openPaymentMethodModal() {
@@ -2321,6 +2568,14 @@
                 
                 init() {
                     console.log('studentFeeManager init called');
+                    
+                    // Watch for tab changes and update URL
+                    this.$watch('activeTab', (value) => {
+                        const url = new URL(window.location);
+                        url.searchParams.set('tab', value);
+                        window.history.pushState({}, '', url);
+                    });
+                    
                     // Listen for approve modal event
                     window.addEventListener('open-approve-modal', (event) => {
                         console.log('open-approve-modal event received', event.detail);
@@ -2696,5 +2951,63 @@
         function closeInvoiceHistoryModal() {
             document.getElementById('invoiceHistoryModal').classList.add('hidden');
         }
+
+        function confirmAction(url, title, message, confirmText) {
+            if (typeof Alpine !== 'undefined') {
+                window.dispatchEvent(new CustomEvent('confirm-show', {
+                    detail: {
+                        title: title,
+                        message: message,
+                        confirmText: confirmText,
+                        cancelText: '{{ __('finance.Cancel') }}',
+                        onConfirm: () => {
+                            const form = document.createElement('form');
+                            form.method = 'POST';
+                            form.action = url;
+                            form.innerHTML = '@csrf';
+                            document.body.appendChild(form);
+                            form.submit();
+                        }
+                    }
+                }));
+            } else {
+                if (confirm(message)) {
+                    const form = document.createElement('form');
+                    form.method = 'POST';
+                    form.action = url;
+                    form.innerHTML = '@csrf';
+                    document.body.appendChild(form);
+                    form.submit();
+                }
+            }
+        }
+
+        // Sync scrollbars between header and body tables
+        document.addEventListener('DOMContentLoaded', function() {
+            const headerWrapper = document.getElementById('headerTableWrapper');
+            const mainWrapper = document.getElementById('mainTableWrapper');
+
+            if (headerWrapper && mainWrapper) {
+                // Sync scroll from header to body
+                let isHeaderScrolling = false;
+                headerWrapper.addEventListener('scroll', function() {
+                    if (!isHeaderScrolling) {
+                        isHeaderScrolling = true;
+                        mainWrapper.scrollLeft = headerWrapper.scrollLeft;
+                        setTimeout(() => { isHeaderScrolling = false; }, 10);
+                    }
+                });
+
+                // Sync scroll from body to header
+                let isMainScrolling = false;
+                mainWrapper.addEventListener('scroll', function() {
+                    if (!isMainScrolling) {
+                        isMainScrolling = true;
+                        headerWrapper.scrollLeft = mainWrapper.scrollLeft;
+                        setTimeout(() => { isMainScrolling = false; }, 10);
+                    }
+                });
+            }
+        });
     </script>
 </x-app-layout>

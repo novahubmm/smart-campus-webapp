@@ -76,8 +76,13 @@ class ReportController extends Controller
         // Get unique categories for filter dropdown
         $categories = DailyReport::distinct()->pluck('category')->filter();
         
-        // Get teachers for the create modal
-        $teachers = TeacherProfile::with('user')->get();
+        // Get teachers for the create modal - ordered by user name
+        $teachers = TeacherProfile::with('user')
+            ->whereHas('user')
+            ->get()
+            ->sortBy(function($teacher) {
+                return $teacher->user->name ?? '';
+            });
         
         // Get recipients for category dropdown
         $recipients = DailyReportRecipient::where('is_active', true)->orderBy('name')->get();
@@ -105,7 +110,7 @@ class ReportController extends Controller
             'message' => 'required|string',
         ]);
 
-        DailyReport::create([
+        $report = DailyReport::create([
             'user_id' => auth()->id(),
             'recipient_user_id' => $validated['recipient_user_id'],
             'direction' => 'outgoing',
@@ -117,6 +122,61 @@ class ReportController extends Controller
         ]);
 
         $this->logCreate('DailyReport', auth()->id(), $validated['subject']);
+
+        // Send push notification to the teacher
+        $recipientUser = \App\Models\User::find($validated['recipient_user_id']);
+        
+        if ($recipientUser) {
+            // Create database notification
+            $recipientUser->notify(new \App\Notifications\DailyReportReceived($report));
+            
+            // Get all device tokens for this user
+            $deviceTokens = \App\Models\DeviceToken::where('user_id', $recipientUser->id)->get();
+            
+            \Log::info('Daily Report - Attempting to send notification', [
+                'recipient_user_id' => $recipientUser->id,
+                'recipient_name' => $recipientUser->name,
+                'device_tokens_count' => $deviceTokens->count(),
+            ]);
+            
+            if ($deviceTokens->isNotEmpty()) {
+                $firebaseService = new \App\Services\FirebaseService();
+                $successCount = 0;
+                
+                foreach ($deviceTokens as $deviceToken) {
+                    $notificationSent = $firebaseService->sendToToken(
+                        $deviceToken->token,
+                        'New Daily Report',
+                        $validated['subject'],
+                        [
+                            'type' => 'daily_report',
+                            'report_id' => $report->id,
+                            'category' => $validated['category'],
+                        ],
+                        'smartcampus_notifications'
+                    );
+                    
+                    if ($notificationSent) {
+                        $successCount++;
+                    }
+                }
+                
+                \Log::info('Daily Report - Notifications sent', [
+                    'report_id' => $report->id,
+                    'total_devices' => $deviceTokens->count(),
+                    'successful' => $successCount,
+                ]);
+            } else {
+                \Log::warning('Daily Report - No device tokens found', [
+                    'recipient_user_id' => $recipientUser->id,
+                    'recipient_name' => $recipientUser->name,
+                ]);
+            }
+        } else {
+            \Log::error('Daily Report - Recipient user not found', [
+                'recipient_user_id' => $validated['recipient_user_id'],
+            ]);
+        }
 
         return redirect()->route('reports.index', ['tab' => 'outgoing'])
             ->with('status', __('Report sent to teacher successfully.'));

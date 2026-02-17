@@ -385,7 +385,12 @@ class AcademicRepository implements AcademicRepositoryInterface
      */
     public function getTeachers()
     {
-        return TeacherProfile::with('user')->get();
+        return TeacherProfile::with('user')
+            ->get()
+            ->sortBy(function ($teacher) {
+                return $teacher->user->name ?? '';
+            })
+            ->values();
     }
 
     public function getFacilities()

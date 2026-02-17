@@ -24,6 +24,30 @@
                 $classTeacher = $class->teacher?->user?->name ?? '—';
             @endphp
 
+            @if(!isset($activityData))
+            <x-detail-header
+                icon="fas fa-chalkboard"
+                iconBg="bg-green-50 dark:bg-green-900/30"
+                iconColor="text-green-600 dark:text-green-400"
+                :title="\App\Helpers\SectionHelper::formatFullClassName($class->name, $class->grade?->level)"
+                :subtitle="__('academic_management.Grade') . ': ' . ($class->grade?->name ?? '—')"
+                :badge="$class->room?->name ?? __('academic_management.No Room')"
+                badgeColor="active"
+                :editRoute="null"
+                :deleteRoute="route('academic-management.classes.destroy', $class->id)"
+                :deleteText="__('academic_management.Delete Class')"
+                :deleteTitle="__('academic_management.Delete Class')"
+                :deleteMessage="__('academic_management.confirm_delete')"
+            >
+                <x-slot name="actions">
+                    <button type="button" class="inline-flex items-center justify-center gap-2 px-4 py-2 text-sm font-semibold rounded-lg border border-blue-200 dark:border-blue-800 bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 hover:bg-blue-100 dark:hover:bg-blue-900/50 transition-colors" onclick="openModal('editClassModal')">
+                        <i class="fas fa-edit"></i>
+                        <span>{{ __('academic_management.Edit Class') }}</span>
+                    </button>
+                </x-slot>
+            </x-detail-header>
+            @endif
+
 
             {{-- Activity Summary Section --}}
             @if(isset($activityData))

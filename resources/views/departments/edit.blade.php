@@ -13,8 +13,8 @@
         </div>
     </x-slot>
 
-    <div class="py-6 sm:py-12">
-        <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 space-y-6">
+    <div class="py-6 sm:py-10">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-6">
             <x-back-link 
                 :href="route('departments.index')"
                 :text="__('departments.Back to Departments')"

@@ -23,6 +23,7 @@
         'today' => $today,
         'currentMonth' => $currentMonth,
         'currentYear' => $currentYear,
+        'initialTab' => $initialTab,
     ]))" x-init="initPage()">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-6">
             <!-- View Toggle Tabs -->
@@ -463,7 +464,7 @@
     <script>
         function teacherAttendancePage(config) {
             return {
-                tab: 'daily',
+                tab: config.initialTab || 'monthly',
                 routes: config.routes,
                 today: config.today,
                 dailyDate: config.today,
@@ -509,6 +510,14 @@
                     this.loadSummer();
                     this.loadAnnual();
                 },
+                init() {
+                    // Watch for tab changes and update URL
+                    this.$watch('tab', (value) => {
+                        const url = new URL(window.location);
+                        url.searchParams.set('tab', value);
+                        window.history.pushState({}, '', url);
+                    });
+                },
 
                 updateAcademicYear() {
                     const year = parseInt(this.monthFilter.split('-')[0]);
@@ -542,7 +551,8 @@
                         });
                 },
 
-                filterDailyList() {
+                filterDailyList(resetPage = true) {
+                    const previousPage = this.dailyCurrentPage;
                     const q = this.dailySearch.toLowerCase().trim();
                     if (!q) {
                         this.filteredDailyList = this.dailyList;
@@ -553,7 +563,8 @@
                                    (row.department && row.department.toLowerCase().includes(q));
                         });
                     }
-                    this.dailyCurrentPage = 1;
+                    const totalPages = Math.ceil(this.filteredDailyList.length / this.perPage) || 1;
+                    this.dailyCurrentPage = resetPage ? 1 : Math.min(Math.max(previousPage, 1), totalPages);
                 },
 
                 computeDailyStats() {
@@ -750,16 +761,24 @@
                             ...data
                         }),
                     })
-                    .then(r => r.json())
-                    .then(() => {
+                    .then(async r => {
+                        const payload = await r.json().catch(() => ({}));
+                        if (!r.ok || payload.success === false) {
+                            throw new Error(payload.message || 'Failed to save attendance');
+                        }
+                        return payload;
+                    })
+                    .then((payload) => {
+                        const saved = payload?.data || {};
                         // Update local data
                         const row = this.dailyList.find(r => r.id === teacherId);
                         if (row) {
-                            row.status = data.status;
-                            row.start_time = data.start_time;
-                            row.end_time = data.end_time;
+                            row.status = saved.status ?? data.status;
+                            row.start_time = saved.start_time ?? data.start_time;
+                            row.end_time = saved.end_time ?? data.end_time;
+                            row.remark = saved.remark ?? data.remark ?? row.remark;
                         }
-                        this.filterDailyList();
+                        this.filterDailyList(false);
                         this.computeDailyStats();
                     })
                     .catch(err => console.error('Failed to save attendance:', err));

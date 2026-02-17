@@ -378,6 +378,116 @@ class StudentController extends Controller
     }
 
     /**
+     * Get Subject Performance (Profile Screen)
+     * GET /api/v1/guardian/students/{id}/profile/subject-performance
+     */
+    public function subjectPerformance(Request $request, string $id): JsonResponse
+    {
+        try {
+            $student = $this->getAuthorizedStudent($request, $id);
+            if (!$student) {
+                return ApiResponse::error('Student not found or unauthorized', 404);
+            }
+
+            $performance = $this->studentRepository->getSubjectPerformance($student);
+
+            return ApiResponse::success($performance);
+        } catch (\Exception $e) {
+            return ApiResponse::error('Failed to retrieve subject performance: ' . $e->getMessage(), 500);
+        }
+    }
+
+    /**
+     * Get Progress Tracking (GPA & Rank History)
+     * GET /api/v1/guardian/students/{id}/profile/progress-tracking?months=6
+     */
+    public function progressTracking(Request $request, string $id): JsonResponse
+    {
+        $request->validate([
+            'months' => 'nullable|integer|min:1|max:12',
+        ]);
+
+        try {
+            $student = $this->getAuthorizedStudent($request, $id);
+            if (!$student) {
+                return ApiResponse::error('Student not found or unauthorized', 404);
+            }
+
+            $months = $request->input('months', 6);
+            $tracking = $this->studentRepository->getProgressTracking($student, $months);
+
+            return ApiResponse::success($tracking);
+        } catch (\Exception $e) {
+            return ApiResponse::error('Failed to retrieve progress tracking: ' . $e->getMessage(), 500);
+        }
+    }
+
+    /**
+     * Get Comparison Data (Student vs Class Average)
+     * GET /api/v1/guardian/students/{id}/profile/comparison
+     */
+    public function comparisonData(Request $request, string $id): JsonResponse
+    {
+        try {
+            $student = $this->getAuthorizedStudent($request, $id);
+            if (!$student) {
+                return ApiResponse::error('Student not found or unauthorized', 404);
+            }
+
+            $comparison = $this->studentRepository->getComparisonData($student);
+
+            return ApiResponse::success($comparison);
+        } catch (\Exception $e) {
+            return ApiResponse::error('Failed to retrieve comparison data: ' . $e->getMessage(), 500);
+        }
+    }
+
+    /**
+     * Get Attendance Summary (Profile Screen)
+     * GET /api/v1/guardian/students/{id}/profile/attendance-summary?months=3
+     */
+    public function attendanceSummary(Request $request, string $id): JsonResponse
+    {
+        $request->validate([
+            'months' => 'nullable|integer|min:1|max:12',
+        ]);
+
+        try {
+            $student = $this->getAuthorizedStudent($request, $id);
+            if (!$student) {
+                return ApiResponse::error('Student not found or unauthorized', 404);
+            }
+
+            $months = $request->input('months', 3);
+            $summary = $this->studentRepository->getAttendanceSummary($student, $months);
+
+            return ApiResponse::success($summary);
+        } catch (\Exception $e) {
+            return ApiResponse::error('Failed to retrieve attendance summary: ' . $e->getMessage(), 500);
+        }
+    }
+
+    /**
+     * Get Rankings & Exam History (Profile Screen)
+     * GET /api/v1/guardian/students/{id}/profile/rankings
+     */
+    public function rankingsData(Request $request, string $id): JsonResponse
+    {
+        try {
+            $student = $this->getAuthorizedStudent($request, $id);
+            if (!$student) {
+                return ApiResponse::error('Student not found or unauthorized', 404);
+            }
+
+            $rankings = $this->studentRepository->getRankingsData($student);
+
+            return ApiResponse::success($rankings);
+        } catch (\Exception $e) {
+            return ApiResponse::error('Failed to retrieve rankings data: ' . $e->getMessage(), 500);
+        }
+    }
+
+    /**
      * Helper to get authorized student
      */
     private function getAuthorizedStudent(Request $request, string $studentId): ?StudentProfile
