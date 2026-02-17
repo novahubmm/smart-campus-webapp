@@ -68,9 +68,11 @@
                 @can('manage academic management')
                     <x-nav-link :href="route('ongoing-class.index')" label="{{ __('navigation.Ongoing Class') }}" icon="fas fa-chalkboard" :active="(bool) request()->routeIs('ongoing-class.*')" />
                 @endcan
-                <!-- @can('manage academic management')
+                @if($featureService->isEnabled('homework'))
+                @can('manage academic management')
                     <x-nav-link :href="route('homework.index')" label="{{ __('navigation.Homework') }}" icon="fas fa-tasks" :active="(bool) request()->routeIs('homework.*')" />
-                @endcan -->
+                @endcan
+                @endif
             </div>
             @endcan
 
@@ -86,10 +88,14 @@
                     @endif
                 @endcan
                 @can('manage event planner')
-                    <x-nav-link :href="route('events.index')" label="{{ __('navigation.Event Planner') }}" icon="fas fa-calendar" :active="(bool) request()->routeIs('events.*')" />
+                    @if($featureService->isEnabled('events'))
+                        <x-nav-link :href="route('events.index')" label="{{ __('navigation.Event Planner') }}" icon="fas fa-calendar" :active="(bool) request()->routeIs('events.*')" />
+                    @endif
                 @endcan
                 @can('manage announcements')
-                    <x-nav-link :href="route('announcements.index')" label="{{ __('navigation.Announcements') }}" icon="fas fa-bell" :active="(bool) request()->routeIs('announcements.*')" />
+                    @if($featureService->isEnabled('announcements'))
+                        <x-nav-link :href="route('announcements.index')" label="{{ __('navigation.Announcements') }}" icon="fas fa-bell" :active="(bool) request()->routeIs('announcements.*')" />
+                    @endif
                 @endcan
             </div>
             @endcan

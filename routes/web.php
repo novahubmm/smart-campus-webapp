@@ -197,12 +197,12 @@ Route::middleware(['auth', 'ensure.active'])->group(function () {
     // Announcement management routes (admin only)
     Route::resource('announcements', \App\Http\Controllers\AnnouncementController::class)
         ->only(['index', 'store', 'update', 'destroy'])
-        ->middleware(['ensure.setup:events', 'can:manage announcements']);
+        ->middleware(['ensure.setup:events', 'can:manage announcements', 'feature:announcements']);
     
     // Announcement view route (accessible to staff for viewing from notifications)
     Route::get('/announcements/{announcement}', [\App\Http\Controllers\AnnouncementController::class, 'show'])
         ->name('announcements.show')
-        ->middleware('ensure.setup:events');
+        ->middleware(['ensure.setup:events', 'feature:announcements']);
 
     Route::get('/time-table-attendance-setup', [\App\Http\Controllers\TimeTableAttendanceSetupController::class, 'index'])
         ->middleware('setup.locked')
