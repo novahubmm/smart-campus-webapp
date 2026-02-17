@@ -24,7 +24,7 @@ class PayrollEmployeeSummaryData
     {
         return new self(
             employeeType: 'staff',
-            employeeId: $profile->id,
+            employeeId: $profile->employee_id ?? $profile->id,
             name: $profile->user?->name ?? __('Staff'),
             position: $profile->position ?? __('Staff'),
             department: $profile->department?->name,
@@ -39,7 +39,7 @@ class PayrollEmployeeSummaryData
     {
         return new self(
             employeeType: 'teacher',
-            employeeId: $profile->id,
+            employeeId: $profile->employee_id ?? $profile->id,
             name: $profile->user?->name ?? __('Teacher'),
             position: $profile->position ?? __('Teacher'),
             department: $profile->department?->name,

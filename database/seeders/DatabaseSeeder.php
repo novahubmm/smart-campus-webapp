@@ -28,8 +28,8 @@ class DatabaseSeeder extends Seeder
             ExamTypeSeeder::class,
             AnnouncementTypeSeeder::class,
             DemoReadySeeder::class,
-            FeeCategorySeeder::class,
             MultiRoleUserSeeder::class,
+            FeeCategorySeeder::class,
             // ClassRecordsSeeder::class,
         ]);
     }

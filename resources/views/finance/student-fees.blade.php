@@ -292,8 +292,9 @@
                     </div>
 
                     <!-- Invoices Fee Table -->
-                    <div class="student-fee-table-wrapper">
-                        <table class="divide-y divide-gray-200 dark:divide-gray-700 student-fee-table">
+                    <!-- Table Header with Scrollbar -->
+                    <div class="student-fee-table-wrapper" id="headerTableWrapper">
+                        <table class="divide-y divide-gray-200 dark:divide-gray-700 student-fee-table" id="headerTable">
                             <thead class="bg-gray-50 dark:bg-gray-700">
                                 <tr>
                                     <th class="fee-sticky-col fee-sticky-col-1 px-4 py-3 text-left text-xs font-semibold text-gray-600 dark:text-gray-300 whitespace-nowrap bg-gray-50 dark:bg-gray-700">{{ __('finance.No.') }}</th>
@@ -307,6 +308,12 @@
                                     <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 dark:text-gray-300 whitespace-nowrap">{{ __('finance.Actions') }}</th>
                                 </tr>
                             </thead>
+                        </table>
+                    </div>
+
+                    <!-- Table Body with Scrollbar -->
+                    <div class="student-fee-table-wrapper" id="mainTableWrapper" style="overflow-y: visible;">
+                        <table class="divide-y divide-gray-200 dark:divide-gray-700 student-fee-table" id="mainTable">
                             <tbody class="divide-y divide-gray-200 dark:divide-gray-700">
                                 @forelse($unpaidInvoices as $index => $invoice)
                                     @php
@@ -360,9 +367,10 @@
                                                         title="{{ __('finance.View Payment History') }}">
                                                     <i class="fas fa-history"></i>
                                                 </button>
-                                                <form method="POST" action="{{ route('student-fees.students.reinform', $student) }}" class="inline">
+                                                <form method="POST" action="{{ route('student-fees.students.reinform', $student) }}" class="inline" id="reminder-form-{{ $student->id }}">
                                                     @csrf
-                                                    <button type="submit" class="action-btn" title="{{ __('finance.Send Reminder') }}" onclick="return confirm('{{ __('finance.Send payment reminder to guardian?') }}')">
+                                                    <button type="button" class="action-btn" title="{{ __('finance.Send Reminder') }}" 
+                                                        onclick="confirmAction('{{ route('student-fees.students.reinform', $student) }}', '{{ __('finance.Send Reminder') }}', '{{ __('finance.Send payment reminder to guardian?') }}', '{{ __('finance.Send Reminder') }}')">
                                                         <i class="fas fa-bell"></i>
                                                     </button>
                                                 </form>
@@ -2233,7 +2241,7 @@
                     const printWindow = window.open('', '_blank');
                     
                     // Get school info from settings
-                    const schoolLogo = '{{ asset("images/school-logo.jpg") }}';
+                    const schoolLogo = '{{ asset("images/school-logo.png") }}';
                     
                     // Helper function to convert numbers to Myanmar words
                     function numberToMyanmarWords(num) {
@@ -2943,5 +2951,63 @@
         function closeInvoiceHistoryModal() {
             document.getElementById('invoiceHistoryModal').classList.add('hidden');
         }
+
+        function confirmAction(url, title, message, confirmText) {
+            if (typeof Alpine !== 'undefined') {
+                window.dispatchEvent(new CustomEvent('confirm-show', {
+                    detail: {
+                        title: title,
+                        message: message,
+                        confirmText: confirmText,
+                        cancelText: '{{ __('finance.Cancel') }}',
+                        onConfirm: () => {
+                            const form = document.createElement('form');
+                            form.method = 'POST';
+                            form.action = url;
+                            form.innerHTML = '@csrf';
+                            document.body.appendChild(form);
+                            form.submit();
+                        }
+                    }
+                }));
+            } else {
+                if (confirm(message)) {
+                    const form = document.createElement('form');
+                    form.method = 'POST';
+                    form.action = url;
+                    form.innerHTML = '@csrf';
+                    document.body.appendChild(form);
+                    form.submit();
+                }
+            }
+        }
+
+        // Sync scrollbars between header and body tables
+        document.addEventListener('DOMContentLoaded', function() {
+            const headerWrapper = document.getElementById('headerTableWrapper');
+            const mainWrapper = document.getElementById('mainTableWrapper');
+
+            if (headerWrapper && mainWrapper) {
+                // Sync scroll from header to body
+                let isHeaderScrolling = false;
+                headerWrapper.addEventListener('scroll', function() {
+                    if (!isHeaderScrolling) {
+                        isHeaderScrolling = true;
+                        mainWrapper.scrollLeft = headerWrapper.scrollLeft;
+                        setTimeout(() => { isHeaderScrolling = false; }, 10);
+                    }
+                });
+
+                // Sync scroll from body to header
+                let isMainScrolling = false;
+                mainWrapper.addEventListener('scroll', function() {
+                    if (!isMainScrolling) {
+                        isMainScrolling = true;
+                        headerWrapper.scrollLeft = mainWrapper.scrollLeft;
+                        setTimeout(() => { isMainScrolling = false; }, 10);
+                    }
+                });
+            }
+        });
     </script>
 </x-app-layout>

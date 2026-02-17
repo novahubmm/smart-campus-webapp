@@ -471,8 +471,13 @@ Route::prefix('v1')->group(function () {
                 // Announcements
                 Route::get('/announcements', [GuardianAnnouncementController::class, 'index']);
                 Route::get('/announcements/recent', [GuardianDashboardController::class, 'recentAnnouncements']);
+                Route::get('/announcements/calendar', [GuardianAnnouncementController::class, 'calendar']);
+                Route::post('/announcements/mark-all-read', [GuardianAnnouncementController::class, 'markAllAsRead']);
                 Route::get('/announcements/{announcement_id}', [GuardianAnnouncementController::class, 'show']);
                 Route::post('/announcements/{announcement_id}/read', [GuardianAnnouncementController::class, 'markAsRead']);
+                Route::put('/announcements/{announcement_id}/unread', [GuardianAnnouncementController::class, 'markAsUnread']);
+                Route::put('/announcements/{announcement_id}/pin', [GuardianAnnouncementController::class, 'pinAnnouncement']);
+                Route::put('/announcements/{announcement_id}/unpin', [GuardianAnnouncementController::class, 'unpinAnnouncement']);
 
                 // Fees & Payments
                 Route::prefix('fees')->group(function () {
@@ -638,9 +643,13 @@ Route::prefix('v1')->group(function () {
 
             // Announcements (Old)
             Route::get('/announcements', [GuardianAnnouncementController::class, 'index']);
+            Route::get('/announcements/calendar', [GuardianAnnouncementController::class, 'calendar']);
+            Route::post('/announcements/mark-all-read', [GuardianAnnouncementController::class, 'markAllAsRead']);
             Route::get('/announcements/{id}', [GuardianAnnouncementController::class, 'show']);
             Route::post('/announcements/{id}/read', [GuardianAnnouncementController::class, 'markAsRead']);
-            Route::post('/announcements/mark-all-read', [GuardianAnnouncementController::class, 'markAllAsRead']);
+            Route::put('/announcements/{id}/unread', [GuardianAnnouncementController::class, 'markAsUnread']);
+            Route::put('/announcements/{id}/pin', [GuardianAnnouncementController::class, 'pinAnnouncement']);
+            Route::put('/announcements/{id}/unpin', [GuardianAnnouncementController::class, 'unpinAnnouncement']);
 
             // Fees & Payments (Old)
             Route::prefix('fees')->group(function () {

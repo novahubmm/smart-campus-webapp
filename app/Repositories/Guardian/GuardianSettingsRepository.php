@@ -80,7 +80,7 @@ class GuardianSettingsRepository implements GuardianSettingsRepositoryInterface
         $contactInfo = [
             'phone' => $setting->school_phone ?? '+959123456789',
             'email' => $setting->school_email ?? 'info@khinshinthar.edu',
-            'website' => $setting->school_website ?? 'https://khinshinthar.edu',
+            'website' => $setting->school_website ?? 'https://yarkhinshinthar.edu',
             'address' => $setting->school_address ?? '123 Education Road, Yangon',
             'address_mm' => $setting->school_address ?? 'ပညာရေးလမ်း ၁၂၃၊ ရန်ကုန်',
             'office_hours' => $setting->office_start_time && $setting->office_end_time 
@@ -92,7 +92,7 @@ class GuardianSettingsRepository implements GuardianSettingsRepositoryInterface
         // Build about info
         $aboutInfo = [
             'description' => $setting->school_about_us ?? 'Khinn Shin Thar High School is a leading educational institution committed to excellence in education.',
-            'description_mm' => 'ခင်ရှင်သာ အထက်တန်းကျောင်းသည် ထိပ်တန်းပညာရေးအဖွဲ့အစည်း ဖြစ်ပါသည်။',
+            'description_mm' => $setting->school_about_us_mm ?? 'ခင်ရှင်သာ အထက်တန်းကျောင်းသည် ထိပ်တန်းပညာရေးအဖွဲ့အစည်း ဖြစ်ပါသည်။',
             'vision' => $setting->vision ?? 'To be the premier educational institution providing world-class education.',
             'vision_mm' => $setting->vision_mm ?? 'ထိပ်တန်းပညာရေးအဖွဲ့အစည်း ဖြစ်လာရန်',
             'mission' => $setting->mission ?? 'To provide quality education and nurture future leaders.',
@@ -189,12 +189,12 @@ class GuardianSettingsRepository implements GuardianSettingsRepositoryInterface
             'total_staff' => $totalStaff,
             'total_classes' => $totalClasses,
             'student_teacher_ratio' => $studentTeacherRatio,
-            'pass_rate' => 98.5,
-            'average_attendance' => 95.2,
+            'pass_rate' => $setting->pass_rate ?? 98.5,
+            'average_attendance' => $setting->average_attendance ?? 95.2,
         ];
 
-        // Build accreditations
-        $accreditations = [
+        // Build accreditations - use from database or default
+        $accreditations = $setting->accreditations ?? [
             [
                 'name' => 'Ministry of Education',
                 'name_mm' => 'ပညာရေးဝန်ကြီးဌာန',
@@ -216,7 +216,7 @@ class GuardianSettingsRepository implements GuardianSettingsRepositoryInterface
             'school_name' => $setting->school_name ?? 'Khinn Shin Thar High School',
             'school_name_mm' => $setting->school_name_mm ?? 'ခင်ရှင်သာ အထက်တန်းကျောင်း',
             'school_code' => $setting->school_code ?? 'SCHS-001',
-            'logo_url' => $setting->school_logo_path ? url($setting->school_logo_path) : url('/school-logo.jpg'),
+            'logo_url' => $setting->school_logo_path ? url($setting->school_logo_path) : url('/school-logo.png'),
             'established_year' => $setting->established_year ?? 1995,
             'motto' => $setting->motto ?? 'Excellence in Education',
             'motto_mm' => $setting->motto_mm ?? 'ပညာရေးတွင် ထူးချွန်မှု',

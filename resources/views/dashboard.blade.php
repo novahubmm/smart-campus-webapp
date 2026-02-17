@@ -32,7 +32,7 @@
             <div class="flex-1 p-6 bg-emerald-600 dark:bg-emerald-700 flex items-center justify-center school-logo">
                 @php
                     $schoolLogo = $setting?->school_logo_path;
-                    $logoUrl = $schoolLogo ? asset('storage/'.$schoolLogo) : asset('school-logo.jpg');
+                    $logoUrl = $schoolLogo ? asset('storage/'.$schoolLogo) : asset('school-logo.png');
                 @endphp
                 <img src="{{ $logoUrl }}" class="school-banner-logo drop-shadow-lg" alt="School Logo">
             </div>

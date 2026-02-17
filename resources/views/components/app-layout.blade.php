@@ -22,8 +22,8 @@
         <title>{{ config('app.name', 'Smart Campus') }}</title>
 
         <!-- Favicon -->
-        <link rel="icon" type="image/jpeg" href="{{ asset('school-logo.jpg') }}">
-        <link rel="alternate icon" href="{{ asset('school-logo.jpg') }}">
+        <link rel="icon" type="image/jpeg" href="{{ asset('school-logo.png') }}">
+        <link rel="alternate icon" href="{{ asset('school-logo.png') }}">
 
         <!-- Fonts - with Google Fonts fallback -->
         <link rel="preconnect" href="https://fonts.googleapis.com">

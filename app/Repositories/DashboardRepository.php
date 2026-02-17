@@ -37,26 +37,30 @@ class DashboardRepository implements DashboardRepositoryInterface
 
     public function getFeeCollectionPercent(): float
     {
-        if (!Schema::hasTable('student_fees')) {
+        if (!Schema::hasTable('invoices')) {
             return 0.0;
         }
 
         $startOfMonth = Date::now()->startOfMonth();
         $endOfMonth = Date::now()->endOfMonth();
 
-        $due = DB::table('student_fees')
-            ->whereBetween('due_date', [$startOfMonth, $endOfMonth])
-            ->sum('amount_due');
+        // Get total amount due for this month (from invoices)
+        $totalDue = DB::table('invoices')
+            ->whereBetween('invoice_date', [$startOfMonth, $endOfMonth])
+            ->whereNull('deleted_at')
+            ->sum('total_amount');
 
-        $paid = DB::table('student_fees')
-            ->whereBetween('due_date', [$startOfMonth, $endOfMonth])
-            ->sum(DB::raw('COALESCE(amount_paid, 0)'));
+        // Get total amount paid for this month (from invoices)
+        $totalPaid = DB::table('invoices')
+            ->whereBetween('invoice_date', [$startOfMonth, $endOfMonth])
+            ->whereNull('deleted_at')
+            ->sum('paid_amount');
 
-        if ($due <= 0) {
+        if ($totalDue <= 0) {
             return 0.0;
         }
 
-        return round(min(100, ($paid / $due) * 100), 1);
+        return round(min(100, ($totalPaid / $totalDue) * 100), 1);
     }
 
     public function getUpcomingEvents(int $limit = 5): Collection

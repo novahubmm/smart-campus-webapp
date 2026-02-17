@@ -85,6 +85,7 @@ class SalaryPayrollController extends Controller
 
             return [
                 'record' => $record,
+                'profile' => $profile,
                 'employee_name' => $profile?->user?->name ?? __('Employee'),
                 'position' => $profile?->position ?? '-',
                 'department' => $profile?->department?->name ?? '-',
@@ -94,9 +95,10 @@ class SalaryPayrollController extends Controller
         // Build history entries for Alpine.js (flatten the data)
         $historyEntriesJson = collect($historyEntries)->map(function ($item) {
             $record = $item['record'];
+            $profile = $item['profile'];
             return [
                 'employee_type' => $record->employee_type,
-                'employee_id' => $record->employee_id,
+                'employee_id' => $profile?->employee_id ?? $record->employee_id,
                 'employee_name' => $item['employee_name'],
                 'position' => $item['position'],
                 'department' => $item['department'],
