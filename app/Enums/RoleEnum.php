@@ -4,6 +4,7 @@ namespace App\Enums;
 
 enum RoleEnum: string
 {
+    case SYSTEM_ADMIN = 'system_admin';
     case ADMIN = 'admin';
     case STAFF = 'staff';
     case TEACHER = 'teacher';
@@ -24,6 +25,7 @@ enum RoleEnum: string
     public function label(): string
     {
         return match ($this) {
+            self::SYSTEM_ADMIN => 'System Administrator',
             self::ADMIN => 'Administrator',
             self::STAFF => 'Staff',
             self::TEACHER => 'Teacher',
