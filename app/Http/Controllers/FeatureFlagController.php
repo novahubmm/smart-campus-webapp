@@ -14,8 +14,6 @@ class FeatureFlagController extends Controller
     public function __construct(FeatureService $featureService)
     {
         $this->featureService = $featureService;
-        $this->middleware('auth');
-        $this->middleware('role:system_admin');
     }
 
     /**

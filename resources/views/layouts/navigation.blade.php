@@ -227,17 +227,7 @@
                 <x-nav-link :href="route('feedback.create')" label="{{ __('navigation.Submit Feedback') }}" icon="fas fa-comment-dots" :active="(bool) request()->routeIs('feedback.*')" />
             </div>
             @endcan
-            @can('view system management')
-            <div class="space-y-2">
-                <p class="text-[10px] font-semibold tracking-[0.18em] text-gray-500 dark:text-gray-400 uppercase px-3">{{ __('navigation.System') }}</p>
-                @can('manage roles')
-                    <x-nav-link :href="route('roles.index')" label="{{ __('navigation.Roles') }}" icon="fas fa-user-shield" :active="(bool) request()->routeIs('roles.*')" />
-                @endcan
-                @can('manage permissions')
-                    <x-nav-link :href="route('permissions.index')" label="{{ __('navigation.Permissions') }}" icon="fas fa-lock" :active="(bool) request()->routeIs('permissions.*')" />
-                @endcan
-            </div>
-            @endcan
+
             @role('system_admin')
             <div class="space-y-2">
                 <p class="text-[10px] font-semibold tracking-[0.18em] text-gray-500 dark:text-gray-400 uppercase px-3">{{ __('navigation.System Administration') }}</p>
