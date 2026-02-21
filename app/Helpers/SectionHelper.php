@@ -86,7 +86,13 @@ class SectionHelper
      */
     public static function formatFullClassName(string $className, $gradeLevel = null): string
     {
+        // First, try to extract section from the class name
         $section = self::extractSection($className);
+        
+        // If no section found and className is just a single letter, use it as the section
+        if ($section === null && preg_match('/^[A-Za-z]$/', trim($className))) {
+            $section = strtoupper(trim($className));
+        }
         
         // If grade level not provided, try to extract from class name
         if ($gradeLevel === null) {

@@ -31,7 +31,6 @@ class Event extends Model
     protected $casts = [
         'start_date' => 'date',
         'end_date' => 'date',
-        'status' => 'boolean',
     ];
 
     public function category()
@@ -51,11 +50,21 @@ class Event extends Model
 
     public function scopeUpcoming($query)
     {
-        return $query->where('start_date', '>=', now())->where('status', true);
+        return $query->where('status', 'upcoming');
+    }
+
+    public function scopeOngoing($query)
+    {
+        return $query->where('status', 'ongoing');
+    }
+
+    public function scopeCompleted($query)
+    {
+        return $query->where('status', 'completed');
     }
 
     public function scopeActive($query)
     {
-        return $query->where('status', true);
+        return $query->whereIn('status', ['upcoming', 'ongoing']);
     }
 }

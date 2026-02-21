@@ -4,7 +4,7 @@ namespace App\Repositories\Guardian;
 
 use App\Interfaces\Guardian\GuardianFeeRepositoryInterface;
 use App\Models\Invoice;
-use App\Models\Payment;
+use App\Models\PaymentSystem\Payment;
 use App\Models\StudentProfile;
 use Carbon\Carbon;
 use Illuminate\Pagination\LengthAwarePaginator;

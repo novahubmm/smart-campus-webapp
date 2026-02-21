@@ -84,12 +84,23 @@ class PaymentController extends Controller
     public function submitPayment(Request $request, string $studentId): JsonResponse
     {
         try {
+            // Calculate max months based on student's batch end date
+            $maxMonths = 12; // Default fallback
+            $student = StudentProfile::with('batch')->find($studentId);
+            
+            if ($student && $student->batch && $student->batch->end_date) {
+                $now = now();
+                $batchEndDate = $student->batch->end_date;
+                $monthsUntilEnd = $now->diffInMonths($batchEndDate);
+                $maxMonths = max(1, ceil($monthsUntilEnd)); // At least 1 month
+            }
+            
             $validator = Validator::make($request->all(), [
                 'invoice_ids' => 'required|array|min:1',
                 'invoice_ids.*' => 'required|string',
                 'payment_method_id' => 'required|string|exists:payment_methods,id',
                 'payment_amount' => 'required|numeric|min:0',
-                'payment_months' => 'required|integer|min:1|max:12',
+                'payment_months' => "required|integer|min:1|max:{$maxMonths}",
                 'payment_date' => 'required|date|date_format:Y-m-d',
                 'receipt_image' => 'required|string',
                 'notes' => 'nullable|string|max:500',

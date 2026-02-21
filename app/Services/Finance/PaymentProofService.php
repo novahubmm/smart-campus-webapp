@@ -2,7 +2,7 @@
 
 namespace App\Services\Finance;
 
-use App\Models\Payment;
+use App\Models\PaymentSystem\Payment;
 use App\Models\PaymentProof;
 use App\Repositories\Finance\InvoiceRepository;
 use App\Repositories\Finance\PaymentProofRepository;

@@ -23,6 +23,7 @@ class StoreFeeStructureRequest extends FormRequest
             'applicable_from' => ['nullable', 'date'],
             'applicable_to' => ['nullable', 'date', 'after_or_equal:applicable_from'],
             'status' => ['sometimes', 'boolean'],
+            'supports_payment_period' => ['sometimes', 'boolean'],
         ];
     }
 }

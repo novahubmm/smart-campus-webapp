@@ -15,9 +15,6 @@ class Subject extends Model
         'code',
         'name',
         'subject_type_id',
-        'icon',
-        'icon_color',
-        'progress_color',
     ];
 
     // Relationships

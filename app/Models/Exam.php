@@ -91,7 +91,31 @@ class Exam extends Model
      */
     public function scopeActive($query)
     {
-        return $query->where('status', true);
+        return $query->whereIn('status', ['upcoming', 'ongoing']);
+    }
+
+    /**
+     * Scope to get upcoming exams.
+     */
+    public function scopeUpcoming($query)
+    {
+        return $query->where('status', 'upcoming');
+    }
+
+    /**
+     * Scope to get ongoing exams.
+     */
+    public function scopeOngoing($query)
+    {
+        return $query->where('status', 'ongoing');
+    }
+
+    /**
+     * Scope to get completed exams.
+     */
+    public function scopeCompleted($query)
+    {
+        return $query->where('status', 'completed');
     }
 
     /**

@@ -117,7 +117,7 @@
                             </tr>
                             <tr>
                                 <th class="w-48 px-4 py-3 text-left font-semibold text-gray-600 dark:text-gray-400 bg-gray-50 dark:bg-gray-900/50">{{ __('student_profiles.Current Class') }}</th>
-                                <td class="px-4 py-3 text-gray-900 dark:text-gray-100">{{ $studentProfile->classModel?->name ?? '—' }}</td>
+                                <td class="px-4 py-3 text-gray-900 dark:text-gray-100">{{ $studentProfile->formatted_class_name }}</td>
                             </tr>
                             <tr>
                                 <th class="w-48 px-4 py-3 text-left font-semibold text-gray-600 dark:text-gray-400 bg-gray-50 dark:bg-gray-900/50">{{ __('student_profiles.Previous Grade') }}</th>
@@ -265,6 +265,62 @@
                             </tr>
                         </tbody>
                     </table>
+                </div>
+            </div>
+
+            <!-- Guardian Information Section -->
+            <div class="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl shadow-sm">
+                <div class="flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-700">
+                    <h4 class="flex items-center gap-2 text-base font-semibold text-gray-900 dark:text-white">
+                        <i class="fas fa-user-shield text-blue-500"></i>
+                        {{ __('student_profiles.Guardian Information') }}
+                    </h4>
+                </div>
+                <div class="overflow-x-auto">
+                    @if($studentProfile->guardians && $studentProfile->guardians->count() > 0)
+                        <table class="w-full text-sm">
+                            <tbody class="divide-y divide-gray-200 dark:divide-gray-700">
+                                @foreach($studentProfile->guardians as $index => $guardian)
+                                    @if($index > 0)
+                                        <tr>
+                                            <td colspan="2" class="px-4 py-2 bg-gray-100 dark:bg-gray-900/30"></td>
+                                        </tr>
+                                    @endif
+                                    <tr>
+                                        <th class="w-48 px-4 py-3 text-left font-semibold text-gray-600 dark:text-gray-400 bg-gray-50 dark:bg-gray-900/50">{{ __('student_profiles.Name') }}</th>
+                                        <td class="px-4 py-3 text-gray-900 dark:text-gray-100">{{ $guardian->user->name }}</td>
+                                    </tr>
+                                    <tr>
+                                        <th class="w-48 px-4 py-3 text-left font-semibold text-gray-600 dark:text-gray-400 bg-gray-50 dark:bg-gray-900/50">{{ __('student_profiles.Email address') }}</th>
+                                        <td class="px-4 py-3 text-gray-900 dark:text-gray-100">{{ $guardian->user->email }}</td>
+                                    </tr>
+                                    <tr>
+                                        <th class="w-48 px-4 py-3 text-left font-semibold text-gray-600 dark:text-gray-400 bg-gray-50 dark:bg-gray-900/50">{{ __('student_profiles.Phone number') }}</th>
+                                        <td class="px-4 py-3 text-gray-900 dark:text-gray-100">{{ $guardian->user->phone ?? '—' }}</td>
+                                    </tr>
+                                    <tr>
+                                        <th class="w-48 px-4 py-3 text-left font-semibold text-gray-600 dark:text-gray-400 bg-gray-50 dark:bg-gray-900/50">{{ __('student_profiles.Relationship type') }}</th>
+                                        <td class="px-4 py-3 text-gray-900 dark:text-gray-100">
+                                            @if($guardian->pivot && $guardian->pivot->relationship)
+                                                <span class="capitalize">{{ $guardian->pivot->relationship }}</span>
+                                            @else
+                                                —
+                                            @endif
+                                        </td>
+                                    </tr>
+                                @endforeach
+                            </tbody>
+                        </table>
+                    @else
+                        <table class="w-full text-sm">
+                            <tbody class="divide-y divide-gray-200 dark:divide-gray-700">
+                                <tr>
+                                    <th class="w-48 px-4 py-3 text-left font-semibold text-gray-600 dark:text-gray-400 bg-gray-50 dark:bg-gray-900/50">{{ __('student_profiles.Guardian') }}</th>
+                                    <td class="px-4 py-3 text-gray-900 dark:text-gray-100">—</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    @endif
                 </div>
             </div>
         </div>

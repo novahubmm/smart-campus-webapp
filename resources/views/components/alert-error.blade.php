@@ -1,19 +1,42 @@
 @props(['message' => null])
 
+<!-- Modal Error Alert -->
 <div
-    x-data="{ show: true }"
+    x-data="{ show: false, message: '{{ $message }}' }"
     x-show="show"
-    x-init="setTimeout(() => show = false, 7000)"
-    class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-4"
+    x-cloak
+    @show-error.window="show = true; message = $event.detail.message"
+    class="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-50 p-4"
+    style="display: none;"
+    @click.self="show = false"
+    @keydown.escape.window="show = false"
 >
-    <div class="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 text-red-800 dark:text-red-200 px-4 py-3 rounded-lg relative flex items-start gap-3">
-        <span class="inline-flex items-center justify-center w-8 h-8 rounded-full bg-red-100 dark:bg-red-800 text-red-700 dark:text-red-200">
-            <i class="fas fa-exclamation-circle"></i>
-        </span>
-        <span class="block text-sm sm:text-base">{{ $message ?? $slot }}</span>
-        <button @click="show = false" class="absolute top-2 right-2 text-red-600 dark:text-red-300 hover:text-red-800 dark:hover:text-red-100">
-            <span class="sr-only">{{ __('components.Close') }}</span>
-            <i class="fas fa-times text-sm"></i>
-        </button>
+    <div class="bg-gray-800 rounded-xl shadow-2xl max-w-lg w-full p-6"
+         @click.stop
+         x-transition:enter="transition ease-out duration-300"
+         x-transition:enter-start="opacity-0 transform scale-90"
+         x-transition:enter-end="opacity-100 transform scale-100"
+         x-transition:leave="transition ease-in duration-200"
+         x-transition:leave-start="opacity-100 transform scale-100"
+         x-transition:leave-end="opacity-0 transform scale-90">
+        
+        <!-- Header with icon and title -->
+        <div class="flex items-center gap-3 mb-4">
+            <div class="w-12 h-12 rounded-full flex items-center justify-center flex-shrink-0 bg-red-900">
+                <i class="fas fa-exclamation-circle text-white text-xl"></i>
+            </div>
+            <h3 class="text-xl font-semibold text-white">Error</h3>
+        </div>
+        
+        <!-- Message -->
+        <p class="text-gray-300 text-sm leading-relaxed mb-6" x-text="message">{{ $message ?? $slot }}</p>
+        
+        <!-- Button container aligned to right -->
+        <div class="flex justify-end">
+            <button @click="show = false"
+                    class="bg-red-600 hover:bg-red-700 text-white font-semibold py-2.5 px-8 rounded-lg transition-colors">
+                OK
+            </button>
+        </div>
     </div>
 </div>

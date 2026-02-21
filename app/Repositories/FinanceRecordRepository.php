@@ -8,7 +8,7 @@ use App\DTOs\Finance\IncomeData;
 use App\Interfaces\FinanceRecordRepositoryInterface;
 use App\Models\Expense;
 use App\Models\Income;
-use App\Models\Payment;
+use App\Models\PaymentSystem\Payment;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Collection;
@@ -73,25 +73,29 @@ class FinanceRecordRepository implements FinanceRecordRepositoryInterface
     public function listStudentPayments(FinanceFilterData $filter): LengthAwarePaginator
     {
         $query = Payment::query()
-            ->with(['student.grade', 'student.classModel'])
-            ->where('status', true)
+            ->with(['invoice.student.user', 'invoice.student.grade', 'invoice.student.classModel', 'paymentMethod'])
+            ->where('status', 'verified')
+            ->whereHas('invoice', function ($q) {
+                $q->whereNotNull('batch_id');
+            })
             ->latest('payment_date');
 
         $this->applyCommonFilters($query, $filter, 'payment_date');
 
         if ($filter->paymentMethod) {
-            $query->where('payment_method', $filter->paymentMethod);
+            $query->where('payment_method_id', $filter->paymentMethod);
         }
 
         if ($filter->search) {
             $search = $filter->search;
             $query->where(function (Builder $builder) use ($search) {
                 $builder->where('payment_number', 'like', "%{$search}%")
-                    ->orWhere('transaction_id', 'like', "%{$search}%")
-                    ->orWhere('reference_number', 'like', "%{$search}%")
-                    ->orWhereHas('student', function (Builder $studentQuery) use ($search) {
-                        $studentQuery->where('name', 'like', "%{$search}%")
-                            ->orWhere('student_identifier', 'like', "%{$search}%");
+                    ->orWhere('notes', 'like', "%{$search}%")
+                    ->orWhereHas('invoice.student.user', function (Builder $userQuery) use ($search) {
+                        $userQuery->where('name', 'like', "%{$search}%");
+                    })
+                    ->orWhereHas('invoice.student', function (Builder $studentQuery) use ($search) {
+                        $studentQuery->where('student_identifier', 'like', "%{$search}%");
                     });
             });
         }
@@ -279,8 +283,11 @@ class FinanceRecordRepository implements FinanceRecordRepositoryInterface
 
         // Get daily student fee payments
         $dailyFees = Payment::query()
-            ->where('status', true)
-            ->selectRaw('DATE(payment_date) as date, SUM(amount) as total')
+            ->where('status', 'verified')
+            ->whereHas('invoice', function ($q) {
+                $q->whereNotNull('batch_id');
+            })
+            ->selectRaw('DATE(payment_date) as date, SUM(payment_amount) as total')
             ->when($year, fn($q) => $q->whereYear('payment_date', $year))
             ->when($month, fn($q) => $q->whereMonth('payment_date', $month))
             ->groupBy('date')
@@ -347,10 +354,14 @@ class FinanceRecordRepository implements FinanceRecordRepositoryInterface
 
     private function sumStudentFees(FinanceFilterData $filter): float
     {
-        $query = Payment::query()->where('status', true);
+        $query = Payment::query()
+            ->where('status', 'verified')
+            ->whereHas('invoice', function ($q) {
+                $q->whereNotNull('batch_id');
+            });
         $this->applyCommonFilters($query, $filter, 'payment_date');
 
-        return (float) $query->sum('amount');
+        return (float) $query->sum('payment_amount');
     }
 
     private function sumExpenses(FinanceFilterData $filter): float

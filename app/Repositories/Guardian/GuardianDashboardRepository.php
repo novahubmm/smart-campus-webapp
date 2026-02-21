@@ -134,6 +134,7 @@ class GuardianDashboardRepository implements GuardianDashboardRepositoryInterfac
                     ->orWhereNull('target_roles')
                     ->orWhereJsonLength('target_roles', 0);
             })
+            ->with('announcementType')
             ->orderBy('publish_date', 'desc')
             ->limit($limit)
             ->get();
@@ -143,7 +144,6 @@ class GuardianDashboardRepository implements GuardianDashboardRepositoryInterfac
                 'id' => $announcement->id,
                 'title' => $announcement->title,
                 'description' => \Illuminate\Support\Str::limit($announcement->content, 100),
-                'category' => $announcement->type ?? 'general',
                 'priority' => $announcement->priority ?? 'normal',
                 'date' => $announcement->publish_date ? $announcement->publish_date->format('Y-m-d') : $announcement->created_at->format('Y-m-d'),
                 'is_read' => false, // TODO: Implement read tracking

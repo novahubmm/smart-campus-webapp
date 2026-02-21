@@ -225,6 +225,29 @@ class AcademicRepository implements AcademicRepositoryInterface
         return SchoolClass::count();
     }
 
+    public function getClasses()
+        {
+            return SchoolClass::with(['grade', 'room', 'teacher.user'])
+                ->select('classes.*')
+                ->selectSub(function ($query) {
+                    $query->from('student_profiles')
+                        ->selectRaw('count(distinct student_profiles.id)')
+                        ->leftJoin('student_class', function ($join) {
+                            $join->on('student_class.student_id', '=', 'student_profiles.id')
+                                ->whereColumn('student_class.class_id', 'classes.id');
+                        })
+                        ->where(function ($where) {
+                            $where->whereColumn('student_profiles.class_id', 'classes.id')
+                                ->orWhereNotNull('student_class.class_id');
+                        });
+                }, 'students_count')
+                ->join('grades', 'classes.grade_id', '=', 'grades.id')
+                ->orderBy('grades.level')
+                ->orderBy('classes.name')
+                ->paginate(10, ['*'], 'classes_page')
+                ->withQueryString();
+        }
+
     public function getRoomsCount(): int
     {
         return Room::count();
@@ -263,35 +286,24 @@ class AcademicRepository implements AcademicRepositoryInterface
                     ->whereNull('student_profiles.deleted_at');
             }, 'students_count')
             ->with(['batch', 'gradeCategory'])
+            ->whereNotNull('batch_id') // Exclude orphaned grades
             ->orderBy('level')
             ->paginate(10, ['*'], 'grades_page')
             ->withQueryString();
     }
 
-    public function getClasses()
-    {
-        return SchoolClass::with(['grade', 'room', 'teacher.user'])
-            ->select('classes.*')
-            ->selectSub(function ($query) {
-                $query->from('student_profiles')
-                    ->selectRaw('count(distinct student_profiles.id)')
-                    ->leftJoin('student_class', function ($join) {
-                        $join->on('student_class.student_id', '=', 'student_profiles.id')
-                            ->whereColumn('student_class.class_id', 'classes.id');
-                    })
-                    ->where(function ($where) {
-                        $where->whereColumn('student_profiles.class_id', 'classes.id')
-                            ->orWhereNotNull('student_class.class_id');
-                    });
-            }, 'students_count')
-            ->orderBy('name')
-            ->paginate(10, ['*'], 'classes_page')
-            ->withQueryString();
-    }
-
     public function getRoomsWithCounts()
     {
-        return Room::withCount('classes')->with('classes')->orderBy('name')->paginate(10, ['*'], 'rooms_page')->withQueryString();
+        return Room::withCount('classes')
+            ->with(['classes' => function ($query) {
+                $query->join('grades', 'classes.grade_id', '=', 'grades.id')
+                      ->orderBy('grades.level', 'asc')
+                      ->orderBy('classes.name', 'asc')
+                      ->select('classes.*');
+            }, 'classes.grade'])
+            ->orderBy('name')
+            ->paginate(10, ['*'], 'rooms_page')
+            ->withQueryString();
     }
 
     public function getSubjectsWithCounts()

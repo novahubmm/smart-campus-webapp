@@ -86,9 +86,8 @@
                             <label class="text-xs font-semibold text-gray-600 dark:text-gray-400">{{ __('events.Status') }}</label>
                             <select name="status" class="rounded-lg border-gray-300 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-200 text-sm focus:border-indigo-500 focus:ring-indigo-500">
                                 <option value="all">{{ __('events.All Status') }}</option>
-                                <option value="active" @selected($filter->status === 'active')>{{ __('events.Active') }}</option>
-                                <option value="inactive" @selected($filter->status === 'inactive')>{{ __('events.Inactive') }}</option>
                                 <option value="upcoming" @selected($filter->status === 'upcoming')>{{ __('events.Upcoming') }}</option>
+                                <option value="ongoing" @selected($filter->status === 'ongoing')>{{ __('events.Ongoing') }}</option>
                                 <option value="completed" @selected($filter->status === 'completed')>{{ __('events.Completed') }}</option>
                             </select>
                         </div>
@@ -143,15 +142,14 @@
                                     </td>
                                     <td class="px-4 py-3 text-sm text-gray-700 dark:text-gray-300">{{ $event->venue ?? '—' }}</td>
                                     <td class="px-4 py-3">
-                                        @php $isUpcoming = $event->start_date && $event->start_date->isFuture(); $isCompleted = $event->end_date && $event->end_date->isPast(); @endphp
-                                        @if(!$event->status)
-                                            <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-semibold bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300">{{ __('events.Inactive') }}</span>
-                                        @elseif($isCompleted)
-                                            <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-semibold bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-100">{{ __('events.Completed') }}</span>
-                                        @elseif($isUpcoming)
+                                        @if($event->status === 'upcoming')
                                             <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-semibold bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-100">{{ __('events.Upcoming') }}</span>
+                                        @elseif($event->status === 'ongoing')
+                                            <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-semibold bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-100">{{ __('events.Ongoing') }}</span>
+                                        @elseif($event->status === 'completed')
+                                            <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-semibold bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-100">{{ __('events.Completed') }}</span>
                                         @else
-                                            <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-semibold bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-100">{{ __('events.Active') }}</span>
+                                            <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-semibold bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300">{{ __('events.Unknown') }}</span>
                                         @endif
                                     </td>
                                     <td class="px-4 py-3">
@@ -377,10 +375,13 @@
                                 <label class="block text-sm font-semibold text-gray-700 dark:text-gray-200 mb-1">{{ __('events.Description') }}</label>
                                 <textarea name="description" rows="3" class="w-full rounded-lg border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200 focus:border-indigo-500 focus:ring-indigo-500" x-model="eventForm.description"></textarea>
                             </div>
-                            <div class="flex items-center gap-2">
-                                <input type="hidden" name="status" value="0">
-                                <input type="checkbox" id="eventStatus" name="status" value="1" class="rounded border-gray-300 text-indigo-600 focus:ring-indigo-500" x-model="eventForm.status">
-                                <label for="eventStatus" class="text-sm font-medium text-gray-700 dark:text-gray-200">{{ __('events.Active') }}</label>
+                            <div>
+                                <label class="block text-sm font-semibold text-gray-700 dark:text-gray-200 mb-1">{{ __('events.Status') }}</label>
+                                <select name="status" class="w-full rounded-lg border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200 focus:border-indigo-500 focus:ring-indigo-500" x-model="eventForm.status">
+                                    <option value="upcoming">{{ __('events.Upcoming') }}</option>
+                                    <option value="ongoing">{{ __('events.Ongoing') }}</option>
+                                    <option value="completed">{{ __('events.Completed') }}</option>
+                                </select>
                             </div>
                         </div>
                         <div class="flex items-center justify-end gap-3 p-5 border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900/50 rounded-b-xl">
@@ -401,7 +402,7 @@
             return {
                 modals: { event: false },
                 eventMethod: 'POST', eventAction: '{{ route('events.store') }}',
-                eventForm: { title: '', event_category_id: '', start_date: '', start_time: '', end_date: '', end_time: '', venue: '', description: '', status: true },
+                eventForm: { title: '', event_category_id: '', start_date: '', start_time: '', end_date: '', end_time: '', venue: '', description: '', status: 'upcoming' },
                 calendarView: 'month',
                 currentDate: new Date({{ $monthDate->year }}, {{ $monthDate->month - 1 }}, {{ now()->day }}),
                 hours: [8, 9, 10, 11, 12, 13, 14, 15, 16, 17],
@@ -446,8 +447,8 @@
                 getEventTop(event) { if (!event.start_time) return 0; const [h, m] = event.start_time.split(':').map(Number); return ((h - 8) * 48) + (m / 60 * 48); },
                 prevPeriod() { if (this.calendarView === 'day') this.currentDate = new Date(this.currentDate.getFullYear(), this.currentDate.getMonth(), this.currentDate.getDate() - 1); else if (this.calendarView === 'week') this.currentDate = new Date(this.currentDate.getFullYear(), this.currentDate.getMonth(), this.currentDate.getDate() - 7); else this.currentDate = new Date(this.currentDate.getFullYear(), this.currentDate.getMonth() - 1, 1); },
                 nextPeriod() { if (this.calendarView === 'day') this.currentDate = new Date(this.currentDate.getFullYear(), this.currentDate.getMonth(), this.currentDate.getDate() + 1); else if (this.calendarView === 'week') this.currentDate = new Date(this.currentDate.getFullYear(), this.currentDate.getMonth(), this.currentDate.getDate() + 7); else this.currentDate = new Date(this.currentDate.getFullYear(), this.currentDate.getMonth() + 1, 1); },
-                openEventModal() { this.modals.event = true; this.eventMethod = 'POST'; this.eventAction = '{{ route('events.store') }}'; this.eventForm = { title: '', event_category_id: '', start_date: '', start_time: '', end_date: '', end_time: '', venue: '', description: '', status: true }; },
-                openEditModal(event) { this.modals.event = true; this.eventMethod = 'PUT'; this.eventAction = '{{ url('events') }}/' + event.id; this.eventForm = { title: event.title || '', event_category_id: event.event_category_id || '', start_date: event.start_date ? event.start_date.split('T')[0] : '', start_time: event.start_time || '', end_date: event.end_date ? event.end_date.split('T')[0] : '', end_time: event.end_time || '', venue: event.venue || '', description: event.description || '', status: event.status ? true : false }; },
+                openEventModal() { this.modals.event = true; this.eventMethod = 'POST'; this.eventAction = '{{ route('events.store') }}'; this.eventForm = { title: '', event_category_id: '', start_date: '', start_time: '', end_date: '', end_time: '', venue: '', description: '', status: 'upcoming' }; },
+                openEditModal(event) { this.modals.event = true; this.eventMethod = 'PUT'; this.eventAction = '{{ url('events') }}/' + event.id; this.eventForm = { title: event.title || '', event_category_id: event.event_category_id || '', start_date: event.start_date ? event.start_date.split('T')[0] : '', start_time: event.start_time || '', end_date: event.end_date ? event.end_date.split('T')[0] : '', end_time: event.end_time || '', venue: event.venue || '', description: event.description || '', status: event.status || 'upcoming' }; },
                 closeEventModal() { this.modals.event = false; },
                 submitDelete(id) { 
                     window.dispatchEvent(new CustomEvent('confirm-show', {

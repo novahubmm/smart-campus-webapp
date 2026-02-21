@@ -32,9 +32,6 @@ class AnnouncementController extends Controller
         // Get announcement types from database
         $announcementTypes = AnnouncementType::getActive();
 
-        // Get events for linking
-        $events = \App\Models\Event::orderBy('start_date', 'desc')->where('status',true)->get();
-
         // Get grades for teacher/guardian targeting
         $grades = \App\Models\Grade::orderBy('level')->get();
 
@@ -55,7 +52,6 @@ class AnnouncementController extends Controller
             'participantRoles' => $participantRoles,
             'announcementTypes' => $announcementTypes,
             'priorities' => $priorities,
-            'events' => $events,
             'grades' => $grades,
             'departments' => $departments,
             'stats' => $stats,
@@ -64,7 +60,7 @@ class AnnouncementController extends Controller
 
     public function show(Announcement $announcement): View
     {
-        $announcement->load(['creator', 'announcementType', 'event']);
+        $announcement->load(['creator', 'announcementType']);
 
         // Get grades for display
         $grades = \App\Models\Grade::orderBy('level')->get();

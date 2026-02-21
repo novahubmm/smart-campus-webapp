@@ -8,7 +8,7 @@ use App\DTOs\Finance\InvoiceData;
 use App\DTOs\Finance\PaymentData;
 use App\Models\FeeStructure;
 use App\Models\Invoice;
-use App\Models\Payment;
+use App\Models\PaymentSystem\Payment;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Collection;
 

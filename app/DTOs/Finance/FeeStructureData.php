@@ -15,6 +15,7 @@ class FeeStructureData
         public readonly ?string $applicable_from,
         public readonly ?string $applicable_to,
         public readonly bool $status,
+        public readonly bool $supports_payment_period,
     ) {}
 
     public static function from(array $payload): self
@@ -28,6 +29,7 @@ class FeeStructureData
             applicable_from: Arr::get($payload, 'applicable_from'),
             applicable_to: Arr::get($payload, 'applicable_to'),
             status: (bool) ($payload['status'] ?? true),
+            supports_payment_period: (bool) ($payload['supports_payment_period'] ?? false),
         );
     }
 
@@ -42,6 +44,7 @@ class FeeStructureData
             'applicable_from' => $this->applicable_from,
             'applicable_to' => $this->applicable_to,
             'status' => $this->status,
+            'supports_payment_period' => $this->supports_payment_period,
         ];
     }
 }

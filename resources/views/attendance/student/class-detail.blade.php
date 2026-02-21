@@ -59,15 +59,15 @@
                                 @click="selectedPeriod = tp.id"
                                 :class="selectedPeriod === tp.id 
                                     ? 'bg-blue-600 text-white border-blue-600' 
-                                    : (hasPeriodData(tp.id) 
+                                    : (tp.has_attendance 
                                         ? 'bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-300 border-green-300 dark:border-green-700' 
                                         : 'bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-200 border-gray-300 dark:border-gray-600 hover:border-blue-400')"
                                 class="relative px-4 py-3 rounded-lg border-2 transition-all">
                             <div class="font-semibold" x-text="'P' + tp.period_number + ' - ' + (tp.subject_name || '—')"></div>
                             <div class="text-xs opacity-75" x-text="tp.starts_at + ' - ' + tp.ends_at"></div>
-                            <template x-if="hasPeriodData(tp.id)">
-                                <span class="absolute -top-1 -right-1 w-4 h-4 bg-green-500 rounded-full flex items-center justify-center">
-                                    <i class="fas fa-check text-white text-[8px]"></i>
+                            <template x-if="tp.has_attendance">
+                                <span class="absolute -top-1 -right-1 w-5 h-5 bg-green-500 rounded-full flex items-center justify-center">
+                                    <i class="fas fa-check text-white text-[10px]"></i>
                                 </span>
                             </template>
                         </button>

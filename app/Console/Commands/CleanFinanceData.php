@@ -8,7 +8,7 @@ use App\Models\Grade;
 use App\Models\Invoice;
 use App\Models\InvoiceItem;
 use App\Models\NotificationLog;
-use App\Models\Payment;
+use App\Models\PaymentSystem\Payment;
 use App\Models\PaymentItem;
 use App\Models\PaymentMethod;
 use App\Models\PaymentProof;

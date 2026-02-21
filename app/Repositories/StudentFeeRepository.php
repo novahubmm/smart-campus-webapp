@@ -11,7 +11,7 @@ use App\Models\FeeStructure;
 use App\Models\FeeType;
 use App\Models\Invoice;
 use App\Models\InvoiceItem;
-use App\Models\Payment;
+use App\Models\PaymentSystem\Payment;
 use App\Models\PaymentItem;
 use App\Models\StudentProfile;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
@@ -62,8 +62,10 @@ class StudentFeeRepository implements StudentFeeRepositoryInterface
 
     public function listPayments(FeeFilterData $filter): LengthAwarePaginator
     {
-        $query = Payment::query()
-            ->with(['student.grade', 'student.classModel', 'student.guardians.user', 'collectedBy'])
+        // Use PaymentSystem Payment model for verified payments
+        $query = \App\Models\PaymentSystem\Payment::query()
+            ->where('status', 'verified') // Only show verified (paid) payments
+            ->with(['student.grade', 'student.classModel', 'student.user', 'student.guardians.user', 'paymentMethod', 'feeDetails', 'invoice'])
             ->latest('payment_date');
 
         if ($filter->month && $filter->month !== 'all') {
@@ -80,8 +82,10 @@ class StudentFeeRepository implements StudentFeeRepositoryInterface
 
         if ($filter->search) {
             $query->whereHas('student', function ($q) use ($filter) {
-                $q->where('name', 'like', "%{$filter->search}%")
-                    ->orWhere('student_identifier', 'like', "%{$filter->search}%");
+                $q->whereHas('user', function ($q) use ($filter) {
+                    $q->where('name', 'like', "%{$filter->search}%");
+                })
+                ->orWhere('student_identifier', 'like', "%{$filter->search}%");
             });
         }
 

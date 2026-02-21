@@ -17,7 +17,7 @@ return new class extends Migration
             $table->uuid('batch_id');
             $table->uuid('grade_category_id');
             $table->decimal('price_per_month', 10, 2)->nullable();
-            $table->foreign('batch_id')->references('id')->on('batches')->onDelete('set null');
+            $table->foreign('batch_id')->references('id')->on('batches')->onDelete('cascade');
             $table->foreign('grade_category_id')->references('id')->on('grade_categories')->onDelete('set null');
             $table->timestamps();
             $table->softDeletes();

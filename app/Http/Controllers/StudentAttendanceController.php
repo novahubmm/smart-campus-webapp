@@ -68,21 +68,30 @@ class StudentAttendanceController extends Controller
 
         $timetablePeriods = [];
         if ($timetable) {
-            $timetablePeriods = Period::with(['subject'])
+            $allPeriods = Period::with(['subject'])
                 ->where('timetable_id', $timetable->id)
                 ->where('is_break', false)
                 ->where('day_of_week', $dayKey) // Only check full day format
                 ->orderBy('period_number')
-                ->get()
-                ->map(function ($p) {
-                    return [
-                        'id' => $p->id,
-                        'period_number' => $p->period_number,
-                        'subject_name' => $p->subject?->name,
-                        'starts_at' => format_time($p->starts_at),
-                        'ends_at' => format_time($p->ends_at),
-                    ];
-                })->values()->toArray();
+                ->get();
+            
+            // Get period IDs that have attendance collected for this date
+            $periodsWithAttendance = StudentAttendance::whereIn('period_id', $allPeriods->pluck('id'))
+                ->whereDate('date', $date)
+                ->groupBy('period_id')
+                ->pluck('period_id')
+                ->toArray();
+            
+            $timetablePeriods = $allPeriods->map(function ($p) use ($periodsWithAttendance) {
+                return [
+                    'id' => $p->id,
+                    'period_number' => $p->period_number,
+                    'subject_name' => $p->subject?->name,
+                    'starts_at' => format_time($p->starts_at),
+                    'ends_at' => format_time($p->ends_at),
+                    'has_attendance' => in_array($p->id, $periodsWithAttendance),
+                ];
+            })->values()->toArray();
         }
 
         if ($request->expectsJson()) {
@@ -471,6 +480,26 @@ class StudentAttendanceController extends Controller
         $periodNumber = $validated['period_number'];
         $collectTime = now()->format('H:i:s');
 
+        // Find the period_id based on class, date, and period_number
+        $dateObj = \Carbon\Carbon::parse($date);
+        $dayOfWeek = strtolower($dateObj->format('l')); // Full day name (monday, tuesday, etc.)
+        
+        $timetable = Timetable::where('class_id', $class->id)
+            ->where('is_active', true)
+            ->first();
+        
+        $periodId = null;
+        if ($timetable) {
+            $period = Period::where('timetable_id', $timetable->id)
+                ->where('day_of_week', $dayOfWeek)
+                ->where('period_number', $periodNumber)
+                ->first();
+            
+            if ($period) {
+                $periodId = $period->id;
+            }
+        }
+
         // Prepare data for bulk upsert
         $upsertData = [];
         foreach ($validated['records'] as $record) {
@@ -479,7 +508,7 @@ class StudentAttendanceController extends Controller
                 'student_id' => $record['student_id'],
                 'date' => $date,
                 'period_number' => $periodNumber,
-                'period_id' => null,
+                'period_id' => $periodId, // Now properly set
                 'status' => $record['status'],
                 'remark' => $record['remark'] ?? null,
                 'marked_by' => auth()->id(),
@@ -493,7 +522,7 @@ class StudentAttendanceController extends Controller
         StudentAttendance::upsert(
             $upsertData,
             ['student_id', 'date', 'period_number'],
-            ['status', 'remark', 'marked_by', 'collect_time', 'updated_at']
+            ['period_id', 'status', 'remark', 'marked_by', 'collect_time', 'updated_at']
         );
 
         $this->logActivity('create', 'StudentAttendance', $class->id, "Saved class attendance for period {$periodNumber} on {$date}");

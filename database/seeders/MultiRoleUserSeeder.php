@@ -240,18 +240,28 @@ class MultiRoleUserSeeder extends Seeder
     {
         $this->command->info('Creating students...');
 
-        // Find existing Kindergarten A class
-        $kindergartenA = $this->findExistingClass('Kindergarten A');
+        // Find Kindergarten grade first
+        $kindergartenGrade = Grade::where('level', 0)
+            ->where('batch_id', $this->batch->id)
+            ->first();
+
+        if (!$kindergartenGrade) {
+            $this->command->error('❌ Kindergarten grade not found!');
+            throw new \Exception('Kindergarten grade not found');
+        }
+
+        // Find existing class A in Kindergarten
+        $kindergartenA = $this->findExistingClass('A', $kindergartenGrade->id);
         if (!$kindergartenA) {
-            $this->command->error('❌ Kindergarten A class not found!');
-            throw new \Exception('Kindergarten A class not found');
+            $this->command->error('❌ Kindergarten class A not found!');
+            throw new \Exception('Kindergarten class A not found');
         }
         
-        // Find existing Kindergarten B class
-        $kindergartenB = $this->findExistingClass('Kindergarten B');
+        // Find existing class B in Kindergarten
+        $kindergartenB = $this->findExistingClass('B', $kindergartenGrade->id);
         if (!$kindergartenB) {
-            $this->command->error('❌ Kindergarten B class not found!');
-            throw new \Exception('Kindergarten B class not found');
+            $this->command->error('❌ Kindergarten class B not found!');
+            throw new \Exception('Kindergarten class B not found');
         }
 
         // Create 3 students in Kindergarten A
@@ -285,20 +295,13 @@ class MultiRoleUserSeeder extends Seeder
         $this->command->info('✓ Created ' . count($this->students) . ' students');
     }
 
-    private function findExistingClass(string $className, ?string $gradeLevel = null): ?SchoolClass
+    private function findExistingClass(string $className, ?string $gradeId = null): ?SchoolClass
     {
         $query = SchoolClass::where('name', $className)
             ->where('batch_id', $this->batch->id);
 
-        if ($gradeLevel !== null) {
-            // Find grade first
-            $grade = Grade::where('level', $gradeLevel)
-                ->where('batch_id', $this->batch->id)
-                ->first();
-            
-            if ($grade) {
-                $query->where('grade_id', $grade->id);
-            }
+        if ($gradeId !== null) {
+            $query->where('grade_id', $gradeId);
         }
 
         $class = $query->first();

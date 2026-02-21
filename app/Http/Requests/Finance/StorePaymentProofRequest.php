@@ -23,12 +23,26 @@ class StorePaymentProofRequest extends FormRequest
      */
     public function rules(): array
     {
+        // Calculate max months based on student's batch end date
+        $maxMonths = 12; // Default fallback
+        $studentId = $this->route('student_id') ?? $this->route('studentId') ?? $this->input('student_id');
+        
+        if ($studentId) {
+            $student = \App\Models\StudentProfile::with('batch')->find($studentId);
+            if ($student && $student->batch && $student->batch->end_date) {
+                $now = now();
+                $batchEndDate = $student->batch->end_date;
+                $monthsUntilEnd = $now->diffInMonths($batchEndDate);
+                $maxMonths = max(1, ceil($monthsUntilEnd)); // At least 1 month
+            }
+        }
+        
         return [
             'fee_ids' => ['required', 'array', 'min:1'],
             'fee_ids.*' => ['required', 'string', 'exists:invoices,id'],
             'payment_method_id' => ['required', 'string', 'exists:payment_methods,id'],
             'payment_amount' => ['required', 'numeric', 'min:0.01'],
-            'payment_months' => ['required', 'integer', 'min:1', 'max:12'],
+            'payment_months' => ['required', 'integer', 'min:1', "max:{$maxMonths}"],
             'payment_date' => ['required', 'date', 'date_format:Y-m-d', 'before_or_equal:today'],
             'receipt_image' => ['required', 'string'], // Base64 or file path
             'notes' => ['nullable', 'string', 'max:500'],
@@ -53,7 +67,7 @@ class StorePaymentProofRequest extends FormRequest
             'payment_months.required' => 'Number of months is required.',
             'payment_months.integer' => 'Number of months must be an integer.',
             'payment_months.min' => 'Number of months must be at least 1.',
-            'payment_months.max' => 'Number of months cannot exceed 12.',
+            'payment_months.max' => 'Number of months cannot exceed the batch end date.',
             'payment_date.required' => 'Payment date is required.',
             'payment_date.date' => 'Payment date must be a valid date.',
             'payment_date.date_format' => 'Payment date must be in Y-m-d format.',

@@ -20,15 +20,10 @@
                 <div class="py-6 sm:py-10" x-data="{
                     step: 1,
                     total: 7,
-                    bindExisting: false,
                     form: {
-                        user_id: @js(old('user_id')),
                         name: @js(old('name')),
-                        email: @js(old('email')),
                         phone: @js(old('phone')),
                         nrc: @js(old('nrc')),
-                        password: '',
-                        is_active: @js((bool) old('is_active', true)),
                         student_identifier: @js(old('student_identifier')),
                         status: @js(old('status', 'active')),
                         grade_id: @js(old('grade_id')),
@@ -68,19 +63,161 @@
                         medicine_allergy: @js(old('medicine_allergy')),
                         food_allergy: @js(old('food_allergy')),
                         medical_directory: @js(old('medical_directory')),
+                        guardian_name: @js(old('guardian_name')),
+                        guardian_phone: @js(old('guardian_phone')),
+                        guardian_email: @js(old('guardian_email')),
+                        existing_guardian_id: @js(old('existing_guardian_id')),
                     },
+                    useExistingGuardian: 'false',
                     errors: {},
                     
                     nextStep() {
-                        const validation = validateFormStep(this.form, this.step, 'student');
-                        this.errors = validation.errors;
-                        
-                        if (validation.isValid) {
-                            this.step = Math.min(this.total, this.step + 1);
-                        } else {
-                            updateFieldErrorClasses(this.errors);
-                            showFormNotification('Please fill in the following required fields:', 'error', this.errors);
+                        // Step 1: Validate student name
+                        if (this.step === 1) {
+                            if (!this.form.name || this.form.name.trim() === '') {
+                                this.errors = { name: 'Name is required' };
+                                updateFieldErrorClasses(this.errors);
+                                return;
+                            }
                         }
+                        
+                        // Step 2: Validate grade
+                        if (this.step === 2) {
+                            if (!this.form.grade_id || this.form.grade_id === '') {
+                                this.errors = { grade_id: 'Grade is required' };
+                                updateFieldErrorClasses(this.errors);
+                                return;
+                            }
+                        }
+                        
+                        // Step 3: Validate all personal details fields
+                        if (this.step === 3) {
+                            this.errors = {};
+                            let hasError = false;
+                            
+                            if (!this.form.gender || this.form.gender === '') {
+                                this.errors.gender = 'Gender is required';
+                                hasError = true;
+                            }
+                            
+                            if (!this.form.ethnicity || this.form.ethnicity.trim() === '') {
+                                this.errors.ethnicity = 'Ethnicity is required';
+                                hasError = true;
+                            }
+                            
+                            if (!this.form.religious || this.form.religious.trim() === '') {
+                                this.errors.religious = 'Religious is required';
+                                hasError = true;
+                            }
+                            
+                            if (!this.form.dob || this.form.dob === '') {
+                                this.errors.dob = 'DOB is required';
+                                hasError = true;
+                            }
+                            
+                            if (!this.form.address || this.form.address.trim() === '') {
+                                this.errors.address = 'Address is required';
+                                hasError = true;
+                            }
+                            
+                            if (hasError) {
+                                updateFieldErrorClasses(this.errors);
+                                return;
+                            }
+                        }
+                        
+                        // Step 5: Validate family & emergency fields (except In-school Relative fields and occupations)
+                        if (this.step === 5) {
+                            this.errors = {};
+                            let hasError = false;
+                            
+                            if (!this.form.father_name || this.form.father_name.trim() === '') {
+                                this.errors.father_name = 'Father Name is required';
+                                hasError = true;
+                            }
+                            
+                            if (!this.form.father_nrc || this.form.father_nrc.trim() === '') {
+                                this.errors.father_nrc = 'Father NRC is required';
+                                hasError = true;
+                            }
+                            
+                            if (!this.form.father_phone_no || this.form.father_phone_no.trim() === '') {
+                                this.errors.father_phone_no = 'Father Phone No. is required';
+                                hasError = true;
+                            }
+                            
+                            if (!this.form.mother_name || this.form.mother_name.trim() === '') {
+                                this.errors.mother_name = 'Mother Name is required';
+                                hasError = true;
+                            }
+                            
+                            if (!this.form.mother_nrc || this.form.mother_nrc.trim() === '') {
+                                this.errors.mother_nrc = 'Mother NRC is required';
+                                hasError = true;
+                            }
+                            
+                            if (!this.form.mother_phone_no || this.form.mother_phone_no.trim() === '') {
+                                this.errors.mother_phone_no = 'Mother Phone No. is required';
+                                hasError = true;
+                            }
+                            
+                            if (!this.form.emergency_contact_phone_no || this.form.emergency_contact_phone_no.trim() === '') {
+                                this.errors.emergency_contact_phone_no = 'Emergency Contact Phone is required';
+                                hasError = true;
+                            }
+                            
+                            if (hasError) {
+                                updateFieldErrorClasses(this.errors);
+                                return;
+                            }
+                        }
+                        
+                        // Step 7: Validation logic moved to submitForm()
+                        
+                        // Clear errors and proceed to next step
+                        this.errors = {};
+                        this.step = Math.min(this.total, this.step + 1);
+                    },
+
+                    submitForm() {
+                        // Validate step 7 before submission
+                        this.errors = {};
+                        let hasError = false;
+                        
+                        if (this.useExistingGuardian === 'true') {
+                            // Validate existing guardian selection
+                            if (!this.form.existing_guardian_id || this.form.existing_guardian_id === '') {
+                                this.errors.existing_guardian_id = '{{ __('student_profiles.Please select a guardian') }}';
+                                hasError = true;
+                            }
+                        } else {
+                            // Validate new guardian fields
+                            if (!this.form.guardian_name || this.form.guardian_name.trim() === '') {
+                                this.errors.guardian_name = '{{ __('student_profiles.Guardian Name is required') }}';
+                                hasError = true;
+                            }
+                            
+                            if (!this.form.guardian_phone || this.form.guardian_phone.trim() === '') {
+                                this.errors.guardian_phone = '{{ __('student_profiles.Guardian Phone No. is required') }}';
+                                hasError = true;
+                            }
+                            
+                            if (!this.form.guardian_email || this.form.guardian_email.trim() === '') {
+                                this.errors.guardian_email = '{{ __('student_profiles.Guardian Email is required') }}';
+                                hasError = true;
+                            } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(this.form.guardian_email)) {
+                                this.errors.guardian_email = '{{ __('student_profiles.Please enter a valid email address') }}';
+                                hasError = true;
+                            }
+                        }
+                        
+                        if (hasError) {
+                            updateFieldErrorClasses(this.errors);
+                            return;
+                        }
+
+                        // If all valid, submit the form
+                        this.$el.closest('form').submit();
                     }
                 }">
                     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-4">
@@ -100,7 +237,7 @@
                         </div>
 
                         <div class="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl shadow-sm">
-                            <form method="POST" action="{{ route('student-profiles.store') }}" class="p-6 sm:p-8 space-y-6">
+                            <form method="POST" action="{{ route('student-profiles.store') }}" enctype="multipart/form-data" class="p-6 sm:p-8 space-y-6">
                                 @csrf
 
                                 <!-- Step 1: Portal Account & ID -->
@@ -110,88 +247,77 @@
                                         <span>{{ __('student_profiles.Portal Account & Student ID') }}</span>
                                     </div>
 
-                                    <div class="flex items-center gap-3">
-                                        <label class="inline-flex items-center text-sm font-semibold text-gray-700 dark:text-gray-300">
-                                            <input type="checkbox" x-model="bindExisting" class="rounded border-gray-300 dark:border-gray-700 text-indigo-600 shadow-sm focus:ring-indigo-500 dark:bg-gray-900 dark:text-gray-300">
-                                            <span class="ml-2">{{ __('student_profiles.Bind existing student portal user') }}</span>
-                                        </label>
+                                    <!-- Student Photo Upload -->
+                                    <div class="flex flex-col items-center gap-4 p-6 bg-gray-50 dark:bg-gray-900/50 rounded-lg border-2 border-dashed border-gray-300 dark:border-gray-700">
+                                        <div x-data="{ photoPreview: null, photoName: '' }">
+                                            <div class="flex flex-col items-center gap-3">
+                                                <div class="relative">
+                                                    <div class="w-32 h-32 rounded-full overflow-hidden bg-gray-200 dark:bg-gray-700 flex items-center justify-center">
+                                                        <template x-if="!photoPreview">
+                                                            <i class="fas fa-user text-4xl text-gray-400 dark:text-gray-500"></i>
+                                                        </template>
+                                                        <template x-if="photoPreview">
+                                                            <img :src="photoPreview" alt="Student Photo" class="w-full h-full object-cover">
+                                                        </template>
+                                                    </div>
+                                                </div>
+                                                <div class="text-center">
+                                                    <label for="photo" class="cursor-pointer inline-flex items-center px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-medium rounded-lg transition-colors">
+                                                        <i class="fas fa-camera mr-2"></i>
+                                                        <span x-text="photoName ? 'Change Photo' : 'Upload Photo'"></span>
+                                                    </label>
+                                                    <input type="file" id="photo" name="photo" accept="image/*" class="hidden"
+                                                           @change="
+                                                               const file = $event.target.files[0];
+                                                               if (file) {
+                                                                   photoName = file.name;
+                                                                   const reader = new FileReader();
+                                                                   reader.onload = (e) => { photoPreview = e.target.result; };
+                                                                   reader.readAsDataURL(file);
+                                                               }
+                                                           ">
+                                                    <p class="text-xs text-gray-500 dark:text-gray-400 mt-2">{{ __('student_profiles.JPG, PNG or GIF (MAX. 2MB)') }}</p>
+                                                    <p x-show="photoName" x-text="photoName" class="text-xs text-gray-600 dark:text-gray-400 mt-1"></p>
+                                                </div>
+                                            </div>
+                                        </div>
                                     </div>
 
-                                    <div x-show="bindExisting" x-cloak class="space-y-3">
-                                        <label class="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1">{{ __('student_profiles.Existing Portal User') }}</label>
-                                        <select name="user_id" x-model="form.user_id" class="w-full rounded-lg border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-200 focus:border-indigo-500 focus:ring-indigo-500">
-                                            <option value="">{{ __('student_profiles.Select a student account') }}</option>
-                                            @foreach($studentUsers as $user)
-                                                <option value="{{ $user->id }}">{{ $user->name }} — {{ $user->email }}</option>
-                                            @endforeach
-                                        </select>
-                                        <p class="text-xs text-gray-500 dark:text-gray-400">{{ __('student_profiles.If binding an existing user, portal credentials stay the same unless you provide a new password below.') }}</p>
-                                        @error('user_id')<p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>@enderror
-                                    </div>
-
-                                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4" x-show="!bindExisting" x-cloak>
+                                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                         <div>
                                             <label class="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1">{{ __('student_profiles.Student Name') }} <span class="text-red-500">*</span></label>
-                                            <input type="text" name="name" x-model="form.name" :disabled="bindExisting" autocomplete="name" 
+                                            <input type="text" name="name" x-model="form.name" autocomplete="name" 
                                                    class="w-full rounded-lg border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-200 focus:border-indigo-500 focus:ring-indigo-500"
                                                    :class="errors.name ? 'field-error' : ''">
                                             <p x-show="errors.name" x-text="errors.name" class="mt-1 text-sm text-red-600 dark:text-red-400"></p>
                                             @error('name')<p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>@enderror
                                         </div>
                                         <div>
-                                            <label class="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1">{{ __('student_profiles.Portal Email') }}</label>
-                                            <input type="email" name="email" x-model="form.email" :disabled="bindExisting" autocomplete="email" 
-                                                   class="w-full rounded-lg border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-200 focus:border-indigo-500 focus:ring-indigo-500">
-                                            @error('email')<p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>@enderror
-                                        </div>
-                                    </div>
-
-                                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4" x-show="!bindExisting" x-cloak>
-                                        <div>
                                             <label class="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1">{{ __('student_profiles.Phone') }}</label>
-                                            <input type="text" name="phone" x-model="form.phone" :disabled="bindExisting" autocomplete="tel" 
+                                            <input type="text" name="phone" x-model="form.phone" autocomplete="tel" 
                                                    class="w-full rounded-lg border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-200 focus:border-indigo-500 focus:ring-indigo-500">
                                             @error('phone')<p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>@enderror
                                         </div>
+                                    </div>
+
+                                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                         <div>
                                             <label class="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1">{{ __('student_profiles.NRC / ID') }}</label>
-                                            <input type="text" name="nrc" x-model="form.nrc" :disabled="bindExisting" autocomplete="off" 
-                                                   class="w-full rounded-lg border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-200 focus:border-indigo-500 focus:ring-indigo-500"
-                                                   :class="errors.nrc ? 'field-error' : ''">
-                                            <p x-show="errors.nrc" x-text="errors.nrc" class="mt-1 text-sm text-red-600 dark:text-red-400"></p>
-                                            @error('nrc')<p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>@enderror
+                                            <input type="text" name="nrc" x-model="form.nrc" autocomplete="off" 
+                                                   class="w-full rounded-lg border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-200 focus:border-indigo-500 focus:ring-indigo-500">
                                         </div>
-                                    </div>
-
-                                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                                        <div x-show="!bindExisting" x-cloak>
-                                            <label class="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1">{{ __('student_profiles.Portal Password') }}</label>
-                                            <input type="password" name="password" :disabled="bindExisting" autocomplete="current-password" 
-                                                   class="w-full rounded-lg border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-200 focus:border-indigo-500 focus:ring-indigo-500" 
-                                                   placeholder="********">
-                                            @error('password')<p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>@enderror
-                                        </div>
-                                        <div class="flex items-center gap-3 mt-7">
-                                            <label class="inline-flex items-center text-sm font-semibold text-gray-700 dark:text-gray-300">
-                                                <input type="checkbox" name="is_active" x-model="form.is_active" :checked="form.is_active" value="1" class="rounded border-gray-300 dark:border-gray-700 text-indigo-600 shadow-sm focus:ring-indigo-500 dark:bg-gray-900 dark:text-gray-300">
-                                                <span class="ml-2">{{ __('student_profiles.Allow portal login') }}</span>
-                                            </label>
-                                        </div>
-                                    </div>
-
-                                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                         <div>
                                             <label class="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1">{{ __('student_profiles.Student Identifier') }}</label>
                                             <input type="text" name="student_identifier" x-model="form.student_identifier" class="w-full rounded-lg border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-200 focus:border-indigo-500 focus:ring-indigo-500" placeholder="STD-XXXX (auto if blank)">
-                                            @error('student_identifier')<p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>@enderror
                                         </div>
-                                        <div>
-                                            <label class="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1">{{ __('student_profiles.Profile Status') }}</label>
-                                            <select name="status" x-model="form.status" class="w-full rounded-lg border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-200 focus:border-indigo-500 focus:ring-indigo-500">
-                                                <option value="active">{{ __('student_profiles.Active') }}</option>
-                                                <option value="inactive">{{ __('student_profiles.Inactive') }}</option>
-                                            </select>
-                                        </div>
+                                    </div>
+
+                                    <div>
+                                        <label class="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1">{{ __('student_profiles.Profile Status') }}</label>
+                                        <select name="status" x-model="form.status" class="w-full rounded-lg border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-200 focus:border-indigo-500 focus:ring-indigo-500">
+                                            <option value="active">{{ __('student_profiles.Active') }}</option>
+                                            <option value="inactive">{{ __('student_profiles.Inactive') }}</option>
+                                        </select>
                                     </div>
                                 </div>
 
@@ -203,14 +329,16 @@
                                     </div>
                                     <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                         <div>
-                                            <label class="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1">{{ __('student_profiles.Grade') }}</label>
-                                            <select name="grade_id" x-model="form.grade_id" class="w-full rounded-lg border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-200 focus:border-indigo-500 focus:ring-indigo-500">
+                                            <label class="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1">{{ __('student_profiles.Grade') }} <span class="text-red-500">*</span></label>
+                                            <select name="grade_id" x-model="form.grade_id" 
+                                                    class="w-full rounded-lg border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-200 focus:border-indigo-500 focus:ring-indigo-500"
+                                                    :class="errors.grade_id ? 'field-error' : ''">
                                                 <option value="">{{ __('student_profiles.Select grade') }}</option>
                                                 @foreach($grades as $grade)
                                                     <option value="{{ $grade->id }}">{{ $grade->name }}</option>
                                                 @endforeach
                                             </select>
-                                            @error('grade_id')<p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>@enderror
+                                            <p x-show="errors.grade_id" x-text="errors.grade_id" class="mt-1 text-sm text-red-600 dark:text-red-400"></p>
                                         </div>
                                         <div>
                                             <label class="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1">{{ __('student_profiles.Class') }}</label>
@@ -220,7 +348,6 @@
                                                     <option value="{{ $class->id }}">{{ $class->name }}</option>
                                                 @endforeach
                                             </select>
-                                            @error('class_id')<p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>@enderror
                                         </div>
                                     </div>
                                     <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -263,31 +390,46 @@
                                     </div>
                                     <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
                                         <div>
-                                            <label class="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1">{{ __('student_profiles.Gender') }}</label>
-                                            <select name="gender" x-model="form.gender" class="w-full rounded-lg border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-200 focus:border-indigo-500 focus:ring-indigo-500">
+                                            <label class="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1">{{ __('student_profiles.Gender') }} <span class="text-red-500">*</span></label>
+                                            <select name="gender" x-model="form.gender" 
+                                                    class="w-full rounded-lg border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-200 focus:border-indigo-500 focus:ring-indigo-500"
+                                                    :class="errors.gender ? 'field-error' : ''">
                                                 <option value="">{{ __('student_profiles.Select') }}</option>
                                                 <option value="male" @selected(old('gender') === 'male')>{{ __('student_profiles.Male') }}</option>
                                                 <option value="female" @selected(old('gender') === 'female')>{{ __('student_profiles.Female') }}</option>
                                                 <option value="other" @selected(old('gender') === 'other')>{{ __('student_profiles.Other') }}</option>
                                             </select>
+                                            <p x-show="errors.gender" x-text="errors.gender" class="mt-1 text-sm text-red-600 dark:text-red-400"></p>
                                         </div>
                                         <div>
-                                            <label class="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1">{{ __('student_profiles.Ethnicity') }}</label>
-                                            <input type="text" name="ethnicity" x-model="form.ethnicity" class="w-full rounded-lg border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-200 focus:border-indigo-500 focus:ring-indigo-500">
+                                            <label class="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1">{{ __('student_profiles.Ethnicity') }} <span class="text-red-500">*</span></label>
+                                            <input type="text" name="ethnicity" x-model="form.ethnicity" 
+                                                   class="w-full rounded-lg border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-200 focus:border-indigo-500 focus:ring-indigo-500"
+                                                   :class="errors.ethnicity ? 'field-error' : ''">
+                                            <p x-show="errors.ethnicity" x-text="errors.ethnicity" class="mt-1 text-sm text-red-600 dark:text-red-400"></p>
                                         </div>
                                         <div>
-                                            <label class="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1">{{ __('student_profiles.Religious') }}</label>
-                                            <input type="text" name="religious" x-model="form.religious" class="w-full rounded-lg border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-200 focus:border-indigo-500 focus:ring-indigo-500">
+                                            <label class="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1">{{ __('student_profiles.Religious') }} <span class="text-red-500">*</span></label>
+                                            <input type="text" name="religious" x-model="form.religious" 
+                                                   class="w-full rounded-lg border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-200 focus:border-indigo-500 focus:ring-indigo-500"
+                                                   :class="errors.religious ? 'field-error' : ''">
+                                            <p x-show="errors.religious" x-text="errors.religious" class="mt-1 text-sm text-red-600 dark:text-red-400"></p>
                                         </div>
                                     </div>
                                     <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
                                         <div>
-                                            <label class="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1">{{ __('student_profiles.DOB') }}</label>
-                                            <input type="date" name="dob" x-model="form.dob" class="w-full rounded-lg border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-200 focus:border-indigo-500 focus:ring-indigo-500">
+                                            <label class="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1">{{ __('student_profiles.DOB') }} <span class="text-red-500">*</span></label>
+                                            <input type="date" name="dob" x-model="form.dob" 
+                                                   class="w-full rounded-lg border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-200 focus:border-indigo-500 focus:ring-indigo-500"
+                                                   :class="errors.dob ? 'field-error' : ''">
+                                            <p x-show="errors.dob" x-text="errors.dob" class="mt-1 text-sm text-red-600 dark:text-red-400"></p>
                                         </div>
                                         <div>
-                                            <label class="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1">{{ __('student_profiles.Address') }}</label>
-                                            <input type="text" name="address" x-model="form.address" class="w-full rounded-lg border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-200 focus:border-indigo-500 focus:ring-indigo-500">
+                                            <label class="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1">{{ __('student_profiles.Address') }} <span class="text-red-500">*</span></label>
+                                            <input type="text" name="address" x-model="form.address" 
+                                                   class="w-full rounded-lg border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-200 focus:border-indigo-500 focus:ring-indigo-500"
+                                                   :class="errors.address ? 'field-error' : ''">
+                                            <p x-show="errors.address" x-text="errors.address" class="mt-1 text-sm text-red-600 dark:text-red-400"></p>
                                         </div>
                                         <div></div>
                                     </div>
@@ -319,18 +461,27 @@
                                     </div>
                                     <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                         <div>
-                                            <label class="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1">{{ __('student_profiles.Father Name') }}</label>
-                                            <input type="text" name="father_name" x-model="form.father_name" class="w-full rounded-lg border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-200 focus:border-indigo-500 focus:ring-indigo-500">
+                                            <label class="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1">{{ __('student_profiles.Father Name') }} <span class="text-red-500">*</span></label>
+                                            <input type="text" name="father_name" x-model="form.father_name" 
+                                                   class="w-full rounded-lg border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-200 focus:border-indigo-500 focus:ring-indigo-500"
+                                                   :class="errors.father_name ? 'field-error' : ''">
+                                            <p x-show="errors.father_name" x-text="errors.father_name" class="mt-1 text-sm text-red-600 dark:text-red-400"></p>
                                         </div>
                                         <div>
-                                            <label class="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1">{{ __('student_profiles.Father NRC') }}</label>
-                                            <input type="text" name="father_nrc" x-model="form.father_nrc" class="w-full rounded-lg border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-200 focus:border-indigo-500 focus:ring-indigo-500">
+                                            <label class="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1">{{ __('student_profiles.Father NRC') }} <span class="text-red-500">*</span></label>
+                                            <input type="text" name="father_nrc" x-model="form.father_nrc" 
+                                                   class="w-full rounded-lg border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-200 focus:border-indigo-500 focus:ring-indigo-500"
+                                                   :class="errors.father_nrc ? 'field-error' : ''">
+                                            <p x-show="errors.father_nrc" x-text="errors.father_nrc" class="mt-1 text-sm text-red-600 dark:text-red-400"></p>
                                         </div>
                                     </div>
                                     <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                         <div>
-                                            <label class="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1">{{ __('student_profiles.Father Phone No.') }}</label>
-                                            <input type="text" name="father_phone_no" x-model="form.father_phone_no" class="w-full rounded-lg border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-200 focus:border-indigo-500 focus:ring-indigo-500">
+                                            <label class="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1">{{ __('student_profiles.Father Phone No.') }} <span class="text-red-500">*</span></label>
+                                            <input type="text" name="father_phone_no" x-model="form.father_phone_no" 
+                                                   class="w-full rounded-lg border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-200 focus:border-indigo-500 focus:ring-indigo-500"
+                                                   :class="errors.father_phone_no ? 'field-error' : ''">
+                                            <p x-show="errors.father_phone_no" x-text="errors.father_phone_no" class="mt-1 text-sm text-red-600 dark:text-red-400"></p>
                                         </div>
                                         <div>
                                             <label class="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1">{{ __('student_profiles.Father Occupation') }}</label>
@@ -339,18 +490,27 @@
                                     </div>
                                     <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                         <div>
-                                            <label class="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1">{{ __('student_profiles.Mother Name') }}</label>
-                                            <input type="text" name="mother_name" x-model="form.mother_name" class="w-full rounded-lg border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-200 focus:border-indigo-500 focus:ring-indigo-500">
+                                            <label class="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1">{{ __('student_profiles.Mother Name') }} <span class="text-red-500">*</span></label>
+                                            <input type="text" name="mother_name" x-model="form.mother_name" 
+                                                   class="w-full rounded-lg border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-200 focus:border-indigo-500 focus:ring-indigo-500"
+                                                   :class="errors.mother_name ? 'field-error' : ''">
+                                            <p x-show="errors.mother_name" x-text="errors.mother_name" class="mt-1 text-sm text-red-600 dark:text-red-400"></p>
                                         </div>
                                         <div>
-                                            <label class="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1">{{ __('student_profiles.Mother NRC') }}</label>
-                                            <input type="text" name="mother_nrc" x-model="form.mother_nrc" class="w-full rounded-lg border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-200 focus:border-indigo-500 focus:ring-indigo-500">
+                                            <label class="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1">{{ __('student_profiles.Mother NRC') }} <span class="text-red-500">*</span></label>
+                                            <input type="text" name="mother_nrc" x-model="form.mother_nrc" 
+                                                   class="w-full rounded-lg border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-200 focus:border-indigo-500 focus:ring-indigo-500"
+                                                   :class="errors.mother_nrc ? 'field-error' : ''">
+                                            <p x-show="errors.mother_nrc" x-text="errors.mother_nrc" class="mt-1 text-sm text-red-600 dark:text-red-400"></p>
                                         </div>
                                     </div>
                                     <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                         <div>
-                                            <label class="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1">{{ __('student_profiles.Mother Phone No.') }}</label>
-                                            <input type="text" name="mother_phone_no" x-model="form.mother_phone_no" class="w-full rounded-lg border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-200 focus:border-indigo-500 focus:ring-indigo-500">
+                                            <label class="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1">{{ __('student_profiles.Mother Phone No.') }} <span class="text-red-500">*</span></label>
+                                            <input type="text" name="mother_phone_no" x-model="form.mother_phone_no" 
+                                                   class="w-full rounded-lg border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-200 focus:border-indigo-500 focus:ring-indigo-500"
+                                                   :class="errors.mother_phone_no ? 'field-error' : ''">
+                                            <p x-show="errors.mother_phone_no" x-text="errors.mother_phone_no" class="mt-1 text-sm text-red-600 dark:text-red-400"></p>
                                         </div>
                                         <div>
                                             <label class="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1">{{ __('student_profiles.Mother Occupation') }}</label>
@@ -359,8 +519,11 @@
                                     </div>
                                     <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                         <div>
-                                            <label class="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1">{{ __('student_profiles.Emergency Contact Phone') }}</label>
-                                            <input type="text" name="emergency_contact_phone_no" x-model="form.emergency_contact_phone_no" class="w-full rounded-lg border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-200 focus:border-indigo-500 focus:ring-indigo-500">
+                                            <label class="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1">{{ __('student_profiles.Emergency Contact Phone') }} <span class="text-red-500">*</span></label>
+                                            <input type="text" name="emergency_contact_phone_no" x-model="form.emergency_contact_phone_no" 
+                                                   class="w-full rounded-lg border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-200 focus:border-indigo-500 focus:ring-indigo-500"
+                                                   :class="errors.emergency_contact_phone_no ? 'field-error' : ''">
+                                            <p x-show="errors.emergency_contact_phone_no" x-text="errors.emergency_contact_phone_no" class="mt-1 text-sm text-red-600 dark:text-red-400"></p>
                                         </div>
                                         <div>
                                             <label class="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1">{{ __('student_profiles.In-school Relative Name') }}</label>
@@ -415,15 +578,95 @@
                                     </div>
                                 </div>
 
-                                <!-- Step 7: Review & Submit -->
+                                <!-- Step 7: Guardian Information -->
                                 <div x-show="step === 7" x-cloak class="space-y-4">
                                     <div class="flex items-center gap-2 text-sm font-semibold text-gray-700 dark:text-gray-200">
-                                        <i class="fas fa-clipboard-check text-indigo-500"></i>
-                                        <span>{{ __('student_profiles.Review & Submit') }}</span>
+                                        <i class="fas fa-user-shield text-indigo-500"></i>
+                                        <span>{{ __('student_profiles.Guardian Information') }}</span>
                                     </div>
-                                    <div class="rounded-lg border border-dashed border-gray-300 dark:border-gray-700 bg-gray-50 dark:bg-gray-900 p-4 text-sm text-gray-700 dark:text-gray-300 space-y-2">
-                                        <p>{{ __('student_profiles.Review the student portal account, placement, and family details before submitting.') }}</p>
-                                        <p>{{ __('student_profiles.You can revisit any step to adjust data. Passwords are optional when binding an existing user; providing one will reset the portal credentials.') }}</p>
+                                    
+                                    <!-- Choose Guardian Type -->
+                                    <div class="flex items-center gap-6 p-4 bg-gray-50 dark:bg-gray-900/50 rounded-lg border border-gray-200 dark:border-gray-700">
+                                        <label class="inline-flex items-center cursor-pointer">
+                                            <input type="radio" name="guardian_type" value="false" x-model="useExistingGuardian" checked class="w-4 h-4 text-indigo-600 border-gray-300 focus:ring-indigo-500 dark:border-gray-600 dark:bg-gray-700">
+                                            <span class="ml-2 text-sm font-medium text-gray-700 dark:text-gray-300">{{ __('student_profiles.Create New Guardian') }}</span>
+                                        </label>
+                                        <label class="inline-flex items-center cursor-pointer">
+                                            <input type="radio" name="guardian_type" value="true" x-model="useExistingGuardian" class="w-4 h-4 text-indigo-600 border-gray-300 focus:ring-indigo-500 dark:border-gray-600 dark:bg-gray-700">
+                                            <span class="ml-2 text-sm font-medium text-gray-700 dark:text-gray-300">{{ __('student_profiles.Link Existing Guardian') }}</span>
+                                        </label>
+                                    </div>
+                                    
+                                    <!-- Existing Guardian Selection -->
+                                    <div x-show="useExistingGuardian === 'true'" x-cloak>
+                                        <label class="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1">{{ __('student_profiles.Select Existing Guardian') }} <span class="text-red-500">*</span></label>
+                                        <select name="existing_guardian_id" x-model="form.existing_guardian_id"
+                                                class="w-full rounded-lg border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-200 focus:border-indigo-500 focus:ring-indigo-500"
+                                                :class="errors.existing_guardian_id ? 'field-error' : ''">
+                                            <option value="">{{ __('student_profiles.Select a guardian') }}</option>
+                                            @foreach($guardians as $guardian)
+                                                <option value="{{ $guardian->id }}">
+                                                    {{ $guardian->user->name }} — {{ $guardian->user->email }} — {{ $guardian->user->phone }}
+                                                </option>
+                                            @endforeach
+                                        </select>
+                                        <p x-show="errors.existing_guardian_id" x-text="errors.existing_guardian_id" class="mt-1 text-sm text-red-600 dark:text-red-400"></p>
+                                        
+                                        <div class="mt-4 rounded-lg border border-blue-200 dark:border-blue-700 bg-blue-50 dark:bg-blue-900/20 p-4">
+                                            <div class="flex items-start gap-3">
+                                                <i class="fas fa-info-circle text-blue-600 dark:text-blue-400 mt-0.5"></i>
+                                                <div class="text-sm text-blue-800 dark:text-blue-300">
+                                                    <p class="font-semibold mb-1">{{ __('student_profiles.Link Existing Guardian') }}</p>
+                                                    <p>{{ __('student_profiles.The selected guardian will be linked to this student. No new account will be created.') }}</p>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    
+                                    <!-- New Guardian Form -->
+                                    <div x-show="useExistingGuardian === 'false'" x-cloak>
+                                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                            <div>
+                                                <label class="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1">{{ __('student_profiles.Guardian Name') }} <span class="text-red-500">*</span></label>
+                                                <input type="text" name="guardian_name" x-model="form.guardian_name" 
+                                                       class="w-full rounded-lg border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-200 focus:border-indigo-500 focus:ring-indigo-500"
+                                                       :class="errors.guardian_name ? 'field-error' : ''">
+                                                <p x-show="errors.guardian_name" x-text="errors.guardian_name" class="mt-1 text-sm text-red-600 dark:text-red-400"></p>
+                                            </div>
+                                            <div>
+                                                <label class="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1">{{ __('student_profiles.Guardian Phone No.') }} <span class="text-red-500">*</span></label>
+                                                <input type="text" name="guardian_phone" x-model="form.guardian_phone" 
+                                                       class="w-full rounded-lg border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-200 focus:border-indigo-500 focus:ring-indigo-500"
+                                                       :class="errors.guardian_phone ? 'field-error' : ''">
+                                                <p x-show="errors.guardian_phone" x-text="errors.guardian_phone" class="mt-1 text-sm text-red-600 dark:text-red-400"></p>
+                                            </div>
+                                        </div>
+                                        
+                                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-4">
+                                            <div>
+                                                <label class="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1">{{ __('student_profiles.Guardian Email') }} <span class="text-red-500">*</span></label>
+                                                <input type="email" name="guardian_email" x-model="form.guardian_email" 
+                                                       class="w-full rounded-lg border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-200 focus:border-indigo-500 focus:ring-indigo-500"
+                                                       :class="errors.guardian_email ? 'field-error' : ''">
+                                                <p x-show="errors.guardian_email" x-text="errors.guardian_email" class="mt-1 text-sm text-red-600 dark:text-red-400"></p>
+                                            </div>
+                                            <div>
+                                                <label class="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1">{{ __('student_profiles.Guardian Password') }}</label>
+                                                <input type="text" name="guardian_password" value="12345678" readonly
+                                                       class="w-full rounded-lg border-gray-300 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-400 focus:border-indigo-500 focus:ring-indigo-500 bg-gray-100 text-gray-600 cursor-not-allowed">
+                                                <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">{{ __('student_profiles.Default password: 12345678') }}</p>
+                                            </div>
+                                        </div>
+                                        
+                                        <div class="mt-4 rounded-lg border border-blue-200 dark:border-blue-700 bg-blue-50 dark:bg-blue-900/20 p-4">
+                                            <div class="flex items-start gap-3">
+                                                <i class="fas fa-info-circle text-blue-600 dark:text-blue-400 mt-0.5"></i>
+                                                <div class="text-sm text-blue-800 dark:text-blue-300">
+                                                    <p class="font-semibold mb-1">{{ __('student_profiles.Guardian Account Creation') }}</p>
+                                                    <p>{{ __('student_profiles.A guardian account will be created with the provided information. The default password is 12345678 and should be changed after first login.') }}</p>
+                                                </div>
+                                            </div>
+                                        </div>
                                     </div>
                                 </div>
 
@@ -436,7 +679,7 @@
                                         <button type="button" x-show="step < total" @click="nextStep()" class="flex-1 sm:flex-none px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold rounded-lg shadow-sm">
                                             {{ __('student_profiles.Next step') }} <i class="fas fa-chevron-right ml-2"></i>
                                         </button>
-                                        <button type="submit" x-show="step === total" class="flex-1 sm:flex-none px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold rounded-lg shadow-sm">
+                                        <button type="button" @click="submitForm()" x-show="step === total" class="flex-1 sm:flex-none px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold rounded-lg shadow-sm">
                                             {{ __('student_profiles.Create Student') }}
                                         </button>
                                     </div>
@@ -445,4 +688,97 @@
                         </div>
                     </div>
                 </div>
+
+    <script>
+        function showNotification(message, type) {
+            // Create modal overlay
+            const overlay = document.createElement('div');
+            overlay.className = 'fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-50 p-4';
+            overlay.style.animation = 'fadeIn 0.2s ease-in-out';
+            
+            // Create modal content - more compact design
+            const modal = document.createElement('div');
+            modal.className = 'bg-gray-800 rounded-xl shadow-2xl max-w-lg w-full p-6';
+            modal.style.animation = 'slideIn 0.3s ease-out';
+            
+            // Create modal header with icon and title in one row
+            const header = document.createElement('div');
+            header.className = 'flex items-center gap-3 mb-4';
+            
+            const icon = document.createElement('div');
+            icon.className = `w-12 h-12 rounded-full flex items-center justify-center flex-shrink-0 ${type === 'success' ? 'bg-green-600' : 'bg-red-900'}`;
+            icon.innerHTML = '<i class="fas fa-exclamation-circle text-white text-xl"></i>';
+            
+            const title = document.createElement('h3');
+            title.className = 'text-xl font-semibold text-white';
+            title.textContent = type === 'success' ? 'Success' : 'Error';
+            
+            header.appendChild(icon);
+            header.appendChild(title);
+            
+            // Create message
+            const messageEl = document.createElement('p');
+            messageEl.className = 'text-gray-300 text-sm leading-relaxed mb-6';
+            messageEl.textContent = message;
+            
+            // Create button container aligned to right
+            const buttonContainer = document.createElement('div');
+            buttonContainer.className = 'flex justify-end';
+            
+            // Create OK button
+            const button = document.createElement('button');
+            button.className = 'bg-red-600 hover:bg-red-700 text-white font-semibold py-2.5 px-8 rounded-lg transition-colors';
+            button.textContent = 'OK';
+            button.onclick = () => overlay.remove();
+            
+            buttonContainer.appendChild(button);
+            
+            // Assemble modal
+            modal.appendChild(header);
+            modal.appendChild(messageEl);
+            modal.appendChild(buttonContainer);
+            overlay.appendChild(modal);
+            
+            // Add to body
+            document.body.appendChild(overlay);
+            
+            // Close on overlay click
+            overlay.addEventListener('click', (e) => {
+                if (e.target === overlay) {
+                    overlay.remove();
+                }
+            });
+            
+            // Close on Escape key
+            const escapeHandler = (e) => {
+                if (e.key === 'Escape') {
+                    overlay.remove();
+                    document.removeEventListener('keydown', escapeHandler);
+                }
+            };
+            document.addEventListener('keydown', escapeHandler);
+        }
+        
+        // Add animations
+        const style = document.createElement('style');
+        style.textContent = `
+            @keyframes fadeIn {
+                from { opacity: 0; }
+                to { opacity: 1; }
+            }
+            @keyframes slideIn {
+                from { transform: translateY(-20px); opacity: 0; }
+                to { transform: translateY(0); opacity: 1; }
+            }
+        `;
+        document.head.appendChild(style);
+        
+        // Show backend validation errors on page load
+        @if($errors->any())
+            document.addEventListener('DOMContentLoaded', function() {
+                const firstError = @json($errors->first());
+                showNotification(firstError, 'error');
+            });
+        @endif
+    </script>
             </x-app-layout>

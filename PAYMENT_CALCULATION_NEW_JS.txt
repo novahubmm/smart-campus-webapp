@@ -1,0 +1,93 @@
+// Updated openPaymentModal function - add payment_months to each fee
+openPaymentModal(data) {
+    const student = data.student;
+    const invoice = data.invoice;
+    
+    this.paymentInfo = `${student.user?.name || 'Student'} (${student.student_identifier}) - ${student.grade?.name || ''} ${student.class_model?.name || ''}`;
+    this.paymentStudentId = student.id;
+    this.paymentInvoiceId = invoice?.id || '';
+    
+    // Safety check for fees
+    if (!invoice || !invoice.fees || !Array.isArray(invoice.fees)) {
+        console.error('Invoice fees not properly loaded:', invoice);
+        alert('{{ __('finance.Error loading invoice fees. Please refresh the page.') }}');
+        return;
+    }
+    
+    // Calculate remaining months based on batch end date
+    const batchEndDate = student.batch?.end_date || '{{ now()->addMonths(10)->format('Y-m-d') }}';
+    const remainingMonths = this.calculateRemainingMonths(batchEndDate);
+    
+    // Filter payment period options based on remaining months
+    this.paymentPeriodOptions = this.getAvailablePaymentOptions(remainingMonths);
+    
+    // Check for overdue fees
+    const hasOverdue = invoice.fees.some(fee => {
+        const dateToCompare = fee.due_date_raw || fee.due_date;
+        return new Date(dateToCompare) < new Date() && fee.remaining_amount > 0;
+    });
+    
+    // Initialize payment data
+    this.paymentData = {
+        payment_type: 'full',
+        payment_method_id: '',
+        payment_date: '{{ now()->format('Y-m-d') }}',
+        reference_number: '',
+        notes: '',
+        fees: invoice.fees.map(fee => ({
+            id: fee.id,
+            fee_name: fee.fee_name,
+            fee_name_mm: fee.fee_name_mm,
+            amount: parseFloat(fee.amount),
+            remaining_amount: parseFloat(fee.remaining_amount),
+            payment_amount: parseFloat(fee.remaining_amount),
+            payment_months: 1,  // Initialize each fee with 1 month
+            due_date: fee.due_date,
+            due_date_raw: fee.due_date_raw
+        })),
+        hasOverdueFees: hasOverdue,
+        subtotal: 0,
+        discount: 0,
+        discountPercent: 0,
+        total: 0
+    };
+    
+    this.updatePaymentCalculation();
+    this.showPaymentModal = true;
+},
+
+// Updated updatePaymentCalculation function
+updatePaymentCalculation() {
+    let subtotal = 0;
+    let totalDiscount = 0;
+    let maxDiscountPercent = 0;
+    
+    this.paymentData.fees.forEach(fee => {
+        let feeAmount = 0;
+        
+        if (this.paymentData.payment_type === 'full') {
+            // Each fee uses its own payment_months
+            feeAmount = fee.remaining_amount * (fee.payment_months || 1);
+        } else {
+            feeAmount = fee.payment_amount || 0;
+        }
+        
+        subtotal += feeAmount;
+        
+        // Apply discount ONLY to School Fee based on its payment_months
+        const isSchoolFee = fee.fee_name && fee.fee_name.toLowerCase().includes('school fee');
+        if (isSchoolFee) {
+            const discountOption = this.paymentPeriodOptions.find(opt => opt.months == (fee.payment_months || 1));
+            if (discountOption && discountOption.discount_percent > 0) {
+                const feeDiscount = feeAmount * (discountOption.discount_percent / 100);
+                totalDiscount += feeDiscount;
+                maxDiscountPercent = Math.max(maxDiscountPercent, parseFloat(discountOption.discount_percent));
+            }
+        }
+    });
+    
+    this.paymentData.subtotal = subtotal;
+    this.paymentData.discount = totalDiscount;
+    this.paymentData.discountPercent = maxDiscountPercent;
+    this.paymentData.total = subtotal - totalDiscount;
+},

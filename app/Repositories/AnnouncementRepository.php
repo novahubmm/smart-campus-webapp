@@ -15,10 +15,6 @@ class AnnouncementRepository implements AnnouncementRepositoryInterface
     {
         $query = Announcement::query()->with(['creator', 'announcementType'])->orderByDesc('created_at')->orderByDesc('publish_date');
 
-        if ($filter->type && $filter->type !== 'all') {
-            $query->where('type', $filter->type);
-        }
-
         if ($filter->priority && $filter->priority !== 'all') {
             $query->where('priority', $filter->priority);
         }

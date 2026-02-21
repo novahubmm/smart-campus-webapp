@@ -19,7 +19,6 @@
             'announcement_type_id' => $a->announcement_type_id,
             'priority' => $a->priority,
             'location' => $a->location,
-            'event_id' => $a->event_id,
             'target_roles' => $a->target_roles ?? [],
             'target_grades' => $a->target_grades ?? ['all'],
             'target_departments' => $a->target_departments ?? ['all'],
@@ -323,7 +322,7 @@
                                     <label class="block text-sm font-semibold text-gray-700 dark:text-gray-200 mb-1">{{ __('announcements.Message') }} <span class="text-red-500">*</span></label>
                                     <textarea name="content" rows="4" class="w-full rounded-lg border-gray-300 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-200 focus:border-amber-500 focus:ring-amber-500" x-model="form.content" required placeholder="{{ __('announcements.Enter announcement message...') }}"></textarea>
                                 </div>
-                                <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mt-4">
+                                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
                                     <div>
                                         <label class="block text-sm font-semibold text-gray-700 dark:text-gray-200 mb-1">{{ __('announcements.Priority') }} <span class="text-red-500">*</span></label>
                                         <select name="priority" class="w-full rounded-lg border-gray-300 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-200 focus:border-amber-500 focus:ring-amber-500" x-model="form.priority" required>
@@ -336,15 +335,6 @@
                                     <div>
                                         <label class="block text-sm font-semibold text-gray-700 dark:text-gray-200 mb-1">{{ __('announcements.Location') }}</label>
                                         <input type="text" name="location" class="w-full rounded-lg border-gray-300 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-200 focus:border-amber-500 focus:ring-amber-500" x-model="form.location" placeholder="{{ __('announcements.e.g., Main Campus') }}">
-                                    </div>
-                                    <div>
-                                        <label class="block text-sm font-semibold text-gray-700 dark:text-gray-200 mb-1">{{ __('announcements.Link Event') }}</label>
-                                        <select name="event_id" class="w-full rounded-lg border-gray-300 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-200 focus:border-amber-500 focus:ring-amber-500" x-model="form.event_id">
-                                            <option value="">{{ __('announcements.No event') }}</option>
-                                            @foreach($events as $event)
-                                                <option value="{{ $event->id }}">{{ $event->title }}</option>
-                                            @endforeach
-                                        </select>
                                     </div>
                                 </div>
                             </div>
@@ -502,7 +492,6 @@
                     announcement_type_id: '',
                     priority: 'medium',
                     location: '',
-                    event_id: '',
                     target_roles: [],
                     target_grades: ['all'],
                     target_departments: ['all'],
@@ -529,7 +518,6 @@
                         announcement_type_id: announcement.announcement_type_id || '',
                         priority: announcement.priority || 'medium',
                         location: announcement.location || '',
-                        event_id: announcement.event_id || '',
                         target_roles: announcement.target_roles || [],
                         target_grades: announcement.target_grades || ['all'],
                         target_departments: announcement.target_departments || ['all'],
@@ -584,7 +572,6 @@
                         announcement_type_id: '',
                         priority: 'medium',
                         location: '',
-                        event_id: '',
                         target_roles: [],
                         target_grades: ['all'],
                         target_departments: ['all'],

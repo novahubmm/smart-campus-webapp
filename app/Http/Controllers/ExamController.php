@@ -215,27 +215,11 @@ class ExamController extends Controller
     {
         $status = $exam->status;
         
-        // First check the saved status value
-        if ($status === 'results_published' || $status === 'results') {
-            return ['label' => __('Results'), 'class' => 'results'];
-        }
-        
-        if ($status === 'completed') {
-            return ['label' => __('Completed'), 'class' => 'completed'];
-        }
-        
-        if ($status === 'upcoming') {
-            return ['label' => __('Upcoming'), 'class' => 'upcoming'];
-        }
-        
-        // If no valid status, calculate based on dates
-        $now = now();
-        
-        if ($exam->end_date && $exam->end_date < $now) {
-            return ['label' => __('Completed'), 'class' => 'completed'];
-        }
-        
-        // Default to upcoming
-        return ['label' => __('Upcoming'), 'class' => 'upcoming'];
+        return match($status) {
+            'upcoming' => ['label' => __('Upcoming'), 'class' => 'upcoming'],
+            'ongoing' => ['label' => __('Ongoing'), 'class' => 'ongoing'],
+            'completed' => ['label' => __('Completed'), 'class' => 'completed'],
+            default => ['label' => __('Upcoming'), 'class' => 'upcoming'],
+        };
     }
 }

@@ -30,6 +30,42 @@ Schedule::command('fees:mark-overdue')
     ->withoutOverlapping()
     ->runInBackground();
 
+// Payment System: Generate monthly invoices on the 1st of every month at 12:00 AM
+Schedule::job(new \App\Jobs\PaymentSystem\MonthlyInvoiceGenerationJob())
+    ->monthlyOn(1, '00:00')
+    ->withoutOverlapping();
+
+// Payment System: Generate one-time fee invoices daily at 6:00 AM
+Schedule::command('payment:generate-one-time-invoices')
+    ->dailyAt('06:00')
+    ->withoutOverlapping()
+    ->runInBackground();
+
+// Update event statuses daily at midnight
+Schedule::job(new \App\Jobs\UpdateEventStatusJob())
+    ->dailyAt('00:00')
+    ->withoutOverlapping();
+
+// Update exam statuses daily at midnight
+Schedule::job(new \App\Jobs\UpdateExamStatusJob())
+    ->dailyAt('00:00')
+    ->withoutOverlapping();
+
+// Mark absent students for missing attendance records daily at 1:00 AM
+Schedule::job(new \App\Jobs\MarkAbsentStudentsJob())
+    ->dailyAt('01:00')
+    ->withoutOverlapping();
+
+// Mark absent teachers for missing attendance records daily at 1:10 AM
+Schedule::job(new \App\Jobs\MarkAbsentTeachersJob())
+    ->dailyAt('01:10')
+    ->withoutOverlapping();
+
+// Mark absent staff for missing attendance records daily at 1:20 AM
+Schedule::job(new \App\Jobs\MarkAbsentStaffJob())
+    ->dailyAt('01:20')
+    ->withoutOverlapping();
+
 Artisan::command('preflight:check {--quick : Skip database connectivity check}', function () {
     $results = [];
     $failed = 0;

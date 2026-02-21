@@ -126,7 +126,7 @@ class GuardianExamRepository implements GuardianExamRepositoryInterface
     public function getSubjects(StudentProfile $student): array
     {
         $gradeSubjects = GradeSubject::where('grade_id', $student->grade_id)
-            ->with(['subject', 'teacher.user'])
+            ->with(['subject.subjectType', 'teacher.user'])
             ->get();
 
         $subjects = $gradeSubjects->map(function ($gs) use ($student) {
@@ -171,22 +171,28 @@ class GuardianExamRepository implements GuardianExamRepositoryInterface
                 ->where('subject_id', $subject->id)
                 ->count();
 
-            // Generate color based on subject name
-            $colors = ['#2196F3', '#9C27B0', '#FF9800', '#4CAF50', '#F44336', '#00BCD4', '#FFC107', '#E91E63'];
-            $colorIndex = abs(crc32($subject->name)) % count($colors);
+            // Determine image and colors based on subject type
+            $subjectTypeName = $subject->subjectType?->name ?? 'Core';
+            $isCore = strtolower($subjectTypeName) === 'core';
+            
+            $image = $isCore ? 'core_subject.svg' : 'elective_subject.svg';
+            $iconColor = $isCore ? '#2196F3' : '#4CAF50'; // Blue for Core, Green for Elective
+            $progressColor = $isCore ? '#2196F3' : '#4CAF50';
 
             return [
                 'id' => $subject->id,
                 'name' => $subject->name,
                 'name_mm' => $subject->name_mm ?? $subject->name,
                 'code' => $subject->code ?? strtoupper(substr($subject->name, 0, 3)) . '-' . ($student->grade?->name ?? '10'),
+                'category' => $subjectTypeName,
                 'teacher_id' => $gs->teacher?->id,
                 'teacher_name' => $gs->teacher?->user?->name ?? 'N/A',
                 'teacher_name_mm' => $gs->teacher?->user?->name_mm ?? $gs->teacher?->user?->name ?? 'N/A',
                 'teacher_phone' => $gs->teacher?->user?->phone,
                 'teacher_email' => $gs->teacher?->user?->email,
-                'color' => $colors[$colorIndex],
-                'icon' => $subject->icon ?? '📚',
+                'image' => url('images/subject_images/' . $image),
+                'icon_color' => $iconColor,
+                'progress_color' => $progressColor,
                 'weekly_hours' => $weeklyHours,
                 'total_chapters' => $totalChapters,
                 'completed_chapters' => $completedChapters,

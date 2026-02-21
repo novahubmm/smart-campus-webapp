@@ -6,7 +6,7 @@ use App\Models\FeeStructure;
 use App\Models\FeeType;
 use App\Models\Grade;
 use App\Models\Invoice;
-use App\Models\Payment;
+use App\Models\PaymentSystem\Payment;
 use App\Models\PaymentMethod;
 use App\Models\PaymentProof;
 use App\Models\StudentProfile;

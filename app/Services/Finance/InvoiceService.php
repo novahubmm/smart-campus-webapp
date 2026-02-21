@@ -79,6 +79,122 @@ class InvoiceService
     }
 
     /**
+     * Generate one-time fee invoices for all students in the target grade
+     *
+     * @param FeeStructure $fee The one-time fee structure
+     * @return int Number of invoices created
+     */
+    public function generateOneTimeFeeInvoice(FeeStructure $fee): int
+    {
+        $invoicesCreated = 0;
+
+        try {
+            DB::beginTransaction();
+
+            // Query all active students in the target grade
+            $students = StudentProfile::where('status', 'active')
+                ->where('grade_id', $fee->grade_id)
+                ->with(['grade', 'user'])
+                ->get();
+
+            // Get next invoice sequence
+            $invoiceCounter = $this->getNextInvoiceSequence();
+
+            foreach ($students as $student) {
+                try {
+                    // Generate unique invoice number
+                    $invoiceNumber = $this->generateInvoiceNumber($invoiceCounter);
+
+                    // Calculate due date based on fee type's due_date_type
+                    $dueDate = $this->calculateDueDate($fee->feeType);
+
+                    // Set academic year
+                    $academicYear = $fee->batch->name ?? now()->format('Y');
+
+                    // Attempt to create invoice with retry logic for unique constraint
+                    $attempt = 0;
+                    $maxAttempts = 10;
+                    $created = false;
+
+                    while (!$created && $attempt < $maxAttempts) {
+                        try {
+                            $invoice = $this->invoiceRepo->create([
+                                'invoice_number' => $invoiceNumber,
+                                'student_id' => $student->id,
+                                'fee_structure_id' => $fee->id,
+                                'invoice_date' => now(),
+                                'due_date' => $dueDate,
+                                'month' => now()->format('Y-m'),
+                                'academic_year' => $academicYear,
+                                'subtotal' => $fee->amount,
+                                'discount' => 0,
+                                'total_amount' => $fee->amount,
+                                'paid_amount' => 0,
+                                'balance' => $fee->amount,
+                                'status' => 'unpaid',
+                                'created_by' => auth()->id(),
+                            ]);
+
+                            $invoicesCreated++;
+                            $invoiceCounter++;
+
+                            Log::info('One-time fee invoice created', [
+                                'invoice_id' => $invoice->id,
+                                'student_id' => $student->id,
+                                'fee_structure_id' => $fee->id,
+                                'amount' => $fee->amount,
+                            ]);
+
+                            $created = true;
+                        } catch (\Exception $e) {
+                            // If unique constraint on invoice_number, increment counter and retry
+                            $attempt++;
+                            $invoiceCounter++;
+                            $invoiceNumber = $this->generateInvoiceNumber($invoiceCounter);
+
+                            if ($attempt >= $maxAttempts) {
+                                Log::error('Failed to create one-time fee invoice after retries', [
+                                    'student_id' => $student->id,
+                                    'fee_structure_id' => $fee->id,
+                                    'error' => $e->getMessage(),
+                                ]);
+                                throw $e;
+                            }
+                        }
+                    }
+                } catch (\Exception $e) {
+                    Log::error('Failed to generate one-time fee invoice for student', [
+                        'student_id' => $student->id,
+                        'student_name' => $student->user->name ?? 'Unknown',
+                        'fee_structure_id' => $fee->id,
+                        'error' => $e->getMessage(),
+                    ]);
+                    // Continue with next student instead of failing entire batch
+                }
+            }
+
+            DB::commit();
+
+            Log::info('One-time fee invoices generated', [
+                'fee_structure_id' => $fee->id,
+                'grade_id' => $fee->grade_id,
+                'total_students' => $students->count(),
+                'invoices_created' => $invoicesCreated,
+            ]);
+
+            return $invoicesCreated;
+        } catch (\Exception $e) {
+            DB::rollBack();
+            Log::error('Failed to generate one-time fee invoices', [
+                'fee_structure_id' => $fee->id,
+                'error' => $e->getMessage(),
+            ]);
+            throw $e;
+        }
+    }
+
+
+    /**
      * Generate invoices for a specific student
      */
     public function generateInvoicesForStudent(
@@ -164,9 +280,11 @@ class InvoiceService
                 }
             }
 
+            // Calculate due date based on fee type's due_date_type
+            $dueDate = $this->calculateDueDate($structure->feeType);
+
             // Create invoice
             $invoiceNumber = $this->generateInvoiceNumber($invoiceCounter);
-            $dueDate = now()->addDays(30); // 30 days from now
 
             // Attempt to create invoice, retrying with incremented sequence if invoice_number collides
             $attempt = 0;
@@ -266,5 +384,23 @@ class InvoiceService
         }
         
         return sprintf('%s%s-%04d', $prefix, $date, $sequence);
+    }
+
+    /**
+     * Calculate due date based on fee type's due_date_type
+     */
+    private function calculateDueDate(?FeeType $feeType): \Carbon\Carbon
+    {
+        if (!$feeType || !$feeType->due_date_type) {
+            // Default to end of month if no fee type or due_date_type
+            return now()->endOfMonth();
+        }
+
+        return match($feeType->due_date_type) {
+            'end_of_month' => now()->endOfMonth(),
+            'next_15_days' => now()->addDays(15),
+            'today' => now(),
+            default => now()->endOfMonth(),
+        };
     }
 }

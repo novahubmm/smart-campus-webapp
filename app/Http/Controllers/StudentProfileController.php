@@ -80,18 +80,75 @@ class StudentProfileController extends Controller
         $grades = Grade::orderBy('name')->get();
         $classes = SchoolClass::orderBy('name')->get();
         $studentUsers = User::role(RoleEnum::STUDENT->value)->orderBy('name')->get();
+        $guardians = \App\Models\GuardianProfile::with('user')->get();
 
-        return view('student-profiles.create', compact('grades', 'classes', 'studentUsers'));
+        return view('student-profiles.create', compact('grades', 'classes', 'studentUsers', 'guardians'));
     }
 
     public function store(StudentProfileStoreRequest $request): RedirectResponse
     {
         $this->authorize('manage student profiles');
 
-        $data = StudentProfileStoreData::from($request->validated());
+        $validated = $request->validated();
+
+        // Handle photo upload
+        if ($request->hasFile('photo')) {
+            $path = $request->file('photo')->store('student-photos', 'public');
+            $validated['photo_path'] = $path;
+        }
+
+        $data = StudentProfileStoreData::from($validated);
         $profile = $this->studentProfileService->store($data);
 
-        $this->logCreate('StudentProfile', $profile->id ?? '', $request->validated()['student_identifier'] ?? null);
+        // Handle guardian linking or creation
+        if (!empty($validated['existing_guardian_id'])) {
+            // Link existing guardian to student
+            try {
+                $profile->guardians()->attach($validated['existing_guardian_id'], [
+                    'relationship' => 'parent', // Default relationship
+                ]);
+            } catch (\Exception $e) {
+                \Log::error('Guardian linking failed', [
+                    'student_id' => $profile->id,
+                    'guardian_id' => $validated['existing_guardian_id'],
+                    'error' => $e->getMessage(),
+                ]);
+            }
+        } elseif (!empty($validated['guardian_name']) && !empty($validated['guardian_email'])) {
+            // Create new guardian profile
+            try {
+                // Create guardian user account
+                $guardianUser = User::create([
+                    'name' => $validated['guardian_name'],
+                    'email' => $validated['guardian_email'],
+                    'phone' => $validated['guardian_phone'] ?? null,
+                    'password' => bcrypt('12345678'), // Default password
+                    'is_active' => true,
+                ]);
+
+                // Assign guardian role
+                $guardianUser->assignRole(RoleEnum::GUARDIAN->value);
+
+                // Create guardian profile
+                $guardianProfile = \App\Models\GuardianProfile::create([
+                    'user_id' => $guardianUser->id,
+                    'status' => 'active',
+                ]);
+
+                // Link guardian to student
+                $profile->guardians()->attach($guardianProfile->id, [
+                    'relationship' => 'parent', // Default relationship
+                ]);
+
+            } catch (\Exception $e) {
+                \Log::error('Guardian creation failed', [
+                    'student_id' => $profile->id,
+                    'error' => $e->getMessage(),
+                ]);
+            }
+        }
+
+        $this->logCreate('StudentProfile', $profile->id ?? '', $validated['student_identifier'] ?? null);
 
         return redirect()->route('student-profiles.index')
             ->with('success', 'Student profile created successfully.');
@@ -101,7 +158,7 @@ class StudentProfileController extends Controller
     {
         $this->authorize('manage student profiles');
 
-        $studentProfile->load(['user', 'grade', 'classModel']);
+        $studentProfile->load(['user', 'grade', 'classModel', 'guardians.user']);
 
         return view('student-profiles.show', compact('studentProfile'));
     }
@@ -110,7 +167,7 @@ class StudentProfileController extends Controller
     {
         $this->authorize('manage student profiles');
 
-        $studentProfile->load(['user', 'grade', 'classModel']);
+        $studentProfile->load(['user', 'grade', 'classModel', 'guardians.user']);
         $grades = Grade::orderBy('name')->get();
         $classes = SchoolClass::orderBy('name')->get();
         $studentUsers = User::role(RoleEnum::STUDENT->value)->orderBy('name')->get();

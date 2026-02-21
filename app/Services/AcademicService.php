@@ -118,14 +118,13 @@ class AcademicService
      */
     public function setupGrade(GradeData $data): Grade
     {
-        // Check if grade already exists for batch and category
+        // Check if grade already exists for batch
         if (Grade::where('level', $data->level)
             ->where('batch_id', $data->batch_id)
-            ->where('grade_category_id', $data->grade_category_id)
             ->exists()
         ) {
             throw ValidationException::withMessages([
-                'level' => ['Grade already exists for this batch and category.'],
+                'level' => ['Grade already exists for this batch.'],
             ]);
         }
         return $this->academicRepository->createGrade($data);
@@ -214,11 +213,10 @@ class AcademicService
     {
         if (Grade::where('level', $data->level)
             ->where('batch_id', $data->batch_id)
-            ->where('grade_category_id', $data->grade_category_id)
             ->exists()
         ) {
             throw ValidationException::withMessages([
-                'level' => ['Grade already exists for this batch and category.'],
+                'level' => ['Grade already exists for this batch.'],
             ]);
         }
 
@@ -243,12 +241,11 @@ class AcademicService
 
         if (Grade::where('level', $data->level)
             ->where('batch_id', $data->batch_id)
-            ->where('grade_category_id', $data->grade_category_id)
             ->where('id', '!=', $gradeId)
             ->exists()
         ) {
             throw ValidationException::withMessages([
-                'level' => ['Grade already exists for this batch and category.'],
+                'level' => ['Grade already exists for this batch.'],
             ]);
         }
 

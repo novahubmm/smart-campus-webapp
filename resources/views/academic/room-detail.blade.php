@@ -65,25 +65,24 @@
                 ]"
             />
 
-            <x-info-table 
-                :title="__('academic_management.Room Facilities')"
-                :rows="[
-                    [
-                        'label' => __('academic_management.Facilities'),
-                        'value' => $room->facilities->isNotEmpty() ? e($room->facilities->pluck('name')->implode(', ')) : '—'
-                    ],
-                ]"
-            />
-
             @php
                 $classColumns = [
                     [
                         'label' => __('academic_management.Class Name'),
-                        'render' => fn($class) => '<a href="' . route('academic-management.classes.show', $class->id) . '" style="font-weight: 600; color: #007AFF;">' . e($class->name) . '</a>',
+                        'render' => function($class) {
+                            // Extract grade level and section
+                            $gradeLevel = $class->grade->level ?? 0;
+                            $section = \App\Helpers\SectionHelper::extractSection($class->name);
+                            
+                            // Format using GradeHelper
+                            $formattedName = \App\Helpers\GradeHelper::formatClassName($gradeLevel, $section);
+                            
+                            return '<a href="' . route('academic-management.classes.show', $class->id) . '" style="font-weight: 600; color: #007AFF;">' . e($formattedName) . '</a>';
+                        },
                     ],
                     [
                         'label' => __('academic_management.Grade'),
-                        'render' => fn($class) => __('academic_management.Grade') . ' ' . e($class->grade->level ?? '—'),
+                        'render' => fn($class) => \App\Helpers\GradeHelper::getLocalizedName($class->grade->level ?? 0),
                     ],
                     [
                         'label' => __('academic_management.Students'),

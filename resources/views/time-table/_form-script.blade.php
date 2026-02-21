@@ -1,25 +1,29 @@
 @php
     $classOptions = $classes
         ->map(function ($c) {
-            // Format: "Grade X (Section)" or just "Grade X" if no section
-            $gradeLevel = $c->grade?->level;
-            $section = null;
+            // Construct the full class name from grade name + class name
+            // e.g., "Kindergarten" + "A" = "Kindergarten A"
+            // or "Grade 8" + "A" = "Grade 8 A"
+            $gradeName = $c->grade->name ?? '';
+            $className = $c->name ?? '';
             
-            // Extract section from class name (e.g., "Grade 1 A" -> "A")
-            if ($c->name && preg_match('/\s([A-Za-z])$/i', $c->name, $matches)) {
-                $section = strtoupper($matches[1]);
+            // Combine them with a space
+            if ($gradeName && $className) {
+                $label = $gradeName . ' ' . $className;
+            } elseif ($gradeName) {
+                $label = $gradeName;
+            } elseif ($className) {
+                $label = $className;
+            } else {
+                $label = 'Unknown Class';
             }
-            
-            // Build localized label
-            $label = $gradeLevel !== null 
-                ? \App\Helpers\SectionHelper::formatClassName($gradeLevel, $section)
-                : ($c->name ?? '');
             
             return [
                 'id' => $c->id,
                 'label' => $label,
                 'grade_id' => $c->grade_id,
                 'batch_id' => $c->batch_id,
+                'name' => $c->name,
             ];
         })
         ->values();

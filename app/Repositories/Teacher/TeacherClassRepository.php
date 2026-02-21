@@ -33,12 +33,20 @@ class TeacherClassRepository implements TeacherClassRepositoryInterface
             return ['classes' => [], 'total_classes' => 0, 'total_students' => 0];
         }
 
+        // Get classes from timetable periods
         $periods = Period::where('teacher_profile_id', $teacherProfile->id)
             ->whereHas('timetable', fn($q) => $q->where('is_active', true))
             ->with(['timetable.schoolClass.enrolledStudents', 'timetable.schoolClass.grade.gradeCategory', 'timetable.schoolClass.room', 'timetable.schoolClass.teacher.user', 'timetable.batch'])
             ->get();
 
-        $classIds = $periods->pluck('timetable.class_id')->unique()->filter();
+        $classIdsFromPeriods = $periods->pluck('timetable.class_id')->unique()->filter();
+        
+        // Also get classes where teacher is the homeroom teacher
+        $classIdsAsHomeroom = SchoolClass::where('teacher_id', $teacherProfile->id)->pluck('id');
+        
+        // Merge both sets of class IDs
+        $classIds = $classIdsFromPeriods->merge($classIdsAsHomeroom)->unique();
+        
         $classes = SchoolClass::whereIn('id', $classIds)
             ->with(['enrolledStudents', 'grade.gradeCategory', 'room', 'teacher.user', 'batch'])
             ->get();
@@ -1398,6 +1406,16 @@ class TeacherClassRepository implements TeacherClassRepositoryInterface
             return false;
         }
 
+        // Check if teacher is the homeroom teacher
+        $isHomeroomTeacher = SchoolClass::where('id', $classId)
+            ->where('teacher_id', $teacherProfile->id)
+            ->exists();
+        
+        if ($isHomeroomTeacher) {
+            return true;
+        }
+
+        // Check if teacher has periods in the class timetable
         return Period::where('teacher_profile_id', $teacherProfile->id)
             ->whereHas('timetable', fn($q) => $q->where('class_id', $classId)->where('is_active', true))
             ->exists();

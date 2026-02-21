@@ -295,23 +295,32 @@ class OngoingClassController extends Controller
 
         $timetablePeriods = collect();
         if ($timetable) {
-            $timetablePeriods = Period::where('timetable_id', $timetable->id)
+            $allPeriods = Period::where('timetable_id', $timetable->id)
                 ->where('day_of_week', $dayOfWeek)
                 ->orderBy('period_number')
                 ->with(['subject', 'teacher.user'])
-                ->get()
-                ->map(function ($period) {
-                    return [
-                        'id' => $period->id,
-                        'period_number' => $period->period_number,
-                        'subject_name' => $period->subject?->name ?? ($period->is_break ? 'Break' : '—'),
-                        'subject_id' => $period->subject_id,
-                        'teacher_name' => $period->teacher?->user?->name ?? '—',
-                        'starts_at' => $period->starts_at instanceof Carbon ? $period->starts_at->format('H:i') : substr((string) $period->starts_at, 0, 5),
-                        'ends_at' => $period->ends_at instanceof Carbon ? $period->ends_at->format('H:i') : substr((string) $period->ends_at, 0, 5),
-                        'is_break' => $period->is_break,
-                    ];
-                });
+                ->get();
+            
+            // Get period IDs that have attendance collected for this date
+            $periodsWithAttendance = StudentAttendance::whereIn('period_id', $allPeriods->pluck('id'))
+                ->whereDate('date', $dateStr)
+                ->groupBy('period_id')
+                ->pluck('period_id')
+                ->toArray();
+            
+            $timetablePeriods = $allPeriods->map(function ($period) use ($periodsWithAttendance) {
+                return [
+                    'id' => $period->id,
+                    'period_number' => $period->period_number,
+                    'subject_name' => $period->subject?->name ?? ($period->is_break ? 'Break' : '—'),
+                    'subject_id' => $period->subject_id,
+                    'teacher_name' => $period->teacher?->user?->name ?? '—',
+                    'starts_at' => $period->starts_at instanceof Carbon ? $period->starts_at->format('H:i') : substr((string) $period->starts_at, 0, 5),
+                    'ends_at' => $period->ends_at instanceof Carbon ? $period->ends_at->format('H:i') : substr((string) $period->ends_at, 0, 5),
+                    'is_break' => $period->is_break,
+                    'has_attendance' => in_array($period->id, $periodsWithAttendance),
+                ];
+            });
         }
 
         // Attendance summary
@@ -324,10 +333,16 @@ class OngoingClassController extends Controller
 
         $periodIds = [];
         if ($timetable) {
-            $periodIds = Period::where('timetable_id', $timetable->id)
-                ->where('day_of_week', $dayOfWeek)
-                ->pluck('id')
-                ->toArray();
+            // If a specific period is selected, only get that period
+            if ($periodId) {
+                $periodIds = [$periodId];
+            } else {
+                // Otherwise get all periods for the day
+                $periodIds = Period::where('timetable_id', $timetable->id)
+                    ->where('day_of_week', $dayOfWeek)
+                    ->pluck('id')
+                    ->toArray();
+            }
         }
 
         // Get attendance records for these periods on the selected date

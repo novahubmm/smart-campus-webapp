@@ -78,7 +78,7 @@
                     [
                         'label' => __('academic_management.Duration'),
                         'value' => $batch->start_date && $batch->end_date 
-                            ? $batch->start_date->diffInMonths($batch->end_date) . ' ' . __('academic_management.months')
+                            ? round($batch->start_date->diffInMonths($batch->end_date)) . ' ' . __('academic_management.months')
                             : '—'
                     ],
                 ]"

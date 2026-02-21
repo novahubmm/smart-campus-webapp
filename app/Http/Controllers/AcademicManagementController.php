@@ -60,6 +60,9 @@ class AcademicManagementController extends Controller
         $teachers = $this->academicRepository->getTeachers();
         $facilities = $this->academicRepository->getFacilities();
         $subjectTypes = $this->academicRepository->getSubjectTypes();
+        
+        // Get all grades for dropdowns (without pagination)
+        $allGrades = $this->academicRepository->getGradesWithDetails();
 
         return view('academic.academic-management', compact(
             'batchesCount',
@@ -76,7 +79,8 @@ class AcademicManagementController extends Controller
             'activeBatches',
             'teachers',
             'facilities',
-            'subjectTypes'
+            'subjectTypes',
+            'allGrades'
         ));
     }
 
@@ -599,8 +603,13 @@ class AcademicManagementController extends Controller
 
         abort_unless($room, 404);
 
-        // Load relationships for detail view
-        $room->load(['classes.grade', 'classes.students', 'classes.teacher', 'facilities']);
+        // Load relationships for detail view with sorted classes
+        $room->load(['classes' => function ($query) {
+            $query->join('grades', 'classes.grade_id', '=', 'grades.id')
+                  ->orderBy('grades.level', 'asc')
+                  ->orderBy('classes.name', 'asc')
+                  ->select('classes.*');
+        }, 'classes.grade', 'classes.students', 'classes.teacher', 'facilities']);
 
         return view('academic.room-detail', compact('room'));
     }

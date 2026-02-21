@@ -201,7 +201,7 @@ class TimetableController extends Controller
     {
         // Get class_id from query string for auto-selection
         $selectedClassId = $request->query('class_id');
-
+        
         return view('time-table.create', array_merge($this->formContext(), [
             'selectedClassId' => $selectedClassId,
         ]));

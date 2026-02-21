@@ -23,8 +23,7 @@ class UpdateGradeRequest extends FormRequest
                 'min:0',
                 function ($attribute, $value, $fail) use ($gradeId) {
                     $query = \App\Models\Grade::where('batch_id', $this->batch_id)
-                        ->where('level', $value)
-                        ->where('grade_category_id', $this->grade_category_id);
+                        ->where('level', $value);
                     
                     if ($gradeId) {
                         $query->where('id', '!=', $gradeId);

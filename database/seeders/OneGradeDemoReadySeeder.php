@@ -53,7 +53,7 @@ class OneGradeDemoReadySeeder extends DemoBaseSeeder
             $this->command->info('One-grade demo dataset created successfully.');
             $this->command->info('Batch: ' . $batch->name);
             $this->command->info('Grade: Kindergarten (0)');
-            $this->command->info('Classes: 3 (Kindergarten A/B/C)');
+            $this->command->info('Classes: 3 (A/B/C)');
             $this->command->info('Teachers: 3');
             $this->command->info('Staff: 3');
             $this->command->info('Students: 21 (7 per class)');
@@ -116,7 +116,8 @@ class OneGradeDemoReadySeeder extends DemoBaseSeeder
             ['color' => '#3B82F6']
         );
 
-        return Grade::firstOrCreate(
+        // Use updateOrCreate to ensure we're linking to the correct batch
+        return Grade::updateOrCreate(
             ['level' => 0, 'batch_id' => $batch->id],
             [
                 'grade_category_id' => $primaryCategory->id,
@@ -176,8 +177,8 @@ class OneGradeDemoReadySeeder extends DemoBaseSeeder
                     'previous_experience_years' => 2 + $index,
                     'status' => 'active',
                     'current_grades' => [0],
-                    'current_classes' => ["Kindergarten {$definition['section']}"],
-                    'responsible_class' => "Kindergarten {$definition['section']}",
+                    'current_classes' => [$definition['section']],
+                    'responsible_class' => $definition['section'],
                 ]
             );
         }
@@ -219,16 +220,15 @@ class OneGradeDemoReadySeeder extends DemoBaseSeeder
 
     private function createClasses(Batch $batch, Grade $grade, array $rooms, array $teachers): array
     {
-        $this->command->info('Creating classes (Kindergarten A/B/C)...');
+        $this->command->info('Creating classes (A/B/C)...');
 
         $classes = [];
         foreach (self::SECTIONS as $section) {
-            $className = "Kindergarten {$section}";
-
+            // Use only the section letter (A, B, C) as the class name
             $classes[$section] = SchoolClass::updateOrCreate(
-                ['name' => $className, 'batch_id' => $batch->id],
+                ['name' => $section, 'grade_id' => $grade->id],
                 [
-                    'grade_id' => $grade->id,
+                    'batch_id' => $batch->id,
                     'teacher_id' => $teachers[$section]->id,
                     'room_id' => $rooms[$section]->id,
                 ]

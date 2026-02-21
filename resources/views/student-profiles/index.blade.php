@@ -76,7 +76,7 @@
                         'label' => __('student_profiles.Full Name'),
                         'render' => function($student) {
                             return '<p class="text-sm font-semibold text-gray-900 dark:text-white">' . e($student->user?->name ?? '—') . '</p>' .
-                                   '<p class="text-xs text-gray-500 dark:text-gray-400">' . e($student->classModel?->name ?? $student->current_class ?? '—') . '</p>';
+                                   '<p class="text-xs text-gray-500 dark:text-gray-400">' . e($student->formatted_class_name) . '</p>';
                         },
                     ],
                     [

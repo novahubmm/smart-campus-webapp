@@ -31,13 +31,10 @@ class EventController extends Controller
         $today = now()->toDateString();
         $stats = [
             'total' => Event::count(),
-            'upcoming' => Event::where('status', true)->whereDate('start_date', '>', $today)->count(),
-            'active' => Event::where('status', true)
-                ->whereDate('start_date', '<=', $today)
-                ->where(function ($q) use ($today) {
-                    $q->whereNull('end_date')->orWhereDate('end_date', '>=', $today);
-                })->count(),
-            'completed' => Event::whereDate('end_date', '<', $today)->count(),
+            'upcoming' => Event::where('status', 'upcoming')->count(),
+            'ongoing' => Event::where('status', 'ongoing')->count(),
+            'completed' => Event::where('status', 'completed')->count(),
+            'result' => Event::where('status', 'result')->count(),
         ];
 
         $month = $filter->month ?: now()->format('Y-m');

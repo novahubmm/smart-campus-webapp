@@ -19,10 +19,8 @@ class Announcement extends Model
         'title',
         'content',
         'announcement_type_id',
-        'type',
         'priority',
         'location',
-        'event_id',
         'target_roles',
         'target_grades',
         'target_departments',
@@ -45,11 +43,6 @@ class Announcement extends Model
     public function creator(): BelongsTo
     {
         return $this->belongsTo(User::class, 'created_by');
-    }
-
-    public function event(): BelongsTo
-    {
-        return $this->belongsTo(Event::class);
     }
 
     public function announcementType(): BelongsTo

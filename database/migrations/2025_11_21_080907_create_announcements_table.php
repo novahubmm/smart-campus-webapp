@@ -12,7 +12,6 @@ return new class extends Migration
             $table->uuid('id')->primary();
             $table->string('title');
             $table->text('content');
-            $table->enum('type', ['general', 'urgent', 'event', 'academic', 'holiday'])->default('general');
             $table->enum('priority', ['low', 'medium', 'high', 'urgent'])->default('medium');
             $table->json('target_roles')->nullable(); // ['admin', 'teacher', 'student', 'parent', 'staff']
             $table->uuid('created_by')->nullable();

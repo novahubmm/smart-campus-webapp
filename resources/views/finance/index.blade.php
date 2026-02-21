@@ -119,12 +119,12 @@
                                     <td class="td-cell">{{ $payment->payment_date?->format('M j, Y') }}</td>
                                     <td class="td-cell font-semibold text-green-600 dark:text-green-400">{{ $payment->payment_number }}</td>
                                     <td class="td-cell">
-                                        <div class="font-medium text-gray-900 dark:text-white">{{ $payment->student?->user?->name ?? '-' }}</div>
-                                        <div class="text-xs text-gray-500">{{ $payment->student?->student_identifier ?? '' }}</div>
+                                        <div class="font-medium text-gray-900 dark:text-white">{{ $payment->invoice?->student?->user?->name ?? '-' }}</div>
+                                        <div class="text-xs text-gray-500">{{ $payment->invoice?->student?->student_identifier ?? '' }}</div>
                                     </td>
-                                    <td class="td-cell">{{ $payment->student?->grade?->name ?? '-' }} / {{ $payment->student?->classModel?->name ?? '-' }}</td>
-                                    <td class="td-cell font-bold text-green-600 dark:text-green-400">{{ number_format($payment->amount, 0) }} MMK</td>
-                                    <td class="td-cell"><span class="payment-method-badge">{{ ucfirst(str_replace('_', ' ', $payment->payment_method)) }}</span></td>
+                                    <td class="td-cell">{{ $payment->invoice?->student?->grade?->name ?? '-' }} / {{ $payment->invoice?->student?->formatted_class_name ?? '-' }}</td>
+                                    <td class="td-cell font-bold text-green-600 dark:text-green-400">{{ number_format($payment->payment_amount, 0) }} MMK</td>
+                                    <td class="td-cell"><span class="payment-method-badge">{{ $payment->paymentMethod?->name ?? '-' }}</span></td>
                                 </tr>
                                 @empty
                                 <tr>

@@ -2,7 +2,7 @@
 
 namespace App\Repositories\Finance;
 
-use App\Models\Payment;
+use App\Models\PaymentSystem\Payment;
 use Illuminate\Support\Collection;
 
 class PaymentRepository

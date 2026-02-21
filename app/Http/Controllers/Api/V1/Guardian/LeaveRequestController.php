@@ -111,7 +111,7 @@ class LeaveRequestController extends Controller
     {
         $request->validate([
             'student_id' => $studentId ? 'nullable|string' : 'required|string',
-            'leave_type' => 'required|string|in:sick,casual,emergency,other',
+            'leave_type' => 'required|string|in:sick,personal,emergency,other',
             'start_date' => 'required|date',
             'end_date' => 'required|date|after_or_equal:start_date',
             'reason' => 'required|string|max:1000',
@@ -145,7 +145,7 @@ class LeaveRequestController extends Controller
         $request->validate([
             'student_ids' => 'required|array|min:1',
             'student_ids.*' => 'required|string',
-            'leave_type' => 'required|string|in:sick,casual,emergency,other',
+            'leave_type' => 'required|string|in:sick,personal,emergency,other',
             'start_date' => 'required|date',
             'end_date' => 'required|date|after_or_equal:start_date',
             'reason' => 'required|string|max:1000',
@@ -220,7 +220,7 @@ class LeaveRequestController extends Controller
     public function update(Request $request, string $studentIdOrRequestId, ?string $requestId = null): JsonResponse
     {
         $request->validate([
-            'leave_type' => 'sometimes|string|in:sick,casual,emergency,other',
+            'leave_type' => 'sometimes|string|in:sick,personal,emergency,other',
             'start_date' => 'sometimes|date',
             'end_date' => 'sometimes|date|after_or_equal:start_date',
             'reason' => 'sometimes|string|max:1000',

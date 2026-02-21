@@ -192,21 +192,6 @@
                             </div>
                         </div>
 
-                        <!-- Event Link -->
-                        @if($announcement->event)
-                            <div>
-                                <h4 class="text-sm font-semibold text-gray-900 dark:text-white mb-2">{{ __('announcements.Linked Event') }}</h4>
-                                <div class="text-sm">
-                                    <a href="{{ route('events.show', $announcement->event) }}" class="text-amber-600 dark:text-amber-400 hover:text-amber-700 dark:hover:text-amber-300 font-medium">
-                                        {{ $announcement->event->title }}
-                                    </a>
-                                    <div class="text-gray-500 dark:text-gray-400 text-xs mt-1">
-                                        {{ $announcement->event->start_date->format('M d, Y') }}
-                                    </div>
-                                </div>
-                            </div>
-                        @endif
-
                         <!-- Last Updated -->
                         <div>
                             <h4 class="text-sm font-semibold text-gray-900 dark:text-white mb-2">{{ __('announcements.Last Updated') }}</h4>

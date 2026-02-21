@@ -36,6 +36,14 @@ use App\Http\Controllers\Api\V1\UnifiedAuthController;
 use App\Http\Controllers\Api\V1\UnifiedDashboardController;
 use App\Http\Controllers\Api\V1\UnifiedNotificationController;
 
+// Payment System API Controllers
+use App\Http\Controllers\Api\V1\PaymentSystem\FeeController;
+use App\Http\Controllers\Api\V1\PaymentSystem\InvoiceController;
+use App\Http\Controllers\Api\V1\PaymentSystem\PaymentController as PaymentSystemPaymentController;
+use App\Http\Controllers\Api\V1\PaymentSystem\PaymentMethodController;
+use App\Http\Controllers\Api\V1\PaymentSystem\PaymentOptionController;
+use App\Http\Controllers\Api\V1\PaymentSystem\PaymentVerificationController;
+
 // Guardian API Controllers
 use App\Http\Controllers\Api\V1\Guardian\AuthController as GuardianAuthController;
 use App\Http\Controllers\Api\V1\Guardian\DashboardController as GuardianDashboardController;
@@ -176,6 +184,42 @@ Route::prefix('v1')->group(function () {
         // Device Tokens (unified for both roles)
         Route::post('/device-tokens', [DeviceTokenController::class, 'store']);
         Route::delete('/device-tokens', [DeviceTokenController::class, 'destroy']);
+    });
+
+    // Payment System Routes - Matching Postman Collection Structure
+    Route::prefix('payment-system')->group(function () {
+        // Public routes (no auth required for payment options)
+        Route::get('/payment-options', [PaymentOptionController::class, 'index']);
+        Route::get('/payment-methods', [PaymentMethodController::class, 'index']);
+        
+        // Protected routes (require authentication)
+        Route::middleware('auth:sanctum')->group(function () {
+            // Invoice endpoints
+            Route::get('/students/{studentId}/invoices', [InvoiceController::class, 'index']);
+            
+            // Payment endpoints
+            Route::post('/students/{studentId}/payments/submit', [PaymentSystemPaymentController::class, 'store']);
+            Route::get('/students/{studentId}/payments/history', [PaymentSystemPaymentController::class, 'history']);
+            
+            // Admin payment verification routes
+            Route::prefix('admin/payments')->group(function () {
+                Route::post('/{paymentId}/verify', [PaymentVerificationController::class, 'verify']);
+                Route::post('/{paymentId}/reject', [PaymentVerificationController::class, 'reject']);
+            });
+            
+            // Admin fee management
+            Route::post('/fees', [FeeController::class, 'store']);
+        });
+    });
+
+    // Shorter URL aliases (without payment-system prefix)
+    Route::get('/payment-options', [PaymentOptionController::class, 'index']);
+    Route::get('/payment-methods', [PaymentMethodController::class, 'index']);
+    
+    Route::middleware('auth:sanctum')->group(function () {
+        Route::get('/students/{studentId}/invoices', [InvoiceController::class, 'index']);
+        Route::post('/students/{studentId}/payments/submit', [PaymentSystemPaymentController::class, 'store']);
+        Route::get('/students/{studentId}/payments/history', [PaymentSystemPaymentController::class, 'history']);
     });
 
     Route::middleware('auth:sanctum')->group(function () {

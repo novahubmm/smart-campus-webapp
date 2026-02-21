@@ -58,6 +58,11 @@ class Invoice extends Model
         return $this->hasMany(InvoiceItem::class);
     }
 
+    public function fees(): HasMany
+    {
+        return $this->hasMany(PaymentSystem\InvoiceFee::class, 'invoice_id');
+    }
+
     public function payments(): HasMany
     {
         return $this->hasMany(PaymentItem::class, 'invoice_id');

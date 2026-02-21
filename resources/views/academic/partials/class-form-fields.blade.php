@@ -21,8 +21,12 @@
         class="w-full rounded-lg border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200 focus:border-blue-500 focus:ring-blue-500"
         required>
         @foreach($grades as $grade)
-            <option value="{{ $grade->id }}" {{ $selectedGrade == $grade->id ? 'selected' : '' }}>
-                @gradeName($grade->level)
+            @php
+                $gradeId = is_array($grade) ? $grade['id'] : $grade->id;
+                $gradeLevel = is_array($grade) ? $grade['level'] : $grade->level;
+            @endphp
+            <option value="{{ $gradeId }}" {{ $selectedGrade == $gradeId ? 'selected' : '' }}>
+                @gradeName($gradeLevel)
             </option>
         @endforeach
     </select>

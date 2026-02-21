@@ -18,7 +18,8 @@ class StoreClassRequest extends FormRequest
             'name' => [
                 'required',
                 'string',
-                'max:255',
+                'size:1',
+                'regex:/^[A-Z]$/',
             ],
             'grade_id' => ['required', 'uuid', 'exists:grades,id'],
             'batch_id' => ['nullable', 'uuid', 'exists:batches,id'],
@@ -27,13 +28,22 @@ class StoreClassRequest extends FormRequest
         ];
     }
 
+    public function messages(): array
+    {
+        return [
+            'name.regex' => __('academic_management.Class name must be a single uppercase letter (A-Z)'),
+            'name.size' => __('academic_management.Class name must be a single letter'),
+        ];
+    }
+
     public function withValidator($validator)
     {
         $validator->after(function ($validator) {
-            $exists = \App\Models\SchoolClass::where('grade_id', $this->grade_id)
-                ->where('name', $this->name)
+            // Check for duplicate: same grade + same name
+            $exists = \App\Models\SchoolClass::where('name', $this->name)
+                ->where('grade_id', $this->grade_id)
                 ->exists();
-
+            
             if ($exists) {
                 $validator->errors()->add('name', __('academic_management.duplicate_class_error'));
             }

@@ -256,7 +256,18 @@ class CurriculumApiController extends Controller
             return ApiResponse::error('Teacher profile not found', 403);
         }
 
-        $classes = SchoolClass::where('teacher_id', $teacherProfile->id)
+        // Get classes where teacher is the homeroom teacher OR teaches through timetable
+        $homeroomClassIds = SchoolClass::where('teacher_id', $teacherProfile->id)
+            ->pluck('id');
+        
+        $timetableClassIds = \App\Models\Period::where('teacher_profile_id', $teacherProfile->id)
+            ->whereHas('timetable', fn($q) => $q->where('is_active', true))
+            ->pluck('class_id')
+            ->unique();
+        
+        $allClassIds = $homeroomClassIds->merge($timetableClassIds)->unique();
+
+        $classes = SchoolClass::whereIn('id', $allClassIds)
             ->with(['grade.subjects.curriculumChapters.topics'])
             ->get();
 

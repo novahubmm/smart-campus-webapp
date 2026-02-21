@@ -343,9 +343,12 @@
                                             <td class="px-4 py-3 text-sm text-gray-700 dark:text-gray-300">{{ $room->building ?? 'Building A' }} · {{ $room->floor ?? '1st Floor' }}</td>
                                             <td class="px-4 py-3 text-sm text-gray-700 dark:text-gray-300">
                                                 @if($room->classes->isNotEmpty())
-                                                    @foreach($room->classes as $class)
-                                                        <a href="{{ route('academic-management.classes.show', $class->id) }}" class="text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300">{{ $class->name }}</a>@if(!$loop->last), @endif
+                                                    @foreach($room->classes->take(2) as $class)
+                                                        <a href="{{ route('academic-management.classes.show', $class->id) }}" class="text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300">{{ \App\Helpers\SectionHelper::formatFullClassName($class->name, $class->grade?->level) }}</a>@if(!$loop->last), @endif
                                                     @endforeach
+                                                    @if($room->classes->count() > 2)
+                                                        <span class="text-gray-500 dark:text-gray-400">, +{{ $room->classes->count() - 2 }} more</span>
+                                                    @endif
                                                 @else
                                                     —
                                                 @endif
@@ -512,7 +515,7 @@
         :submitText="__('academic_management.Save Class')"
         :cancelText="__('academic_management.Cancel')">
         @include('academic.partials.class-form-fields', [
-            'grades' => $grades,
+            'grades' => $allGrades,
             'rooms' => $rooms,
             'teachers' => $teachers,
         ])
@@ -571,48 +574,6 @@
                 <p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>
             @enderror
         </div>
-
-        <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
-            <div class="space-y-1">
-                <label for="subjectIcon" class="block text-sm font-semibold text-gray-700 dark:text-gray-200">Icon</label>
-                <input
-                    type="text"
-                    id="subjectIcon"
-                    name="icon"
-                    class="w-full rounded-lg border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200 focus:border-blue-500 focus:ring-blue-500"
-                    value="{{ old('icon') }}"
-                    placeholder="fas fa-book">
-                @error('icon')
-                    <p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>
-                @enderror
-            </div>
-            <div class="space-y-1">
-                <label for="subjectIconColor" class="block text-sm font-semibold text-gray-700 dark:text-gray-200">Icon Color</label>
-                <input
-                    type="text"
-                    id="subjectIconColor"
-                    name="icon_color"
-                    class="w-full rounded-lg border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200 focus:border-blue-500 focus:ring-blue-500"
-                    value="{{ old('icon_color') }}"
-                    placeholder="#3B82F6">
-                @error('icon_color')
-                    <p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>
-                @enderror
-            </div>
-            <div class="space-y-1">
-                <label for="subjectProgressColor" class="block text-sm font-semibold text-gray-700 dark:text-gray-200">Progress Color</label>
-                <input
-                    type="text"
-                    id="subjectProgressColor"
-                    name="progress_color"
-                    class="w-full rounded-lg border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200 focus:border-blue-500 focus:ring-blue-500"
-                    value="{{ old('progress_color') }}"
-                    placeholder="#22C55E">
-                @error('progress_color')
-                    <p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>
-                @enderror
-            </div>
-        </div>
         
         <div class="space-y-1">
             <label for="createSubjectGrades" class="block text-sm font-semibold text-gray-700 dark:text-gray-200">
@@ -624,8 +585,8 @@
                 multiple
                 class="w-full rounded-lg border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200 focus:border-blue-500 focus:ring-blue-500"
                 required>
-                @foreach($grades as $grade)
-                    <option value="{{ $grade->id }}">@gradeName($grade->level)</option>
+                @foreach($allGrades as $grade)
+                    <option value="{{ $grade['id'] }}">@gradeName($grade['level'])</option>
                 @endforeach
             </select>
             <p class="text-xs text-gray-500 dark:text-gray-400">
@@ -637,17 +598,25 @@
         </div>
         
         <div class="space-y-1">
-            <label for="subjectCategory" class="block text-sm font-semibold text-gray-700 dark:text-gray-200">
-                {{ __('academic_management.Category') }}
+            <label for="subjectType" class="block text-sm font-semibold text-gray-700 dark:text-gray-200">
+                {{ __('academic_management.Subject Type') }} <span class="text-red-500">*</span>
             </label>
             <select 
-                id="subjectCategory" 
-                name="category" 
-                class="w-full rounded-lg border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200 focus:border-blue-500 focus:ring-blue-500">
-                <option value="core" {{ old('category') == 'core' ? 'selected' : '' }}>{{ __('academic_management.Core') }}</option>
-                <option value="elective" {{ old('category') == 'elective' ? 'selected' : '' }}>{{ __('academic_management.Elective') }}</option>
+                id="subjectType" 
+                name="subject_type_id" 
+                class="w-full rounded-lg border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200 focus:border-blue-500 focus:ring-blue-500"
+                required>
+                <option value="">{{ __('academic_management.Select Subject Type') }}</option>
+                @foreach($subjectTypes as $type)
+                    <option value="{{ $type->id }}" {{ old('subject_type_id') == $type->id ? 'selected' : '' }}>
+                        {{ $type->name }}
+                    </option>
+                @endforeach
             </select>
-            @error('category')
+            <p class="text-xs text-gray-500 dark:text-gray-400">
+                <i class="fas fa-info-circle mr-1"></i>{{ __('academic_management.Core subjects will use blue theme, Elective subjects will use green theme') }}
+            </p>
+            @error('subject_type_id')
                 <p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>
             @enderror
         </div>

@@ -17,6 +17,10 @@ return Application::configure(basePath: dirname(__DIR__))
             \App\Http\Middleware\CheckMaintenanceMode::class,
         ]);
 
+        $middleware->api(append: [
+            \App\Http\Middleware\ForceJsonResponse::class,
+        ]);
+
         $middleware->alias([
             'permission' => \Spatie\Permission\Middleware\PermissionMiddleware::class,
             'role' => \Spatie\Permission\Middleware\RoleMiddleware::class,

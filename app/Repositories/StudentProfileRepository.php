@@ -16,10 +16,9 @@ class StudentProfileRepository implements StudentProfileRepositoryInterface
 
         return StudentProfile::create([
             'user_id' => $userId,
+            'student_id' => $userId, // Use user_id as student_id
             'student_identifier' => $studentId,
             'starting_grade_at_school' => $data->startingGradeAtSchool,
-            'current_grade' => $data->currentGrade,
-            'current_class' => $data->currentClass,
             'guardian_teacher' => $data->guardianTeacher,
             'assistant_teacher' => $data->assistantTeacher,
             'date_of_joining' => $data->dateOfJoining,
@@ -64,8 +63,6 @@ class StudentProfileRepository implements StudentProfileRepositoryInterface
             'user_id' => $data->userId,
             'student_identifier' => $studentId,
             'starting_grade_at_school' => $data->startingGradeAtSchool,
-            'current_grade' => $data->currentGrade,
-            'current_class' => $data->currentClass,
             'guardian_teacher' => $data->guardianTeacher,
             'assistant_teacher' => $data->assistantTeacher,
             'date_of_joining' => $data->dateOfJoining,

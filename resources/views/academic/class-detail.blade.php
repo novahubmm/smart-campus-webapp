@@ -112,21 +112,22 @@
                             <span class="ml-1 text-xs opacity-75">({{ $activityData['timetable_periods']->count() }})</span>
                         </button>
                         @foreach($activityData['timetable_periods'] as $tp)
+                            @php
+                                $hasAttendance = $tp['has_attendance'] ?? false;
+                            @endphp
                             <button type="button" 
                                     @click="selectPeriod('{{ $tp['id'] }}')"
                                     :class="selectedPeriod === '{{ $tp['id'] }}' 
                                         ? 'bg-blue-600 text-white border-blue-600' 
-                                        : (periodHasRemarks('{{ $tp['id'] }}')
-                                            ? 'bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-300 border-green-300 dark:border-green-700' 
-                                            : 'bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-200 border-gray-300 dark:border-gray-600 hover:border-blue-400')"
+                                        : '{{ $hasAttendance ? 'bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-300 border-green-300 dark:border-green-700' : 'bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-200 border-gray-300 dark:border-gray-600 hover:border-blue-400' }}'"
                                     class="relative px-4 py-2 rounded-lg border-2 transition-all">
                                 <div class="font-semibold text-sm">P{{ $tp['period_number'] }} - {{ $tp['subject_name'] }}</div>
                                 <div class="text-xs opacity-75">{{ $tp['starts_at'] }} - {{ $tp['ends_at'] }}</div>
-                                <template x-if="periodHasRemarks('{{ $tp['id'] }}')">
-                                    <span class="absolute -top-1 -right-1 w-4 h-4 bg-green-500 rounded-full flex items-center justify-center">
-                                        <i class="fas fa-check text-white text-[8px]"></i>
+                                @if($hasAttendance)
+                                    <span class="absolute -top-1 -right-1 w-5 h-5 bg-green-500 rounded-full flex items-center justify-center">
+                                        <i class="fas fa-check text-white text-[10px]"></i>
                                     </span>
-                                </template>
+                                @endif
                             </button>
                         @endforeach
                     </div>
@@ -617,15 +618,14 @@
 
                         // Select a period and update URL
                         selectPeriod(periodId) {
-                            this.selectedPeriod = periodId;
-                            // Update URL without reload
+                            // Update URL and reload page to fetch period-specific data
                             const url = new URL(window.location);
                             if (periodId) {
                                 url.searchParams.set('period_id', periodId);
                             } else {
                                 url.searchParams.delete('period_id');
                             }
-                            window.history.replaceState({}, '', url);
+                            window.location.href = url.toString();
                         },
 
                         // Get selected period number

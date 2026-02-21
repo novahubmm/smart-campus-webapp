@@ -41,9 +41,9 @@ class StudentProfileService
             $this->userRepository->update(new UserUpdateData(
                 user: $user,
                 name: $data->name,
-                email: $data->email,
-                phone: $data->phone,
-                nrc: $data->nrc,
+                email: $data->email ?: null,
+                phone: $data->phone ?: null,
+                nrc: $data->nrc ?: null,
                 isActive: $data->isActive,
             ));
 
@@ -66,9 +66,9 @@ class StudentProfileService
             $this->userRepository->update(new UserUpdateData(
                 user: $user,
                 name: $data->name ?? $user->name,
-                email: $data->email ?? $user->email,
-                phone: $data->phone ?? $user->phone,
-                nrc: $data->nrc ?? $user->nrc,
+                email: ($data->email ?: $user->email) ?: null,
+                phone: ($data->phone ?: $user->phone) ?: null,
+                nrc: ($data->nrc ?: $user->nrc) ?: null,
                 isActive: $data->isActive,
             ));
 
@@ -82,9 +82,9 @@ class StudentProfileService
 
         return $this->userRepository->create(new UserStoreData(
             name: $data->name ?? '',
-            email: $data->email ?? '',
-            phone: $data->phone ?? '',
-            nrc: $data->nrc ?? '',
+            email: $data->email ?: null,
+            phone: $data->phone ?: null,
+            nrc: $data->nrc ?: null,
             password: $data->password ?? Str::random(12),
             roles: [RoleEnum::STUDENT->value],
             isActive: $data->isActive,

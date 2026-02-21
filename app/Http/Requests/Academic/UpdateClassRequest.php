@@ -18,7 +18,8 @@ class UpdateClassRequest extends FormRequest
             'name' => [
                 'required',
                 'string',
-                'max:255',
+                'size:1',
+                'regex:/^[A-Z]$/',
             ],
             'grade_id' => ['required', 'uuid', 'exists:grades,id'],
             'batch_id' => ['nullable', 'uuid', 'exists:batches,id'],
@@ -27,14 +28,24 @@ class UpdateClassRequest extends FormRequest
         ];
     }
 
+    public function messages(): array
+    {
+        return [
+            'name.regex' => __('academic_management.Class name must be a single uppercase letter (A-Z)'),
+            'name.size' => __('academic_management.Class name must be a single letter'),
+        ];
+    }
+
     public function withValidator($validator)
     {
         $validator->after(function ($validator) {
             $classId = $this->route('id');
             
-            $query = \App\Models\SchoolClass::where('grade_id', $this->grade_id)
-                ->where('name', $this->name);
+            // Check for duplicate: same grade + same name (excluding current class)
+            $query = \App\Models\SchoolClass::where('name', $this->name)
+                ->where('grade_id', $this->grade_id);
             
+            // Exclude current class from check
             if ($classId) {
                 $query->where('id', '!=', $classId);
             }

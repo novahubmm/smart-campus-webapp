@@ -120,7 +120,6 @@ class PublishScheduledAnnouncements extends Command
                     'message' => strip_tags($announcement->content),
                     'announcement_id' => $announcement->id,
                     'priority' => $announcement->priority ?? 'medium',
-                    'type' => $announcement->type ?? 'general',
                 ],
                 'read_at' => null,
             ]);
@@ -149,7 +148,6 @@ class PublishScheduledAnnouncements extends Command
                     'message' => strip_tags($announcement->content),
                     'announcement_id' => $announcement->id,
                     'priority' => $announcement->priority ?? 'medium',
-                    'type' => $announcement->type ?? 'general',
                 ],
                 'read_at' => null,
             ]);

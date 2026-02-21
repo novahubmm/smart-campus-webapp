@@ -114,7 +114,7 @@
     </style>
     @endpush
 
-    <div class="py-6 sm:py-10 overflow-x-hidden" x-data="studentFeeManager()" x-init="init()">
+    <div class="py-6 sm:py-10 overflow-x-hidden" x-data="studentFeeManager()">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-6">
             @if(session('status'))
                 <div class="rounded-lg border border-green-200 bg-green-50 px-4 py-3 text-green-800 dark:border-green-900/50 dark:bg-green-900/30 dark:text-green-100">
@@ -131,7 +131,7 @@
             <!-- Tabs Navigation -->
             <x-academic-tabs :tabs="[
                 'invoice' => __('finance.Fee Management'),
-                'history' => __('finance.Payment History'),
+                'pending_reject' => __('finance.Pending & Rejects'),
                 'structure' => __('finance.Fee Structure'),
                 'payment-methods' => __('finance.Payment Methods'),
             ]" />
@@ -152,12 +152,12 @@
                     </div>
                     <div class="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl p-4 flex items-center gap-4">
                         <div class="w-12 h-12 rounded-xl bg-gradient-to-br from-blue-500 to-indigo-600 text-white flex items-center justify-center text-xl shadow-lg">
-                            <i class="fas fa-users"></i>
+                            <i class="fas fa-hand-holding-usd"></i>
                         </div>
                         <div>
-                            <p class="text-sm text-gray-500 dark:text-gray-400">{{ __('finance.Total Students') }}</p>
-                            <p class="text-xl font-bold text-gray-900 dark:text-white">{{ $totalStudents }}</p>
-                            <p class="text-xs text-gray-500 dark:text-gray-400">{{ __('finance.Active students') }}</p>
+                            <p class="text-sm text-gray-500 dark:text-gray-400">{{ __('finance.Total Received') }}</p>
+                            <p class="text-xl font-bold text-gray-900 dark:text-white">{{ number_format($totalReceived, 0) }} MMK</p>
+                            <p class="text-xs text-green-600 dark:text-green-400">{{ $currentMonth }}</p>
                         </div>
                     </div>
                     <div class="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl p-4 flex items-center gap-4">
@@ -172,95 +172,9 @@
                     </div>
                 </div>
 
-                <!-- Pending Payments from Guardian App -->
-                @if($pendingAppPayments->count() > 0)
-                <div class="bg-white dark:bg-gray-800 border border-amber-200 dark:border-amber-700 rounded-xl shadow-sm mb-6">
-                    <div class="flex items-center justify-between p-4 border-b border-amber-200 dark:border-amber-700 bg-amber-50 dark:bg-amber-900/20">
-                        <div class="flex items-center gap-3">
-                            <div class="w-10 h-10 rounded-lg bg-amber-500 text-white flex items-center justify-center">
-                                <i class="fas fa-mobile-alt"></i>
-                            </div>
-                            <div>
-                                <h3 class="text-lg font-semibold text-gray-900 dark:text-white">{{ __('finance.Pending Payments from Guardian App') }}</h3>
-                                <p class="text-sm text-gray-600 dark:text-gray-400">{{ $pendingAppPayments->count() }} {{ __('finance.payments awaiting confirmation') }}</p>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="p-4">
-                        <div class="overflow-x-auto">
-                            <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
-                                <thead class="bg-gray-50 dark:bg-gray-700">
-                                    <tr>
-                                        <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 dark:text-gray-300">{{ __('finance.Payment #') }}</th>
-                                        <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 dark:text-gray-300">{{ __('finance.Student') }}</th>
-                                        <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 dark:text-gray-300">{{ __('finance.Grade') }}</th>
-                                        <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 dark:text-gray-300">{{ __('finance.Amount') }}</th>
-                                        <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 dark:text-gray-300">{{ __('finance.Method') }}</th>
-                                        <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 dark:text-gray-300">{{ __('finance.Reference') }}</th>
-                                        <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 dark:text-gray-300">{{ __('finance.Date') }}</th>
-                                        <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 dark:text-gray-300">{{ __('finance.Actions') }}</th>
-                                    </tr>
-                                </thead>
-                                <tbody class="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
-                                    @foreach($pendingAppPayments as $payment)
-                                    <tr class="hover:bg-gray-50 dark:hover:bg-gray-700/50">
-                                        <td class="px-4 py-3 text-sm text-gray-900 dark:text-gray-100">
-                                            <span class="font-mono">{{ $payment->payment_number }}</span>
-                                        </td>
-                                        <td class="px-4 py-3 text-sm">
-                                            <div>
-                                                <p class="font-medium text-gray-900 dark:text-gray-100">{{ $payment->student?->user?->name ?? 'N/A' }}</p>
-                                                <p class="text-xs text-gray-500 dark:text-gray-400">{{ $payment->student?->student_identifier ?? 'N/A' }}</p>
-                                            </div>
-                                        </td>
-                                        <td class="px-4 py-3 text-sm text-gray-900 dark:text-gray-100">
-                                            @gradeName($payment->student?->grade?->level ?? 0)
-                                        </td>
-                                        <td class="px-4 py-3 text-sm font-semibold text-gray-900 dark:text-gray-100">
-                                            {{ number_format($payment->amount, 0) }} MMK
-                                        </td>
-                                        <td class="px-4 py-3 text-sm">
-                                            <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium
-                                                @if($payment->paymentMethod?->type === 'mobile_wallet') bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300
-                                                @elseif($payment->paymentMethod?->type === 'bank') bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300
-                                                @else bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300
-                                                @endif">
-                                                {{ $payment->paymentMethod?->name ?? ucfirst(str_replace('_', ' ', $payment->payment_method)) }}
-                                            </span>
-                                        </td>
-                                        <td class="px-4 py-3 text-sm text-gray-600 dark:text-gray-400">
-                                            <span class="font-mono text-xs">{{ $payment->reference_number }}</span>
-                                        </td>
-                                        <td class="px-4 py-3 text-sm text-gray-600 dark:text-gray-400">
-                                            {{ $payment->payment_date?->format('M j, Y') }}
-                                        </td>
-                                        <td class="px-4 py-3 text-sm">
-                                            <div class="flex items-center gap-2">
-                                                <form method="POST" action="{{ route('student-fees.payments.confirm', $payment) }}" class="inline">
-                                                    @csrf
-                                                    <button type="submit" 
-                                                            onclick="return confirm('Confirm this payment?')"
-                                                            class="inline-flex items-center px-3 py-1.5 bg-green-600 hover:bg-green-700 text-white text-xs font-medium rounded-lg transition-colors">
-                                                        <i class="fas fa-check mr-1"></i>
-                                                        {{ __('finance.Confirm') }}
-                                                    </button>
-                                                </form>
-                                                <button type="button"
-                                                        onclick="openRejectModal('{{ $payment->id }}')"
-                                                        class="inline-flex items-center px-3 py-1.5 bg-red-600 hover:bg-red-700 text-white text-xs font-medium rounded-lg transition-colors">
-                                                    <i class="fas fa-times mr-1"></i>
-                                                    {{ __('finance.Reject') }}
-                                                </button>
-                                            </div>
-                                        </td>
-                                    </tr>
-                                    @endforeach
-                                </tbody>
-                            </table>
-                        </div>
-                    </div>
-                </div>
-                @endif
+                {{-- Legacy "Pending Payments from Guardian App" section removed --}}
+                {{-- All pending payments now handled via PaymentSystem Payment Proofs section below --}}
+
 
                 <!-- Fee Management Section -->
                 <div class="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl shadow-sm student-fee-section">
@@ -270,63 +184,83 @@
 
                     <!-- Filters -->
                     <div class="p-4 bg-gray-50 dark:bg-gray-900/50 border-b border-gray-200 dark:border-gray-700">
-                        <form method="GET" action="{{ route('student-fees.index') }}" class="flex flex-wrap items-center gap-3">
+                        <form method="GET" action="{{ route('student-fees.index') }}" class="flex flex-wrap items-center gap-3" id="fee-filter-form">
                             <span class="text-sm font-semibold text-gray-600 dark:text-gray-400">{{ __('finance.Filters:') }}</span>
-                            <select name="month" class="form-select-sm">
+                            <select name="month" class="form-select-sm" onchange="this.form.submit()">
                                 @foreach($monthOptions as $option)
                                     <option value="{{ $option['value'] }}" {{ $selectedMonth == $option['value'] ? 'selected' : '' }}>
                                         {{ $option['label'] }}
                                     </option>
                                 @endforeach
                             </select>
-                            <select name="grade" class="form-select-sm">
+                            <select name="grade" class="form-select-sm" onchange="this.form.submit()">
                                 <option value="">{{ __('finance.All Grades') }}</option>
                                 @foreach($grades as $grade)
-                                    <option value="{{ $grade->id }}" {{ request('grade') == $grade->id ? 'selected' : '' }}>@gradeName($grade->level)</option>
+                                    <option value="{{ $grade->id }}" {{ request('grade') == $grade->id ? 'selected' : '' }}>{{ $grade->name }}</option>
                                 @endforeach
                             </select>
-                            <input type="text" name="search" value="{{ request('search') }}" placeholder="{{ __('finance.Search by name or ID...') }}" class="form-input-sm">
-                            <button type="submit" class="btn-filter">{{ __('finance.Apply') }}</button>
+                            <select name="fee_type" class="form-select-sm" onchange="this.form.submit()">
+                                <option value="">{{ __('finance.All Fee Types') }}</option>
+                                @foreach($feeTypes as $feeType)
+                                    <option value="{{ $feeType->id }}" {{ request('fee_type') == $feeType->id ? 'selected' : '' }}>{{ $feeType->name }}</option>
+                                @endforeach
+                            </select>
+                            <input type="text" name="search" value="{{ request('search') }}" placeholder="{{ __('finance.Search by name or ID...') }}" class="form-input-sm" id="fee-search-input">
+                            <button type="submit" class="hidden">{{ __('finance.Apply') }}</button>
                             <a href="{{ route('student-fees.index') }}" class="btn-filter-reset">{{ __('finance.Reset') }}</a>
                         </form>
                     </div>
 
+                    <script>
+                        // Debounce search input
+                        const searchInput = document.getElementById('fee-search-input');
+                        const filterForm = document.getElementById('fee-filter-form');
+                        let timeout = null;
+
+                        searchInput.addEventListener('input', function() {
+                            clearTimeout(timeout);
+                            timeout = setTimeout(function() {
+                                filterForm.submit();
+                            }, 500);
+                        });
+                        
+                        // Focus search input if it has value (after reload)
+                        if (searchInput.value) {
+                             // We can't easily auto-focus without scrolling, so we might skip this 
+                             // or handle it with URL params if needed. 
+                             // For now, simpler is better.
+                        }
+                    </script>
+
                     <!-- Invoices Fee Table -->
                     <!-- Table Header with Scrollbar -->
-                    <div class="student-fee-table-wrapper" id="headerTableWrapper">
-                        <table class="divide-y divide-gray-200 dark:divide-gray-700 student-fee-table" id="headerTable">
-                            <thead class="bg-gray-50 dark:bg-gray-700">
+                    <!-- Invoices Fee Table -->
+                    <div class="overflow-x-auto">
+                        <table class="min-w-full">
+                            <thead class="bg-gray-50 dark:bg-gray-800">
                                 <tr>
-                                    <th class="fee-sticky-col fee-sticky-col-1 px-4 py-3 text-left text-xs font-semibold text-gray-600 dark:text-gray-300 whitespace-nowrap bg-gray-50 dark:bg-gray-700">{{ __('finance.No.') }}</th>
-                                    <th class="fee-sticky-col fee-sticky-col-2 px-4 py-3 text-left text-xs font-semibold text-gray-600 dark:text-gray-300 whitespace-nowrap bg-gray-50 dark:bg-gray-700">{{ __('finance.Student Name') }}</th>
-                                    <th class="fee-sticky-col fee-sticky-col-3 px-4 py-3 text-left text-xs font-semibold text-gray-600 dark:text-gray-300 whitespace-nowrap bg-gray-50 dark:bg-gray-700">{{ __('finance.Student ID') }}</th>
-                                    <th class="fee-sticky-col fee-sticky-col-4 px-4 py-3 text-left text-xs font-semibold text-gray-600 dark:text-gray-300 whitespace-nowrap bg-gray-50 dark:bg-gray-700">{{ __('finance.Grade/Class') }}</th>
-                                    <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 dark:text-gray-300 whitespace-nowrap">{{ __('finance.Invoice No') }}</th>
-                                    <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 dark:text-gray-300 whitespace-nowrap">{{ __('finance.Fee Type') }}</th>
-                                    <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 dark:text-gray-300 whitespace-nowrap">{{ __('finance.Month') }}</th>
-                                    <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 dark:text-gray-300 whitespace-nowrap">{{ __('finance.Fee Amount') }}</th>
-                                    <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 dark:text-gray-300 whitespace-nowrap">{{ __('finance.Actions') }}</th>
+                                    <th class="th-cell">{{ __('finance.No.') }}</th>
+                                    <th class="th-cell">{{ __('finance.Student Name') }}</th>
+                                    <th class="th-cell">{{ __('finance.Student ID') }}</th>
+                                    <th class="th-cell">{{ __('finance.Class') }}</th>
+                                    <th class="th-cell">{{ __('finance.Invoice No') }}</th>
+                                    <th class="th-cell">{{ __('finance.Fee Type') }}</th>
+                                    <th class="th-cell">{{ __('finance.Month') }}</th>
+                                    <th class="th-cell">{{ __('finance.Fee Amount') }}</th>
+                                    <th class="th-cell">{{ __('finance.Actions') }}</th>
                                 </tr>
                             </thead>
-                        </table>
-                    </div>
-
-                    <!-- Table Body with Scrollbar -->
-                    <div class="student-fee-table-wrapper" id="mainTableWrapper" style="overflow-y: visible;">
-                        <table class="divide-y divide-gray-200 dark:divide-gray-700 student-fee-table" id="mainTable">
                             <tbody class="divide-y divide-gray-200 dark:divide-gray-700">
                                 @forelse($unpaidInvoices as $index => $invoice)
                                     @php
                                         $student = $invoice->student;
-                                        // Get fee type from feeStructure or from first invoice item
-                                        $feeType = $invoice->feeStructure?->feeType ?? $invoice->items->first()?->feeType;
                                         $hasRejectedProof = isset($rejectedProofsByInvoice[$invoice->id]);
                                         $rejectedProof = $hasRejectedProof ? $rejectedProofsByInvoice[$invoice->id] : null;
                                     @endphp
                                     <tr class="bg-white dark:bg-gray-900 hover:bg-gray-50 dark:hover:bg-gray-800/50 {{ $hasRejectedProof ? 'border-l-4 border-red-500' : '' }}">
-                                        <td class="td-cell text-center fee-sticky-col fee-sticky-col-1">{{ $unpaidInvoices->firstItem() + $index }}</td>
-                                        <td class="td-cell fee-sticky-col fee-sticky-col-2">
-                                            <div class="font-medium text-gray-900 dark:text-white">{{ $student->user?->name ?? '-' }}</div>
+                                        <td class="td-cell text-center">{{ $unpaidInvoices->firstItem() + $index }}</td>
+                                        <td class="td-cell font-medium text-gray-900 dark:text-white">
+                                            <div>{{ $student->user?->name ?? '-' }}</div>
                                             @if($hasRejectedProof)
                                                 <div class="flex items-center gap-1 mt-1">
                                                     <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300">
@@ -336,42 +270,40 @@
                                                 </div>
                                             @endif
                                         </td>
-                                        <td class="td-cell text-gray-600 dark:text-gray-400 fee-sticky-col fee-sticky-col-3">{{ $student->student_identifier }}</td>
-                                        <td class="td-cell fee-sticky-col fee-sticky-col-4">@gradeName($student->grade?->level ?? 0) / @className($student->classModel?->name ?? '-', $student->grade?->level)</td>
+                                        <td class="td-cell text-gray-600 dark:text-gray-400">{{ $student->student_identifier }}</td>
+                                        <td class="td-cell">{{ $student->formatted_class_name }}</td>
+                                        <td class="td-cell font-mono text-xs text-gray-600 dark:text-gray-400">{{ $invoice->invoice_number ?? '-' }}</td>
                                         <td class="td-cell">
-                                            <span class="font-mono text-xs text-gray-600 dark:text-gray-400">{{ $invoice->invoice_number ?? '-' }}</span>
+                                            @if($invoice->fees && $invoice->fees->isNotEmpty())
+                                                @foreach($invoice->fees as $fee)
+                                                    <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300">
+                                                        {{ $fee->fee_name }}
+                                                    </span>
+                                                @endforeach
+                                            @else
+                                                <span class="text-gray-500 dark:text-gray-400">-</span>
+                                            @endif
                                         </td>
                                         <td class="td-cell">
-                                            <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-300">
-                                                {{ $feeType->name ?? '-' }}
-                                            </span>
-                                        </td>
-                                        <td class="td-cell">
-                                            <div>{{ $invoice->invoice_date?->format('F Y') ?? $currentMonth }}</div>
+                                            <div>{{ $invoice->invoice_date?->translatedFormat('F Y') ?? $currentMonth }}</div>
                                             @if($hasRejectedProof && $rejectedProof->rejection_reason)
                                                 <div class="text-xs text-red-600 dark:text-red-400 mt-1">
                                                     <i class="fas fa-info-circle"></i> {{ Str::limit($rejectedProof->rejection_reason, 30) }}
                                                 </div>
                                             @endif
                                         </td>
-                                        <td class="td-cell font-semibold">{{ number_format($invoice->total_amount, 0) }} MMK</td>
+                                        <td class="td-cell font-semibold text-green-600 dark:text-green-400">{{ number_format($invoice->total_amount, 0) }} MMK</td>
                                         <!-- Actions -->
                                         <td class="td-cell">
                                             <div class="flex items-center gap-1">
                                                 <button type="button" class="action-btn process" @click="openPaymentModal(@js(['student' => $student, 'amount' => $invoice->total_amount, 'invoice' => $invoice]))" title="{{ __('finance.Process Payment') }}">
                                                     <i class="fas fa-credit-card"></i> {{ __('finance.Pay') }}
                                                 </button>
-                                                <button type="button" 
-                                                        onclick="showInvoiceHistory('{{ $invoice->id }}')" 
-                                                        class="action-btn" 
-                                                        title="{{ __('finance.View Payment History') }}">
-                                                    <i class="fas fa-history"></i>
-                                                </button>
                                                 <form method="POST" action="{{ route('student-fees.students.reinform', $student) }}" class="inline" id="reminder-form-{{ $student->id }}">
                                                     @csrf
-                                                    <button type="button" class="action-btn" title="{{ __('finance.Send Reminder') }}" 
+                                                    <button type="button" class="action-btn" title="{{ __('finance.Remind again to parent') }}" 
                                                         onclick="confirmAction('{{ route('student-fees.students.reinform', $student) }}', '{{ __('finance.Send Reminder') }}', '{{ __('finance.Send payment reminder to guardian?') }}', '{{ __('finance.Send Reminder') }}')">
-                                                        <i class="fas fa-bell"></i>
+                                                        <i class="fas fa-bell"></i> {{ __('finance.Remind again to parent') }}
                                                     </button>
                                                 </form>
                                             </div>
@@ -379,7 +311,7 @@
                                     </tr>
                                 @empty
                                     <tr>
-                                        <td colspan="9" class="td-empty">
+                                        <td colspan="8" class="td-empty">
                                             <div class="flex flex-col items-center py-8">
                                                 <i class="fas fa-file-invoice text-4xl text-gray-300 dark:text-gray-600 mb-3"></i>
                                                 <p class="text-gray-500 dark:text-gray-400">{{ __('finance.No unpaid invoices found.') }}</p>
@@ -434,162 +366,321 @@
                     @endif
                 </div>
 
-                <!-- Pending Payment Proofs Section - Always show -->
-                <div class="bg-white dark:bg-gray-800 border border-purple-200 dark:border-purple-700 rounded-xl shadow-sm mt-6">
-                    <div class="flex items-center justify-between p-4 border-b border-purple-200 dark:border-purple-700 bg-purple-50 dark:bg-purple-900/20">
-                        <div class="flex items-center gap-3">
-                            <div class="w-10 h-10 rounded-lg bg-purple-500 text-white flex items-center justify-center">
-                                <i class="fas fa-receipt"></i>
-                            </div>
-                            <div>
-                                <h3 class="text-lg font-semibold text-gray-900 dark:text-white">{{ __('finance.Pending Payment Proofs') }}</h3>
-                                <p class="text-sm text-gray-600 dark:text-gray-400">
-                                    @if($pendingPaymentProofs->total() > 0)
-                                        {{ $pendingPaymentProofs->total() }} {{ __('finance.payment proofs awaiting verification') }}
-                                    @else
-                                        {{ __('finance.No pending payment proofs') }}
-                                    @endif
-                                </p>
-                            </div>
-                        </div>
+                <!-- Payment History Details Section -->
+                <div class="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl shadow-sm mt-6">
+                    <div class="flex flex-wrap items-center justify-between gap-3 p-4 border-b border-gray-200 dark:border-gray-700">
+                        <h3 class="text-lg font-semibold text-gray-900 dark:text-white">{{ __('finance.Payment History Details') }} - {{ $currentMonth }}</h3>
                     </div>
 
-                    <!-- Proof Filters -->
-                    <div class="p-4 bg-gray-50 dark:bg-gray-900/50 border-b border-gray-200 dark:border-gray-700">
-                        <form method="GET" action="{{ route('student-fees.index') }}" class="flex flex-wrap items-center gap-3">
-                            <!-- Preserve student fee list filters -->
-                            <input type="hidden" name="month" value="{{ $selectedMonth }}">
-                            @if(request('grade'))
-                                <input type="hidden" name="grade" value="{{ request('grade') }}">
-                            @endif
-                            @if(request('search'))
-                                <input type="hidden" name="search" value="{{ request('search') }}">
-                            @endif
-                            
-                            <span class="text-sm font-semibold text-gray-600 dark:text-gray-400">{{ __('finance.Proof Filters:') }}</span>
-                            <select name="proof_month" class="form-select-sm">
-                                @foreach($monthOptions as $option)
-                                    <option value="{{ $option['value'] }}" {{ request('proof_month', $selectedMonth) == $option['value'] ? 'selected' : '' }}>
-                                        {{ $option['label'] }}
-                                    </option>
-                                @endforeach
-                            </select>
-                            <select name="proof_grade" class="form-select-sm">
-                                <option value="">{{ __('finance.All Grades') }}</option>
-                                @foreach($grades as $grade)
-                                    <option value="{{ $grade->id }}" {{ request('proof_grade') == $grade->id ? 'selected' : '' }}>@gradeName($grade->level)</option>
-                                @endforeach
-                            </select>
-                            <input type="text" name="proof_search" value="{{ request('proof_search') }}" placeholder="{{ __('finance.Search by name or ID...') }}" class="form-input-sm">
-                            <button type="submit" class="btn-filter">{{ __('finance.Apply') }}</button>
-                            <a href="{{ route('student-fees.index', ['month' => $selectedMonth]) }}" class="btn-filter-reset">{{ __('finance.Reset') }}</a>
-                        </form>
-                    </div>
-
-                    <div class="p-4">
-                        <div class="overflow-x-auto">
-                            <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
-                                <thead class="bg-gray-50 dark:bg-gray-700">
-                                    <tr>
-                                        <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 dark:text-gray-300">{{ __('finance.Student') }}</th>
-                                        <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 dark:text-gray-300">{{ __('finance.Grade') }}</th>
-                                        <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 dark:text-gray-300">{{ __('finance.Amount') }}</th>
-                                        <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 dark:text-gray-300">{{ __('finance.Months') }}</th>
-                                        <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 dark:text-gray-300">{{ __('finance.Method') }}</th>
-                                        <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 dark:text-gray-300">{{ __('finance.Payment Date') }}</th>
-                                        <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 dark:text-gray-300">{{ __('finance.Submitted') }}</th>
-                                        <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 dark:text-gray-300">{{ __('finance.Actions') }}</th>
-                                    </tr>
-                                </thead>
-                                <tbody class="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
-                                    @forelse($pendingPaymentProofs as $proof)
-                                    <tr class="hover:bg-gray-50 dark:hover:bg-gray-700/50">
-                                        <td class="px-4 py-3 text-sm">
-                                            <div>
-                                                <p class="font-medium text-gray-900 dark:text-gray-100">{{ $proof->student?->user?->name ?? 'N/A' }}</p>
-                                                <p class="text-xs text-gray-500 dark:text-gray-400">{{ $proof->student?->student_identifier ?? 'N/A' }}</p>
-                                            </div>
+                    <!-- Payment History Table -->
+                    <div class="overflow-x-auto">
+                        <table class="min-w-full">
+                            <thead class="bg-gray-50 dark:bg-gray-800">
+                                <tr>
+                                    <th class="th-cell">{{ __('finance.No.') }}</th>
+                                    <th class="th-cell">{{ __('finance.Student Name') }}</th>
+                                    <th class="th-cell">{{ __('finance.Student ID') }}</th>
+                                    <th class="th-cell">{{ __('finance.Class') }}</th>
+                                    <th class="th-cell">{{ __('finance.Invoice No') }}</th>
+                                    <th class="th-cell">{{ __('finance.Fee Type') }}</th>
+                                    <th class="th-cell">{{ __('finance.Month') }}</th>
+                                    <th class="th-cell">{{ __('finance.Fee Amount') }}</th>
+                                    <th class="th-cell">{{ __('finance.Date') }}</th>
+                                    <th class="th-cell">{{ __('finance.Actions') }}</th>
+                                </tr>
+                            </thead>
+                            <tbody class="divide-y divide-gray-200 dark:divide-gray-700">
+                                @forelse($paidPayments as $index => $invoice)
+                                    @php
+                                        // Get the most recent verified payment for this invoice
+                                        $latestPayment = $invoice->payments->first();
+                                        $paymentAmount = $latestPayment ? $latestPayment->payment_amount : $invoice->total_amount;
+                                    @endphp
+                                    <tr class="bg-white dark:bg-gray-900 hover:bg-gray-50 dark:hover:bg-gray-800/50">
+                                        <td class="td-cell text-center">{{ $paidPayments->firstItem() + $index }}</td>
+                                        <td class="td-cell font-medium text-gray-900 dark:text-white">{{ $invoice->student->user->name ?? '-' }}</td>
+                                        <td class="td-cell text-gray-600 dark:text-gray-400">{{ $invoice->student->student_identifier ?? '-' }}</td>
+                                        <td class="td-cell">{{ $invoice->student->formatted_class_name }}</td>
+                                        <td class="td-cell font-mono text-xs">{{ $invoice->invoice_number ?? '-' }}</td>
+                                        <td class="td-cell">
+                                            @if($invoice->fees && $invoice->fees->isNotEmpty())
+                                                @foreach($invoice->fees as $fee)
+                                                    <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300">
+                                                        {{ $fee->fee_name }}
+                                                    </span>
+                                                @endforeach
+                                            @else
+                                                <span class="text-gray-500 dark:text-gray-400">-</span>
+                                            @endif
                                         </td>
-                                        <td class="px-4 py-3 text-sm text-gray-900 dark:text-gray-100">
-                                            @gradeName($proof->student?->grade?->level ?? 0)
-                                        </td>
-                                        <td class="px-4 py-3 text-sm font-semibold text-gray-900 dark:text-gray-100">
-                                            {{ number_format($proof->payment_amount, 0) }} MMK
-                                        </td>
-                                        <td class="px-4 py-3 text-sm text-gray-600 dark:text-gray-400">
-                                            {{ $proof->payment_months }} {{ __('finance.month(s)') }}
-                                        </td>
-                                        <td class="px-4 py-3 text-sm">
-                                            <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300">
-                                                {{ $proof->paymentMethod?->name ?? 'N/A' }}
-                                            </span>
-                                        </td>
-                                        <td class="px-4 py-3 text-sm text-gray-600 dark:text-gray-400">
-                                            {{ $proof->payment_date?->format('M j, Y') }}
-                                        </td>
-                                        <td class="px-4 py-3 text-sm text-gray-600 dark:text-gray-400">
-                                            {{ $proof->created_at?->diffForHumans() }}
-                                        </td>
-                                        <td class="px-4 py-3 text-sm">
-                                            <button type="button"
-                                                    onclick="viewPaymentProof('{{ $proof->id }}')"
-                                                    class="inline-flex items-center px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white text-xs font-medium rounded-lg transition-colors">
-                                                <i class="fas fa-eye mr-1"></i>
-                                                {{ __('finance.View & Process') }}
-                                            </button>
+                                        <td class="td-cell">{{ $invoice->invoice_date?->translatedFormat('F Y') ?? $currentMonth }}</td>
+                                        <td class="td-cell font-semibold text-green-600 dark:text-green-400">{{ number_format($paymentAmount, 0) }} MMK</td>
+                                        <td class="td-cell">{{ $invoice->updated_at?->translatedFormat('M j, Y') }}</td>
+                                        <td class="td-cell">
+                                            @if($latestPayment)
+                                                <a href="{{ route('student-fees.payment-receipt', ['payment' => $latestPayment->id]) }}" class="action-btn view" title="{{ __('finance.View Receipt') }}">
+                                                    <i class="fas fa-receipt"></i> {{ __('finance.View Receipt') }}
+                                                </a>
+                                            @else
+                                                <button type="button" class="action-btn view" title="{{ __('finance.View Invoice') }}" @click="openInvoiceModal(@js($invoice))">
+                                                    <i class="fas fa-file-invoice"></i> {{ __('finance.View Invoice') }}
+                                                </button>
+                                            @endif
                                         </td>
                                     </tr>
-                                    @empty
+                                @empty
                                     <tr>
-                                        <td colspan="8" class="px-4 py-8 text-center">
-                                            <div class="flex flex-col items-center">
-                                                <i class="fas fa-inbox text-4xl text-gray-300 dark:text-gray-600 mb-3"></i>
-                                                <p class="text-gray-500 dark:text-gray-400">{{ __('finance.No pending payment proofs at the moment.') }}</p>
-                                                <p class="text-sm text-gray-400 dark:text-gray-500 mt-1">{{ __('finance.Payment proofs submitted by guardians will appear here.') }}</p>
+                                        <td colspan="10" class="td-empty">
+                                            <div class="flex flex-col items-center py-8">
+                                                <i class="fas fa-history text-4xl text-gray-300 dark:text-gray-600 mb-3"></i>
+                                                <p class="text-gray-500 dark:text-gray-400">{{ __('finance.No payments history found.') }}</p>
                                             </div>
                                         </td>
                                     </tr>
-                                    @endforelse
-                                </tbody>
-                            </table>
-                        </div>
+                                @endforelse
+                            </tbody>
+                        </table>
                     </div>
-
-                    <!-- Proof Pagination -->
-                    @if($pendingPaymentProofs->hasPages())
+                    @if($paidPayments->total() > 0)
                         <div class="px-4 py-3 border-t border-gray-200 dark:border-gray-700 flex flex-wrap items-center justify-between gap-3">
                             <div class="text-sm text-gray-600 dark:text-gray-400">
-                                {{ __('pagination.Showing') }} {{ $pendingPaymentProofs->firstItem() ?? 0 }} {{ __('pagination.to') }} {{ $pendingPaymentProofs->lastItem() ?? 0 }} {{ __('pagination.of') }} {{ $pendingPaymentProofs->total() }} {{ __('pagination.results') }}
+                                {{ __('pagination.Showing') }} {{ $paidPayments->firstItem() ?? 0 }} {{ __('pagination.to') }} {{ $paidPayments->lastItem() ?? 0 }} {{ __('pagination.of') }} {{ $paidPayments->total() }} {{ __('pagination.results') }}
                             </div>
-                            <div class="flex items-center gap-1">
-                                {{-- Previous Page --}}
-                                <a href="{{ $pendingPaymentProofs->appends(request()->except('proof_page'))->previousPageUrl() ?? '#' }}" class="px-3 py-1.5 text-sm font-medium rounded-lg border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 {{ $pendingPaymentProofs->onFirstPage() ? 'opacity-50 pointer-events-none' : '' }}">
-                                    <i class="fas fa-angle-left"></i>
-                                </a>
-                                {{-- Page Numbers --}}
-                                @php
-                                    $currentPage = $pendingPaymentProofs->currentPage();
-                                    $lastPage = $pendingPaymentProofs->lastPage();
-                                    $start = max(1, $currentPage - 2);
-                                    $end = min($lastPage, $start + 4);
-                                    if ($end - $start < 4) $start = max(1, $end - 4);
-                                @endphp
-                                @for($page = $start; $page <= $end; $page++)
-                                    <a href="{{ $pendingPaymentProofs->appends(request()->except('proof_page'))->url($page) }}" class="px-3 py-1.5 text-sm font-medium rounded-lg border {{ $page === $currentPage ? 'bg-purple-600 text-white border-purple-600' : 'border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700' }}">
-                                        {{ $page }}
+                            @if($paidPayments->hasPages())
+                                <div class="flex items-center gap-1">
+                                    {{-- First Page --}}
+                                    <a href="{{ $paidPayments->url(1) }}" class="px-3 py-1.5 text-sm font-medium rounded-lg border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 {{ $paidPayments->onFirstPage() ? 'opacity-50 pointer-events-none' : '' }}">
+                                        <i class="fas fa-angle-double-left"></i>
                                     </a>
-                                @endfor
-                                {{-- Next Page --}}
-                                <a href="{{ $pendingPaymentProofs->appends(request()->except('proof_page'))->nextPageUrl() ?? '#' }}" class="px-3 py-1.5 text-sm font-medium rounded-lg border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 {{ !$pendingPaymentProofs->hasMorePages() ? 'opacity-50 pointer-events-none' : '' }}">
-                                    <i class="fas fa-angle-right"></i>
-                                </a>
-                            </div>
+                                    {{-- Previous Page --}}
+                                    <a href="{{ $paidPayments->previousPageUrl() ?? '#' }}" class="px-3 py-1.5 text-sm font-medium rounded-lg border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 {{ $paidPayments->onFirstPage() ? 'opacity-50 pointer-events-none' : '' }}">
+                                        <i class="fas fa-angle-left"></i>
+                                    </a>
+                                    {{-- Page Numbers --}}
+                                    @php
+                                        $histCurrentPage = $paidPayments->currentPage();
+                                        $histLastPage = $paidPayments->lastPage();
+                                        $histStart = max(1, $histCurrentPage - 2);
+                                        $histEnd = min($histLastPage, $histStart + 4);
+                                        if ($histEnd - $histStart < 4) $histStart = max(1, $histEnd - 4);
+                                    @endphp
+                                    @for($page = $histStart; $page <= $histEnd; $page++)
+                                        <a href="{{ $paidPayments->url($page) }}" class="px-3 py-1.5 text-sm font-medium rounded-lg border {{ $page === $histCurrentPage ? 'bg-blue-600 text-white border-blue-600' : 'border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700' }}">
+                                            {{ $page }}
+                                        </a>
+                                    @endfor
+                                    {{-- Next Page --}}
+                                    <a href="{{ $paidPayments->nextPageUrl() ?? '#' }}" class="px-3 py-1.5 text-sm font-medium rounded-lg border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 {{ !$paidPayments->hasMorePages() ? 'opacity-50 pointer-events-none' : '' }}">
+                                        <i class="fas fa-angle-right"></i>
+                                    </a>
+                                    {{-- Last Page --}}
+                                    <a href="{{ $paidPayments->url($paidPayments->lastPage()) }}" class="px-3 py-1.5 text-sm font-medium rounded-lg border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 {{ !$paidPayments->hasMorePages() ? 'opacity-50 pointer-events-none' : '' }}">
+                                        <i class="fas fa-angle-double-right"></i>
+                                    </a>
+                                </div>
+                            @endif
                         </div>
                     @endif
                 </div>
             </div>
 
-            <!-- Fee Structure Tab -->
+            <!-- Pending & Rejects Tab -->
+            <div x-show="activeTab === 'pending_reject'" x-cloak>
+                <!-- Status Cards -->
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+                    <div class="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl p-4 flex items-center gap-4">
+                        <div class="w-12 h-12 rounded-xl bg-gradient-to-br from-amber-400 to-yellow-600 text-white flex items-center justify-center text-xl shadow-lg">
+                            <i class="fas fa-clock"></i>
+                        </div>
+                        <div>
+                            <p class="text-sm text-gray-500 dark:text-gray-400">{{ __('finance.Pending Verifications') }}</p>
+                            <p class="text-xl font-bold text-gray-900 dark:text-white">{{ $pendingPayments->total() }}</p>
+                            <p class="text-xs text-gray-500 dark:text-gray-400">{{ __('finance.Requires Action') }}</p>
+                        </div>
+                    </div>
+                    <div class="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl p-4 flex items-center gap-4">
+                        <div class="w-12 h-12 rounded-xl bg-gradient-to-br from-red-500 to-rose-600 text-white flex items-center justify-center text-xl shadow-lg">
+                            <i class="fas fa-times-circle"></i>
+                        </div>
+                        <div>
+                            <p class="text-sm text-gray-500 dark:text-gray-400">{{ __('finance.Rejected Payments') }}</p>
+                            <p class="text-xl font-bold text-gray-900 dark:text-white">{{ $rejectedPayments->total() }}</p>
+                            <p class="text-xs text-gray-500 dark:text-gray-400">{{ __('finance.Needs Review') }}</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Filters for Pending & Rejected -->
+                <div class="mb-6 p-4 bg-gray-50 dark:bg-gray-900/50 border border-gray-200 dark:border-gray-700 rounded-xl">
+                    <form method="GET" action="{{ route('student-fees.index') }}" class="flex flex-wrap items-center gap-3" id="pending-filter-form">
+                        <input type="hidden" name="tab" value="pending_reject">
+                        <span class="text-sm font-semibold text-gray-600 dark:text-gray-400">{{ __('finance.Filters:') }}</span>
+                        <select name="month" class="form-select-sm" onchange="this.form.submit()">
+                            @foreach($monthOptions as $option)
+                                <option value="{{ $option['value'] }}" {{ $selectedMonth == $option['value'] ? 'selected' : '' }}>
+                                    {{ $option['label'] }}
+                                </option>
+                            @endforeach
+                        </select>
+                        <select name="grade" class="form-select-sm" onchange="this.form.submit()">
+                            <option value="">{{ __('finance.All Grades') }}</option>
+                            @foreach($grades as $grade)
+                                <option value="{{ $grade->id }}" {{ request('grade') == $grade->id ? 'selected' : '' }}>{{ $grade->name }}</option>
+                            @endforeach
+                        </select>
+                        <input type="text" name="search" value="{{ request('search') }}" placeholder="{{ __('finance.Search by name or ID...') }}" class="form-input-sm" id="pending-search-input">
+                        <button type="submit" class="hidden">{{ __('finance.Apply') }}</button>
+                        <a href="{{ route('student-fees.index', ['tab' => 'pending_reject']) }}" class="btn-filter-reset">{{ __('finance.Reset') }}</a>
+                    </form>
+                    <script>
+                        // Debounce search input for pending tab
+                        const pendingSearchInput = document.getElementById('pending-search-input');
+                        const pendingFilterForm = document.getElementById('pending-filter-form');
+                        let pendingTimeout = null;
+
+                        pendingSearchInput.addEventListener('input', function() {
+                            clearTimeout(pendingTimeout);
+                            pendingTimeout = setTimeout(function() {
+                                pendingFilterForm.submit();
+                            }, 500);
+                        });
+                    </script>
+                </div>
+
+                <!-- Pending Invoices Section -->
+                <div class="bg-white dark:bg-gray-800 border border-yellow-200 dark:border-yellow-700 rounded-xl shadow-sm mb-6">
+                    <div class="flex items-center justify-between p-4 border-b border-yellow-200 dark:border-yellow-700 bg-yellow-50 dark:bg-yellow-900/20">
+                        <div class="flex items-center gap-3">
+                            <div class="w-10 h-10 rounded-lg bg-yellow-500 text-white flex items-center justify-center">
+                                <i class="fas fa-clock"></i>
+                            </div>
+                            <div>
+                                <h3 class="text-lg font-semibold text-gray-900 dark:text-white">{{ __('finance.Pending Invoices List') }}</h3>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="overflow-x-auto">
+                        <table class="min-w-full">
+                            <thead class="bg-gray-50 dark:bg-gray-700">
+                                <tr>
+                                    <th class="th-cell">{{ __('finance.No.') }}</th>
+                                    <th class="th-cell">{{ __('finance.Student Name') }}</th>
+                                    <th class="th-cell">{{ __('finance.Student ID') }}</th>
+                                    <th class="th-cell">{{ __('finance.Class') }}</th>
+                                    <th class="th-cell">{{ __('finance.Invoice No') }}</th>
+                                    <th class="th-cell">{{ __('finance.Month') }}</th>
+                                    <th class="th-cell">{{ __('finance.Fee Amount') }}</th>
+                                    <th class="th-cell">{{ __('finance.Date') }}</th>
+                                    <th class="th-cell">{{ __('finance.Actions') }}</th>
+                                </tr>
+                            </thead>
+                            <tbody class="divide-y divide-gray-200 dark:divide-gray-700">
+                                @forelse($pendingPayments as $index => $payment)
+                                    <tr class="bg-white dark:bg-gray-900 hover:bg-gray-50 dark:hover:bg-gray-800/50">
+                                        <td class="td-cell text-center">{{ $pendingPayments->firstItem() + $index }}</td>
+                                        <td class="td-cell font-medium text-gray-900 dark:text-white">{{ $payment->student->user->name ?? '-' }}</td>
+                                        <td class="td-cell text-gray-600 dark:text-gray-400">{{ $payment->student->student_identifier ?? '-' }}</td>
+                                        <td class="td-cell">{{ $payment->student->formatted_class_name ?? '-' }}</td>
+                                        <td class="td-cell font-mono text-xs text-gray-600 dark:text-gray-400">{{ $payment->invoice ? $payment->invoice->invoice_number : '-' }}</td>
+                                        <td class="td-cell">{{ $payment->invoice ? ($payment->invoice->invoice_date?->translatedFormat('F Y') ?? '-') : '-' }}</td>
+                                        <td class="td-cell font-semibold text-gray-900 dark:text-white">{{ number_format($payment->payment_amount, 0) }} MMK</td>
+                                        <td class="td-cell text-gray-600 dark:text-gray-400">{{ $payment->created_at->translatedFormat('M j, Y') }}</td>
+                                        <td class="td-cell">
+                                            <button type="button" class="action-btn process" title="{{ __('finance.Verify') }}" onclick="viewPaymentProof('{{ $payment->id }}')">
+                                                <i class="fas fa-check-circle"></i> {{ __('finance.Verify') }}
+                                            </button>
+                                        </td>
+                                    </tr>
+                                @empty
+                                    <tr>
+                                        <td colspan="9" class="td-empty">
+                                            <div class="flex flex-col items-center py-8">
+                                                <i class="fas fa-clock text-4xl text-gray-300 dark:text-gray-600 mb-3"></i>
+                                                <p class="text-gray-500 dark:text-gray-400">{{ __('finance.No pending invoices found.') }}</p>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                @endforelse
+                            </tbody>
+                        </table>
+                    </div>
+                     @if($pendingPayments->hasPages())
+                        <div class="p-4 border-t border-gray-200 dark:border-gray-700">{{ $pendingPayments->appends(request()->query())->links() }}</div>
+                     @endif
+                </div>
+
+                <!-- Rejected Invoices Section -->
+                <div class="bg-white dark:bg-gray-800 border border-red-200 dark:border-red-700 rounded-xl shadow-sm">
+                    <div class="flex items-center justify-between p-4 border-b border-red-200 dark:border-red-700 bg-red-50 dark:bg-red-900/20">
+                        <div class="flex items-center gap-3">
+                            <div class="w-10 h-10 rounded-lg bg-red-500 text-white flex items-center justify-center">
+                                <i class="fas fa-times-circle"></i>
+                            </div>
+                            <div>
+                                <h3 class="text-lg font-semibold text-gray-900 dark:text-white">{{ __('finance.Rejected Invoices List') }}</h3>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="overflow-x-auto">
+                        <table class="min-w-full">
+                            <thead class="bg-gray-50 dark:bg-gray-700">
+                                <tr>
+                                    <th class="th-cell">{{ __('finance.No.') }}</th>
+                                    <th class="th-cell">{{ __('finance.Student Name') }}</th>
+                                    <th class="th-cell">{{ __('finance.Student ID') }}</th>
+                                    <th class="th-cell">{{ __('finance.Class') }}</th>
+                                    <th class="th-cell">{{ __('finance.Invoice No') }}</th>
+                                    <th class="th-cell">{{ __('finance.Month') }}</th>
+                                    <th class="th-cell">{{ __('finance.Fee Amount') }}</th>
+                                    <th class="th-cell">{{ __('finance.Date') }}</th>
+                                    <th class="th-cell">{{ __('finance.Actions') }}</th>
+                                </tr>
+                            </thead>
+                            <tbody class="divide-y divide-gray-200 dark:divide-gray-700">
+                                @forelse($rejectedPayments as $index => $payment)
+                                    <tr class="bg-white dark:bg-gray-900 hover:bg-gray-50 dark:hover:bg-gray-800/50">
+                                        <td class="td-cell text-center">{{ $rejectedPayments->firstItem() + $index }}</td>
+                                        <td class="td-cell font-medium text-gray-900 dark:text-white">{{ $payment->student->user->name ?? '-' }}</td>
+                                        <td class="td-cell text-gray-600 dark:text-gray-400">{{ $payment->student->student_identifier ?? '-' }}</td>
+                                        <td class="td-cell">{{ $payment->student->formatted_class_name ?? '-' }}</td>
+                                        <td class="td-cell font-mono text-xs text-gray-600 dark:text-gray-400">{{ $payment->invoice ? $payment->invoice->invoice_number : '-' }}</td>
+                                        <td class="td-cell">
+                                            <div>{{ $payment->invoice ? ($payment->invoice->invoice_date?->translatedFormat('F Y') ?? '-') : '-' }}</div>
+                                            @if($payment->rejection_reason)
+                                                <div class="text-xs text-red-600 dark:text-red-400 mt-1">
+                                                    <i class="fas fa-info-circle"></i> {{ Str::limit($payment->rejection_reason, 30) }}
+                                                </div>
+                                            @endif
+                                        </td>
+                                        <td class="td-cell font-semibold text-red-600 dark:text-red-400">{{ number_format($payment->payment_amount, 0) }} MMK</td>
+                                        <td class="td-cell text-gray-600 dark:text-gray-400">{{ $payment->updated_at->translatedFormat('M j, Y') }}</td>
+                                        <td class="td-cell">
+                                            <button type="button" class="action-btn view" title="{{ __('finance.View') }}" onclick="viewPaymentProof('{{ $payment->id }}')">
+                                                <i class="fas fa-eye"></i> {{ __('finance.View') }}
+                                            </button>
+                                        </td>
+                                    </tr>
+                                @empty
+                                    <tr>
+                                        <td colspan="9" class="td-empty">
+                                            <div class="flex flex-col items-center py-8">
+                                                <i class="fas fa-times-circle text-4xl text-gray-300 dark:text-gray-600 mb-3"></i>
+                                                <p class="text-gray-500 dark:text-gray-400">{{ __('finance.No rejected invoices found.') }}</p>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                @endforelse
+                            </tbody>
+                        </table>
+                    </div>
+                     @if($rejectedPayments->hasPages())
+                        <div class="p-4 border-t border-gray-200 dark:border-gray-700">{{ $rejectedPayments->appends(request()->query())->links() }}</div>
+                     @endif
+                </div>
+            </div>
+
             <div x-show="activeTab === 'structure'" x-cloak>
                 <div class="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl shadow-sm">
                     <div class="flex flex-wrap items-center justify-between gap-3 p-4 border-b border-gray-200 dark:border-gray-700">
@@ -598,14 +689,6 @@
                                 <i class="fas fa-graduation-cap text-amber-600"></i> {{ __('finance.School Fees (Monthly Recurring)') }}
                             </h3>
                             <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">{{ __('finance.Monthly tuition fees set in Academic Management for each grade level') }}</p>
-                        </div>
-                        <div class="flex items-center gap-2">
-                            <button type="button" class="inline-flex items-center gap-2 px-4 py-2 text-sm font-semibold rounded-lg text-white bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 shadow-md hover:shadow-lg transition-all" @click="openCategoryModal()">
-                                <i class="fas fa-tags"></i> {{ __('finance.Add Category') }}
-                            </button>
-                            <button type="button" class="inline-flex items-center gap-2 px-4 py-2 text-sm font-semibold rounded-lg text-white bg-gradient-to-r from-amber-600 to-orange-600 hover:from-amber-700 hover:to-orange-700 shadow-md hover:shadow-lg transition-all" @click="openStructureModal()">
-                                <i class="fas fa-plus-circle"></i> {{ __('finance.Add Fees') }}
-                            </button>
                         </div>
                     </div>
 
@@ -671,126 +754,6 @@
                         </table>
                     </div>
 
-                    <!-- Fee Categories -->
-                    <div class="p-4 border-t border-gray-200 dark:border-gray-700">
-                        <div class="flex flex-wrap items-center justify-between gap-3 mb-3">
-                            <h4 class="text-md font-semibold text-gray-900 dark:text-white flex items-center gap-2">
-                                <i class="fas fa-tags text-purple-600"></i> {{ __('finance.Fee Categories') }}
-                            </h4>
-                        </div>
-                        <div class="overflow-x-auto">
-                            <table class="min-w-full">
-                                <thead class="bg-gray-50 dark:bg-gray-800">
-                                    <tr>
-                                        <th class="th-cell">{{ __('finance.Category Name') }}</th>
-                                        <th class="th-cell">{{ __('finance.Category Code') }}</th>
-                                        <th class="th-cell">{{ __('finance.Description') }}</th>
-                                        <th class="th-cell">{{ __('finance.Mandatory Fee') }}</th>
-                                        <th class="th-cell">{{ __('finance.Status') }}</th>
-                                        <th class="th-cell">{{ __('finance.Actions') }}</th>
-                                    </tr>
-                                </thead>
-                                <tbody class="divide-y divide-gray-200 dark:divide-gray-700">
-                                    @forelse($feeTypes as $feeType)
-                                        <tr class="bg-white dark:bg-gray-900 hover:bg-gray-50 dark:hover:bg-gray-800/50">
-                                            <td class="td-cell font-semibold">{{ $feeType->name }}</td>
-                                            <td class="td-cell">
-                                                @if($feeType->code)
-                                                    <span class="px-2 py-1 text-xs font-semibold rounded-md bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300">
-                                                        {{ $feeType->code }}
-                                                    </span>
-                                                @else
-                                                    <span class="text-gray-400">-</span>
-                                                @endif
-                                            </td>
-                                            <td class="td-cell text-sm text-gray-600 dark:text-gray-400">
-                                                {{ $feeType->description ? Str::limit($feeType->description, 50) : '-' }}
-                                            </td>
-                                            <td class="td-cell">
-                                                @if($feeType->is_mandatory)
-                                                    <span class="px-2 py-1 text-xs font-semibold rounded-md bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-300">
-                                                        <i class="fas fa-exclamation-circle mr-1"></i>{{ __('finance.Mandatory Fee') }}
-                                                    </span>
-                                                @else
-                                                    <span class="text-gray-400">{{ __('finance.Optional') }}</span>
-                                                @endif
-                                            </td>
-                                            <td class="td-cell">
-                                                <span class="collection-badge">{{ $feeType->status ? __('finance.Active') : __('finance.Inactive') }}</span>
-                                            </td>
-                                            <td class="td-cell">
-                                                <div class="flex items-center gap-1">
-                                                    <button type="button" class="action-btn edit" @click="openEditCategoryModal(@js($feeType))" title="{{ __('finance.Edit') }}">
-                                                        <i class="fas fa-edit"></i>
-                                                    </button>
-                                                    <form method="POST" action="{{ route('student-fees.categories.destroy', $feeType) }}" class="inline" onsubmit="return confirm('{{ __('finance.Delete this category?') }}')">
-                                                        @csrf
-                                                        @method('DELETE')
-                                                        <button type="submit" class="action-btn delete" title="{{ __('finance.Delete') }}">
-                                                            <i class="fas fa-trash"></i>
-                                                        </button>
-                                                    </form>
-                                                </div>
-                                            </td>
-                                        </tr>
-                                    @empty
-                                        <tr>
-                                            <td colspan="6" class="td-cell text-center text-gray-500 dark:text-gray-400">
-                                                {{ __('finance.No fee categories yet. Click "Add Category" to create one.') }}
-                                            </td>
-                                        </tr>
-                                    @endforelse
-                                </tbody>
-                            </table>
-                        </div>
-                    </div>
-
-                    <!-- Additional Fee Structures (non-monthly) -->
-                    @if($structures->count() > 0)
-                        <div class="p-4 border-t border-gray-200 dark:border-gray-700">
-                            <div class="flex flex-wrap items-center justify-between gap-3 mb-3">
-                                <h4 class="text-md font-semibold text-gray-900 dark:text-white">{{ __('finance.Other Fee Structures') }}</h4>
-                            </div>
-                            <div class="overflow-x-auto">
-                                <table class="min-w-full">
-                                    <thead class="bg-gray-50 dark:bg-gray-800">
-                                        <tr>
-                                            <th class="th-cell">{{ __('finance.Grade') }}</th>
-                                            <th class="th-cell">{{ __('finance.Fee Type') }}</th>
-                                            <th class="th-cell">{{ __('finance.Amount') }}</th>
-                                            <th class="th-cell">{{ __('finance.Frequency') }}</th>
-                                            <th class="th-cell">{{ __('finance.Status') }}</th>
-                                            <th class="th-cell">{{ __('finance.Actions') }}</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody class="divide-y divide-gray-200 dark:divide-gray-700">
-                                        @foreach($structures as $structure)
-                                            <tr class="bg-white dark:bg-gray-900">
-                                                <td class="td-cell">@gradeName($structure->grade->level ?? 0)</td>
-                                                <td class="td-cell">{{ $structure->feeType->name ?? '-' }}</td>
-                                                <td class="td-cell font-semibold">{{ number_format($structure->amount, 0) }} MMK</td>
-                                                <td class="td-cell">{{ ucfirst($structure->frequency) }}</td>
-                                                <td class="td-cell">
-                                                    <span class="collection-badge">{{ $structure->status ? __('finance.Active') : __('finance.Inactive') }}</span>
-                                                </td>
-                                                <td class="td-cell">
-                                                    <div class="flex items-center gap-1">
-                                                        <button type="button" class="action-btn edit" @click="openEditStructureModal(@js($structure))">
-                                                            <i class="fas fa-edit"></i>
-                                                        </button>
-                                                        <button type="button" class="action-btn delete" @click="confirmDeleteStructure(@js($structure))">
-                                                            <i class="fas fa-trash"></i>
-                                                        </button>
-                                                    </div>
-                                                </td>
-                                            </tr>
-                                        @endforeach
-                                    </tbody>
-                                </table>
-                            </div>
-                        </div>
-                    @endif
-
                     <!-- Payment Promotions -->
                     <div class="p-4 border-t border-gray-200 dark:border-gray-700">
                         <div class="flex flex-wrap items-center justify-between gap-3 mb-3">
@@ -850,132 +813,129 @@
                             </table>
                         </div>
                     </div>
-                </div>
-            </div>
 
-            <!-- Payment History Tab -->
-            <div x-show="activeTab === 'history'" x-cloak>
-                <!-- Stats Cards -->
-                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-                    <div class="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl p-4 flex items-center gap-4">
-                        <div class="w-12 h-12 rounded-xl bg-gradient-to-br from-blue-500 to-indigo-600 text-white flex items-center justify-center text-xl shadow-lg">
-                            <i class="fas fa-calendar-alt"></i>
+                    <!-- Additional Fee Table -->
+                    <div class="p-4 border-t border-gray-200 dark:border-gray-700">
+                        <div class="flex flex-wrap items-center justify-between gap-3 mb-3">
+                            <h4 class="text-md font-semibold text-gray-900 dark:text-white flex items-center gap-2">
+                                <i class="fas fa-tags text-purple-600"></i> {{ __('finance.Additional Fee Table') }}
+                            </h4>
+                            <button type="button" class="inline-flex items-center gap-2 px-4 py-2 text-sm font-semibold rounded-lg text-white bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 shadow-md hover:shadow-lg transition-all" @click="openCategoryModal()">
+                                <i class="fas fa-plus"></i> {{ __('finance.Add Additional Fee') }}
+                            </button>
                         </div>
-                        <div>
-                            <p class="text-sm text-gray-500 dark:text-gray-400">{{ __('finance.Selected Month') }}</p>
-                            <p class="text-xl font-bold text-gray-900 dark:text-white">{{ $currentMonth }}</p>
-                            <p class="text-xs text-gray-500 dark:text-gray-400">{{ __('finance.Current selection') }}</p>
-                        </div>
-                    </div>
-                    <div class="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl p-4 flex items-center gap-4">
-                        <div class="w-12 h-12 rounded-xl bg-gradient-to-br from-amber-500 to-orange-600 text-white flex items-center justify-center text-xl shadow-lg">
-                            <i class="fas fa-file-invoice"></i>
-                        </div>
-                        <div>
-                            <p class="text-sm text-gray-500 dark:text-gray-400">{{ __('finance.Total Invoices') }}</p>
-                            <p class="text-xl font-bold text-gray-900 dark:text-white">{{ $totalInvoices }}</p>
-                            <p class="text-xs text-gray-500 dark:text-gray-400">{{ __('finance.Generated') }}</p>
-                        </div>
-                    </div>
-                    <div class="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl p-4 flex items-center gap-4">
-                        <div class="w-12 h-12 rounded-xl bg-gradient-to-br from-green-500 to-emerald-600 text-white flex items-center justify-center text-xl shadow-lg">
-                            <i class="fas fa-check-circle"></i>
-                        </div>
-                        <div>
-                            <p class="text-sm text-gray-500 dark:text-gray-400">{{ __('finance.Payments Collected') }}</p>
-                            <p class="text-xl font-bold text-gray-900 dark:text-white">{{ $payments->count() }}</p>
-                            <p class="text-xs text-gray-500 dark:text-gray-400">{{ __('finance.Completed') }}</p>
-                        </div>
-                    </div>
-                    <div class="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl p-4 flex items-center gap-4">
-                        <div class="w-12 h-12 rounded-xl bg-gradient-to-br from-purple-500 to-violet-600 text-white flex items-center justify-center text-xl shadow-lg">
-                            <i class="fas fa-dollar-sign"></i>
-                        </div>
-                        <div>
-                            <p class="text-sm text-gray-500 dark:text-gray-400">{{ __('finance.Total Amount') }}</p>
-                            <p class="text-xl font-bold text-gray-900 dark:text-white">{{ number_format($payments->sum('amount'), 0) }} MMK</p>
-                            <p class="text-xs text-gray-500 dark:text-gray-400">{{ __('finance.Collected') }}</p>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Payment History Section -->
-                <div class="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl shadow-sm">
-                    <div class="flex flex-wrap items-center justify-between gap-3 p-4 border-b border-gray-200 dark:border-gray-700">
-                        <h3 class="text-lg font-semibold text-gray-900 dark:text-white">{{ __('finance.Payment History Details') }}</h3>
-                    </div>
-
-                    <!-- Filters -->
-                    <div class="p-4 bg-gray-50 dark:bg-gray-900/50 border-b border-gray-200 dark:border-gray-700">
-                        <form method="GET" action="{{ route('student-fees.index') }}" class="flex flex-wrap items-center gap-3">
-                            <input type="hidden" name="tab" value="history">
-                            <span class="text-sm font-semibold text-gray-600 dark:text-gray-400">{{ __('finance.Filter by Month:') }}</span>
-                            <select name="month" class="form-select-sm" onchange="this.form.submit()">
-                                @foreach($monthOptions as $option)
-                                    <option value="{{ $option['value'] }}" {{ $selectedMonth == $option['value'] ? 'selected' : '' }}>
-                                        {{ $option['label'] }}
-                                    </option>
-                                @endforeach
-                            </select>
-                            <a href="{{ route('student-fees.index') }}?tab=history" class="btn-filter-reset">{{ __('finance.Reset') }}</a>
-                        </form>
-                    </div>
-
-                    <!-- Payment History Table -->
-                    <div class="overflow-x-auto">
-                        <table class="min-w-full">
-                            <thead class="bg-gray-50 dark:bg-gray-800">
-                                <tr>
-                                    <th class="th-cell">{{ __('finance.Payment #') }}</th>
-                                    <th class="th-cell">{{ __('finance.Student ID') }}</th>
-                                    <th class="th-cell">{{ __('finance.Student Name') }}</th>
-                                    <th class="th-cell">{{ __('finance.Grade/Class') }}</th>
-                                    <th class="th-cell">{{ __('finance.Amount') }}</th>
-                                    <th class="th-cell">{{ __('finance.Payment Method') }}</th>
-                                    <th class="th-cell">{{ __('finance.Date') }}</th>
-                                    <th class="th-cell">{{ __('finance.Actions') }}</th>
-                                </tr>
-                            </thead>
-                            <tbody class="divide-y divide-gray-200 dark:divide-gray-700">
-                                @forelse($payments as $payment)
-                                    <tr class="bg-white dark:bg-gray-900 hover:bg-gray-50 dark:hover:bg-gray-800/50">
-                                        <td class="td-cell font-semibold text-amber-600 dark:text-amber-400">{{ $payment->payment_number }}</td>
-                                        <td class="td-cell text-gray-600 dark:text-gray-400">{{ $payment->student->student_identifier ?? '-' }}</td>
-                                        <td class="td-cell">
-                                            <div class="font-medium text-gray-900 dark:text-white">{{ $payment->student->user->name ?? '-' }}</div>
-                                        </td>
-                                        <td class="td-cell">@gradeName($payment->student->grade->level ?? 0) / @className($payment->student->classModel->name ?? '-', $payment->student->grade?->level)</td>
-                                        <td class="td-cell font-semibold text-green-600 dark:text-green-400">{{ number_format($payment->amount, 0) }} MMK</td>
-                                        <td class="td-cell">
-                                            <span class="payment-method-badge" data-method="{{ $payment->payment_method }}">
-                                                {{ ucfirst(str_replace('_', ' ', $payment->payment_method)) }}
-                                            </span>
-                                        </td>
-                                        <td class="td-cell">{{ $payment->payment_date?->format('M j, Y') }}</td>
-                                        <td class="td-cell">
-                                            <button type="button" class="action-btn view" title="{{ __('finance.View Receipt') }}" @click="openReceiptModal(@js($payment))">
-                                                <i class="fas fa-receipt"></i>
-                                            </button>
-                                        </td>
-                                    </tr>
-                                @empty
+                        <div class="overflow-x-auto">
+                            <table class="min-w-full">
+                                <thead class="bg-gray-50 dark:bg-gray-800">
                                     <tr>
-                                        <td colspan="8" class="td-empty">
-                                            <div class="flex flex-col items-center py-8">
-                                                <i class="fas fa-history text-4xl text-gray-300 dark:text-gray-600 mb-3"></i>
-                                                <p class="text-gray-500 dark:text-gray-400">{{ __('finance.No payments recorded yet.') }}</p>
-                                            </div>
-                                        </td>
+                                        <th class="th-cell">{{ __('finance.No.') }}</th>
+                                        <th class="th-cell">{{ __('finance.Name') }}</th>
+                                        <th class="th-cell">{{ __('finance.Fee Type') }}</th>
+                                        <th class="th-cell">{{ __('finance.Amount') }}</th>
+                                        <th class="th-cell">{{ __('finance.Due Date') }}</th>
+                                        <th class="th-cell">{{ __('finance.Partial') }}</th>
+                                        <th class="th-cell">{{ __('finance.Discount') }}</th>
+                                        <th class="th-cell">{{ __('finance.Status') }}</th>
+                                        <th class="th-cell">{{ __('finance.Actions') }}</th>
                                     </tr>
-                                @endforelse
-                            </tbody>
-                        </table>
+                                </thead>
+                                <tbody class="divide-y divide-gray-200 dark:divide-gray-700">
+                                    @forelse($feeTypes as $index => $feeType)
+                                        <tr class="bg-white dark:bg-gray-900 hover:bg-gray-50 dark:hover:bg-gray-800/50">
+                                            <td class="td-cell text-center">{{ $index + 1 }}</td>
+                                            <td class="td-cell">
+                                                <div class="font-semibold text-gray-900 dark:text-white">{{ $feeType->name }}</div>
+                                                @if($feeType->description)
+                                                    <div class="text-xs text-gray-500 dark:text-gray-400 mt-0.5">{{ Str::limit($feeType->description, 40) }}</div>
+                                                @endif
+                                            </td>
+                                            <td class="td-cell">
+                                                <span class="px-2 py-1 text-xs font-semibold rounded-md bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300">
+                                                    {{ $feeType->fee_type ?? 'Other' }}
+                                                </span>
+                                            </td>
+                                            <td class="td-cell font-semibold text-amber-600 dark:text-amber-400">{{ number_format($feeType->amount, 0) }} MMK</td>
+                                            <td class="td-cell text-sm text-gray-600 dark:text-gray-400">
+                                                @if($feeType->due_date)
+                                                    <span class="font-medium">{{ $feeType->due_date }}<sup>{{ in_array($feeType->due_date, [1,21]) ? 'st' : (in_array($feeType->due_date, [2,22]) ? 'nd' : (in_array($feeType->due_date, [3,23]) ? 'rd' : 'th')) }}</sup></span>
+                                                    <span class="text-xs text-gray-400 dark:text-gray-500 ml-0.5">/ {{ __('finance.month') }}</span>
+                                                @else
+                                                    -
+                                                @endif
+                                            </td>
+                                            <td class="td-cell">
+                                                @if($feeType->partial_status)
+                                                    <span class="px-2 py-1 text-xs font-semibold rounded-md bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300">
+                                                        <i class="fas fa-check-circle mr-1"></i>{{ __('finance.Yes') }}
+                                                    </span>
+                                                @else
+                                                    <span class="px-2 py-1 text-xs font-semibold rounded-md bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-400">
+                                                        {{ __('finance.No') }}
+                                                    </span>
+                                                @endif
+                                            </td>
+                                            <td class="td-cell">
+                                                @if($feeType->discount_status)
+                                                    <span class="px-2 py-1 text-xs font-semibold rounded-md bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300">
+                                                        <i class="fas fa-check-circle mr-1"></i>{{ __('finance.Yes') }}
+                                                    </span>
+                                                @else
+                                                    <span class="px-2 py-1 text-xs font-semibold rounded-md bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-400">
+                                                        {{ __('finance.No') }}
+                                                    </span>
+                                                @endif
+                                            </td>
+                                            <td class="td-cell">
+                                                @if($feeType->status)
+                                                    <span class="px-2 py-1 text-xs font-semibold rounded-md bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300">
+                                                        <i class="fas fa-check-circle mr-1"></i>{{ __('finance.Active') }}
+                                                    </span>
+                                                @else
+                                                    <span class="px-2 py-1 text-xs font-semibold rounded-md bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-300">
+                                                        {{ __('finance.Inactive') }}
+                                                    </span>
+                                                @endif
+                                            </td>
+                                            <td class="td-cell">
+                                                <div class="flex items-center gap-1">
+                                                    <a href="{{ route('student-fees.categories.show', $feeType) }}" class="action-btn view" title="{{ __('finance.View Details') }}">
+                                                        <i class="fas fa-eye"></i>
+                                                    </a>
+                                                    <button type="button" class="action-btn edit" @click="openEditCategoryModal(@js($feeType))" title="{{ __('finance.Edit') }}">
+                                                        <i class="fas fa-edit"></i>
+                                                    </button>
+                                                    <form method="POST" action="{{ route('student-fees.categories.destroy', $feeType) }}" class="inline" onsubmit="return confirm('{{ __('finance.Delete this fee?') }}')">
+                                                        @csrf
+                                                        @method('DELETE')
+                                                        <button type="submit" class="action-btn delete" title="{{ __('finance.Delete') }}">
+                                                            <i class="fas fa-trash"></i>
+                                                        </button>
+                                                    </form>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    @empty
+                                        <tr>
+                                            <td colspan="9" class="td-empty">
+                                                <div class="flex flex-col items-center py-8">
+                                                    <i class="fas fa-tags text-4xl text-gray-300 dark:text-gray-600 mb-3"></i>
+                                                    <p class="text-gray-500 dark:text-gray-400">{{ __('finance.No additional fees yet. Click "Add Additional Fee" to create one.') }}</p>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    @endforelse
+                                </tbody>
+                            </table>
+                        </div>
                     </div>
-                    @if($payments->hasPages())
-                        <div class="p-4 border-t border-gray-200 dark:border-gray-700">{{ $payments->withQueryString()->links() }}</div>
-                    @endif
+
+
+
+
                 </div>
             </div>
+
+
 
             <!-- Payment Methods Tab -->
             <div x-show="activeTab === 'payment-methods'" x-cloak>
@@ -1082,78 +1042,280 @@
                 </div>
             </div>
 
-        </div>
+
 
         <!-- Process Payment Modal -->
         <div x-show="showPaymentModal" x-cloak class="fixed inset-0 z-50 overflow-y-auto" @click.self="showPaymentModal = false">
             <div class="fixed inset-0 bg-black/50 backdrop-blur-sm"></div>
             <div class="flex min-h-full items-center justify-center p-4">
-                <div class="relative bg-white dark:bg-gray-800 rounded-xl w-full max-w-lg shadow-2xl" @click.stop>
-                    <form @submit.prevent="submitPayment" x-ref="paymentForm">
+                <div class="relative bg-white dark:bg-gray-800 rounded-xl w-full max-w-2xl shadow-2xl" @click.stop>
+                    <form @submit.prevent="submitPayment" x-ref="paymentForm" enctype="multipart/form-data">
+                        <!-- Header -->
                         <div class="flex items-center justify-between p-5 border-b border-gray-200 dark:border-gray-700">
                             <h4 class="text-lg font-semibold text-gray-900 dark:text-white flex items-center gap-2">
-                                <i class="fas fa-money-check-alt text-green-600"></i> {{ __('finance.Process Payment') }}
+                                <i class="fas fa-money-check-alt text-green-600"></i> {{ __('finance.Payment') }}
                             </h4>
                             <button type="button" class="w-8 h-8 rounded-lg flex items-center justify-center text-gray-500 hover:bg-gray-200 dark:hover:bg-gray-700" @click="showPaymentModal = false">
                                 <i class="fas fa-times"></i>
                             </button>
                         </div>
-                        <div class="p-5 space-y-4">
-                            <div class="p-3 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg">
-                                <p class="text-sm font-semibold text-amber-800 dark:text-amber-200" x-text="paymentInfo"></p>
+
+                        <div class="p-5 space-y-5 max-h-[70vh] overflow-y-auto">
+                            <!-- Student Info -->
+                            <div class="p-3 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg">
+                                <p class="text-sm font-semibold text-blue-800 dark:text-blue-200" x-text="paymentInfo"></p>
                             </div>
-                            <input type="hidden" name="student_id" x-model="paymentStudentId">
-                            <input type="hidden" name="items[0][invoice_id]" x-model="paymentInvoiceId">
-                            <div class="grid grid-cols-2 gap-4">
-                                <div>
-                                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-1.5">{{ __('finance.Payment Type') }} <span class="text-red-500">*</span></label>
-                                    <select name="payment_method" class="form-select-full" x-model="paymentForm.payment_method" required>
-                                        <option value="">{{ __('finance.Select Payment Type') }}</option>
-                                        <option value="cash">{{ __('finance.Cash') }}</option>
-                                        <option value="card">{{ __('finance.Card Payment') }}</option>
-                                        <option value="bank_transfer">{{ __('finance.Bank Transfer') }}</option>
-                                        <option value="cheque">{{ __('finance.Check') }}</option>
-                                        <option value="online">{{ __('finance.Online Payment') }}</option>
-                                        <option value="mobile_payment">{{ __('finance.Mobile Payment') }}</option>
-                                    </select>
-                                </div>
-                                <div>
-                                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-1.5">{{ __('finance.Payment Reference') }}</label>
-                                    <input type="text" name="reference_number" class="form-input-full" x-model="paymentForm.reference_number" placeholder="{{ __('finance.Transaction ID, Check #, etc.') }}">
-                                </div>
-                            </div>
-                            <div class="grid grid-cols-2 gap-4">
-                                <div>
-                                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-1.5">{{ __('finance.Amount (MMK)') }} <span class="text-red-500">*</span></label>
-                                    <input type="number" step="1" min="1" name="amount" class="form-input-full" x-model="paymentAmount" required>
-                                </div>
-                                <div>
-                                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-1.5">{{ __('finance.Payment Date') }} <span class="text-red-500">*</span></label>
-                                    <input type="date" name="payment_date" class="form-input-full" x-model="paymentForm.payment_date" required>
-                                </div>
-                            </div>
-                            <input type="hidden" name="items[0][amount]" x-model="paymentAmount">
-                            <div class="grid grid-cols-2 gap-4">
-                                <div>
-                                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-1.5">{{ __('finance.Receptionist ID') }}</label>
-                                    <input type="text" name="receptionist_id" class="form-input-full" x-model="paymentForm.receptionist_id" placeholder="{{ __('finance.e.g., R001') }}">
-                                </div>
-                                <div>
-                                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-1.5">{{ __('finance.Receptionist Name') }}</label>
-                                    <input type="text" name="receptionist_name" class="form-input-full" x-model="paymentForm.receptionist_name" placeholder="{{ __('finance.Enter name') }}">
-                                </div>
-                            </div>
+
+                            <!-- Payment Type Selection -->
                             <div>
-                                <label class="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-1.5">{{ __('finance.Payment Notes') }}</label>
-                                <textarea name="notes" rows="2" class="form-input-full" x-model="paymentForm.notes" placeholder="{{ __('finance.Additional payment details...') }}"></textarea>
+                                <label class="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-3">{{ __('finance.Payment Type') }}</label>
+                                <div class="grid grid-cols-2 gap-3">
+                                    <label class="relative flex items-center p-4 border-2 rounded-lg cursor-pointer transition-all" :class="paymentData.payment_type === 'full' ? 'border-green-500 bg-green-50 dark:bg-green-900/20' : 'border-gray-300 dark:border-gray-600 hover:border-green-300'">
+                                        <input type="radio" name="payment_type" value="full" x-model="paymentData.payment_type" @change="updatePaymentCalculation" class="sr-only">
+                                        <div class="flex items-center gap-3">
+                                            <div class="w-5 h-5 rounded-full border-2 flex items-center justify-center" :class="paymentData.payment_type === 'full' ? 'border-green-500' : 'border-gray-400'">
+                                                <div x-show="paymentData.payment_type === 'full'" class="w-3 h-3 rounded-full bg-green-500"></div>
+                                            </div>
+                                            <div>
+                                                <p class="font-semibold text-gray-900 dark:text-white">{{ __('finance.Full Payment') }}</p>
+                                                <p class="text-xs text-gray-500 dark:text-gray-400">{{ __('finance.Pay all fees') }}</p>
+                                            </div>
+                                        </div>
+                                    </label>
+                                    <label class="relative flex items-center p-4 border-2 rounded-lg cursor-pointer transition-all" :class="[paymentData.payment_type === 'partial' ? 'border-amber-500 bg-amber-50 dark:bg-amber-900/20' : 'border-gray-300 dark:border-gray-600 hover:border-amber-300', (paymentData.hasOverdueFees || paymentData.hasNonPartialFee || paymentData.hasReachedPartialLimit) ? 'opacity-50 cursor-not-allowed' : '']">
+                                        <input type="radio" name="payment_type" value="partial" x-model="paymentData.payment_type" @change="updatePaymentCalculation" :disabled="paymentData.hasOverdueFees || paymentData.hasNonPartialFee || paymentData.hasReachedPartialLimit" class="sr-only">
+                                        <div class="flex items-center gap-3">
+                                            <div class="w-5 h-5 rounded-full border-2 flex items-center justify-center" :class="paymentData.payment_type === 'partial' ? 'border-amber-500' : 'border-gray-400'">
+                                                <div x-show="paymentData.payment_type === 'partial'" class="w-3 h-3 rounded-full bg-amber-500"></div>
+                                            </div>
+                                            <div>
+                                                <p class="font-semibold text-gray-900 dark:text-white">{{ __('finance.Partial Payment') }}</p>
+                                                <p class="text-xs text-gray-500 dark:text-gray-400">{{ __('finance.Adjust amounts') }}</p>
+                                            </div>
+                                        </div>
+                                    </label>
+                                </div>
+                                <p x-show="paymentData.hasOverdueFees" class="mt-2 text-xs text-red-600 dark:text-red-400">
+                                    <i class="fas fa-exclamation-triangle mr-1"></i>{{ __('finance.Cannot make partial payment - some fees are overdue') }}
+                                </p>
+                                <p x-show="paymentData.hasNonPartialFee && !paymentData.hasOverdueFees" class="mt-2 text-xs text-red-600 dark:text-red-400">
+                                    <i class="fas fa-exclamation-triangle mr-1"></i>{{ __('finance.Cannot make partial payment - some fees do not support partial payment') }}
+                                </p>
+                                <p x-show="paymentData.hasReachedPartialLimit && !paymentData.hasOverdueFees && !paymentData.hasNonPartialFee" class="mt-2 text-xs text-red-600 dark:text-red-400">
+                                    <i class="fas fa-exclamation-triangle mr-1"></i>{{ __('finance.Maximum partial payment limit reached. Please pay the full remaining amount.') }}
+                                </p>
+                            </div>
+
+                            <!-- Payment Period Selection - Full Payment Only (Hidden for Remaining Invoices) -->
+                            <div x-show="paymentData.payment_type === 'full' && !paymentData.isRemainingInvoice">
+                                <label class="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-3">{{ __('finance.Payment Period') }}</label>
+                                <p class="text-xs text-gray-500 dark:text-gray-400 mb-3">{{ __('finance.Select payment period for each fee type') }}</p>
+                                
+                                <!-- Fee-specific payment period selection -->
+                                <div class="space-y-2">
+                                    <template x-for="(fee, index) in paymentData.fees" :key="fee.id">
+                                        <div class="border border-gray-200 dark:border-gray-700 rounded-lg p-3 bg-white dark:bg-gray-800">
+                                            <!-- Fee Header with Amount -->
+                                            <div class="flex items-center justify-between mb-2">
+                                                <div class="flex-1">
+                                                    <div class="flex items-baseline gap-2">
+                                                        <p class="font-medium text-sm text-gray-900 dark:text-white" x-text="fee.fee_name"></p>
+                                                        <p class="text-xs text-gray-500" x-text="'{{ __('finance.Due') }}: ' + formatDueDate(fee.due_date)"></p>
+                                                    </div>
+                                                    <!-- Show calculation dynamically -->
+                                                    <p class="text-xs text-gray-600 dark:text-gray-400 mt-1">
+                                                        <span x-text="fee.remaining_amount.toLocaleString() + ' MMK'"></span>
+                                                        <template x-if="fee.payment_months > 1">
+                                                            <span x-text="' × ' + fee.payment_months"></span>
+                                                        </template>
+                                                        <template x-if="fee.payment_months == 1">
+                                                            <span>/{{ __('finance.month') }}</span>
+                                                        </template>
+                                                        <!-- Add discount notice -->
+                                                        <template x-if="(() => {
+                                                            const isSchoolFee = fee.fee_name && fee.fee_name.toLowerCase().includes('school fee');
+                                                            const discountOption = paymentPeriodOptions.find(opt => opt.months == (fee.payment_months || 1));
+                                                            return isSchoolFee && discountOption && discountOption.discount_percent > 0;
+                                                        })()">
+                                                            <span class="text-green-600 dark:text-green-400 ml-1" x-text="'(' + parseInt(paymentPeriodOptions.find(opt => opt.months == (fee.payment_months || 1)).discount_percent) + '% {{ __('finance.off') }})'"></span>
+                                                        </template>
+                                                    </p>
+                                                </div>
+                                                <div class="text-right">
+                                                    <span class="text-sm font-bold text-gray-900 dark:text-white" x-text="(() => {
+                                                        let amount = fee.remaining_amount * fee.payment_months;
+                                                        const isSchoolFee = fee.fee_name && fee.fee_name.toLowerCase().includes('school fee');
+                                                        const discountOption = paymentPeriodOptions.find(opt => opt.months == (fee.payment_months || 1));
+                                                        if (isSchoolFee && discountOption && discountOption.discount_percent > 0) {
+                                                            amount = amount * (1 - discountOption.discount_percent / 100);
+                                                        }
+                                                        return amount.toLocaleString() + ' MMK';
+                                                    })()"></span>
+                                                    <template x-if="(() => {
+                                                        const isSchoolFee = fee.fee_name && fee.fee_name.toLowerCase().includes('school fee');
+                                                        const discountOption = paymentPeriodOptions.find(opt => opt.months == (fee.payment_months || 1));
+                                                        return isSchoolFee && discountOption && discountOption.discount_percent > 0;
+                                                    })()">
+                                                        <div class="text-xs text-gray-500 line-through" x-text="(fee.remaining_amount * fee.payment_months).toLocaleString() + ' MMK'"></div>
+                                                    </template>
+                                                </div>
+                                            </div>
+                                            
+                                            <!-- Payment period options in one line -->
+                                            <div class="flex gap-2">
+                                                <template x-for="option in paymentPeriodOptions" :key="option.months">
+                                                    <label class="flex-1 relative flex flex-col items-center justify-center p-2 border-2 rounded-lg cursor-pointer transition-all text-center" :class="fee.payment_months == option.months ? 'border-teal-500 bg-teal-50 dark:bg-teal-900/20' : 'border-gray-300 dark:border-gray-600 hover:border-teal-300'">
+                                                        <input type="radio" :name="'fee_months_' + fee.id" :value="option.months" x-model.number="fee.payment_months" @change="updatePaymentCalculation" class="sr-only">
+                                                        <div class="flex flex-row items-center justify-center gap-1">
+                                                            <span class="font-bold text-sm text-gray-900 dark:text-white" x-text="option.months"></span>
+                                                            <span class="text-xs text-gray-600 dark:text-gray-400" x-text="option.months === 1 ? '{{ __('finance.month') }}' : '{{ __('finance.months') }}'"></span>
+                                                            <template x-if="option.discount_percent > 0 && fee.fee_name && fee.fee_name.toLowerCase().includes('school fee')">
+                                                                <span class="text-xs font-medium text-green-600 dark:text-green-400" x-text="'(-' + parseInt(option.discount_percent) + '%)'"></span>
+                                                            </template>
+                                                        </div>
+                                                    </label>
+                                                </template>
+                                            </div>
+                                        </div>
+                                    </template>
+                                </div>
+                            </div>
+
+                            <!-- Partial Payment - Fee Breakdown with Input Field -->
+                            <div x-show="paymentData.payment_type === 'partial'">
+                                <div class="border border-gray-200 dark:border-gray-700 rounded-xl p-4 bg-white dark:bg-gray-800">
+                                    <h4 class="font-semibold text-gray-900 dark:text-white mb-1">{{ __('finance.Payment Summary') }}</h4>
+                                    <p class="text-xs text-gray-500 dark:text-gray-400 mb-4">{{ __('finance.Select fees and adjust amounts') }}</p>
+                                    
+                                    <div class="border-t border-gray-200 dark:border-gray-700 pt-3">
+                                        <p class="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-3">{{ __('finance.Fees Breakdown') }}</p>
+                                        
+                                        <div class="space-y-4">
+                                            <template x-for="(fee, index) in paymentData.fees" :key="fee.id">
+                                                <div class="space-y-2">
+                                                    <div class="flex items-start justify-between gap-3">
+                                                        <div class="flex-1 min-w-0">
+                                                            <p class="text-sm font-medium text-gray-900 dark:text-white truncate" x-text="fee.fee_name"></p>
+                                                            <p class="text-xs text-gray-500 dark:text-gray-400">
+                                                                {{ __('finance.Total') }}: <span x-text="fee.remaining_amount.toLocaleString()"></span> MMK
+                                                                <span x-show="fee.payment_amount < fee.remaining_amount" class="ml-2">
+                                                                    | {{ __('finance.Remaining') }}: <span x-text="(fee.remaining_amount - fee.payment_amount).toLocaleString()"></span> MMK
+                                                                </span>
+                                                            </p>
+                                                        </div>
+                                                        
+                                                        <div class="flex items-center gap-2 flex-shrink-0">
+                                                            <button type="button" 
+                                                                @click="adjustFeeAmount(index, -500)"
+                                                                class="w-9 h-9 flex items-center justify-center rounded-lg border-2 transition-all"
+                                                                :class="fee.payment_amount <= 1000 ? 'border-gray-200 dark:border-gray-700 text-gray-300 dark:text-gray-600 cursor-not-allowed' : 'border-gray-300 dark:border-gray-600 text-gray-600 dark:text-gray-300 hover:border-teal-500 hover:text-teal-500'"
+                                                                :disabled="fee.payment_amount <= 1000">
+                                                                <i class="fas fa-minus text-xs"></i>
+                                                            </button>
+                                                            
+                                                            <input 
+                                                                type="number" 
+                                                                :value="fee.payment_amount"
+                                                                @input="setFeeAmount(index, $event.target.value)"
+                                                                @blur="validateFeeAmount(index)"
+                                                                min="1000"
+                                                                :max="fee.remaining_amount"
+                                                                step="500"
+                                                                class="w-28 px-2 py-2 text-center text-sm font-bold border-2 border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:border-teal-500 focus:ring-2 focus:ring-teal-500/20"
+                                                                placeholder="1,000"
+                                                            />
+                                                            
+                                                            <button type="button" 
+                                                                @click="adjustFeeAmount(index, 500)"
+                                                                class="w-9 h-9 flex items-center justify-center rounded-lg border-2 transition-all"
+                                                                :class="fee.payment_amount >= fee.remaining_amount ? 'border-gray-200 dark:border-gray-700 text-gray-300 dark:text-gray-600 cursor-not-allowed' : 'border-gray-300 dark:border-gray-600 text-gray-600 dark:text-gray-300 hover:border-teal-500 hover:text-teal-500'"
+                                                                :disabled="fee.payment_amount >= fee.remaining_amount">
+                                                                <i class="fas fa-plus text-xs"></i>
+                                                            </button>
+                                                        </div>
+                                                    </div>
+                                                    
+                                                    <p x-show="fee.payment_amount < 1000" class="text-xs text-red-600 dark:text-red-400 text-right">
+                                                        <i class="fas fa-exclamation-circle mr-1"></i>{{ __('finance.Minimum amount is 1,000 MMK') }}
+                                                    </p>
+                                                </div>
+                                            </template>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                                <!-- Total Amount -->
+                                <div class="p-3 bg-gradient-to-br from-teal-500 to-emerald-500 rounded-lg">
+                                    <div class="flex items-center justify-between text-white">
+                                        <span class="text-sm font-medium">{{ __('finance.Total Amount') }}</span>
+                                        <span class="font-bold text-xl" x-text="paymentData.total.toLocaleString() + ' MMK'"></span>
+                                    </div>
+                                </div>
+
+                            <!-- Hidden inputs for fee payment months -->
+                            <template x-for="(fee, index) in paymentData.fees" :key="fee.id">
+                                <input type="hidden" :name="'fee_payment_months[' + fee.id + ']'" :value="fee.payment_months">
+                            </template>
+                            
+                            <!-- Hidden inputs for fee amounts (partial payment) -->
+                            <template x-for="(fee, index) in paymentData.fees" :key="'amount-' + fee.id">
+                                <input type="hidden" :name="'fee_amounts[' + fee.id + ']'" :value="fee.payment_amount">
+                            </template>
+                            
+                            <!-- Hidden input for overall payment_months (use max value for validation) -->
+                            <input type="hidden" name="payment_months" :value="Math.max(...paymentData.fees.map(f => f.payment_months || 1))">
+                            
+                            <!-- Hidden input for payment type -->
+                            <input type="hidden" name="payment_type" :value="paymentData.payment_type">>
+
+                            <!-- Payment Method -->
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-2">{{ __('finance.Payment Method') }} <span class="text-red-500">*</span></label>
+                                <select name="payment_method_id" x-model="paymentData.payment_method_id" required class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white">
+                                    <option value="">{{ __('finance.Select Payment Method') }}</option>
+                                    @foreach($paymentMethods as $method)
+                                        <option value="{{ $method->id }}">{{ $method->name }} @if($method->account_number && $method->account_number !== 'N/A') - {{ $method->account_number }} @endif</option>
+                                    @endforeach
+                                </select>
+                            </div>
+
+                            <!-- Reference Number & Payment Date -->
+                            <div class="grid grid-cols-2 gap-4">
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-2">{{ __('finance.Reference Number') }}</label>
+                                    <input type="text" name="reference_number" x-model="paymentData.reference_number" placeholder="{{ __('finance.Transaction ID, Check #, etc.') }}" class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white">
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-2">{{ __('finance.Payment Date') }} <span class="text-red-500">*</span></label>
+                                    <input type="date" name="payment_date" x-model="paymentData.payment_date" required class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white">
+                                </div>
+                            </div>
+
+                            <!-- Receipt Image Upload -->
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-2">{{ __('finance.Receipt Image') }} <span class="text-gray-500 text-xs">({{ __('finance.Optional') }})</span></label>
+                                <input type="file" name="receipt_image" accept="image/*" @change="handleReceiptUpload" class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white">
+                            </div>
+
+                            <!-- Notes -->
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-2">{{ __('finance.Notes') }}</label>
+                                <textarea name="notes" x-model="paymentData.notes" rows="2" placeholder="{{ __('finance.Additional payment details...') }}" class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"></textarea>
                             </div>
                         </div>
+
+                        <!-- Footer -->
                         <div class="flex items-center justify-between gap-3 p-5 border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900/50 rounded-b-xl">
                             <button type="button" class="px-4 py-2 text-sm font-medium rounded-lg border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700" @click="showPaymentModal = false">
                                 <i class="fas fa-times mr-2"></i>{{ __('finance.Cancel') }}
                             </button>
-                            <button type="submit" class="px-4 py-2 text-sm font-semibold rounded-lg text-white bg-green-600 hover:bg-green-700" :disabled="isSubmitting">
-                                <span x-show="!isSubmitting"><i class="fas fa-check mr-2"></i>{{ __('finance.Confirm Payment') }}</span>
+                            <button type="submit" class="px-8 py-3 text-base font-bold rounded-lg text-white bg-gradient-to-r from-teal-500 to-emerald-500 hover:from-teal-600 hover:to-emerald-600 shadow-xl hover:shadow-2xl transform hover:scale-105 transition-all duration-200" :disabled="isSubmitting">
+                                <span x-show="!isSubmitting" class="flex items-center gap-2">
+                                    <i class="fas fa-check-circle"></i>
+                                    <span>{{ __('finance.Pay Now') }}</span>
+                                    <span class="px-2 py-0.5 bg-white/20 rounded text-sm" x-text="paymentData.total.toLocaleString() + ' MMK'"></span>
+                                </span>
                                 <span x-show="isSubmitting"><i class="fas fa-spinner fa-spin mr-2"></i>{{ __('finance.Processing...') }}</span>
                             </button>
                         </div>
@@ -1162,91 +1324,7 @@
             </div>
         </div>
 
-        <!-- Add/Edit Fee Structure Modal -->
-        <div x-show="showStructureModal" x-cloak class="fixed inset-0 z-50 overflow-y-auto" @click.self="showStructureModal = false">
-            <div class="fixed inset-0 bg-black/50 backdrop-blur-sm"></div>
-            <div class="flex min-h-full items-center justify-center p-4">
-                <div class="relative bg-white dark:bg-gray-800 rounded-xl w-full max-w-lg shadow-2xl" @click.stop>
-                    <form method="POST" :action="structureFormAction" x-ref="structureForm">
-                        @csrf
-                        <template x-if="structureFormMethod === 'PUT'"><input type="hidden" name="_method" value="PUT"></template>
-                        <div class="flex items-center justify-between p-5 border-b border-gray-200 dark:border-gray-700">
-                            <h4 class="text-lg font-semibold text-gray-900 dark:text-white flex items-center gap-2">
-                                <i class="fas fa-dollar-sign text-amber-600"></i>
-                                <span x-text="structureFormMethod === 'PUT' ? '{{ __('finance.Edit School Fee') }}' : '{{ __('finance.Add School Fee') }}'"></span>
-                            </h4>
-                            <button type="button" class="w-8 h-8 rounded-lg flex items-center justify-center text-gray-500 hover:bg-gray-200 dark:hover:bg-gray-700" @click="showStructureModal = false">
-                                <i class="fas fa-times"></i>
-                            </button>
-                        </div>
-                        <div class="p-5 space-y-4">
-                            <div class="grid grid-cols-2 gap-4">
-                                <div>
-                                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-1.5">{{ __('finance.Grade') }} <span class="text-red-500">*</span></label>
-                                    <select name="grade_id" class="form-select-full" x-model="structureForm.grade_id" required>
-                                        <option value="">{{ __('finance.Select Grade') }}</option>
-                                        @foreach($grades as $grade)
-                                            <option value="{{ $grade->id }}">@gradeName($grade->level)</option>
-                                        @endforeach
-                                    </select>
-                                </div>
-                                <div>
-                                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-1.5">{{ __('finance.Batch') }} <span class="text-red-500">*</span></label>
-                                    <select name="batch_id" class="form-select-full" x-model="structureForm.batch_id" required>
-                                        <option value="">{{ __('finance.Select Batch') }}</option>
-                                        @foreach($batches as $batch)
-                                            <option value="{{ $batch->id }}">{{ $batch->name }}</option>
-                                        @endforeach
-                                    </select>
-                                </div>
-                            </div>
-                            <div class="grid grid-cols-2 gap-4">
-                                <div>
-                                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-1.5">{{ __('finance.Fee Type') }} <span class="text-red-500">*</span></label>
-                                    <select name="fee_type_id" class="form-select-full" x-model="structureForm.fee_type_id" required>
-                                        <option value="">{{ __('finance.Select Fee Type') }}</option>
-                                        @foreach($feeTypes as $type)
-                                            <option value="{{ $type->id }}">{{ $type->name }}</option>
-                                        @endforeach
-                                    </select>
-                                </div>
-                                <div>
-                                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-1.5">{{ __('finance.Monthly Fee (MMK)') }} <span class="text-red-500">*</span></label>
-                                    <input type="number" step="1" min="0" name="amount" class="form-input-full" x-model="structureForm.amount" placeholder="15000" required>
-                                </div>
-                            </div>
-                            <div class="grid grid-cols-2 gap-4">
-                                <div>
-                                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-1.5">{{ __('finance.Frequency') }} <span class="text-red-500">*</span></label>
-                                    <select name="frequency" class="form-select-full" x-model="structureForm.frequency" required>
-                                        <option value="monthly">{{ __('finance.Monthly') }}</option>
-                                        <option value="quarterly">{{ __('finance.Quarterly') }}</option>
-                                        <option value="half-yearly">{{ __('finance.Half-Yearly') }}</option>
-                                        <option value="yearly">{{ __('finance.Yearly') }}</option>
-                                        <option value="one-time">{{ __('finance.One-Time') }}</option>
-                                    </select>
-                                </div>
-                                <div class="flex items-center pt-6">
-                                    <input type="hidden" name="status" value="0">
-                                    <label class="inline-flex items-center gap-2 cursor-pointer">
-                                        <input type="checkbox" name="status" value="1" class="rounded border-gray-300 text-amber-600 focus:ring-amber-500" x-model="structureForm.status">
-                                        <span class="text-sm font-medium text-gray-700 dark:text-gray-200">{{ __('finance.Active') }}</span>
-                                    </label>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="flex items-center justify-between gap-3 p-5 border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900/50 rounded-b-xl">
-                            <button type="button" class="px-4 py-2 text-sm font-medium rounded-lg border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700" @click="showStructureModal = false">
-                                <i class="fas fa-times mr-2"></i>{{ __('finance.Cancel') }}
-                            </button>
-                            <button type="submit" class="px-4 py-2 text-sm font-semibold rounded-lg text-white bg-amber-600 hover:bg-amber-700">
-                                <i class="fas fa-save mr-2"></i>{{ __('finance.Save Fee') }}
-                            </button>
-                        </div>
-                    </form>
-                </div>
-            </div>
-        </div>
+
 
         <!-- Edit Grade Fee Modal -->
         <div x-show="showGradeFeeModal" x-cloak class="fixed inset-0 z-50 overflow-y-auto" @click.self="showGradeFeeModal = false">
@@ -1311,12 +1389,12 @@
                             <div>
                                 <label class="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-1.5">{{ __('finance.Discount Percentage') }} <span class="text-red-500">*</span></label>
                                 <div class="relative">
-                                    <input type="number" step="0.1" min="0" max="100" name="discount_percent" class="form-input-full pr-12" x-model="promotionForm.discount_percent" placeholder="0" required>
+                                    <input type="number" step="1" min="0" max="100" name="discount_percent" class="form-input-full pr-12" x-model="promotionForm.discount_percent" placeholder="0" required>
                                     <div class="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
                                         <span class="text-gray-500 dark:text-gray-400 font-semibold">%</span>
                                     </div>
                                 </div>
-                                <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">{{ __('finance.Enter discount percentage (0-100)') }}</p>
+                                <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">{{ __('finance.Enter whole number percentage (0-100)') }}</p>
                             </div>
                             <div class="flex items-center">
                                 <input type="hidden" name="is_active" value="0">
@@ -1410,52 +1488,178 @@
         <div x-show="showCategoryModal" x-cloak class="fixed inset-0 z-50 overflow-y-auto" @click.self="showCategoryModal = false">
             <div class="fixed inset-0 bg-black/50 backdrop-blur-sm"></div>
             <div class="flex min-h-full items-center justify-center p-4">
-                <div class="relative bg-white dark:bg-gray-800 rounded-xl w-full max-w-lg shadow-2xl" @click.stop>
+                <div class="relative bg-white dark:bg-gray-800 rounded-xl w-full max-w-2xl shadow-2xl" @click.stop>
                     <form method="POST" :action="categoryFormAction" x-ref="categoryForm">
                         @csrf
                         <template x-if="categoryFormMethod === 'PUT'"><input type="hidden" name="_method" value="PUT"></template>
                         <div class="flex items-center justify-between p-5 border-b border-gray-200 dark:border-gray-700">
                             <h4 class="text-lg font-semibold text-gray-900 dark:text-white flex items-center gap-2">
                                 <i class="fas fa-tags text-purple-600"></i>
-                                <span x-text="categoryFormMethod === 'PUT' ? '{{ __('finance.Edit Fee Category') }}' : '{{ __('finance.Add Fee Category') }}'"></span>
+                                <span x-text="categoryFormMethod === 'PUT' ? '{{ __('finance.Edit Additional Fee') }}' : '{{ __('finance.Add Additional Fee') }}'"></span>
                             </h4>
                             <button type="button" class="w-8 h-8 rounded-lg flex items-center justify-center text-gray-500 hover:bg-gray-200 dark:hover:bg-gray-700" @click="showCategoryModal = false">
                                 <i class="fas fa-times"></i>
                             </button>
                         </div>
-                        <div class="p-5 space-y-4">
-                            <div>
-                                <label class="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-1.5">{{ __('finance.Category Name') }} <span class="text-red-500">*</span></label>
-                                <input type="text" name="name" class="form-input-full" x-model="categoryForm.name" placeholder="{{ __('finance.e.g., Library Fee, Sport Fee, Lab Fee') }}" required>
+                        <div class="p-5 space-y-4 max-h-[70vh] overflow-y-auto">
+                            <!-- Row 1: Name & Fee Type -->
+                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-1.5">{{ __('finance.Name') }} <span class="text-red-500">*</span></label>
+                                    <input type="text" name="name" class="form-input-full" x-model="categoryForm.name" placeholder="{{ __('finance.e.g., Library Fee, Sport Fee') }}" required>
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-1.5">{{ __('finance.Fee Type') }} <span class="text-red-500">*</span></label>
+                                    <select name="fee_type" class="form-select-full" x-model="categoryForm.fee_type" required>
+                                        @foreach(\App\Models\FeeType::FEE_TYPES as $type)
+                                            <option value="{{ $type }}">{{ $type }}</option>
+                                        @endforeach
+                                    </select>
+                                </div>
                             </div>
-                            <div>
-                                <label class="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-1.5">{{ __('finance.Category Code') }}</label>
-                                <input type="text" name="code" class="form-input-full" x-model="categoryForm.code" placeholder="{{ __('finance.e.g., LIB, SPORT, LAB') }}">
-                                <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">{{ __('finance.Short code for internal reference (optional)') }}</p>
+
+                            <!-- Row 2: Amount -->
+                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-1.5">{{ __('finance.Amount') }} (MMK) <span class="text-red-500">*</span></label>
+                                    <input type="number" name="amount" class="form-input-full" x-model="categoryForm.amount" placeholder="0" min="0" step="1" required>
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-1.5">{{ __('finance.Status') }} <span class="text-red-500">*</span></label>
+                                    <select name="status" class="form-select-full" x-model="categoryForm.status" required>
+                                        <option value="active">{{ __('finance.Active') }}</option>
+                                        <option value="inactive">{{ __('finance.Inactive') }}</option>
+                                    </select>
+                                </div>
                             </div>
+
+                            <!-- Row 4: Frequency -->
+                            <div class="pt-2 border-t border-gray-200 dark:border-gray-700">
+                                <label class="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-1.5">{{ __('finance.Frequency') }} <span class="text-red-500">*</span></label>
+                                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                    <div>
+                                        <select name="frequency" class="form-select-full" x-model="categoryForm.frequency" required>
+                                            <option value="0">{{ __('finance.Choose Frequency') }}</option>
+                                            <option value="one_time">{{ __('finance.This Month') }}</option>
+                                            <option value="monthly">{{ __('finance.Monthly') }}</option>
+                                        </select>
+                                    </div>
+                                </div>
+                                
+                                <!-- Month Selection (shown only for monthly) -->
+                                <div x-show="categoryForm.frequency === 'monthly'" class="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-3">
+                                    <div>
+                                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-1.5">{{ __('finance.Start Month') }} <span class="text-red-500">*</span></label>
+                                        <select name="start_month" class="form-select-full" x-model="categoryForm.start_month" :required="categoryForm.frequency === 'monthly'">
+                                            <option value="1" :disabled="1 < currentMonth">{{ __('finance.January') }}</option>
+                                            <option value="2" :disabled="2 < currentMonth">{{ __('finance.February') }}</option>
+                                            <option value="3" :disabled="3 < currentMonth">{{ __('finance.March') }}</option>
+                                            <option value="4" :disabled="4 < currentMonth">{{ __('finance.April') }}</option>
+                                            <option value="5" :disabled="5 < currentMonth">{{ __('finance.May') }}</option>
+                                            <option value="6" :disabled="6 < currentMonth">{{ __('finance.June') }}</option>
+                                            <option value="7" :disabled="7 < currentMonth">{{ __('finance.July') }}</option>
+                                            <option value="8" :disabled="8 < currentMonth">{{ __('finance.August') }}</option>
+                                            <option value="9" :disabled="9 < currentMonth">{{ __('finance.September') }}</option>
+                                            <option value="10" :disabled="10 < currentMonth">{{ __('finance.October') }}</option>
+                                            <option value="11" :disabled="11 < currentMonth">{{ __('finance.November') }}</option>
+                                            <option value="12" :disabled="12 < currentMonth">{{ __('finance.December') }}</option>
+                                        </select>
+                                    </div>
+                                    <div>
+                                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-1.5">{{ __('finance.End Month') }} <span class="text-red-500">*</span></label>
+                                        <select name="end_month" class="form-select-full" x-model="categoryForm.end_month" :required="categoryForm.frequency === 'monthly'">
+                                            <option value="1" :disabled="1 < currentMonth">{{ __('finance.January') }}</option>
+                                            <option value="2" :disabled="2 < currentMonth">{{ __('finance.February') }}</option>
+                                            <option value="3" :disabled="3 < currentMonth">{{ __('finance.March') }}</option>
+                                            <option value="4" :disabled="4 < currentMonth">{{ __('finance.April') }}</option>
+                                            <option value="5" :disabled="5 < currentMonth">{{ __('finance.May') }}</option>
+                                            <option value="6" :disabled="6 < currentMonth">{{ __('finance.June') }}</option>
+                                            <option value="7" :disabled="7 < currentMonth">{{ __('finance.July') }}</option>
+                                            <option value="8" :disabled="8 < currentMonth">{{ __('finance.August') }}</option>
+                                            <option value="9" :disabled="9 < currentMonth">{{ __('finance.September') }}</option>
+                                            <option value="10" :disabled="10 < currentMonth">{{ __('finance.October') }}</option>
+                                            <option value="11" :disabled="11 < currentMonth">{{ __('finance.November') }}</option>
+                                            <option value="12" :disabled="12 < currentMonth">{{ __('finance.December') }}</option>
+                                        </select>
+                                    </div>
+                                </div>
+                                
+                                <!-- Validation Error Messages -->
+                                <div x-show="categoryForm.frequency === 'monthly' && parseInt(categoryForm.start_month) < currentMonth" class="mt-2 p-2 rounded-lg bg-red-50 dark:bg-red-900/30 border border-red-200 dark:border-red-800">
+                                    <p class="text-sm text-red-600 dark:text-red-400 flex items-center gap-2">
+                                        <i class="fas fa-exclamation-circle"></i>
+                                        <span>{{ __('finance.Start month cannot be earlier than current month') }}</span>
+                                    </p>
+                                </div>
+                                <div x-show="categoryForm.frequency === 'monthly' && parseInt(categoryForm.end_month) < currentMonth" class="mt-2 p-2 rounded-lg bg-red-50 dark:bg-red-900/30 border border-red-200 dark:border-red-800">
+                                    <p class="text-sm text-red-600 dark:text-red-400 flex items-center gap-2">
+                                        <i class="fas fa-exclamation-circle"></i>
+                                        <span>{{ __('finance.End month cannot be earlier than current month') }}</span>
+                                    </p>
+                                </div>
+                                <div x-show="categoryForm.frequency === 'monthly' && parseInt(categoryForm.end_month) < parseInt(categoryForm.start_month)" class="mt-2 p-2 rounded-lg bg-red-50 dark:bg-red-900/30 border border-red-200 dark:border-red-800">
+                                    <p class="text-sm text-red-600 dark:text-red-400 flex items-center gap-2">
+                                        <i class="fas fa-exclamation-circle"></i>
+                                        <span>{{ __('finance.End month cannot be earlier than start month') }}</span>
+                                    </p>
+                                </div>
+                            </div>
+
+                            <!-- Row 5: Due Date -->
+                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-1.5">{{ __('finance.Due Date') }} <span class="text-red-500">*</span></label>
+                                    <select name="due_date" class="form-select-full" x-model="categoryForm.due_date" required>
+                                        @for($day = 1; $day <= 28; $day++)
+                                            <option value="{{ $day }}" :disabled="categoryForm.frequency === 'one_time' && {{ $day }} < currentDay">{{ $day }}</option>
+                                        @endfor
+                                    </select>
+                                    <p class="text-xs text-gray-500 dark:text-gray-400 mt-1" x-show="categoryForm.frequency === 'monthly'">{{ __('finance.Every month on this day') }}</p>
+                                    <p class="text-xs text-gray-500 dark:text-gray-400 mt-1" x-show="categoryForm.frequency === 'one_time'">{{ __('finance.Due date for this month') }}</p>
+                                </div>
+                            </div>
+                            
+                            <!-- Due Date Validation Error -->
+                            <div x-show="categoryForm.frequency === 'one_time' && parseInt(categoryForm.due_date) < currentDay" class="p-2 rounded-lg bg-red-50 dark:bg-red-900/30 border border-red-200 dark:border-red-800">
+                                <p class="text-sm text-red-600 dark:text-red-400 flex items-center gap-2">
+                                    <i class="fas fa-exclamation-circle"></i>
+                                    <span>{{ __('finance.Due date cannot be earlier than today') }}</span>
+                                </p>
+                            </div>
+
+                            <!-- Row 6: Description -->
                             <div>
                                 <label class="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-1.5">{{ __('finance.Description') }}</label>
-                                <textarea name="description" rows="3" class="form-input-full" x-model="categoryForm.description" placeholder="{{ __('finance.Brief description of this fee category...') }}"></textarea>
+                                <textarea name="description" rows="2" class="form-input-full" x-model="categoryForm.description" placeholder="{{ __('finance.Brief description of this fee...') }}"></textarea>
                             </div>
-                            <div class="flex items-center gap-4">
-                                <label class="inline-flex items-center gap-2 cursor-pointer">
-                                    <input type="hidden" name="is_mandatory" value="0">
-                                    <input type="checkbox" name="is_mandatory" value="1" class="rounded border-gray-300 text-purple-600 focus:ring-purple-500" x-model="categoryForm.is_mandatory">
-                                    <span class="text-sm font-medium text-gray-700 dark:text-gray-200">{{ __('finance.Mandatory Fee') }}</span>
-                                </label>
-                                <label class="inline-flex items-center gap-2 cursor-pointer">
-                                    <input type="hidden" name="status" value="0">
-                                    <input type="checkbox" name="status" value="1" class="rounded border-gray-300 text-purple-600 focus:ring-purple-500" x-model="categoryForm.status">
-                                    <span class="text-sm font-medium text-gray-700 dark:text-gray-200">{{ __('finance.Active') }}</span>
-                                </label>
+
+                            <!-- Row 5: Toggle Options -->
+                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2 border-t border-gray-200 dark:border-gray-700">
+                                <div class="flex items-center gap-3 p-3 rounded-lg bg-gray-50 dark:bg-gray-900/50">
+                                    <input type="checkbox" name="partial_status" value="1" class="rounded border-gray-300 text-purple-600 focus:ring-purple-500 w-5 h-5" x-model="categoryForm.partial_status" id="partial_status_toggle">
+                                    <label for="partial_status_toggle" class="cursor-pointer">
+                                        <div class="text-sm font-medium text-gray-700 dark:text-gray-200">{{ __('finance.Allow Partial') }}</div>
+                                        <div class="text-xs text-gray-500 dark:text-gray-400">{{ __('finance.Partial payment') }}</div>
+                                    </label>
+                                </div>
+                                <div class="flex items-center gap-3 p-3 rounded-lg bg-gray-50 dark:bg-gray-900/50">
+                                    <input type="checkbox" name="discount_status" value="1" class="rounded border-gray-300 text-purple-600 focus:ring-purple-500 w-5 h-5" x-model="categoryForm.discount_status" id="discount_status_toggle">
+                                    <label for="discount_status_toggle" class="cursor-pointer">
+                                        <div class="text-sm font-medium text-gray-700 dark:text-gray-200">{{ __('finance.Allow Discount') }}</div>
+                                        <div class="text-xs text-gray-500 dark:text-gray-400">{{ __('finance.Discount eligible') }}</div>
+                                    </label>
+                                </div>
                             </div>
                         </div>
                         <div class="flex items-center justify-between gap-3 p-5 border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900/50 rounded-b-xl">
                             <button type="button" class="px-4 py-2 text-sm font-medium rounded-lg border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700" @click="showCategoryModal = false">
                                 <i class="fas fa-times mr-2"></i>{{ __('finance.Cancel') }}
                             </button>
-                            <button type="submit" class="px-4 py-2 text-sm font-semibold rounded-lg text-white bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700">
-                                <i class="fas fa-save mr-2"></i>{{ __('finance.Save Category') }}
+                            <button type="submit" 
+                                class="px-4 py-2 text-sm font-semibold rounded-lg text-white bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700"
+                                :disabled="(categoryForm.frequency === 'monthly' && (parseInt(categoryForm.start_month) < currentMonth || parseInt(categoryForm.end_month) < currentMonth || parseInt(categoryForm.end_month) < parseInt(categoryForm.start_month))) || (categoryForm.frequency === 'one_time' && parseInt(categoryForm.due_date) < currentDay)"
+                                :class="{'opacity-50 cursor-not-allowed': (categoryForm.frequency === 'monthly' && (parseInt(categoryForm.start_month) < currentMonth || parseInt(categoryForm.end_month) < currentMonth || parseInt(categoryForm.end_month) < parseInt(categoryForm.start_month))) || (categoryForm.frequency === 'one_time' && parseInt(categoryForm.due_date) < currentDay)}">
+                                <i class="fas fa-save mr-2"></i>{{ __('finance.Save') }}
                             </button>
                         </div>
                     </form>
@@ -1666,7 +1870,7 @@
                         <button type="button" class="px-4 py-2 text-sm font-medium rounded-lg border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700" @click="closeApproveConfirm()">
                             <i class="fas fa-times mr-2"></i>{{ __('finance.Cancel') }}
                         </button>
-                        <form :action="approveConfirmData.formAction" method="POST" id="approveConfirmForm" class="inline">
+                        <form :action="approveConfirmData ? approveConfirmData.formAction : '#'" method="POST" id="approveConfirmForm" class="inline">
                             @csrf
                             <button type="submit" class="px-4 py-2 text-sm font-semibold rounded-lg text-white bg-green-600 hover:bg-green-700">
                                 <i class="fas fa-check mr-2"></i>{{ __('finance.Approve') }}
@@ -1676,6 +1880,7 @@
                 </div>
             </div>
         </div>
+    </div>
     </div>
 
     <style>
@@ -1909,10 +2114,15 @@
 
     <script>
         function studentFeeManager() {
+            const currentDay = new Date().getDate(); // 1-31
+            const currentMonth = new Date().getMonth() + 1; // 1-12
             return {
+                initialized: false,
+                currentDay: currentDay,
+                currentMonth: currentMonth,
                 activeTab: new URLSearchParams(window.location.search).get('tab') || 'invoice',
                 showPaymentModal: false,
-                showStructureModal: false,
+                // showStructureModal removed
                 showCategoryModal: false,
                 showGradeFeeModal: false,
                 showPromotionModal: false,
@@ -1943,32 +2153,28 @@
                     receptionist_id: '',
                     receptionist_name: ''
                 },
-                structureFormMethod: 'POST',
-                structureFormAction: '{{ route('student-fees.structures.store') }}',
-                categoryFormMethod: 'POST',
-                categoryFormAction: '{{ route('student-fees.categories.store') }}',
-                gradeFeeFormAction: '',
-                paymentMethodFormMethod: 'POST',
-                paymentMethodFormAction: '{{ route('payment-methods.store') }}',
-                structureForm: {
-                    grade_id: '',
-                    batch_id: '',
-                    fee_type_id: '',
-                    amount: '',
-                    frequency: 'monthly',
-                    status: true
-                },
+
                 categoryForm: {
                     name: '',
                     code: '',
                     description: '',
-                    is_mandatory: false,
-                    status: true
+                    fee_type: 'Other',
+                    amount: 0,
+                    due_date: 1,
+                    partial_status: false,
+                    discount_status: false,
+                    status: 'active',
+                    frequency: 'monthly',
+                    start_month: new Date().getMonth() + 1,
+                    end_month: new Date().getMonth() + 1
                 },
+                categoryFormAction: '',
+                categoryFormMethod: 'POST',
                 gradeFeeForm: {
                     gradeName: '',
                     price_per_month: ''
                 },
+                gradeFeeFormAction: '',
                 promotionFormAction: '',
                 promotionForm: {
                     durationLabel: '',
@@ -1989,6 +2195,8 @@
                     instructions_mm: '',
                     sort_order: 0
                 },
+                paymentMethodFormAction: '',
+                paymentMethodFormMethod: 'POST',
                 paymentInfo: '',
                 paymentStudentId: '',
                 paymentInvoiceId: '',
@@ -2002,52 +2210,287 @@
                     receptionist_name: '{{ auth()->user()->name }}',
                     notes: ''
                 },
+                paymentData: {
+                    payment_type: 'full',
+                    payment_months: 1,
+                    payment_method_id: '',
+                    payment_date: '{{ now()->format('Y-m-d') }}',
+                    reference_number: '',
+                    notes: '',
+                    fees: [],
+                    hasOverdueFees: false,
+                    subtotal: 0,
+                    discount: 0,
+                    discountPercent: 0,
+                    total: 0
+                },
+                paymentPeriodOptions: @json($paymentPromotions ?? []),
+                allPaymentPromotions: @json($paymentPromotions ?? []),
+                
+                init() {
+                    // Mark as initialized to prevent errors during Alpine setup
+                    this.$nextTick(() => {
+                        this.initialized = true;
+                    });
+                },
                 
                 openPaymentModal(data) {
                     const student = data.student;
-                    const amount = data.amount;
                     const invoice = data.invoice;
                     
-                    this.paymentInfo = `${student.user?.name || 'Student'} (${student.student_identifier}) - Fee: ${parseInt(amount).toLocaleString()} MMK`;
+                    this.paymentInfo = `${student.user?.name || 'Student'} (${student.student_identifier}) - ${student.grade?.name || ''} ${student.class_model?.name || ''}`;
                     this.paymentStudentId = student.id;
                     this.paymentInvoiceId = invoice?.id || '';
-                    this.paymentAmount = amount;
-                    // Reset form
-                    this.paymentForm = {
-                        payment_method: '',
-                        reference_number: '',
+                    
+                    // Safety check for fees
+                    if (!invoice || !invoice.fees || !Array.isArray(invoice.fees)) {
+                        console.error('Invoice fees not properly loaded:', invoice);
+                        alert('{{ __('finance.Error loading invoice fees. Please refresh the page.') }}');
+                        return;
+                    }
+                    
+                    // Check if this is a remaining balance invoice (invoice number ends with -1 or -2)
+                    const isRemainingInvoice = invoice.invoice_type === 'remaining_balance' || 
+                                              (invoice.invoice_number && invoice.invoice_number.match(/-\d+$/));
+                    
+                    // Calculate remaining months based on batch end date
+                    const batchEndDate = student.batch?.end_date || '{{ now()->addMonths(10)->format('Y-m-d') }}';
+                    const remainingMonths = this.calculateRemainingMonths(batchEndDate);
+                    
+                    // Filter payment period options based on remaining months
+                    this.paymentPeriodOptions = this.getAvailablePaymentOptions(remainingMonths);
+                    
+                    // Check for overdue fees
+                    const hasOverdue = invoice.fees.some(fee => {
+                        const dateToCompare = fee.due_date_raw || fee.due_date;
+                        return new Date(dateToCompare) < new Date() && fee.remaining_amount > 0;
+                    });
+                    
+                    // Check if any fee doesn't support partial payment
+                    const hasNonPartialFee = invoice.fees.some(fee => {
+                        console.log('Fee:', fee.fee_name, 'supports_payment_period:', fee.supports_payment_period);
+                        return fee.supports_payment_period === false || fee.supports_payment_period === 0;
+                    });
+                    
+                    // Check partial payment limit (max 2 partial payments)
+                    // Count how many remaining balance invoices exist for this invoice's parent
+                    const parentInvoiceId = invoice.parent_invoice_id || invoice.id;
+                    const partialPaymentCount = invoice.partial_payment_count || 0;
+                    const hasReachedPartialLimit = partialPaymentCount >= 2;
+                    
+                    console.log('hasNonPartialFee:', hasNonPartialFee);
+                    console.log('partialPaymentCount:', partialPaymentCount, 'hasReachedPartialLimit:', hasReachedPartialLimit);
+                    console.log('isRemainingInvoice:', isRemainingInvoice);
+                    
+                    // Initialize payment data
+                    this.paymentData = {
+                        payment_type: 'full',
+                        payment_method_id: '',
                         payment_date: '{{ now()->format('Y-m-d') }}',
-                        receptionist_id: '',
-                        receptionist_name: '{{ auth()->user()->name }}',
-                        notes: ''
+                        reference_number: '',
+                        notes: '',
+                        fees: invoice.fees.map(fee => ({
+                            id: fee.id,
+                            fee_name: fee.fee_name,
+                            fee_name_mm: fee.fee_name_mm,
+                            amount: parseFloat(fee.amount),
+                            remaining_amount: parseFloat(fee.remaining_amount),
+                            payment_amount: parseFloat(fee.remaining_amount),
+                            payment_months: 1,
+                            due_date: fee.due_date,
+                            supports_payment_period: fee.supports_payment_period
+                        })),
+                        hasOverdueFees: hasOverdue,
+                        hasNonPartialFee: hasNonPartialFee,
+                        hasReachedPartialLimit: hasReachedPartialLimit,
+                        isRemainingInvoice: isRemainingInvoice,
+                        subtotal: 0,
+                        discount: 0,
+                        discountPercent: 0,
+                        total: 0
                     };
+                    
+                    this.updatePaymentCalculation();
                     this.showPaymentModal = true;
+                },
+                
+                updatePaymentCalculation() {
+                    let subtotal = 0;
+                    let totalDiscount = 0;
+                    let maxDiscountPercent = 0;
+                    
+                    this.paymentData.fees.forEach(fee => {
+                        let feeAmount = 0;
+                        
+                        if (this.paymentData.payment_type === 'full') {
+                            // Each fee uses its own payment_months
+                            feeAmount = fee.remaining_amount * (fee.payment_months || 1);
+                        } else {
+                            feeAmount = fee.payment_amount || 0;
+                        }
+                        
+                        subtotal += feeAmount;
+                        
+                        // Apply discount ONLY to School Fee based on its payment_months
+                        const isSchoolFee = fee.fee_name && fee.fee_name.toLowerCase().includes('school fee');
+                        if (isSchoolFee) {
+                            const discountOption = this.paymentPeriodOptions.find(opt => opt.months == (fee.payment_months || 1));
+                            if (discountOption && discountOption.discount_percent > 0) {
+                                const feeDiscount = feeAmount * (discountOption.discount_percent / 100);
+                                totalDiscount += feeDiscount;
+                                maxDiscountPercent = Math.max(maxDiscountPercent, parseFloat(discountOption.discount_percent));
+                            }
+                        }
+                    });
+                    
+                    this.paymentData.subtotal = subtotal;
+                    this.paymentData.discount = Math.round(totalDiscount);
+                    this.paymentData.discountPercent = maxDiscountPercent;
+                    this.paymentData.total = subtotal - Math.round(totalDiscount);
+                },
+                
+                adjustFeeAmount(index, amount) {
+                    const fee = this.paymentData.fees[index];
+                    let newAmount = (fee.payment_amount || 0) + amount;
+                    
+                    // Ensure amount is within valid range (minimum 1000)
+                    if (newAmount < 1000) {
+                        newAmount = 1000;
+                    } else if (newAmount > fee.remaining_amount) {
+                        newAmount = fee.remaining_amount;
+                    }
+                    
+                    // Round to nearest 500
+                    newAmount = Math.round(newAmount / 500) * 500;
+                    
+                    // Final check after rounding
+                    if (newAmount > fee.remaining_amount) {
+                        newAmount = Math.floor(fee.remaining_amount / 500) * 500;
+                    }
+                    
+                    fee.payment_amount = newAmount;
+                    this.updatePaymentCalculation();
+                },
+                
+                setFeeAmount(index, value) {
+                    const fee = this.paymentData.fees[index];
+                    let newAmount = parseInt(value) || 0;
+                    
+                    // Allow typing but don't enforce limits yet (will be validated on blur)
+                    fee.payment_amount = newAmount;
+                    this.updatePaymentCalculation();
+                },
+                
+                validateFeeAmount(index) {
+                    const fee = this.paymentData.fees[index];
+                    let amount = fee.payment_amount;
+                    
+                    // Enforce minimum 1000
+                    if (amount < 1000) {
+                        amount = 1000;
+                    }
+                    
+                    // Enforce maximum (remaining amount)
+                    if (amount > fee.remaining_amount) {
+                        amount = fee.remaining_amount;
+                    }
+                    
+                    // Round to nearest 500
+                    amount = Math.round(amount / 500) * 500;
+                    
+                    // Final check after rounding
+                    if (amount < 1000) {
+                        amount = 1000;
+                    }
+                    if (amount > fee.remaining_amount) {
+                        amount = Math.floor(fee.remaining_amount / 500) * 500;
+                    }
+                    
+                    fee.payment_amount = amount;
+                    this.updatePaymentCalculation();
+                },
+                
+                roundToNearest500(index) {
+                    const fee = this.paymentData.fees[index];
+                    let amount = fee.payment_amount || 0;
+                    
+                    // Round to nearest 500
+                    amount = Math.round(amount / 500) * 500;
+                    
+                    // Ensure within bounds
+                    if (amount < 0) {
+                        amount = 0;
+                    } else if (amount > fee.remaining_amount) {
+                        amount = Math.floor(fee.remaining_amount / 500) * 500;
+                    }
+                    
+                    fee.payment_amount = amount;
+                    this.updatePaymentCalculation();
+                },
+                
+                formatDueDate(dateString) {
+                    if (!dateString) return 'N/A';
+                    
+                    // If already formatted
+                    if (dateString.match(/^[A-Za-z]{3}\s\d{1,2},\s\d{4}$/)) {
+                        return dateString;
+                    }
+                    
+                    // Parse ISO date format
+                    try {
+                        const date = new Date(dateString);
+                        const options = { year: 'numeric', month: 'short', day: 'numeric' };
+                        return date.toLocaleDateString('en-US', options);
+                    } catch (e) {
+                        return dateString;
+                    }
+                },
+                
+                handleReceiptUpload(event) {
+                    const file = event.target.files[0];
+                    if (file && file.size > 2048 * 1024) {
+                        alert('{{ __('finance.Receipt image must be less than 2MB') }}');
+                        event.target.value = '';
+                    }
                 },
                 
                 async submitPayment() {
                     if (this.isSubmitting) return;
-                    if (!this.paymentForm.payment_method) {
+                    
+                    // Validation
+                    if (!this.paymentData.payment_method_id) {
                         alert('{{ __('finance.Please select a payment method') }}');
+                        return;
+                    }
+                    
+                    // Validate that all fees have payment months selected
+                    const missingPaymentMonths = this.paymentData.fees.some(fee => !fee.payment_months || fee.payment_months < 1);
+                    if (missingPaymentMonths) {
+                        alert('{{ __('finance.Please select payment period for all fees') }}');
+                        return;
+                    }
+                    
+                    // Validate minimum amount for partial payments
+                    if (this.paymentData.payment_type === 'partial') {
+                        const belowMinimum = this.paymentData.fees.some(fee => fee.payment_amount > 0 && fee.payment_amount < 1000);
+                        if (belowMinimum) {
+                            alert('{{ __('finance.Minimum payment amount is 1,000 MMK per fee') }}');
+                            return;
+                        }
+                    }
+                    
+                    if (this.paymentData.total <= 0) {
+                        alert('{{ __('finance.Payment amount must be greater than 0') }}');
                         return;
                     }
                     
                     this.isSubmitting = true;
                     
-                    const formData = new FormData();
-                    formData.append('_token', '{{ csrf_token() }}');
-                    formData.append('student_id', this.paymentStudentId);
-                    formData.append('amount', this.paymentAmount);
-                    formData.append('payment_method', this.paymentForm.payment_method);
-                    formData.append('payment_date', this.paymentForm.payment_date);
-                    formData.append('reference_number', this.paymentForm.reference_number || '');
-                    formData.append('receptionist_id', this.paymentForm.receptionist_id || '');
-                    formData.append('receptionist_name', this.paymentForm.receptionist_name || '');
-                    formData.append('notes', this.paymentForm.notes || '');
-                    formData.append('items[0][invoice_id]', this.paymentInvoiceId || '');
-                    formData.append('items[0][amount]', this.paymentAmount);
-                    
                     try {
-                        const response = await fetch('{{ route('student-fees.payments.store') }}', {
+                        const formData = new FormData(this.$refs.paymentForm);
+                        formData.append('_token', '{{ csrf_token() }}');
+                        
+                        const response = await fetch(`/student-fees/payment-system/invoices/${this.paymentInvoiceId}/process`, {
                             method: 'POST',
                             headers: {
                                 'Accept': 'application/json',
@@ -2056,77 +2499,23 @@
                             body: formData
                         });
                         
-                        const data = await response.json();
+                        const result = await response.json();
                         
-                        if (data.success) {
-                            this.showPaymentModal = false;
-                            this.receiptData = {
-                                payment_number: data.payment.payment_number || '',
-                                student_name: data.payment.student_name || '-',
-                                student_id: data.payment.student_id || '-',
-                                class_name: data.payment.class_name || '-',
-                                guardian_name: data.payment.guardian_name || 'N/A',
-                                amount: parseInt(data.payment.amount || 0).toLocaleString(),
-                                payment_method: (data.payment.payment_method || '').replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase()),
-                                payment_date: data.payment.payment_date || '-',
-                                receptionist_id: data.payment.receptionist_id || '',
-                                receptionist_name: data.payment.receptionist_name || '',
-                                ferry_fee: data.payment.ferry_fee || '0',
-                                notes: data.payment.notes || ''
-                            };
-                            this.showReceiptModal = true;
+                        if (response.ok && result.success) {
+                            // Redirect to receipt page
+                            window.location.href = result.redirect_url;
                         } else {
-                            alert(data.message || '{{ __('finance.Payment failed. Please try again.') }}');
+                            alert(result.message || '{{ __('finance.Payment processing failed') }}');
+                            this.isSubmitting = false;
                         }
                     } catch (error) {
-                        console.error('Payment error:', error);
+                        console.error('Payment submission error:', error);
                         alert('{{ __('finance.Payment failed. Please try again.') }}');
-                    } finally {
                         this.isSubmitting = false;
                     }
                 },
                 
-                openStructureModal() {
-                    this.structureFormMethod = 'POST';
-                    this.structureFormAction = '{{ route('student-fees.structures.store') }}';
-                    this.structureForm = {
-                        grade_id: '',
-                        batch_id: '',
-                        fee_type_id: '',
-                        amount: '',
-                        frequency: 'monthly',
-                        status: true
-                    };
-                    this.showStructureModal = true;
-                },
-                
-                openStructureModalForGrade(gradeId) {
-                    this.structureFormMethod = 'POST';
-                    this.structureFormAction = '{{ route('student-fees.structures.store') }}';
-                    this.structureForm = {
-                        grade_id: gradeId,
-                        batch_id: '',
-                        fee_type_id: '',
-                        amount: '',
-                        frequency: 'monthly',
-                        status: true
-                    };
-                    this.showStructureModal = true;
-                },
-                
-                openEditStructureModal(structure) {
-                    this.structureFormMethod = 'PUT';
-                    this.structureFormAction = '{{ url('student-fees/structures') }}/' + structure.id;
-                    this.structureForm = {
-                        grade_id: structure.grade_id || '',
-                        batch_id: structure.batch_id || '',
-                        fee_type_id: structure.fee_type_id || '',
-                        amount: structure.amount || '',
-                        frequency: structure.frequency || 'monthly',
-                        status: structure.status ? true : false
-                    };
-                    this.showStructureModal = true;
-                },
+
                 
                 openCategoryModal() {
                     this.categoryFormMethod = 'POST';
@@ -2135,21 +2524,33 @@
                         name: '',
                         code: '',
                         description: '',
-                        is_mandatory: false,
-                        status: true
+                        fee_type: 'Other',
+                        amount: '',
+                        due_date: '1',
+                        partial_status: false,
+                        discount_status: false,
+                        status: 'active'
                     };
                     this.showCategoryModal = true;
                 },
                 
                 openEditCategoryModal(category) {
+                    const currentMonth = new Date().getMonth() + 1;
                     this.categoryFormMethod = 'PUT';
                     this.categoryFormAction = '{{ url('student-fees/categories') }}/' + category.id;
                     this.categoryForm = {
                         name: category.name || '',
                         code: category.code || '',
                         description: category.description || '',
-                        is_mandatory: category.is_mandatory ? true : false,
-                        status: category.status ? true : false
+                        fee_type: category.fee_type || 'Other',
+                        amount: category.amount || '',
+                        due_date: category.due_date ? String(category.due_date) : '1',
+                        partial_status: (category.partial_status === true || category.partial_status === 1 || category.partial_status === '1'),
+                        discount_status: (category.discount_status === true || category.discount_status === 1 || category.discount_status === '1'),
+                        status: category.status ? 'active' : 'inactive',
+                        frequency: category.frequency?.frequency || 'monthly',
+                        start_month: category.frequency?.start_month || currentMonth,
+                        end_month: category.frequency?.end_month || currentMonth
                     };
                     this.showCategoryModal = true;
                 },
@@ -2591,6 +2992,102 @@
                 submitDelete() {
                     const form = document.getElementById('deleteConfirmForm');
                     form.submit();
+                },
+                
+                /**
+                 * Calculate remaining months from now to batch end date
+                 */
+                calculateRemainingMonths(batchEndDate) {
+                    const now = new Date();
+                    const endDate = new Date(batchEndDate);
+                    
+                    // Calculate difference in months
+                    let months = (endDate.getFullYear() - now.getFullYear()) * 12;
+                    months += endDate.getMonth() - now.getMonth();
+                    
+                    // Add 1 if we're not at the end of current month
+                    if (endDate.getDate() >= now.getDate()) {
+                        months += 1;
+                    }
+                    
+                    return Math.max(1, months); // At least 1 month
+                },
+                
+                /**
+                 * Get available payment options based on remaining months
+                 * Logic: [1, 3, 6, remaining] with smart filtering
+                 */
+                getAvailablePaymentOptions(remainingMonths) {
+                    const allPromotions = this.allPaymentPromotions;
+                    let availableMonths = [];
+                    
+                    // Always include 1 month
+                    availableMonths.push(1);
+                    
+                    if (remainingMonths >= 10) {
+                        // 10+ months: [1, 3, 6, remaining]
+                        availableMonths = [1, 3, 6, remainingMonths];
+                    } else if (remainingMonths >= 7 && remainingMonths <= 9) {
+                        // 7-9 months: [1, 3, remaining]
+                        availableMonths = [1, 3, remainingMonths];
+                    } else if (remainingMonths >= 4 && remainingMonths <= 6) {
+                        // 4-6 months: [1, 3, remaining] or [1, 3, 6]
+                        if (remainingMonths === 6) {
+                            availableMonths = [1, 3, 6];
+                        } else {
+                            availableMonths = [1, 3, remainingMonths];
+                        }
+                    } else if (remainingMonths === 3) {
+                        // Exactly 3 months: [1, 3]
+                        availableMonths = [1, 3];
+                    } else if (remainingMonths === 2) {
+                        // Exactly 2 months: [1, 2]
+                        availableMonths = [1, 2];
+                    } else {
+                        // 1 month: [1]
+                        availableMonths = [1];
+                    }
+                    
+                    // Remove duplicates and sort
+                    availableMonths = [...new Set(availableMonths)].sort((a, b) => a - b);
+                    
+                    // Build options array
+                    const options = [];
+                    availableMonths.forEach(months => {
+                        const existing = allPromotions.find(p => p.months == months);
+                        if (existing) {
+                            options.push(existing);
+                        } else {
+                            // Create custom option for non-standard month counts
+                            options.push({
+                                months: months,
+                                discount_percent: this.calculateDiscountForMonths(months),
+                                is_active: true
+                            });
+                        }
+                    });
+                    
+                    return options;
+                },
+                
+                /**
+                 * Calculate discount percentage for custom month counts
+                 */
+                calculateDiscountForMonths(months) {
+                    const tiers = {
+                        1: 0, 2: 0, 3: 5, 6: 10, 9: 15, 12: 20
+                    };
+                    
+                    if (tiers[months] !== undefined) {
+                        return tiers[months];
+                    }
+                    
+                    // Interpolate for values between tiers
+                    if (months < 3) return 0;
+                    if (months < 6) return 5 + ((months - 3) / 3) * 5;
+                    if (months < 9) return 10 + ((months - 6) / 3) * 5;
+                    if (months < 12) return 15 + ((months - 9) / 3) * 5;
+                    return 20;
                 }
             };
         }
@@ -2619,7 +3116,7 @@
             content.innerHTML = '<div class="flex items-center justify-center py-8"><i class="fas fa-spinner fa-spin fa-2x text-gray-400"></i></div>';
             
             try {
-                const response = await fetch(`/student-fees/payment-proofs/${proofId}/details`);
+                const response = await fetch(`/student-fees/payment-system/payments/${proofId}/details`);
                 const result = await response.json();
                 
                 if (result.success) {
@@ -2735,7 +3232,7 @@
             closePaymentProofModal();
             const modal = document.getElementById('rejectProofModal');
             const form = document.getElementById('rejectProofForm');
-            form.action = `/student-fees/payment-proofs/${proofId}/reject`;
+            form.action = `/student-fees/payment-system/payments/${proofId}/reject`;
             modal.classList.remove('hidden');
         }
 
@@ -2757,7 +3254,7 @@
                     studentName: studentName,
                     amount: amount,
                     paymentDate: paymentDate,
-                    formAction: `/student-fees/payment-proofs/${proofId}/approve`
+                    formAction: `/student-fees/payment-system/payments/${proofId}/approve`
                 }
             });
             window.dispatchEvent(event);
@@ -2877,77 +3374,6 @@
     </div>
 
     <script>
-        async function showInvoiceHistory(invoiceId) {
-            const modal = document.getElementById('invoiceHistoryModal');
-            const content = document.getElementById('invoiceHistoryContent');
-            
-            modal.classList.remove('hidden');
-            content.innerHTML = '<div class="flex items-center justify-center py-8"><i class="fas fa-spinner fa-spin fa-2x text-gray-400"></i></div>';
-            
-            try {
-                const response = await fetch(`/student-fees/invoices/${invoiceId}/history`);
-                const result = await response.json();
-                
-                if (result.success) {
-                    const data = result.data;
-                    let html = `
-                        <div class="bg-gray-50 dark:bg-gray-900/50 p-4 rounded-lg mb-4">
-                            <h4 class="font-semibold text-gray-900 dark:text-white mb-2">{{ __('finance.Invoice Info') }}</h4>
-                            <div class="grid grid-cols-2 gap-3 text-sm">
-                                <div><span class="text-gray-600 dark:text-gray-400">{{ __('finance.Invoice Number') }}:</span> <span class="font-medium text-gray-900 dark:text-gray-100">${data.invoice.invoice_number}</span></div>
-                                <div><span class="text-gray-600 dark:text-gray-400">{{ __('finance.Amount') }}:</span> <span class="font-medium text-gray-900 dark:text-gray-100">${Number(data.invoice.total_amount).toLocaleString()} MMK</span></div>
-                                <div><span class="text-gray-600 dark:text-gray-400">{{ __('finance.Student') }}:</span> <span class="font-medium text-gray-900 dark:text-gray-100">${data.invoice.student_name}</span></div>
-                                <div><span class="text-gray-600 dark:text-gray-400">{{ __('finance.Month') }}:</span> <span class="font-medium text-gray-900 dark:text-gray-100">${data.invoice.month}</span></div>
-                            </div>
-                        </div>
-                    `;
-                    
-                    if (data.payment_proofs && data.payment_proofs.length > 0) {
-                        html += '<h4 class="font-semibold text-gray-900 dark:text-white mb-3">{{ __('finance.Payment Proof History') }}</h4><div class="space-y-3">';
-                        
-                        data.payment_proofs.forEach((proof, index) => {
-                            const statusColors = {
-                                'pending_verification': 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-300',
-                                'verified': 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300',
-                                'rejected': 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300'
-                            };
-                            
-                            html += `
-                                <div class="border border-gray-200 dark:border-gray-700 rounded-lg p-4">
-                                    <div class="flex items-start justify-between mb-3">
-                                        <div class="flex items-center gap-2">
-                                            <span class="text-sm font-medium text-gray-900 dark:text-white">#${index + 1}</span>
-                                            <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${statusColors[proof.status]}">${proof.status_label}</span>
-                                        </div>
-                                        <span class="text-xs text-gray-500 dark:text-gray-400">${proof.submitted_at}</span>
-                                    </div>
-                                    <div class="grid grid-cols-2 gap-2 text-sm">
-                                        <div><span class="text-gray-600 dark:text-gray-400">{{ __('finance.Amount') }}:</span> <span class="font-medium">${Number(proof.payment_amount).toLocaleString()} MMK</span></div>
-                                        <div><span class="text-gray-600 dark:text-gray-400">{{ __('finance.Method') }}:</span> <span class="font-medium">${proof.payment_method}</span></div>
-                                        <div><span class="text-gray-600 dark:text-gray-400">{{ __('finance.Payment Date') }}:</span> <span class="font-medium">${proof.payment_date}</span></div>
-                                        ${proof.verified_at ? `<div><span class="text-gray-600 dark:text-gray-400">{{ __('finance.Processed At') }}:</span> <span class="font-medium">${proof.verified_at}</span></div>` : ''}
-                                    </div>
-                                    ${proof.rejection_reason ? `<div class="mt-3 p-2 bg-red-50 dark:bg-red-900/20 rounded border border-red-200 dark:border-red-800"><span class="text-xs font-medium text-red-800 dark:text-red-300">{{ __('finance.Rejection Reason') }}:</span><p class="text-sm text-red-700 dark:text-red-400 mt-1">${proof.rejection_reason}</p></div>` : ''}
-                                    ${proof.notes ? `<div class="mt-2 text-sm text-gray-600 dark:text-gray-400"><span class="font-medium">{{ __('finance.Notes') }}:</span> ${proof.notes}</div>` : ''}
-                                </div>
-                            `;
-                        });
-                        
-                        html += '</div>';
-                    } else {
-                        html += '<div class="text-center py-8"><i class="fas fa-inbox text-4xl text-gray-300 dark:text-gray-600 mb-3"></i><p class="text-gray-500 dark:text-gray-400">{{ __('finance.No payment history for this invoice') }}</p></div>';
-                    }
-                    
-                    content.innerHTML = html;
-                } else {
-                    content.innerHTML = '<div class="text-center py-8 text-red-600">{{ __('finance.Failed to load payment history') }}</div>';
-                }
-            } catch (error) {
-                console.error('Error:', error);
-                content.innerHTML = '<div class="text-center py-8 text-red-600">{{ __('finance.Error loading payment history') }}</div>';
-            }
-        }
-
         function closeInvoiceHistoryModal() {
             document.getElementById('invoiceHistoryModal').classList.add('hidden');
         }
@@ -2976,6 +3402,36 @@
                     form.method = 'POST';
                     form.action = url;
                     form.innerHTML = '@csrf';
+                    document.body.appendChild(form);
+                    form.submit();
+                }
+            }
+        }
+
+        function confirmDeleteAction(url, title, message, confirmText) {
+            if (typeof Alpine !== 'undefined') {
+                window.dispatchEvent(new CustomEvent('confirm-show', {
+                    detail: {
+                        title: title,
+                        message: message,
+                        confirmText: confirmText,
+                        cancelText: '{{ __('finance.Cancel') }}',
+                        onConfirm: () => {
+                            const form = document.createElement('form');
+                            form.method = 'POST';
+                            form.action = url;
+                            form.innerHTML = '@csrf @method("DELETE")';
+                            document.body.appendChild(form);
+                            form.submit();
+                        }
+                    }
+                }));
+            } else {
+                if (confirm(message)) {
+                    const form = document.createElement('form');
+                    form.method = 'POST';
+                    form.action = url;
+                    form.innerHTML = '@csrf @method("DELETE")';
                     document.body.appendChild(form);
                     form.submit();
                 }

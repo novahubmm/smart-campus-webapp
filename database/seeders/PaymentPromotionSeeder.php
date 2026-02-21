@@ -27,22 +27,22 @@ class PaymentPromotionSeeder extends Seeder
             ],
             [
                 'months' => 3,
-                'discount_percent' => 5.0,
+                'discount_percent' => 5,
                 'is_active' => true,
             ],
             [
                 'months' => 6,
-                'discount_percent' => 10.0,
+                'discount_percent' => 10,
                 'is_active' => true,
             ],
             [
                 'months' => 9,
-                'discount_percent' => 15.0,
+                'discount_percent' => 15,
                 'is_active' => true,
             ],
             [
                 'months' => 12,
-                'discount_percent' => 20.0,
+                'discount_percent' => 20,
                 'is_active' => true,
             ],
         ];

@@ -5,10 +5,8 @@ namespace App\Http\Controllers;
 use App\DTOs\Finance\FeeFilterData;
 use App\DTOs\Finance\FeeStructureData;
 use App\DTOs\Finance\InvoiceData;
-use App\DTOs\Finance\PaymentData;
 use App\Http\Requests\Finance\StoreFeeStructureRequest;
 use App\Http\Requests\Finance\StoreInvoiceRequest;
-use App\Http\Requests\Finance\StorePaymentRequest;
 use App\Http\Requests\Finance\UpdateFeeStructureRequest;
 use App\Http\Requests\Finance\UpdateInvoiceRequest;
 use App\Http\Requests\Finance\RejectPaymentProofRequest;
@@ -21,11 +19,15 @@ use App\Models\FeeType;
 use App\Services\StudentFeeService;
 use App\Services\Finance\PaymentProofService;
 use App\Services\Finance\NotificationService;
+use App\Services\PaymentSystem\NotificationService as PaymentNotificationService;
+use App\Services\PaymentSystem\PaymentVerificationService;
 use App\Repositories\Finance\InvoiceRepository;
 use App\Traits\LogsActivity;
 use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
+use Illuminate\Support\Str;
 
 class StudentFeeController extends Controller
 {
@@ -35,13 +37,98 @@ class StudentFeeController extends Controller
         private readonly StudentFeeService $service,
         private readonly PaymentProofService $paymentProofService,
         private readonly NotificationService $notificationService,
-        private readonly InvoiceRepository $invoiceRepo
+        private readonly InvoiceRepository $invoiceRepo,
+        private readonly \App\Services\Finance\InvoiceService $invoiceService,
+        private readonly PaymentNotificationService $paymentNotificationService,
+        private readonly PaymentVerificationService $verificationService
     ) {}
+
+    /**
+     * Manually generate monthly invoices for all active students
+     */
+    public function generateInvoices(Request $request): RedirectResponse
+    {
+        try {
+            $month = $request->input('month', now()->format('Y-m'));
+            $academicYear = $request->input('academic_year', now()->format('Y'));
+            
+            $stats = $this->invoiceService->generateMonthlyInvoices($month, $academicYear);
+            
+            $message = sprintf(
+                'Generated %d invoices for %d students. Skipped %d (already have invoices).',
+                $stats['invoices_created'],
+                $stats['total_students'],
+                $stats['invoices_skipped']
+            );
+            
+            if (!empty($stats['errors'])) {
+                $message .= sprintf(' %d errors occurred.', count($stats['errors']));
+            }
+            
+            $this->logCreate('InvoiceGeneration', null, $message);
+            
+            return redirect()->route('student-fees.index')->with('status', $message);
+        } catch (\Exception $e) {
+            \Log::error('Manual invoice generation failed', [
+                'error' => $e->getMessage(),
+            ]);
+            
+            return redirect()->route('student-fees.index')->with('error', __('Failed to generate invoices: ') . $e->getMessage());
+        }
+    }
 
     public function index(Request $request): View
     {
-        // Get selected month or default to current month
-        $selectedMonth = $request->input('month', now()->format('Y-m'));
+        // 1. Determine active/target batch first to set intelligent defaults
+        $currentDate = now();
+        // Try to find batch covering current date
+        $currentBatch = \App\Models\Batch::where('start_date', '<=', $currentDate)
+            ->where('end_date', '>=', $currentDate)
+            ->first();
+        // Fallback to active batch
+        $targetBatch = $currentBatch ?? \App\Models\Batch::where('status', true)->first();
+        
+        // 2. Determine default selected month
+        $defaultMonth = $currentDate->format('Y-m');
+        $monthOptions = collect();
+        
+        if ($targetBatch) {
+            $batchStart = $targetBatch->start_date->copy()->startOfMonth();
+            $batchEnd = $targetBatch->end_date->copy()->startOfMonth();
+            
+            // If current date is before batch start (e.g. Feb vs June), default to batch start
+            if ($currentDate->lt($batchStart)) {
+                $defaultMonth = $batchStart->format('Y-m');
+            } 
+            // If current date is after batch end, default to batch end
+            elseif ($currentDate->gt($batchEnd)) {
+                $defaultMonth = $batchEnd->format('Y-m');
+            }
+            
+            // Generate options from Batch Start to Batch End (Ascending)
+            $date = $batchStart->copy();
+            while ($date->lte($batchEnd)) {
+                 $monthOptions->push([
+                    'value' => $date->format('Y-m'),
+                    'label' => $date->translatedFormat('F Y'),
+                ]);
+                $date->addMonth();
+            }
+        } else {
+             // Fallback if no batch found: Show last 12 months including current
+             $batchStart = $currentDate->copy()->subMonths(11)->startOfMonth();
+             $date = $batchStart->copy();
+             while ($date->lte($currentDate)) {
+                 $monthOptions->push([
+                    'value' => $date->format('Y-m'),
+                    'label' => $date->translatedFormat('F Y'),
+                ]);
+                $date->addMonth();
+             }
+        }
+
+        // Get selected month or default
+        $selectedMonth = $request->input('month', $defaultMonth);
         
         // Add month to request for DTO
         $requestData = $request->all();
@@ -67,21 +154,23 @@ class StudentFeeController extends Controller
             ->unique()
             ->toArray();
         
-        // Query unpaid invoices with relationships
-        $unpaidInvoicesQuery = Invoice::with([
+        // Query unpaid invoices with relationships (using PaymentSystem)
+        $unpaidInvoicesQuery = \App\Models\PaymentSystem\Invoice::with([
             'student.user', 
-            'student.grade', 
+            'student.grade',
+            'student.batch', // Add batch relationship
             'student.classModel', 
-            'feeStructure.feeType',
-            'items.feeType'  // Load invoice items with fee types
+            'student.classModel', 
+            'fees.feeStructure' // Load invoice fees with fee structure
         ])
         ->where(function ($query) use ($rejectedProofInvoiceIds) {
-            // Include invoices that are unpaid or sent
-            $query->whereIn('status', ['unpaid', 'sent'])
+            // Include invoices that are NOT paid and have remaining amount
+            // This excludes original invoices that were partially paid (status='paid')
+            $query->where('status', '!=', 'paid')
+                  ->where('remaining_amount', '>', 0)
                   // OR invoices that have rejected payment proofs
                   ->orWhereIn('id', $rejectedProofInvoiceIds);
         })
-        ->whereBetween('invoice_date', [$monthStart, $monthEnd])
         ->whereHas('student', function ($q) {
             $q->where('status', 'active');
         });
@@ -93,13 +182,29 @@ class StudentFeeController extends Controller
             });
         }
 
-        // Apply search filter
+        // Apply fee type filter
+        if ($request->filled('fee_type')) {
+            $unpaidInvoicesQuery->whereHas('fees', function ($q) use ($request) {
+                $q->whereHas('feeStructure', function ($fq) use ($request) {
+                    $fq->whereHas('feeType', function ($ftq) use ($request) {
+                        $ftq->where('id', $request->fee_type);
+                    });
+                });
+            });
+        }
+
+        // Apply search filter (Student Name, Student ID, Guardian Name)
         if ($request->filled('search')) {
             $search = $request->search;
             $unpaidInvoicesQuery->whereHas('student', function ($q) use ($search) {
                 $q->where('student_identifier', 'like', "%{$search}%")
                   ->orWhereHas('user', function ($q) use ($search) {
                       $q->where('name', 'like', "%{$search}%");
+                  })
+                  ->orWhereHas('guardian', function ($q) use ($search) {
+                      $q->whereHas('user', function ($u) use ($search) {
+                          $u->where('name', 'like', "%{$search}%");
+                      });
                   });
             });
         }
@@ -115,6 +220,20 @@ class StudentFeeController extends Controller
             ->orderBy('invoice_number', 'asc')
             ->paginate(10)
             ->withQueryString();
+        
+        // Add partial payment count to each invoice
+        $unpaidInvoices->getCollection()->transform(function ($invoice) {
+            // Find the root invoice (original invoice)
+            $rootInvoiceId = $invoice->parent_invoice_id ?: $invoice->id;
+            
+            // Count how many remaining balance invoices exist for this root invoice
+            $partialPaymentCount = \App\Models\PaymentSystem\Invoice::where('parent_invoice_id', $rootInvoiceId)
+                ->where('invoice_type', 'remaining_balance')
+                ->count();
+            
+            $invoice->partial_payment_count = $partialPaymentCount;
+            return $invoice;
+        });
 
         // Get payment proofs for the displayed invoices in the selected month
         $studentIds = $unpaidInvoices->pluck('student_id')->unique();
@@ -140,102 +259,190 @@ class StudentFeeController extends Controller
             // Add guardian name
             $payment->guardian_name = $payment->student?->guardians?->first()?->user?->name ?? 'N/A';
             
-            // Add class name
-            $className = '-';
-            if ($payment->student?->grade && $payment->student?->classModel) {
-                $gradeLevel = $payment->student->grade->level;
-                $classNameRaw = $payment->student->classModel->name;
-                
-                // Extract section from class name
-                $section = \App\Helpers\SectionHelper::extractSection($classNameRaw);
-                
-                // Format with grade level and section
-                $className = \App\Helpers\GradeHelper::formatClassName($gradeLevel, $section);
-                
-                // Fallback to raw class name if formatting fails
-                if (empty($className)) {
-                    $className = $classNameRaw;
-                }
-            }
-            $payment->class_name = $className;
+            // Add formatted class name (e.g., "Kindergarten A" for Grade 0, "Grade 1 A" for Grade 1)
+            $payment->class_name = $payment->student?->formatted_class_name ?? '-';
             
             return $payment;
         });
         
-        $feeTypes = FeeType::select('id', 'name')->orderBy('name')->get();
+        $feeTypes = FeeType::with('frequency')->orderBy('name')->get();
         $grades = Grade::orderBy('level')->get();
         $batches = Batch::select('id', 'name')->orderBy('name')->get();
         $paymentMethods = \App\Models\PaymentMethod::orderBy('sort_order')->get();
-        $paymentPromotions = \App\Models\PaymentPromotion::getAllActive();
+        
+        // Get all active payment promotions (1-12 months)
+        $allPaymentPromotions = \App\Models\PaymentPromotion::getAllActive();
+        
+        // Calculate remaining months dynamically based on batch end date
+        // For now, we'll use a helper method to filter payment options
+        // This will be calculated per-student when opening payment modal
+        $paymentPromotions = $allPaymentPromotions;
 
         // Get fee from Grade's price_per_month field (set in academic management)
         $feeByGrade = $grades->pluck('price_per_month', 'id')->map(fn($v) => (float) ($v ?? 0));
 
         // Current month info
-        $currentMonth = \Carbon\Carbon::parse($selectedMonth . '-01')->format('F Y');
+        $currentMonth = \Carbon\Carbon::parse($selectedMonth . '-01')->translatedFormat('F Y');
         $currentMonthKey = $selectedMonth;
 
         // Calculate stats for selected month
         $monthStart = \Carbon\Carbon::parse($selectedMonth . '-01')->startOfMonth();
         $monthEnd = $monthStart->copy()->endOfMonth();
         
-        $totalReceivable = $allStudents->sum(fn($s) => $feeByGrade[$s->grade_id] ?? 0);
-        $totalStudents = $allStudents->count();
+        // Get batch_id for filtering (use target batch)
+        $batchId = $targetBatch?->id;
         
-        // Get invoice counts for selected month
-        $paidInvoices = Invoice::where('status', 'paid')
-            ->whereBetween('invoice_date', [$monthStart, $monthEnd])
+        // Calculate total receivable from unpaid invoices (status != 'paid')
+        $totalReceivable = \App\Models\PaymentSystem\Invoice::when($batchId, function ($query) use ($batchId) {
+                $query->where('batch_id', $batchId);
+            })
+            ->where('status', '!=', 'paid')
+            ->whereHas('student', function ($q) {
+                $q->where('status', 'active');
+            })
+            ->sum('total_amount');
+        
+        // Calculate total received from paid invoices (paid_amount from invoices with status 'paid')
+        $totalReceived = \App\Models\PaymentSystem\Invoice::when($batchId, function ($query) use ($batchId) {
+                $query->where('batch_id', $batchId);
+            })
+            ->where('status', 'paid')
+            ->whereHas('student', function ($q) {
+                $q->where('status', 'active');
+            })
+            ->sum('paid_amount');
+        
+        // Get payment counts for selected month (using PaymentSystem verified payments)
+        $paidInvoices = \App\Models\PaymentSystem\Invoice::when($batchId, function ($query) use ($batchId) {
+                $query->where('batch_id', $batchId);
+            })
+            ->where('status', 'paid')
+            ->whereHas('student', function ($q) {
+                $q->where('status', 'active');
+            })
             ->count();
-        $totalInvoices = Invoice::whereBetween('invoice_date', [$monthStart, $monthEnd])
+        $totalInvoices = \App\Models\PaymentSystem\Invoice::when($batchId, function ($query) use ($batchId) {
+                $query->where('batch_id', $batchId);
+            })
+            ->whereHas('student', function ($q) {
+                $q->where('status', 'active');
+            })
             ->count();
 
         // Student counts by grade for Fee Structure tab
         $studentCountByGrade = $allStudents->groupBy('grade_id')->map->count();
 
-        // Get pending payments from Guardian App (status = false means pending)
-        $pendingAppPayments = \App\Models\Payment::where('status', false)
-            ->with(['student.user', 'student.grade', 'student.classModel', 'items.invoice'])
-            ->orderBy('payment_date', 'desc')
-            ->get();
+        // Legacy pendingAppPayments removed — consolidated to PaymentSystem only
         
-        // Get pending payment proofs from mobile API with filters
-        $proofQuery = \App\Models\PaymentProof::where('status', 'pending_verification')
-            ->with(['student.user', 'student.grade', 'student.classModel', 'paymentMethod']);
-        
-        // Apply proof filters
-        $proofMonth = $request->input('proof_month', $selectedMonth);
-        $proofMonthStart = \Carbon\Carbon::parse($proofMonth . '-01')->startOfMonth();
-        $proofMonthEnd = $proofMonthStart->copy()->endOfMonth();
-        $proofQuery->whereBetween('payment_date', [$proofMonthStart, $proofMonthEnd]);
-        
-        if ($request->filled('proof_grade')) {
-            $proofQuery->whereHas('student', function ($q) use ($request) {
-                $q->where('grade_id', $request->proof_grade);
+        // Get pending payments (PaymentSystem)
+        $pendingPaymentsQuery = \App\Models\PaymentSystem\Payment::where('status', 'pending_verification')
+            ->with(['student.user', 'student.grade', 'student.classModel', 'paymentMethod', 'feeDetails', 'invoice']);
+            
+        // Apply grade filter
+        if ($request->filled('grade')) {
+            $pendingPaymentsQuery->whereHas('student', function ($q) use ($request) {
+                $q->where('grade_id', $request->grade);
             });
         }
         
-        if ($request->filled('proof_search')) {
-            $search = $request->proof_search;
-            $proofQuery->whereHas('student', function ($q) use ($search) {
+        // Apply search filter
+        if ($request->filled('search')) {
+            $search = $request->search;
+            $pendingPaymentsQuery->whereHas('student', function ($q) use ($search) {
                 $q->where('student_identifier', 'like', "%{$search}%")
                   ->orWhereHas('user', function ($q) use ($search) {
                       $q->where('name', 'like', "%{$search}%");
+                  })
+                  ->orWhereHas('guardian', function ($q) use ($search) {
+                      $q->whereHas('user', function ($u) use ($search) {
+                          $u->where('name', 'like', "%{$search}%");
+                      });
                   });
             });
         }
+
+        $pendingPayments = $pendingPaymentsQuery
+            ->orderBy('created_at', 'desc')
+            ->paginate(10, ['*'], 'pending_page')
+            ->withQueryString();
+
+        // Get rejected payments (PaymentSystem)
+        $rejectedPaymentsQuery = \App\Models\PaymentSystem\Payment::where('status', 'rejected')
+            ->with(['student.user', 'student.grade', 'student.classModel', 'paymentMethod', 'feeDetails', 'invoice'])
+            ->whereBetween('payment_date', [$monthStart, $monthEnd]);
+
+        // Apply grade filter
+        if ($request->filled('grade')) {
+            $rejectedPaymentsQuery->whereHas('student', function ($q) use ($request) {
+                $q->where('grade_id', $request->grade);
+            });
+        }
         
-        $pendingPaymentProofs = $proofQuery->orderBy('created_at', 'desc')->paginate(10, ['*'], 'proof_page')->withQueryString();
-        
-        // Generate month options (last 12 months)
-        $monthOptions = collect();
-        for ($i = 0; $i < 12; $i++) {
-            $date = now()->subMonths($i);
-            $monthOptions->push([
-                'value' => $date->format('Y-m'),
-                'label' => $date->format('F Y'),
-            ]);
+        // Apply search filter
+        if ($request->filled('search')) {
+            $search = $request->search;
+            $rejectedPaymentsQuery->whereHas('student', function ($q) use ($search) {
+                $q->where('student_identifier', 'like', "%{$search}%")
+                  ->orWhereHas('user', function ($q) use ($search) {
+                      $q->where('name', 'like', "%{$search}%");
+                  })
+                  ->orWhereHas('guardian', function ($q) use ($search) {
+                      $q->whereHas('user', function ($u) use ($search) {
+                          $u->where('name', 'like', "%{$search}%");
+                      });
+                  });
+            });
         }
 
+        $rejectedPayments = $rejectedPaymentsQuery
+            ->orderBy('updated_at', 'desc')
+            ->paginate(10, ['*'], 'reject_page')
+            ->withQueryString();
+
+        // Get paid payments history (PaymentSystem) - Show invoices with status 'paid'
+        $paidPaymentsQuery = \App\Models\PaymentSystem\Invoice::with([
+                'student.user', 
+                'student.grade',
+                'student.classModel', 
+                'fees', // Load invoice fees
+                'payments' => function($query) {
+                    $query->where('status', 'verified')->orderBy('created_at', 'desc');
+                }
+            ])
+            ->where('status', 'paid') // Only show paid invoices
+            ->whereHas('student', function ($q) {
+                $q->where('status', 'active');
+            });
+
+        // Apply grade filter to paid invoices
+        if ($request->filled('grade')) {
+            $paidPaymentsQuery->whereHas('student', function ($q) use ($request) {
+                $q->where('grade_id', $request->grade);
+            });
+        }
+
+        // Apply search filter to paid invoices
+        if ($request->filled('search')) {
+            $search = $request->search;
+            $paidPaymentsQuery->whereHas('student', function ($q) use ($search) {
+                $q->where('student_identifier', 'like', "%{$search}%")
+                  ->orWhereHas('user', function ($q) use ($search) {
+                      $q->where('name', 'like', "%{$search}%");
+                  })
+                  ->orWhereHas('guardian', function ($q) use ($search) {
+                      $q->whereHas('user', function ($u) use ($search) {
+                          $u->where('name', 'like', "%{$search}%");
+                      });
+                  });
+            });
+        }
+
+        $paidPayments = $paidPaymentsQuery
+            ->orderBy('updated_at', 'desc') // Order by when it was marked as paid
+            ->paginate(10, ['*'], 'history_page')
+            ->withQueryString();
+        
+        // Month options generated at start of method
         return view('finance.student-fees', [
             'filter' => $filter,
             'invoices' => $invoices,
@@ -251,12 +458,14 @@ class StudentFeeController extends Controller
             'currentMonth' => $currentMonth,
             'currentMonthKey' => $currentMonthKey,
             'totalReceivable' => $totalReceivable,
-            'totalStudents' => $totalStudents,
+            'totalReceived' => $totalReceived,
             'paidInvoices' => $paidInvoices,
             'totalInvoices' => $totalInvoices,
             'studentCountByGrade' => $studentCountByGrade,
-            'pendingAppPayments' => $pendingAppPayments,
-            'pendingPaymentProofs' => $pendingPaymentProofs,
+            'pendingAppPayments' => collect(), // Legacy — kept for Blade compatibility, always empty
+            'pendingPayments' => $pendingPayments,
+            'rejectedPayments' => $rejectedPayments,
+            'paidPayments' => $paidPayments,
             'paymentProofsByStudent' => $paymentProofsByStudent,
             'rejectedProofsByInvoice' => $rejectedProofsByInvoice,
             'selectedMonth' => $selectedMonth,
@@ -424,30 +633,227 @@ class StudentFeeController extends Controller
     {
         $validated = $request->validate([
             'name' => 'required|string|max:255',
+            'name_mm' => 'nullable|string|max:255',
             'code' => 'nullable|string|max:50|unique:fee_types,code',
             'description' => 'nullable|string',
-            'is_mandatory' => 'boolean',
-            'status' => 'boolean',
+            'description_mm' => 'nullable|string',
+            'fee_type' => 'required|in:' . implode(',', \App\Models\FeeType::FEE_TYPES),
+            'amount' => 'required|numeric|min:0',
+            'due_date' => 'required|integer|min:1|max:28',
+            'partial_status' => 'nullable|boolean',
+            'discount_status' => 'nullable|boolean',
+            'status' => 'required|in:active,inactive',
+            'frequency' => 'required|in:one_time,monthly',
+            'start_month' => 'nullable|integer|min:1|max:12',
+            'end_month' => 'nullable|integer|min:1|max:12',
         ]);
 
-        \App\Models\FeeType::create($validated);
+        // Handle boolean fields
+        $validated['status'] = $validated['status'] === 'active';
+        $validated['partial_status'] = $request->boolean('partial_status');
+        $validated['discount_status'] = $request->boolean('discount_status');
+        $validated['is_mandatory'] = false;
 
-        return redirect()->route('student-fees.index')->with('status', __('Fee category created.'));
+        // Generate code if not provided
+        if (empty($validated['code'])) {
+            $baseCode = strtoupper(Str::slug($validated['name']));
+            
+            // Fallback for non-latin names or symbols
+            if (empty($baseCode)) {
+                $baseCode = 'FEE-' . strtoupper(Str::random(6));
+            }
+            
+            // Ensure uniqueness
+            $code = $baseCode;
+            $counter = 1;
+            while (\App\Models\FeeType::where('code', $code)->exists()) {
+                $code = $baseCode . '-' . $counter;
+                $counter++;
+            }
+            $validated['code'] = $code;
+        }
+
+        $feeType = new \App\Models\FeeType();
+        $feeType->fill($validated);
+        $feeType->partial_status = $request->boolean('partial_status');
+        $feeType->discount_status = $request->boolean('discount_status');
+        $feeType->save();
+
+        // Handle frequency
+        $frequency = $validated['frequency'];
+        $currentMonth = now()->month;
+        
+        if ($frequency === 'one_time') {
+            // For one-time, set both start and end to current month
+            $startMonth = $currentMonth;
+            $endMonth = $currentMonth;
+        } else {
+            // For monthly, use provided months or default to current month
+            $startMonth = $validated['start_month'] ?? $currentMonth;
+            $endMonth = $validated['end_month'] ?? $currentMonth;
+        }
+
+        // Create frequency record
+        $feeType->frequency()->create([
+            'frequency' => $frequency,
+            'start_month' => $startMonth,
+            'end_month' => $endMonth,
+        ]);
+
+        return redirect()->route('student-fees.index', ['tab' => 'structure'])->with('status', __('Additional fee created.'));
     }
 
     public function updateCategory(Request $request, \App\Models\FeeType $feeType): RedirectResponse
     {
+        \Illuminate\Support\Facades\Log::info('Update Category Request:', $request->all());
         $validated = $request->validate([
             'name' => 'required|string|max:255',
+            'name_mm' => 'nullable|string|max:255',
             'code' => 'nullable|string|max:50|unique:fee_types,code,' . $feeType->id,
             'description' => 'nullable|string',
-            'is_mandatory' => 'boolean',
-            'status' => 'boolean',
+            'description_mm' => 'nullable|string',
+            'fee_type' => 'required|in:' . implode(',', \App\Models\FeeType::FEE_TYPES),
+            'amount' => 'required|numeric|min:0',
+            'due_date' => 'required|integer|min:1|max:28',
+            'partial_status' => 'nullable|boolean',
+            'discount_status' => 'nullable|boolean',
+            'status' => 'required|in:active,inactive',
+            'frequency' => 'required|in:one_time,monthly',
+            'start_month' => 'nullable|integer|min:1|max:12',
+            'end_month' => 'nullable|integer|min:1|max:12',
         ]);
 
-        $feeType->update($validated);
+        // Preserve existing code if not provided
+        if (!isset($validated['code']) || empty($validated['code'])) {
+            $validated['code'] = $feeType->code;
+        }
 
-        return redirect()->route('student-fees.index')->with('status', __('Fee category updated.'));
+        // Handle boolean fields
+        $validated['status'] = $validated['status'] === 'active';
+        $validated['partial_status'] = $request->boolean('partial_status');
+        $validated['discount_status'] = $request->boolean('discount_status');
+
+        // Explicitly set boolean fields to ensure saving
+        $feeType->fill($validated);
+        $feeType->partial_status = $request->boolean('partial_status');
+        $feeType->discount_status = $request->boolean('discount_status');
+        $feeType->save();
+
+        // Handle frequency
+        $frequency = $validated['frequency'];
+        $currentMonth = now()->month;
+        
+        if ($frequency === 'one_time') {
+            // For one-time, set both start and end to current month
+            $startMonth = $currentMonth;
+            $endMonth = $currentMonth;
+        } else {
+            // For monthly, use provided months or default to current month
+            $startMonth = $validated['start_month'] ?? $currentMonth;
+            $endMonth = $validated['end_month'] ?? $currentMonth;
+        }
+
+        // Update or create frequency record
+        $feeType->frequency()->updateOrCreate(
+            ['fee_type_id' => $feeType->id],
+            [
+                'frequency' => $frequency,
+                'start_month' => $startMonth,
+                'end_month' => $endMonth,
+            ]
+        );
+
+        // Check if request came from detail page
+        $referer = $request->headers->get('referer');
+        if ($referer && str_contains($referer, 'student-fees/categories/' . $feeType->id)) {
+            return redirect()->route('student-fees.categories.show', $feeType->id)->with('status', __('Additional fee updated.'));
+        }
+
+        return redirect()->route('student-fees.index', ['tab' => 'structure'])->with('status', __('Additional fee updated.'));
+    }
+
+    public function showCategory(Request $request, \App\Models\FeeType $feeType): View
+    {
+        // Load frequency relationship
+        $feeType->load('frequency');
+        
+        // Get all students with their fee type assignments
+        $query = StudentProfile::with(['user', 'grade', 'classModel'])
+            ->where('status', 'active');
+
+        // Apply grade filter
+        if ($request->filled('grade')) {
+            $query->where('grade_id', $request->grade);
+        }
+
+        // Apply class filter
+        if ($request->filled('class')) {
+            $query->where('class_id', $request->class);
+        }
+
+        // Apply search filter (name or student ID)
+        if ($request->filled('search')) {
+            $search = $request->search;
+            $query->where(function ($q) use ($search) {
+                $q->where('student_identifier', 'like', "%{$search}%")
+                  ->orWhereHas('user', function ($q) use ($search) {
+                      $q->where('name', 'like', "%{$search}%");
+                  });
+            });
+        }
+
+        // Apply status filter (active/inactive assignments)
+        if ($request->filled('status')) {
+            $statusFilter = $request->status;
+            $query->whereHas('feeTypeAssignments', function ($q) use ($feeType, $statusFilter) {
+                $q->where('fee_type_id', $feeType->id)
+                  ->where('is_active', $statusFilter === 'active');
+            });
+        }
+
+        // Get count of active students for this fee type (before pagination)
+        $activeStudentsCount = \App\Models\StudentFeeTypeAssignment::where('fee_type_id', $feeType->id)
+            ->where('is_active', true)
+            ->count();
+
+        // Paginate students (15 per page)
+        $studentsPaginated = $query->orderBy('student_identifier')
+            ->paginate(15)
+            ->withQueryString();
+
+        // Transform paginated collection
+        $studentsPaginated->getCollection()->transform(function ($student) use ($feeType) {
+            // Check if this student has an active assignment for this fee type
+            $assignment = \App\Models\StudentFeeTypeAssignment::where('student_id', $student->id)
+                ->where('fee_type_id', $feeType->id)
+                ->first();
+            
+            $student->assignment_is_active = $assignment ? $assignment->is_active : false;
+            $student->assignment_id = $assignment?->id;
+            
+            // Format class name display - use the full class name directly
+            $student->formatted_class_name = $student->classModel ? $student->classModel->name : 'N/A';
+            
+            return $student;
+        });
+
+        // Get grades and classes for filter dropdowns
+        $grades = Grade::orderBy('level')->get();
+        
+        // Get classes filtered by selected grade
+        $classesQuery = \App\Models\SchoolClass::orderBy('name');
+        if ($request->filled('grade')) {
+            $classesQuery->where('grade_id', $request->grade);
+        }
+        $classes = $classesQuery->get();
+
+        return view('finance.fee-type-detail', [
+            'feeType' => $feeType,
+            'students' => $studentsPaginated,
+            'grades' => $grades,
+            'classes' => $classes,
+            'activeStudentsCount' => $activeStudentsCount,
+        ]);
     }
 
     public function destroyCategory(\App\Models\FeeType $feeType): RedirectResponse
@@ -460,6 +866,469 @@ class StudentFeeController extends Controller
         $feeType->delete();
 
         return redirect()->route('student-fees.index')->with('status', __('Fee category deleted.'));
+    }
+
+    public function toggleStudentFeeType(Request $request, string $feeTypeId, string $studentId): RedirectResponse|JsonResponse
+    {
+        $assignment = \App\Models\StudentFeeTypeAssignment::where('student_id', $studentId)
+            ->where('fee_type_id', $feeTypeId)
+            ->first();
+
+        if ($assignment) {
+            // Toggle the status
+            $assignment->is_active = !$assignment->is_active;
+            $assignment->save();
+            
+            $message = $assignment->is_active 
+                ? __('finance.Student activated successfully')
+                : __('finance.Student deactivated successfully');
+            
+            $isActive = $assignment->is_active;
+        } else {
+            // Create new assignment as active
+            \App\Models\StudentFeeTypeAssignment::create([
+                'student_id' => $studentId,
+                'fee_type_id' => $feeTypeId,
+                'is_active' => true,
+            ]);
+            
+            $message = __('finance.Student activated successfully');
+            $isActive = true;
+        }
+
+        // Check if it's an AJAX request
+        if ($request->wantsJson() || $request->ajax()) {
+            return response()->json([
+                'success' => true,
+                'message' => $message,
+                'is_active' => $isActive
+            ]);
+        }
+
+        // Preserve query parameters (page, search, grade, class) for non-AJAX requests
+        $queryParams = $request->only(['page', 'search', 'grade', 'class']);
+        
+        return redirect()->route('student-fees.categories.show', array_merge(['feeType' => $feeTypeId], $queryParams))
+            ->with('status', $message);
+    }
+
+    public function activateAllStudents(Request $request, string $feeTypeId): JsonResponse
+    {
+        $request->validate([
+            'class_id' => 'required|exists:classes,id'
+        ]);
+
+        $classId = $request->input('class_id');
+        
+        // Get all students in the selected class
+        $students = StudentProfile::where('class_id', $classId)
+            ->where('status', 'active')
+            ->get();
+
+        $activatedCount = 0;
+
+        foreach ($students as $student) {
+            $assignment = \App\Models\StudentFeeTypeAssignment::where('student_id', $student->id)
+                ->where('fee_type_id', $feeTypeId)
+                ->first();
+
+            if ($assignment) {
+                if (!$assignment->is_active) {
+                    $assignment->is_active = true;
+                    $assignment->save();
+                    $activatedCount++;
+                }
+            } else {
+                \App\Models\StudentFeeTypeAssignment::create([
+                    'student_id' => $student->id,
+                    'fee_type_id' => $feeTypeId,
+                    'is_active' => true,
+                ]);
+                $activatedCount++;
+            }
+        }
+
+        return response()->json([
+            'success' => true,
+            'message' => __('finance.students_activated', ['count' => $activatedCount])
+        ]);
+    }
+
+    public function sendInvoiceToStudent(Request $request, string $feeTypeId, string $studentId): JsonResponse
+    {
+        try {
+            $feeType = FeeType::with('frequency')->findOrFail($feeTypeId);
+            $student = StudentProfile::with(['user', 'guardians.user', 'grade', 'batch'])->findOrFail($studentId);
+            
+            // Check if student is activated for this fee type
+            $assignment = \App\Models\StudentFeeTypeAssignment::where('student_id', $studentId)
+                ->where('fee_type_id', $feeTypeId)
+                ->where('is_active', true)
+                ->first();
+                
+            if (!$assignment) {
+                return response()->json([
+                    'success' => false,
+                    'message' => __('finance.Student is not activated for this fee type')
+                ]);
+            }
+            
+            // Get current date and month
+            $currentDate = now();
+            $currentMonth = $currentDate->format('Y-m');
+            
+            // Check if invoice already exists for this student and fee type for current month
+            // Check both unpaid invoices and invoices from this month
+            $existingInvoice = \App\Models\PaymentSystem\Invoice::where('student_id', $studentId)
+                ->whereHas('fees', function($query) use ($feeTypeId) {
+                    $query->where('fee_type_id', $feeTypeId);
+                })
+                ->where(function($query) use ($currentMonth) {
+                    // Either has remaining amount OR was created this month
+                    $query->where('remaining_amount', '>', 0)
+                          ->orWhere(function($q) use ($currentMonth) {
+                              $q->whereRaw("DATE_FORMAT(created_at, '%Y-%m') = ?", [$currentMonth]);
+                          });
+                })
+                ->first();
+                
+            if ($existingInvoice) {
+                return response()->json([
+                    'success' => false,
+                    'message' => __('finance.Invoice already exists for this fee type')
+                ]);
+            }
+            
+            // Generate unique invoice number
+            $todayPrefix = 'INV' . date('Ymd');
+            $lastInvoice = \App\Models\PaymentSystem\Invoice::where('invoice_number', 'like', $todayPrefix . '%')
+                ->lockForUpdate()
+                ->orderBy('invoice_number', 'desc')
+                ->first();
+            
+            $counter = 1;
+            if ($lastInvoice && preg_match('/INV\d{8}-(\d{4})/', $lastInvoice->invoice_number, $matches)) {
+                $counter = intval($matches[1]) + 1;
+            }
+            
+            $invoiceNumber = sprintf('INV%s-%04d', date('Ymd'), $counter);
+            
+            // Calculate due date based on fee type
+            $dueDate = $currentDate->copy()->addDays($feeType->due_date ?? 15);
+            
+            // Get batch_id from student's grade
+            $batchId = $student->grade?->batch_id;
+            if (!$batchId) {
+                // Fallback to active batch if student's grade doesn't have a batch
+                $activeBatch = \App\Models\Batch::where('status', true)->first();
+                $batchId = $activeBatch?->id;
+            }
+            
+            // Create new invoice using PaymentSystem model
+            $invoice = \App\Models\PaymentSystem\Invoice::create([
+                'invoice_number' => $invoiceNumber,
+                'student_id' => $studentId,
+                'batch_id' => $batchId,
+                'due_date' => $dueDate,
+                'invoice_type' => 'one_time',
+                'total_amount' => $feeType->amount,
+                'paid_amount' => 0,
+                'remaining_amount' => $feeType->amount,
+                'status' => 'pending',
+                'created_by' => $request->user()?->id,
+            ]);
+            
+            // Create invoice fee item
+            // Find or create the corresponding fee structure in payment system
+            $feeStructure = \App\Models\PaymentSystem\FeeStructure::firstOrCreate(
+                [
+                    'fee_type' => $feeType->code ?? strtoupper(str_replace(' ', '_', $feeType->name)),
+                    'grade' => (string) $student->grade->level,
+                    'batch' => (string) $student->batch->name,
+                ],
+                [
+                    'name' => $feeType->name,
+                    'name_mm' => $feeType->name_mm,
+                    'description' => $feeType->description,
+                    'description_mm' => $feeType->description_mm,
+                    'amount' => $feeType->amount,
+                    'frequency' => $feeType->frequency?->name ?? 'one_time',
+                    'target_month' => $feeType->target_month,
+                    'due_date' => $dueDate,
+                    'supports_payment_period' => $feeType->partial_status ?? false,
+                    'is_active' => true,
+                ]
+            );
+            
+            \App\Models\PaymentSystem\InvoiceFee::create([
+                'invoice_id' => $invoice->id,
+                'fee_id' => $feeStructure->id,
+                'fee_name' => $feeType->name,
+                'fee_name_mm' => $feeType->name_mm,
+                'amount' => $feeType->amount,
+                'paid_amount' => 0,
+                'remaining_amount' => $feeType->amount,
+                'supports_payment_period' => $feeType->partial_status ?? false,
+                'due_date' => $dueDate,
+                'status' => 'unpaid',
+                'fee_type_id' => $feeTypeId,
+            ]);
+            
+            // Send FCM notification to guardians
+            $this->sendInvoiceNotification($student, $invoice, $feeType);
+            
+            return response()->json([
+                'success' => true,
+                'message' => __('finance.Invoice sent successfully')
+            ]);
+            
+        } catch (\Exception $e) {
+            \Log::error('Error sending invoice: ' . $e->getMessage(), [
+                'fee_type_id' => $feeTypeId,
+                'student_id' => $studentId,
+                'trace' => $e->getTraceAsString()
+            ]);
+            
+            return response()->json([
+                'success' => false,
+                'message' => __('finance.An error occurred')
+            ]);
+        }
+    }
+
+    /**
+     * Bulk send invoices to all active students for a fee type
+     */
+    public function bulkSendInvoices(Request $request, string $feeTypeId): JsonResponse
+    {
+        try {
+            $feeType = FeeType::with('frequency')->findOrFail($feeTypeId);
+
+            // Get all active students assigned to this fee type
+            $assignments = \App\Models\StudentFeeTypeAssignment::where('fee_type_id', $feeTypeId)
+                ->where('is_active', true)
+                ->with(['student.user', 'student.guardians.user', 'student.grade', 'student.batch'])
+                ->get();
+
+            if ($assignments->isEmpty()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => __('finance.No active students found for this fee type')
+                ]);
+            }
+
+            $currentDate = now();
+            $createdCount = 0;
+            $skippedCount = 0;
+            $errors = [];
+
+            foreach ($assignments as $assignment) {
+                $student = $assignment->student;
+
+                if (!$student) {
+                    $skippedCount++;
+                    continue;
+                }
+
+                try {
+                    // Check if invoice already exists for this student and fee type for current month
+                    // Check both unpaid invoices and invoices from this month
+                    $currentMonth = $currentDate->format('Y-m');
+                    
+                    $existingInvoice = \App\Models\PaymentSystem\Invoice::where('student_id', $student->id)
+                        ->whereHas('fees', function($query) use ($feeTypeId) {
+                            $query->where('fee_type_id', $feeTypeId);
+                        })
+                        ->where(function($query) use ($currentMonth) {
+                            // Either has remaining amount OR was created this month
+                            $query->where('remaining_amount', '>', 0)
+                                  ->orWhere(function($q) use ($currentMonth) {
+                                      $q->whereRaw("DATE_FORMAT(created_at, '%Y-%m') = ?", [$currentMonth]);
+                                  });
+                        })
+                        ->first();
+
+                    if ($existingInvoice) {
+                        $skippedCount++;
+                        continue;
+                    }
+
+                    // Generate unique invoice number
+                    $todayPrefix = 'INV' . date('Ymd');
+                    $lastInvoice = \App\Models\PaymentSystem\Invoice::where('invoice_number', 'like', $todayPrefix . '%')
+                        ->lockForUpdate()
+                        ->orderBy('invoice_number', 'desc')
+                        ->first();
+
+                    $counter = 1;
+                    if ($lastInvoice && preg_match('/INV\d{8}-(\d{4})/', $lastInvoice->invoice_number, $matches)) {
+                        $counter = intval($matches[1]) + 1;
+                    }
+
+                    $invoiceNumber = sprintf('INV%s-%04d', date('Ymd'), $counter);
+
+                    // Calculate due date based on fee type
+                    $dueDate = $currentDate->copy()->addDays($feeType->due_date ?? 15);
+
+                    // Get batch_id from student's grade
+                    $batchId = $student->grade?->batch_id;
+                    if (!$batchId) {
+                        // Fallback to active batch if student's grade doesn't have a batch
+                        $activeBatch = \App\Models\Batch::where('status', true)->first();
+                        $batchId = $activeBatch?->id;
+                    }
+
+                    // Create new invoice using PaymentSystem model
+                    $invoice = \App\Models\PaymentSystem\Invoice::create([
+                        'invoice_number' => $invoiceNumber,
+                        'student_id' => $student->id,
+                        'batch_id' => $batchId,
+                        'due_date' => $dueDate,
+                        'invoice_type' => 'one_time',
+                        'total_amount' => $feeType->amount,
+                        'paid_amount' => 0,
+                        'remaining_amount' => $feeType->amount,
+                        'status' => 'pending',
+                        'created_by' => $request->user()?->id,
+                    ]);
+
+                    // Create invoice fee item
+                    // Find or create the corresponding fee structure in payment system
+                    $feeStructure = \App\Models\PaymentSystem\FeeStructure::firstOrCreate(
+                        [
+                            'fee_type' => $feeType->code ?? strtoupper(str_replace(' ', '_', $feeType->name)),
+                            'grade' => (string) $student->grade->level,
+                            'batch' => (string) $student->batch->name,
+                        ],
+                        [
+                            'name' => $feeType->name,
+                            'name_mm' => $feeType->name_mm,
+                            'description' => $feeType->description,
+                            'description_mm' => $feeType->description_mm,
+                            'amount' => $feeType->amount,
+                            'frequency' => $feeType->frequency?->name ?? 'one_time',
+                            'target_month' => $feeType->target_month,
+                            'due_date' => $dueDate,
+                            'supports_payment_period' => $feeType->partial_status ?? false,
+                            'is_active' => true,
+                        ]
+                    );
+
+                    \App\Models\PaymentSystem\InvoiceFee::create([
+                        'invoice_id' => $invoice->id,
+                        'fee_id' => $feeStructure->id,
+                        'fee_name' => $feeType->name,
+                        'fee_name_mm' => $feeType->name_mm,
+                        'amount' => $feeType->amount,
+                        'paid_amount' => 0,
+                        'remaining_amount' => $feeType->amount,
+                        'supports_payment_period' => $feeType->partial_status ?? false,
+                        'due_date' => $dueDate,
+                        'status' => 'unpaid',
+                        'fee_type_id' => $feeTypeId,
+                    ]);
+
+                    // Send FCM notification to guardians
+                    $this->sendInvoiceNotification($student, $invoice, $feeType);
+
+                    $createdCount++;
+
+                } catch (\Exception $e) {
+                    \Log::error('Error creating invoice for student: ' . $e->getMessage(), [
+                        'student_id' => $student->id,
+                        'fee_type_id' => $feeTypeId,
+                        'trace' => $e->getTraceAsString()
+                    ]);
+                    $errors[] = $student->user->name ?? 'Unknown';
+                    $skippedCount++;
+                }
+            }
+
+            $message = __('finance.Invoices sent successfully') . ': ' . $createdCount;
+            if ($skippedCount > 0) {
+                $message .= ', ' . __('finance.Skipped') . ': ' . $skippedCount;
+            }
+            if (!empty($errors)) {
+                $message .= ' (' . __('finance.Errors') . ': ' . implode(', ', $errors) . ')';
+            }
+
+            return response()->json([
+                'success' => true,
+                'message' => $message,
+                'created' => $createdCount,
+                'skipped' => $skippedCount,
+            ]);
+
+        } catch (\Exception $e) {
+            \Log::error('Error in bulk invoice generation: ' . $e->getMessage(), [
+                'fee_type_id' => $feeTypeId,
+                'trace' => $e->getTraceAsString()
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'message' => __('finance.An error occurred')
+            ]);
+        }
+    }
+
+    
+    private function sendInvoiceNotification($student, $invoice, $feeType)
+    {
+        // Get guardian FCM tokens from user relationship
+        $guardians = $student->guardians;
+        
+        if ($guardians->isEmpty()) {
+            \Log::warning('No guardians found for student', ['student_id' => $student->id]);
+            return;
+        }
+        
+        foreach ($guardians as $guardian) {
+            $user = $guardian->user;
+            
+            if ($user && $user->fcm_token) {
+                try {
+                    // Send FCM notification
+                    $notification = [
+                        'title' => __('finance.New Invoice'),
+                        'body' => __('finance.invoice_notification_body', [
+                            'student' => $student->user->name,
+                            'fee_type' => $feeType->name,
+                            'amount' => number_format($invoice->total_amount, 0)
+                        ]),
+                        'data' => [
+                            'type' => 'invoice',
+                            'invoice_id' => $invoice->id,
+                            'invoice_number' => $invoice->invoice_number,
+                            'amount' => $invoice->total_amount,
+                            'student_id' => $student->id,
+                            'fee_type_id' => $feeType->id,
+                            'due_date' => $invoice->due_date->format('Y-m-d'),
+                        ]
+                    ];
+                    
+                    // Use your FCM service here
+                    // Example: app('fcm')->sendNotification($user->fcm_token, $notification);
+                    
+                    \Log::info('Invoice notification prepared for guardian', [
+                        'guardian_id' => $guardian->id,
+                        'user_id' => $user->id,
+                        'invoice_id' => $invoice->id,
+                        'has_fcm_token' => !empty($user->fcm_token)
+                    ]);
+                } catch (\Exception $e) {
+                    \Log::error('Failed to send invoice notification', [
+                        'guardian_id' => $guardian->id,
+                        'error' => $e->getMessage()
+                    ]);
+                }
+            } else {
+                \Log::warning('Guardian user has no FCM token', [
+                    'guardian_id' => $guardian->id,
+                    'user_id' => $user?->id
+                ]);
+            }
+        }
     }
 
     public function storeInvoice(StoreInvoiceRequest $request): RedirectResponse
@@ -485,20 +1354,56 @@ class StudentFeeController extends Controller
      * The deletion will automatically be reflected in the guardian app
      * since the app queries invoices in real-time.
      */
-    public function destroyInvoice(Invoice $invoice): RedirectResponse
+    public function destroyInvoice(string $id): RedirectResponse
     {
         try {
-            // Check if invoice has any payments
-            if ($invoice->paid_amount > 0) {
-                return redirect()->route('student-fees.index')
-                    ->with('error', __('Cannot delete invoice that has payments. Please delete payments first.'));
+            // Try to find in new PaymentSystem first
+            $invoice = \App\Models\PaymentSystem\Invoice::find($id);
+            $isLegacy = false;
+
+            // If not found, try legacy system
+            if (!$invoice) {
+                $invoice = \App\Models\Invoice::find($id);
+                $isLegacy = true;
+            }
+
+            if ($invoice) {
+                // Validation logic depending on system
+                if (!$isLegacy) {
+                    // New Payment System: Check for VERIFIED payments
+                    // We allow deleting invoices that only have pending or rejected payments
+                    $hasVerifiedPayments = $invoice->payments()->where('status', 'verified')->exists();
+                    
+                    if ($hasVerifiedPayments) {
+                         return redirect()->route('student-fees.index')
+                            ->with('error', __('Cannot delete invoice that has verified payments.'));
+                    }
+                } else {
+                    // Legacy System: Check paid_amount
+                    if ($invoice->paid_amount > 0) {
+                        return redirect()->route('student-fees.index')
+                            ->with('error', __('Cannot delete invoice that has payments. Please delete payments first.'));
+                    }
+                }
+            } else {
+                 return redirect()->route('student-fees.index')
+                    ->with('error', __('Invoice not found.'));
             }
 
             $invoiceNumber = $invoice->invoice_number;
             $studentName = $invoice->student?->user?->name ?? 'Unknown';
 
-            // Delete invoice items first (cascade should handle this, but being explicit)
-            $invoice->items()->delete();
+            // Delete related records first
+            if ($isLegacy) {
+                // Legacy system has items relation
+                $invoice->items()->delete();
+            } else {
+                // New system: ensure payments are deleted (if not cascading)
+                $invoice->payments()->delete();
+            }
+            
+            // Both systems have fees relation
+            $invoice->fees()->delete();
             
             // Delete the invoice
             $invoice->delete();
@@ -514,117 +1419,222 @@ class StudentFeeController extends Controller
         }
     }
 
-    public function storePayment(StorePaymentRequest $request): RedirectResponse|\Illuminate\Http\JsonResponse
+    // Legacy storePayment / confirmPayment / rejectPayment removed
+    // All payment operations now use PaymentSystem models
+
+    /**
+     * Process Payment (PaymentSystem) - Full or Partial
+     */
+    public function processPaymentSystem(Request $request, \App\Models\PaymentSystem\Invoice $invoice)
     {
-        $data = PaymentData::from($request->validated(), $request->user()?->id);
-        $payment = $this->service->createPayment($data);
+        // Calculate max months based on student's batch end date
+        $student = $invoice->student;
+        $maxMonths = 12; // Default fallback
+        
+        if ($student && $student->batch && $student->batch->end_date) {
+            $now = now();
+            $batchEndDate = $student->batch->end_date;
+            $monthsUntilEnd = $now->diffInMonths($batchEndDate);
+            $maxMonths = max(1, ceil($monthsUntilEnd)); // At least 1 month
+        }
+        
+        $validated = $request->validate([
+            'payment_type' => 'required|in:full,partial',
+            'payment_months' => "required|integer|min:1|max:{$maxMonths}",
+            'payment_method_id' => 'required|exists:payment_methods,id',
+            'payment_date' => 'required|date',
+            'reference_number' => 'nullable|string|max:255',
+            'receipt_image' => 'nullable|image|max:2048',
+            'notes' => 'nullable|string',
+            'fee_amounts' => 'nullable|array', // For partial payment
+            'fee_amounts.*' => 'nullable|numeric|min:0',
+            'fee_payment_months' => 'nullable|array', // For full payment with variable months per fee
+            'fee_payment_months.*' => "nullable|integer|min:1|max:{$maxMonths}",
+        ]);
 
-        // Load relationships for receipt
-        $payment->load('student.user', 'student.guardians.user', 'student.grade', 'student.classModel');
-
-        $this->logCreate('FeePayment', $payment->id, "Payment: {$payment->payment_number}");
-
-        if ($request->expectsJson() || $request->ajax()) {
-            // Get guardian name (first guardian)
-            $guardianName = $payment->student?->guardians?->first()?->user?->name ?? '';
+        try {
+            // Check if invoice has overdue fees (disable partial payment)
+            $paymentService = app(\App\Services\PaymentSystem\PaymentProcessingService::class);
             
-            // Get class name
-            $className = '';
-            if ($payment->student?->grade && $payment->student?->classModel) {
-                $gradeLevel = $payment->student->grade->level;
-                $classNameRaw = $payment->student->classModel->name;
-                
-                // Extract section from class name (e.g., "Kindergarten A" -> "A")
-                $section = \App\Helpers\SectionHelper::extractSection($classNameRaw);
-                
-                // Format with grade level and section
-                $className = \App\Helpers\GradeHelper::formatClassName($gradeLevel, $section);
-                
-                // Fallback to raw class name if formatting fails
-                if (empty($className)) {
-                    $className = $classNameRaw;
+            if ($validated['payment_type'] === 'partial' && $paymentService->hasOverdueFees($invoice)) {
+                if ($request->expectsJson() || $request->ajax()) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => __('finance.Cannot make partial payment - some fees are overdue')
+                    ], 422);
                 }
+                return redirect()->back()->with('error', __('finance.Cannot make partial payment - some fees are overdue'));
             }
             
-            return response()->json([
-                'success' => true,
-                'message' => __('Payment recorded.'),
-                'payment' => [
-                    'payment_number' => $payment->payment_number,
-                    'student_name' => $payment->student?->user?->name ?? '-',
-                    'student_id' => $payment->student?->student_identifier ?? '-',
-                    'class_name' => $className ?: '-',
-                    'guardian_name' => $guardianName ?: 'N/A',
-                    'amount' => $payment->amount,
-                    'payment_method' => $payment->payment_method,
-                    'payment_date' => $payment->payment_date?->format('M j, Y'),
-                    'receptionist_id' => $payment->receptionist_id,
-                    'receptionist_name' => $payment->receptionist_name,
-                    'ferry_fee' => $payment->ferry_fee ?? '0',
-                    'notes' => $payment->notes ?? '',
-                ],
+            // Check partial payment limit (max 2 partial payments per original invoice)
+            if ($validated['payment_type'] === 'partial') {
+                // Find the root/original invoice
+                $rootInvoice = $invoice->parent_invoice_id ? 
+                    \App\Models\PaymentSystem\Invoice::find($invoice->parent_invoice_id) : 
+                    $invoice;
+                
+                // Count existing remaining balance invoices
+                $existingRemainingCount = \App\Models\PaymentSystem\Invoice::where('parent_invoice_id', $rootInvoice->id)
+                    ->where('invoice_type', 'remaining_balance')
+                    ->count();
+                
+                if ($existingRemainingCount >= 2) {
+                    if ($request->expectsJson() || $request->ajax()) {
+                        return response()->json([
+                            'success' => false,
+                            'message' => __('finance.Maximum partial payment limit reached. Please pay the full remaining amount.')
+                        ], 422);
+                    }
+                    return redirect()->back()->with('error', __('finance.Maximum partial payment limit reached. Please pay the full remaining amount.'));
+                }
+            }
+
+            // Handle receipt image upload
+            $receiptImageUrl = null;
+            if ($request->hasFile('receipt_image')) {
+                $receiptImageUrl = $request->file('receipt_image')->store('payment-receipts', 'public');
+            }
+
+            // Prepare payment data
+            $paymentData = [
+                'payment_type' => $validated['payment_type'],
+                'payment_months' => $validated['payment_months'],
+                'payment_method_id' => $validated['payment_method_id'],
+                'payment_date' => $validated['payment_date'],
+                'receipt_image_url' => $receiptImageUrl,
+                'notes' => $validated['notes'] ?? null,
+                'fee_amounts' => $validated['fee_amounts'] ?? [],
+                'fee_payment_months' => $validated['fee_payment_months'] ?? [],
+            ];
+
+            // Process payment
+            $result = $paymentService->processPayment($invoice, $paymentData);
+
+            if ($result['success']) {
+                $message = __('finance.Payment processed successfully');
+                
+                if ($result['discount_applied'] > 0) {
+                    $message .= ' ' . __('finance.Discount applied') . ': ' . number_format($result['discount_applied']) . ' MMK';
+                }
+                
+                if ($result['remaining_invoice']) {
+                    $message .= ' ' . __('finance.Remaining invoice created') . ': ' . $result['remaining_invoice']->invoice_number;
+                }
+
+                $this->logCreate('Payment', $result['payment']->id, "Processed payment: {$result['payment']->payment_number}");
+
+                if ($request->expectsJson() || $request->ajax()) {
+                    // Return redirect URL instead of payment data
+                    return response()->json([
+                        'success' => true,
+                        'message' => $message,
+                        'redirect_url' => route('student-fees.payment-receipt', ['payment' => $result['payment']->id])
+                    ]);
+                }
+                
+                // For non-AJAX requests, redirect to receipt page
+                return redirect()->route('student-fees.payment-receipt', ['payment' => $result['payment']->id])
+                    ->with('status', $message);
+            } else {
+                if ($request->expectsJson() || $request->ajax()) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => $result['error']
+                    ], 422);
+                }
+                return redirect()->back()->with('error', $result['error']);
+            }
+
+        } catch (\Exception $e) {
+            \Log::error('Payment processing error', [
+                'invoice_id' => $invoice->id,
+                'error' => $e->getMessage(),
             ]);
-        }
 
-        return redirect()->route('student-fees.index')->with('status', __('Payment recorded.'));
+            if ($request->expectsJson() || $request->ajax()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => __('finance.Payment processing failed') . ': ' . $e->getMessage()
+                ], 500);
+            }
+            return redirect()->back()->with('error', __('finance.Payment processing failed') . ': ' . $e->getMessage());
+        }
     }
 
-    public function confirmPayment(Request $request, \App\Models\Payment $payment): RedirectResponse
+    public function showPaymentReceipt(\App\Models\PaymentSystem\Payment $payment): View
     {
-        // Validate that payment is pending
-        if ($payment->status) {
-            return redirect()->route('student-fees.index')->with('error', __('Payment already confirmed.'));
-        }
-
-        // Confirm the payment
-        $payment->update([
-            'status' => true,
-            'notes' => ($payment->notes ?? '') . "\nConfirmed by admin on " . now()->format('Y-m-d H:i:s'),
-        ]);
-
-        // Update invoice paid amount and status
-        foreach ($payment->items as $item) {
-            $invoice = $item->invoice;
-            if ($invoice) {
-                $invoice->paid_amount = ($invoice->paid_amount ?? 0) + $item->amount;
-                $invoice->balance = $invoice->total_amount - $invoice->paid_amount;
-                
-                // Update invoice status
-                if ($invoice->balance <= 0) {
-                    $invoice->status = 'paid';
-                } elseif ($invoice->paid_amount > 0) {
-                    $invoice->status = 'partial';
-                }
-                
-                $invoice->save();
+        // Load relationships
+        $payment->load(['student.user', 'student.grade', 'student.classModel', 'student.guardians.user', 'paymentMethod', 'invoice.fees.feeStructure', 'feeDetails']);
+        
+        // Get guardian name
+        $guardianName = $payment->student?->guardians?->first()?->user?->name ?? 'N/A';
+        
+        // Get formatted class name (e.g., "Kindergarten A" for Grade 0, "Grade 1 A" for Grade 1)
+        $className = $payment->student?->formatted_class_name ?? 'N/A';
+        
+        // Calculate discount information
+        $paymentMonths = $payment->payment_months ?? 1;
+        $subtotal = 0;
+        $discountAmount = 0;
+        
+        // Calculate subtotal from the fees that were actually paid
+        // Use feeDetails to get the actual fees included in this payment
+        if ($payment->feeDetails && $payment->feeDetails->count() > 0) {
+            foreach ($payment->feeDetails as $feeDetail) {
+                $subtotal += $feeDetail->full_amount;
+            }
+        } elseif ($payment->invoice && $payment->invoice->fees) {
+            // Fallback: use invoice fees
+            foreach ($payment->invoice->fees as $fee) {
+                $subtotal += $fee->amount;
             }
         }
-
-        $this->logUpdate('Payment', $payment->id, "Confirmed payment: {$payment->payment_number}");
-
-        return redirect()->route('student-fees.index')->with('status', __('Payment confirmed successfully.'));
-    }
-
-    public function rejectPayment(Request $request, \App\Models\Payment $payment): RedirectResponse
-    {
-        // Validate that payment is pending
-        if ($payment->status) {
-            return redirect()->route('student-fees.index')->with('error', __('Payment already confirmed.'));
+        
+        // Calculate discount only if payment amount is less than subtotal
+        // This represents an actual discount, not a partial payment
+        if ($subtotal > 0 && $payment->payment_amount < $subtotal) {
+            // Check if this is a partial payment (remaining balance exists)
+            $isPartialPayment = $payment->invoice && $payment->invoice->remaining_amount > 0;
+            
+            // Only show discount if it's not a partial payment
+            // For partial payments, the difference is the remaining balance, not a discount
+            if (!$isPartialPayment) {
+                $discountAmount = $subtotal - $payment->payment_amount;
+            }
         }
-
-        $reason = $request->input('reason', 'No reason provided');
-
-        // Update payment with rejection note
-        $payment->update([
-            'notes' => ($payment->notes ?? '') . "\nRejected by admin on " . now()->format('Y-m-d H:i:s') . ". Reason: " . $reason,
+        
+        // Check if this is a partial payment and get remaining invoice info
+        $isPartialPayment = $payment->payment_type === 'partial';
+        $remainingAmount = 0;
+        $remainingInvoiceNumber = null;
+        
+        if ($isPartialPayment && $payment->invoice) {
+            // Calculate remaining amount from original invoice
+            $remainingAmount = $subtotal - $payment->payment_amount;
+            
+            // Find the remaining balance invoice created for this payment
+            $remainingInvoice = \App\Models\PaymentSystem\Invoice::where('parent_invoice_id', $payment->invoice->id)
+                ->where('invoice_type', 'remaining_balance')
+                ->orderBy('created_at', 'desc')
+                ->first();
+            
+            if ($remainingInvoice) {
+                $remainingInvoiceNumber = $remainingInvoice->invoice_number;
+                $remainingAmount = $remainingInvoice->total_amount;
+            }
+        }
+        
+        return view('finance.payment-receipt', [
+            'payment' => $payment,
+            'guardianName' => $guardianName,
+            'className' => $className,
+            'paymentMonths' => $paymentMonths,
+            'subtotal' => $subtotal,
+            'discountAmount' => $discountAmount,
+            'isPartialPayment' => $isPartialPayment,
+            'remainingAmount' => $remainingAmount,
+            'remainingInvoiceNumber' => $remainingInvoiceNumber,
         ]);
-
-        // Optionally delete the payment or mark it as rejected
-        // For now, we'll just add a note. You can add a 'rejected' status if needed
-
-        $this->logDelete('Payment', $payment->id, "Rejected payment: {$payment->payment_number}");
-
-        return redirect()->route('student-fees.index')->with('status', __('Payment rejected.'));
     }
 
     public function updateGradeFee(Request $request, Grade $grade): RedirectResponse
@@ -640,14 +1650,14 @@ class StudentFeeController extends Controller
             
             // If this is the only grade with a fee, prevent clearing it
             if ($gradesWithFees <= 1 && $grade->price_per_month > 0) {
-                return redirect()->route('student-fees.index')
+                return redirect()->route('student-fees.index', ['tab' => 'structure'])
                     ->with('error', __('finance.Please set at least one grade fee'));
             }
         }
 
         $grade->update(['price_per_month' => $validated['price_per_month']]);
 
-        return redirect()->route('student-fees.index')->with('status', __('Grade fee updated.'));
+        return redirect()->route('student-fees.index', ['tab' => 'structure'])->with('status', __('Grade fee updated.'));
     }
 
     /**
@@ -672,6 +1682,176 @@ class StudentFeeController extends Controller
             ]);
 
             return redirect()->route('student-fees.index')->with('error', $e->getMessage());
+        }
+    }
+
+    /**
+     * Approve PaymentSystem Payment from Mobile API
+     */
+    public function approvePaymentSystemPayment(Request $request, \App\Models\PaymentSystem\Payment $payment): RedirectResponse
+    {
+        // Guard: only pending_verification payments can be approved
+        if ($payment->status !== 'pending_verification') {
+            return redirect()->route('student-fees.index')
+                ->with('error', __('Payment is not pending verification. Current status: ') . $payment->status);
+        }
+
+        try {
+            \DB::beginTransaction();
+
+            // Update payment status to verified
+            $payment->update([
+                'status' => 'verified',
+                'verified_at' => now(),
+                'verified_by' => $request->user()->id,
+            ]);
+
+            // Update invoice paid amounts and statuses
+            $invoice = $payment->invoice;
+            if ($invoice) {
+                $invoice->paid_amount += $payment->payment_amount;
+                $invoice->remaining_amount = $invoice->total_amount - $invoice->paid_amount;
+                
+                // Update invoice status based on new 4-status system
+                // pending -> waiting -> rejected/paid
+                if ($invoice->remaining_amount <= 0) {
+                    $invoice->status = 'paid'; // Fully paid
+                } else {
+                    // If partially paid but still has remaining amount, keep as waiting
+                    // (guardian submitted payment, staff approved partial)
+                    $invoice->status = 'waiting';
+                }
+                $invoice->save();
+
+                // Update individual invoice fee amounts and statuses
+                foreach ($payment->feeDetails as $feeDetail) {
+                    $invoiceFee = $invoice->fees()->where('id', $feeDetail->invoice_fee_id)->first();
+                    if ($invoiceFee) {
+                        $invoiceFee->paid_amount += $feeDetail->paid_amount;
+                        $invoiceFee->remaining_amount = $invoiceFee->amount - $invoiceFee->paid_amount;
+                        
+                        // Update fee status based on new system
+                        if ($invoiceFee->remaining_amount <= 0) {
+                            $invoiceFee->status = 'paid';
+                        } else {
+                            $invoiceFee->status = 'waiting'; // Partially paid
+                        }
+                        $invoiceFee->save();
+                    }
+                }
+            }
+
+            \DB::commit();
+
+            $this->logUpdate('PaymentSystemPayment', $payment->id, "Approved payment: {$payment->payment_number} for student: {$payment->student->student_identifier}");
+
+            // Send FCM notification to guardian (non-blocking)
+            try {
+                $this->paymentNotificationService->notifyGuardianOfVerification($payment);
+            } catch (\Exception $e) {
+                \Log::warning('Failed to send approval notification', [
+                    'payment_id' => $payment->id,
+                    'error' => $e->getMessage(),
+                ]);
+            }
+
+            return redirect()->route('student-fees.index')->with('status', __('Payment approved successfully.'));
+        } catch (\Exception $e) {
+            \DB::rollBack();
+            
+            \Log::error('PaymentSystem payment approval failed', [
+                'payment_id' => $payment->id,
+                'error' => $e->getMessage(),
+            ]);
+
+            return redirect()->route('student-fees.index')->with('error', $e->getMessage());
+        }
+    }
+
+    /**
+     * Reject PaymentSystem Payment from Mobile API
+     * Uses PaymentVerificationService for proper rollback + notification
+     */
+    public function rejectPaymentSystemPayment(Request $request, \App\Models\PaymentSystem\Payment $payment): RedirectResponse
+    {
+        // Guard: only pending_verification payments can be rejected
+        if ($payment->status !== 'pending_verification') {
+            return redirect()->route('student-fees.index')
+                ->with('error', __('Payment is not pending verification. Current status: ') . $payment->status);
+        }
+
+        $validated = $request->validate([
+            'rejection_reason' => 'required|string|max:1000',
+        ]);
+
+        try {
+            // Delegate to PaymentVerificationService — handles rollback + notification
+            $this->verificationService->rejectPayment(
+                $payment,
+                $validated['rejection_reason'],
+                $request->user()
+            );
+
+            $this->logUpdate('PaymentSystemPayment', $payment->id, "Rejected payment: {$payment->payment_number} for student: {$payment->student->student_identifier}");
+
+            return redirect()->route('student-fees.index')->with('status', __('Payment rejected. Invoice remains unpaid and guardian has been notified.'));
+        } catch (\InvalidArgumentException $e) {
+            return redirect()->route('student-fees.index')->with('error', $e->getMessage());
+        } catch (\Exception $e) {
+            \Log::error('PaymentSystem payment rejection failed', [
+                'payment_id' => $payment->id,
+                'error' => $e->getMessage(),
+            ]);
+
+            return redirect()->route('student-fees.index')->with('error', $e->getMessage());
+        }
+    }
+
+    /**
+     * Get PaymentSystem Payment Details (AJAX)
+     */
+    public function getPaymentSystemPaymentDetails(\App\Models\PaymentSystem\Payment $payment): \Illuminate\Http\JsonResponse
+    {
+        try {
+            $data = [
+                'student' => [
+                    'name' => $payment->student->user->name ?? 'N/A',
+                    'identifier' => $payment->student->student_identifier ?? 'N/A',
+                    'grade' => $payment->student->grade ? app(\App\Helpers\GradeHelper::class)::getLocalizedName($payment->student->grade->level) : 'N/A',
+                    'class' => $payment->student->classModel ? $payment->student->classModel->name : 'N/A',
+                ],
+                'payment_amount' => $payment->payment_amount,
+                'payment_months' => $payment->payment_months,
+                'payment_date' => $payment->payment_date->format('M j, Y'),
+                'payment_method' => $payment->paymentMethod->name ?? 'N/A',
+                'receipt_image' => $payment->receipt_image_url,
+                'notes' => $payment->notes,
+                'submitted_at' => $payment->created_at->diffForHumans(),
+                'fee_breakdown' => $payment->feeDetails->map(function ($detail) {
+                    return [
+                        'fee_name' => $detail->fee_name,
+                        'fee_name_mm' => $detail->fee_name_mm,
+                        'full_amount' => $detail->full_amount,
+                        'paid_amount' => $detail->paid_amount,
+                        'is_partial' => $detail->is_partial,
+                    ];
+                }),
+            ];
+
+            return response()->json([
+                'success' => true,
+                'data' => $data,
+            ]);
+        } catch (\Exception $e) {
+            \Log::error('Failed to get PaymentSystem payment details', [
+                'payment_id' => $payment->id,
+                'error' => $e->getMessage(),
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'message' => $e->getMessage(),
+            ], 500);
         }
     }
 
@@ -838,7 +2018,7 @@ class StudentFeeController extends Controller
 
         \App\Models\PaymentMethod::create($validated);
 
-        return redirect()->route('student-fees.index')->with('status', __('Payment method created successfully.'));
+        return redirect()->route('student-fees.index', ['tab' => 'payment-methods'])->with('status', __('Payment method created successfully.'));
     }
 
     public function updatePaymentMethod(Request $request, \App\Models\PaymentMethod $paymentMethod): RedirectResponse
@@ -861,7 +2041,7 @@ class StudentFeeController extends Controller
 
         $paymentMethod->update($validated);
 
-        return redirect()->route('student-fees.index')->with('status', __('Payment method updated successfully.'));
+        return redirect()->route('student-fees.index', ['tab' => 'payment-methods'])->with('status', __('Payment method updated successfully.'));
     }
 
     public function destroyPaymentMethod(\App\Models\PaymentMethod $paymentMethod): RedirectResponse
@@ -875,20 +2055,34 @@ class StudentFeeController extends Controller
 
         $paymentMethod->delete();
 
-        return redirect()->route('student-fees.index')->with('status', __('Payment method deleted successfully.'));
+        return redirect()->route('student-fees.index', ['tab' => 'payment-methods'])->with('status', __('Payment method deleted successfully.'));
     }
 
-    public function updatePromotion(Request $request, \App\Models\PaymentPromotion $promotion): RedirectResponse
+    public function updatePromotion(Request $request, string $promotionId): RedirectResponse
     {
-        $validated = $request->validate([
-            'discount_percent' => 'required|numeric|min:0|max:100',
-            'is_active' => 'boolean',
-        ]);
+        try {
+            // Manually find the promotion by UUID
+            $promotion = \App\Models\PaymentPromotion::findOrFail($promotionId);
+            
+            $validated = $request->validate([
+                'discount_percent' => 'required|numeric|min:0|max:100',
+                'is_active' => 'boolean',
+            ]);
 
-        $validated['is_active'] = $request->has('is_active');
+            $validated['is_active'] = $request->has('is_active');
 
-        $promotion->update($validated);
-
-        return redirect()->route('student-fees.index')->with('status', __('Promotion updated successfully.'));
+            $promotion->update($validated);
+       
+            return redirect()->route('student-fees.index', ['tab' => 'structure'])->with('status', __('Promotion updated successfully.'));
+        } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
+            return redirect()->route('student-fees.index', ['tab' => 'structure'])->with('error', __('Promotion not found.'));
+        } catch (\Exception $e) {
+            \Log::error('Failed to update promotion', [
+                'promotion_id' => $promotionId ?? 'unknown',
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
+            ]);
+            return redirect()->route('student-fees.index', ['tab' => 'structure'])->with('error', __('Failed to update promotion: ' . $e->getMessage()));
+        }
     }
 }

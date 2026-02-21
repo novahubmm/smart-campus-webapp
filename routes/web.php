@@ -358,6 +358,12 @@ Route::middleware(['auth', 'ensure.active'])->group(function () {
     Route::get('/student-fees', [\App\Http\Controllers\StudentFeeController::class, 'index'])
         ->middleware('ensure.setup:finance')
         ->name('student-fees.index');
+    Route::post('/student-fees/generate-invoices', [\App\Http\Controllers\StudentFeeController::class, 'generateInvoices'])
+        ->middleware('ensure.setup:finance')
+        ->name('student-fees.generate-invoices');
+    Route::get('/student-fees/categories/{feeType}', [\App\Http\Controllers\StudentFeeController::class, 'showCategory'])
+        ->middleware('ensure.setup:finance')
+        ->name('student-fees.categories.show');
     Route::post('/student-fees/categories', [\App\Http\Controllers\StudentFeeController::class, 'storeCategory'])
         ->middleware('ensure.setup:finance')
         ->name('student-fees.categories.store');
@@ -367,6 +373,18 @@ Route::middleware(['auth', 'ensure.active'])->group(function () {
     Route::delete('/student-fees/categories/{feeType}', [\App\Http\Controllers\StudentFeeController::class, 'destroyCategory'])
         ->middleware('ensure.setup:finance')
         ->name('student-fees.categories.destroy');
+    Route::post('/student-fees/categories/{feeType}/students/{student}/toggle', [\App\Http\Controllers\StudentFeeController::class, 'toggleStudentFeeType'])
+        ->middleware('ensure.setup:finance')
+        ->name('student-fees.categories.toggle-student');
+    Route::post('/student-fees/categories/{feeType}/activate-all', [\App\Http\Controllers\StudentFeeController::class, 'activateAllStudents'])
+        ->middleware('ensure.setup:finance')
+        ->name('student-fees.categories.activate-all');
+    Route::post('/student-fees/categories/{feeType}/students/{student}/send-invoice', [\App\Http\Controllers\StudentFeeController::class, 'sendInvoiceToStudent'])
+        ->middleware('ensure.setup:finance')
+        ->name('student-fees.categories.send-invoice');
+    Route::post('/student-fees/categories/{feeType}/bulk-send-invoices', [\App\Http\Controllers\StudentFeeController::class, 'bulkSendInvoices'])
+        ->middleware('ensure.setup:finance')
+        ->name('student-fees.categories.bulk-send-invoices');
     Route::post('/student-fees/structures', [\App\Http\Controllers\StudentFeeController::class, 'storeStructure'])
         ->middleware('ensure.setup:finance')
         ->name('student-fees.structures.store');
@@ -385,15 +403,29 @@ Route::middleware(['auth', 'ensure.active'])->group(function () {
     Route::delete('/student-fees/invoices/{invoice}', [\App\Http\Controllers\StudentFeeController::class, 'destroyInvoice'])
         ->middleware('ensure.setup:finance')
         ->name('student-fees.invoices.destroy');
-    Route::post('/student-fees/payments', [\App\Http\Controllers\StudentFeeController::class, 'storePayment'])
+    // Legacy storePayment / confirmPayment / rejectPayment routes removed
+    // All payment operations now use PaymentSystem routes below
+
+    Route::post('/student-fees/payment-system/invoices/{invoice}/process', [\App\Http\Controllers\StudentFeeController::class, 'processPaymentSystem'])
         ->middleware('ensure.setup:finance')
-        ->name('student-fees.payments.store');
-    Route::post('/student-fees/payments/{payment}/confirm', [\App\Http\Controllers\StudentFeeController::class, 'confirmPayment'])
+        ->name('student-fees.payment-system.process');
+    
+    Route::get('/student-fees/payment-receipt/{payment}', [\App\Http\Controllers\StudentFeeController::class, 'showPaymentReceipt'])
         ->middleware('ensure.setup:finance')
-        ->name('student-fees.payments.confirm');
-    Route::post('/student-fees/payments/{payment}/reject', [\App\Http\Controllers\StudentFeeController::class, 'rejectPayment'])
+        ->name('student-fees.payment-receipt');
+    
+    // PaymentSystem Payment Proof Routes (Mobile API)
+    Route::post('/student-fees/payment-system/payments/{payment}/approve', [\App\Http\Controllers\StudentFeeController::class, 'approvePaymentSystemPayment'])
         ->middleware('ensure.setup:finance')
-        ->name('student-fees.payments.reject');
+        ->name('student-fees.payment-system.payments.approve');
+    Route::post('/student-fees/payment-system/payments/{payment}/reject', [\App\Http\Controllers\StudentFeeController::class, 'rejectPaymentSystemPayment'])
+        ->middleware('ensure.setup:finance')
+        ->name('student-fees.payment-system.payments.reject');
+    Route::get('/student-fees/payment-system/payments/{payment}/details', [\App\Http\Controllers\StudentFeeController::class, 'getPaymentSystemPaymentDetails'])
+        ->middleware('ensure.setup:finance')
+        ->name('student-fees.payment-system.payments.details');
+    
+    // Old PaymentProof Routes (Legacy)
     Route::post('/student-fees/payment-proofs/{paymentProof}/approve', [\App\Http\Controllers\StudentFeeController::class, 'approvePaymentProof'])
         ->middleware('ensure.setup:finance')
         ->name('student-fees.payment-proofs.approve');

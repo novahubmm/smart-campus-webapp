@@ -250,21 +250,6 @@
                                                     <i class="fas fa-info-circle mr-1"></i>Maximum number of students
                                                 </small>
                                             </div>
-                                            
-                                            <!-- Facilities -->
-                                            <div>
-                                                <label class="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
-                                                    <i class="fas fa-tools text-orange-500 mr-1"></i>{{ __('Facilities') }}
-                                                </label>
-                                                <select name="room_facilities[]" class="room-facilities-dropdown w-full rounded-lg border-gray-300 dark:border-gray-600 dark:bg-gray-900 dark:text-white focus:border-blue-500 focus:ring-blue-500" multiple required>
-                                                    @foreach(App\Models\Facility::all() as $facility)
-                                                        <option value="{{ $facility->id }}">{{ $facility->name }}</option>
-                                                    @endforeach
-                                                </select>
-                                                <small class="block mt-2 text-xs text-gray-500 dark:text-gray-400">
-                                                    <i class="fas fa-info-circle mr-1"></i>Select multiple facilities available in this room
-                                                </small>
-                                            </div>
                                         </div>
                                     </div>
                                 </template>

@@ -21,6 +21,7 @@ class FeeStructure extends Model
         'applicable_from',
         'applicable_to',
         'status',
+        'supports_payment_period',
     ];
 
     protected $casts = [
@@ -28,6 +29,7 @@ class FeeStructure extends Model
         'status' => 'boolean',
         'applicable_from' => 'date',
         'applicable_to' => 'date',
+        'supports_payment_period' => 'boolean',
     ];
 
     public function grade(): BelongsTo

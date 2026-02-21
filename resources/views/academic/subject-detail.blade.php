@@ -16,7 +16,7 @@
                     ['label' => __('academic_management.Subject Code'), 'value' => e($subject->code)],
                     ['label' => __('academic_management.Subject Name'), 'value' => e($subject->name)],
                     ['label' => __('academic_management.Subject Type'), 'value' => e($subject->subjectType->name ?? '—')],
-                    ['label' => __('academic_management.Grade'), 'value' => $subject->grades->isNotEmpty() ? e($subject->grades->pluck('level')->implode(', ')) : '—'],
+                    ['label' => __('academic_management.Grade'), 'value' => $subject->grades->isNotEmpty() ? $subject->grades->map(fn($g) => \App\Helpers\GradeHelper::getLocalizedName($g->level))->implode(', ') : '—'],
                 ];
             @endphp
 
@@ -24,15 +24,58 @@
                 $subjectTypeName = $subject->subjectType->name ?? 'Core';
                 $isCore = strtolower($subjectTypeName) === 'core';
                 $badgeColor = $isCore ? 'info' : 'warning';
+                $image = $isCore ? 'core_subject.svg' : 'elective_subject.svg';
+                $iconColor = $isCore ? '#2196F3' : '#4CAF50';
+                $imageUrl = asset('images/subject_images/' . $image);
             @endphp
-            <x-detail-header icon="fas fa-book" iconBg="bg-indigo-50 dark:bg-indigo-900/30" iconColor="text-indigo-600 dark:text-indigo-400" :title="$subject->name" :subtitle="__('academic_management.Code') . ': ' . $subject->code" :badge="$subjectTypeName" :badgeColor="$badgeColor" :editRoute="null" :deleteRoute="route('academic-management.subjects.destroy', $subject->id)" :deleteText="__('academic_management.Delete Subject')" :deleteTitle="__('academic_management.Delete Subject')" :deleteMessage="__('academic_management.Are you sure you want to delete this subject? This action cannot be undone.')">
-                <x-slot name="actions">
-                    <button type="button" class="inline-flex items-center justify-center gap-2 px-4 py-2 text-sm font-semibold rounded-lg border border-blue-200 dark:border-blue-800 bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 hover:bg-blue-100 dark:hover:bg-blue-900/50 transition-colors" onclick="openModal('editSubjectModal')">
-                        <i class="fas fa-edit"></i>
-                        <span>{{ __('academic_management.Edit Subject') }}</span>
-                    </button>
-                </x-slot>
-            </x-detail-header>
+            <div class="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl shadow-sm overflow-hidden">
+                <div class="p-6">
+                    <div class="flex items-start justify-between gap-4">
+                        <div class="flex items-start gap-4 flex-1">
+                            <!-- Subject Image -->
+                            <div class="w-20 h-20 rounded-xl flex items-center justify-center flex-shrink-0 border-2" style="background-color: {{ $iconColor }}20; border-color: {{ $iconColor }}30;">
+                                <img src="{{ $imageUrl }}" alt="{{ $subject->name }}" class="w-14 h-14 object-contain" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+                                <div class="w-14 h-14 flex items-center justify-center text-3xl" style="display: none; color: {{ $iconColor }};">
+                                    <i class="fas fa-book"></i>
+                                </div>
+                            </div>
+                            
+                            <!-- Subject Info -->
+                            <div class="flex-1 min-w-0">
+                                <h1 class="text-2xl font-bold text-gray-900 dark:text-white mb-1">{{ $subject->name }}</h1>
+                                <p class="text-sm text-gray-500 dark:text-gray-400 mb-3">{{ __('academic_management.Code') }}: {{ $subject->code }}</p>
+                                <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium {{ $isCore ? 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300' : 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300' }}">
+                                    {{ $subjectTypeName }}
+                                </span>
+                            </div>
+                        </div>
+                        
+                        <!-- Actions -->
+                        <div class="flex items-center gap-2">
+                            <button type="button" class="inline-flex items-center justify-center gap-2 px-4 py-2 text-sm font-semibold rounded-lg border border-blue-200 dark:border-blue-800 bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 hover:bg-blue-100 dark:hover:bg-blue-900/50 transition-colors" onclick="openModal('editSubjectModal')">
+                                <i class="fas fa-edit"></i>
+                                <span>{{ __('academic_management.Edit Subject') }}</span>
+                            </button>
+                            <form id="delete-subject-form" method="POST" action="{{ route('academic-management.subjects.destroy', $subject->id) }}" style="display: none;">
+                                @csrf
+                                @method('DELETE')
+                            </form>
+                            <a href="#" 
+                               @click.prevent="$dispatch('confirm-show', {
+                                   title: '{{ __('academic_management.Delete Subject') }}',
+                                   message: '{{ __('academic_management.Are you sure you want to delete this subject? This action cannot be undone.') }}',
+                                   confirmText: '{{ __('academic_management.Delete') }}',
+                                   cancelText: '{{ __('academic_management.Cancel') }}',
+                                   formId: 'delete-subject-form'
+                               })"
+                               class="inline-flex items-center justify-center w-10 h-10 rounded-lg border border-red-200 dark:border-red-800 bg-red-50 dark:bg-red-900/30 text-red-700 dark:text-red-300 hover:bg-red-100 dark:hover:bg-red-900/50 transition-colors"
+                               title="{{ __('academic_management.Delete Subject') }}">
+                                <i class="fas fa-trash"></i>
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
 
             <x-info-table :title="__('academic_management.Subject Information')" :rows="$infoRows" />
 

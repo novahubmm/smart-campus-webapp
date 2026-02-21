@@ -25,7 +25,7 @@ class StoreEventRequest extends FormRequest
             'end_time' => ['nullable', 'date_format:H:i'],
             'venue' => ['nullable', 'string', 'max:255'],
             'banner_image' => ['nullable', 'string', 'max:255'],
-            'status' => ['sometimes', 'boolean'],
+            'status' => ['sometimes', Rule::in(['upcoming', 'ongoing', 'completed', 'result'])],
         ];
     }
 
