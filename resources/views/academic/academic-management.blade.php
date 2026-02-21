@@ -647,7 +647,6 @@
 
         // Initialize Select2 - handled in academic-management.js
         $(document).ready(function() {
-            console.log('Academic Management page loaded');
         });
     </script>
 </x-app-layout>

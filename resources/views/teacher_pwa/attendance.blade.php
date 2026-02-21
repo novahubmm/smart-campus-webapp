@@ -169,7 +169,6 @@ function submitAttendance() {
     }
     
     // TODO: Submit to API
-    console.log('Attendance:', attendance);
     alert('Attendance submitted successfully!');
 }
 </script>

@@ -230,8 +230,6 @@
                         const classSelect = document.getElementById('classFilter');
                         const activateAllBtn = document.getElementById('activateAllBtn');
                         
-                        console.log('Class selected:', classSelect.value);
-                        
                         // Show/hide Activate All button based on class selection
                         if (classSelect.value) {
                             activateAllBtn.style.display = 'block';
@@ -266,8 +264,6 @@
                         const classId = document.getElementById('classFilter').value;
                         const status = document.getElementById('statusFilter').value;
                         const clearBtn = document.getElementById('clearBtn');
-                        
-                        console.log('Loading students with filters:', { search, grade, classId, status });
                         
                         // Show/hide clear button
                         if (search || grade || classId || status) {
@@ -344,8 +340,6 @@
                                 tableContainer.style.opacity = '1';
                                 tableContainer.style.pointerEvents = 'auto';
                             }
-                            
-                            console.log('Table reloaded successfully');
                         })
                         .catch(error => {
                             console.error('Error loading students:', error);

@@ -170,5 +170,4 @@ function deleteSubject(subjectId) {
 
 // Initialize when DOM is loaded
 document.addEventListener('DOMContentLoaded', function() {
-    console.log('Academic Management JS loaded');
 });

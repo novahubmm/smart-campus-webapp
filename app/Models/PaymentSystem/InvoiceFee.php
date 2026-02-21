@@ -26,6 +26,7 @@ class InvoiceFee extends Model
     protected $fillable = [
         'invoice_id',
         'fee_id',
+        'fee_type_id',
         'fee_name',
         'fee_name_mm',
         'amount',

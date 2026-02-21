@@ -236,4 +236,5 @@ return array (
   '1 hour' => '1 hour',
   '8 hours' => '8 hours',
   '15 minutes' => '15 minutes',
+  'Staff' => 'Staff'
 );

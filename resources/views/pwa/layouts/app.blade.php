@@ -164,8 +164,7 @@
                     // Register service worker
                     if ('serviceWorker' in navigator) {
                         navigator.serviceWorker.register('/sw.js')
-                            .then(reg => console.log('Service Worker registered', reg))
-                            .catch(err => console.log('Service Worker registration failed', err));
+                            .catch(err => console.error('Service Worker registration failed', err));
                     }
                     
                     // Request notification permission
@@ -183,7 +182,7 @@
                     const { outcome } = await this.deferredPrompt.userChoice;
                     
                     if (outcome === 'accepted') {
-                        console.log('PWA installed');
+                        // PWA installed successfully
                     }
                     
                     this.deferredPrompt = null;

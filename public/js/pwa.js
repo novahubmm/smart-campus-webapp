@@ -4,12 +4,11 @@ if ('serviceWorker' in navigator) {
     navigator.serviceWorker
       .register('/service-worker.js')
       .then((registration) => {
-        console.log('Service Worker registered successfully:', registration.scope);
+        // Service Worker registered successfully
 
         // Check for updates
         registration.addEventListener('updatefound', () => {
           const newWorker = registration.installing;
-          console.log('Service Worker update found');
 
           newWorker.addEventListener('statechange', () => {
             if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
@@ -25,7 +24,6 @@ if ('serviceWorker' in navigator) {
 
     // Handle controller change (new service worker activated)
     navigator.serviceWorker.addEventListener('controllerchange', () => {
-      console.log('New Service Worker activated');
       window.location.reload();
     });
   });
@@ -43,8 +41,6 @@ function showUpdateNotification() {
 window.deferredPrompt = null;
 
 window.addEventListener('beforeinstallprompt', (e) => {
-  console.log('PWA install prompt triggered');
-
   // Prevent the mini-infobar from appearing on mobile
   e.preventDefault();
 
@@ -57,8 +53,6 @@ window.addEventListener('beforeinstallprompt', (e) => {
 
 // Listen for successful app installation
 window.addEventListener('appinstalled', (e) => {
-  console.log('PWA was installed successfully');
-
   // Clear the deferredPrompt
   window.deferredPrompt = null;
 
@@ -82,7 +76,6 @@ function showInstallPromotion() {
 // Install PWA when user clicks install button
 window.installPWA = async () => {
   if (!window.deferredPrompt) {
-    console.log('No install prompt available');
     return;
   }
 
@@ -91,12 +84,11 @@ window.installPWA = async () => {
 
   // Wait for the user to respond to the prompt
   const { outcome } = await window.deferredPrompt.userChoice;
-  console.log(`User response to install prompt: ${outcome}`);
 
   if (outcome === 'accepted') {
-    console.log('User accepted the install prompt');
+    // User accepted the install prompt
   } else {
-    console.log('User dismissed the install prompt');
+    // User dismissed the install prompt
   }
 
   // Clear the deferredPrompt
@@ -117,7 +109,6 @@ function isPWA() {
 
 // Online/Offline detection
 window.addEventListener('online', () => {
-  console.log('App is online');
   document.body.classList.remove('offline');
 
   // Show online notification
@@ -132,7 +123,6 @@ window.addEventListener('online', () => {
 });
 
 window.addEventListener('offline', () => {
-  console.log('App is offline');
   document.body.classList.add('offline');
 
   // Show offline notification
@@ -156,7 +146,6 @@ function showToast(message, type = 'info') {
 if (!navigator.onLine) {
   document.body.classList.add('offline');
 }
-
-// Log PWA status
-console.log('PWA Mode:', isPWA() ? 'Installed' : 'Browser');
-console.log('Online Status:', navigator.onLine ? 'Online' : 'Offline');
+// PWA status tracking
+// PWA Mode: isPWA() ? 'Installed' : 'Browser'
+// Online Status: navigator.onLine ? 'Online' : 'Offline'

@@ -166,7 +166,6 @@
 function guardianHome() {
     return {
         init() {
-            console.log('Guardian home initialized');
         }
     }
 }

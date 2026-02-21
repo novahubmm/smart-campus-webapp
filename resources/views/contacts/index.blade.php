@@ -29,8 +29,8 @@
                                     <i class="fas fa-phone mr-2 text-emerald-500"></i>{{ __('contacts.Phone') }}
                                 </th>
                                 <td class="px-4 py-3 text-gray-900 dark:text-gray-100">
-                                    <a href="tel:+959798392286" class="hover:text-emerald-600 dark:hover:text-emerald-400 transition-colors">
-                                        +959798392286
+                                    <a href="tel:+959979587680" class="hover:text-emerald-600 dark:hover:text-emerald-400 transition-colors">
+                                        +959979587680
                                     </a>
                                 </td>
                             </tr>

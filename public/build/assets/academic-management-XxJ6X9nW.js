@@ -1,1 +1,0 @@
-document.addEventListener("click",function(e){e.target.classList.contains("simple-modal-overlay")&&(e.target.style.display="none",document.body.style.overflow="auto")});document.addEventListener("DOMContentLoaded",function(){console.log("Academic Management JS loaded")});

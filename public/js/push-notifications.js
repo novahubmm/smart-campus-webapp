@@ -76,7 +76,7 @@ class PushNotificationManager {
             this.isSubscribed = subscription !== null;
 
             if (subscription) {
-                console.log('Already subscribed to push notifications');
+                // Already subscribed
             }
 
             return this.isSubscribed;
@@ -94,14 +94,12 @@ class PushNotificationManager {
             const permission = await Notification.requestPermission();
 
             if (permission === 'granted') {
-                console.log('Notification permission granted');
                 await this.subscribe();
                 return true;
             } else if (permission === 'denied') {
                 console.warn('Notification permission denied');
                 return false;
             } else {
-                console.log('Notification permission dismissed');
                 return false;
             }
         } catch (error) {
@@ -138,7 +136,6 @@ class PushNotificationManager {
 
             if (data.success) {
                 this.isSubscribed = true;
-                console.log('Successfully subscribed to push notifications');
                 this.showToast('Push notifications enabled!', 'success');
             } else {
                 console.error('Subscription failed:', data.message);
@@ -175,7 +172,6 @@ class PushNotificationManager {
                 });
 
                 this.isSubscribed = false;
-                console.log('Successfully unsubscribed from push notifications');
                 this.showToast('Push notifications disabled', 'info');
             }
         } catch (error) {
@@ -233,8 +229,6 @@ class PushNotificationManager {
     showToast(message, type = 'info') {
         if (typeof showToast === 'function') {
             showToast(message, type);
-        } else {
-            console.log(`[${type}] ${message}`);
         }
     }
 }

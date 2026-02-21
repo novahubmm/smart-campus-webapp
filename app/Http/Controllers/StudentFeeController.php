@@ -184,13 +184,16 @@ class StudentFeeController extends Controller
 
         // Apply fee type filter
         if ($request->filled('fee_type')) {
-            $unpaidInvoicesQuery->whereHas('fees', function ($q) use ($request) {
-                $q->whereHas('feeStructure', function ($fq) use ($request) {
-                    $fq->whereHas('feeType', function ($ftq) use ($request) {
-                        $ftq->where('id', $request->fee_type);
+            // Get the fee type code
+            $feeType = \App\Models\FeeType::find($request->fee_type);
+            if ($feeType) {
+                $feeTypeCode = $feeType->code;
+                $unpaidInvoicesQuery->whereHas('fees', function ($q) use ($feeTypeCode) {
+                    $q->whereHas('feeStructure', function ($fq) use ($feeTypeCode) {
+                        $fq->where('fee_type', $feeTypeCode);
                     });
                 });
-            });
+            }
         }
 
         // Apply search filter (Student Name, Student ID, Guardian Name)
@@ -805,10 +808,26 @@ class StudentFeeController extends Controller
         // Apply status filter (active/inactive assignments)
         if ($request->filled('status')) {
             $statusFilter = $request->status;
-            $query->whereHas('feeTypeAssignments', function ($q) use ($feeType, $statusFilter) {
-                $q->where('fee_type_id', $feeType->id)
-                  ->where('is_active', $statusFilter === 'active');
-            });
+            if ($statusFilter === 'active') {
+                // Show only students with active assignments
+                $query->whereHas('feeTypeAssignments', function ($q) use ($feeType) {
+                    $q->where('fee_type_id', $feeType->id)
+                      ->where('is_active', true);
+                });
+            } elseif ($statusFilter === 'inactive') {
+                // Show students with inactive assignments OR no assignment at all
+                $query->where(function ($q) use ($feeType) {
+                    // Has inactive assignment
+                    $q->whereHas('feeTypeAssignments', function ($subQ) use ($feeType) {
+                        $subQ->where('fee_type_id', $feeType->id)
+                             ->where('is_active', false);
+                    })
+                    // OR has no assignment for this fee type
+                    ->orWhereDoesntHave('feeTypeAssignments', function ($subQ) use ($feeType) {
+                        $subQ->where('fee_type_id', $feeType->id);
+                    });
+                });
+            }
         }
 
         // Get count of active students for this fee type (before pagination)
@@ -987,7 +1006,7 @@ class StudentFeeController extends Controller
                     // Either has remaining amount OR was created this month
                     $query->where('remaining_amount', '>', 0)
                           ->orWhere(function($q) use ($currentMonth) {
-                              $q->whereRaw("DATE_FORMAT(created_at, '%Y-%m') = ?", [$currentMonth]);
+                              $q->whereRaw("strftime('%Y-%m', created_at) = ?", [$currentMonth]);
                           });
                 })
                 ->first();
@@ -1131,21 +1150,40 @@ class StudentFeeController extends Controller
                 }
 
                 try {
-                    // Check if invoice already exists for this student and fee type for current month
-                    // Check both unpaid invoices and invoices from this month
+                    // Calculate due date based on fee type
                     $currentMonth = $currentDate->format('Y-m');
+                    $dueDate = $currentDate->copy()->addDays($feeType->due_date ?? 15);
+
+                    // Find or create the corresponding fee structure in payment system first
+                    // This is needed for the duplicate check
+                    $feeStructure = \App\Models\PaymentSystem\FeeStructure::firstOrCreate(
+                        [
+                            'fee_type' => $feeType->code ?? strtoupper(str_replace(' ', '_', $feeType->name)),
+                            'grade' => (string) $student->grade->level,
+                            'batch' => (string) $student->batch->name,
+                        ],
+                        [
+                            'name' => $feeType->name,
+                            'name_mm' => $feeType->name_mm,
+                            'description' => $feeType->description,
+                            'description_mm' => $feeType->description_mm,
+                            'amount' => $feeType->amount,
+                            'frequency' => $feeType->frequency?->name ?? 'one_time',
+                            'target_month' => $feeType->target_month,
+                            'due_date' => $dueDate,
+                            'supports_payment_period' => $feeType->partial_status ?? false,
+                            'is_active' => true,
+                        ]
+                    );
                     
+                    // Check if invoice already exists for this student, fee type, fee_id, and month
+                    // We check based on due_date month, not created_at
                     $existingInvoice = \App\Models\PaymentSystem\Invoice::where('student_id', $student->id)
-                        ->whereHas('fees', function($query) use ($feeTypeId) {
-                            $query->where('fee_type_id', $feeTypeId);
+                        ->whereHas('fees', function($query) use ($feeTypeId, $feeStructure) {
+                            $query->where('fee_type_id', $feeTypeId)
+                                  ->where('fee_id', $feeStructure->id);
                         })
-                        ->where(function($query) use ($currentMonth) {
-                            // Either has remaining amount OR was created this month
-                            $query->where('remaining_amount', '>', 0)
-                                  ->orWhere(function($q) use ($currentMonth) {
-                                      $q->whereRaw("DATE_FORMAT(created_at, '%Y-%m') = ?", [$currentMonth]);
-                                  });
-                        })
+                        ->whereRaw("strftime('%Y-%m', due_date) = ?", [$currentMonth])
                         ->first();
 
                     if ($existingInvoice) {
@@ -1166,9 +1204,6 @@ class StudentFeeController extends Controller
                     }
 
                     $invoiceNumber = sprintf('INV%s-%04d', date('Ymd'), $counter);
-
-                    // Calculate due date based on fee type
-                    $dueDate = $currentDate->copy()->addDays($feeType->due_date ?? 15);
 
                     // Get batch_id from student's grade
                     $batchId = $student->grade?->batch_id;
@@ -1191,28 +1226,6 @@ class StudentFeeController extends Controller
                         'status' => 'pending',
                         'created_by' => $request->user()?->id,
                     ]);
-
-                    // Create invoice fee item
-                    // Find or create the corresponding fee structure in payment system
-                    $feeStructure = \App\Models\PaymentSystem\FeeStructure::firstOrCreate(
-                        [
-                            'fee_type' => $feeType->code ?? strtoupper(str_replace(' ', '_', $feeType->name)),
-                            'grade' => (string) $student->grade->level,
-                            'batch' => (string) $student->batch->name,
-                        ],
-                        [
-                            'name' => $feeType->name,
-                            'name_mm' => $feeType->name_mm,
-                            'description' => $feeType->description,
-                            'description_mm' => $feeType->description_mm,
-                            'amount' => $feeType->amount,
-                            'frequency' => $feeType->frequency?->name ?? 'one_time',
-                            'target_month' => $feeType->target_month,
-                            'due_date' => $dueDate,
-                            'supports_payment_period' => $feeType->partial_status ?? false,
-                            'is_active' => true,
-                        ]
-                    );
 
                     \App\Models\PaymentSystem\InvoiceFee::create([
                         'invoice_id' => $invoice->id,
@@ -1975,8 +1988,13 @@ class StudentFeeController extends Controller
     public function reinform(Request $request, StudentProfile $student): RedirectResponse
     {
         try {
-            // Get unpaid invoices for this student
-            $unpaidInvoices = $this->invoiceRepo->getUnpaidForStudent($student->id);
+            // Get unpaid invoices for this student from the Payment System
+            $unpaidInvoices = \App\Models\PaymentSystem\Invoice::where('student_id', $student->id)
+                ->where('status', '!=', 'paid')
+                ->where('remaining_amount', '>', 0)
+                ->with(['fees.feeStructure'])
+                ->orderBy('due_date', 'asc')
+                ->get();
 
             if ($unpaidInvoices->isEmpty()) {
                 return redirect()->route('student-fees.index')->with('error', __('No unpaid fees found for this student.'));
@@ -1985,7 +2003,7 @@ class StudentFeeController extends Controller
             // Send reinform notification
             $this->notificationService->sendReinformNotification($student->id, $unpaidInvoices);
 
-            $this->logCreate('NotificationLog', null, "Sent reinform notification to guardian of student: {$student->student_identifier}");
+            $this->logCreate('NotificationLog', $student->id, "Sent reinform notification to guardian of student: {$student->student_identifier}");
 
             return redirect()->route('student-fees.index')->with('status', __('Reminder notification sent to guardian.'));
         } catch (\Exception $e) {

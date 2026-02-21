@@ -2268,7 +2268,6 @@
                     
                     // Check if any fee doesn't support partial payment
                     const hasNonPartialFee = invoice.fees.some(fee => {
-                        console.log('Fee:', fee.fee_name, 'supports_payment_period:', fee.supports_payment_period);
                         return fee.supports_payment_period === false || fee.supports_payment_period === 0;
                     });
                     
@@ -2277,10 +2276,6 @@
                     const parentInvoiceId = invoice.parent_invoice_id || invoice.id;
                     const partialPaymentCount = invoice.partial_payment_count || 0;
                     const hasReachedPartialLimit = partialPaymentCount >= 2;
-                    
-                    console.log('hasNonPartialFee:', hasNonPartialFee);
-                    console.log('partialPaymentCount:', partialPaymentCount, 'hasReachedPartialLimit:', hasReachedPartialLimit);
-                    console.log('isRemainingInvoice:', isRemainingInvoice);
                     
                     // Initialize payment data
                     this.paymentData = {
@@ -2968,7 +2963,6 @@
                 },
                 
                 init() {
-                    console.log('studentFeeManager init called');
                     
                     // Watch for tab changes and update URL
                     this.$watch('activeTab', (value) => {
@@ -2979,12 +2973,9 @@
                     
                     // Listen for approve modal event
                     window.addEventListener('open-approve-modal', (event) => {
-                        console.log('open-approve-modal event received', event.detail);
                         this.$nextTick(() => {
                             this.approveConfirmData = event.detail;
                             this.showApproveConfirmModal = true;
-                            console.log('showApproveConfirmModal set to:', this.showApproveConfirmModal);
-                            console.log('approveConfirmData:', this.approveConfirmData);
                         });
                     });
                 },
@@ -3243,10 +3234,8 @@
         }
 
         function openApproveProofModal(proofId, studentName, amount, paymentDate) {
-            console.log('openApproveProofModal called', {proofId, studentName, amount, paymentDate});
             closePaymentProofModal();
             
-            console.log('Dispatching open-approve-modal event');
             // Dispatch a custom event that Alpine can listen to
             const event = new CustomEvent('open-approve-modal', {
                 detail: {
@@ -3258,7 +3247,6 @@
                 }
             });
             window.dispatchEvent(event);
-            console.log('Event dispatched', event);
         }
     </script>
 
