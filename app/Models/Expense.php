@@ -19,7 +19,7 @@ class Expense extends Model
         'description',
         'amount',
         'expense_date',
-        'payment_method',
+        'payment_method_id',
         'vendor_name',
         'invoice_number',
         'receipt_file',
@@ -48,5 +48,10 @@ class Expense extends Model
     public function createdBy(): BelongsTo
     {
         return $this->belongsTo(User::class, 'created_by');
+    }
+
+    public function paymentMethod(): BelongsTo
+    {
+        return $this->belongsTo(PaymentMethod::class, 'payment_method_id');
     }
 }

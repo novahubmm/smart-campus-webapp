@@ -19,7 +19,7 @@ class Income extends Model
         'description',
         'amount',
         'income_date',
-        'payment_method',
+        'payment_method_id',
         'reference_number',
         'invoice_id',
         'grade_id',
@@ -53,5 +53,10 @@ class Income extends Model
     public function creator(): BelongsTo
     {
         return $this->belongsTo(User::class, 'created_by');
+    }
+
+    public function paymentMethod(): BelongsTo
+    {
+        return $this->belongsTo(PaymentMethod::class, 'payment_method_id');
     }
 }

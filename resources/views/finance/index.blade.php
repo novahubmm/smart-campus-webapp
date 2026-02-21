@@ -180,6 +180,11 @@
                             </thead>
                             <tbody class="divide-y divide-gray-200 dark:divide-gray-700">
                                 @forelse($incomes as $income)
+                                @php
+                                    $isCurrentMonth = $income->income_date?->isSameMonth(now());
+                                    // Format date for edit form (YYYY-MM-DD)
+                                    $formattedDate = $income->income_date?->format('Y-m-d');
+                                @endphp
                                 <tr class="bg-white dark:bg-gray-900 hover:bg-gray-50 dark:hover:bg-gray-800/50">
                                     <td class="td-cell">{{ $income->income_date?->format('M j, Y') }}</td>
                                     <td class="td-cell font-semibold text-green-600 dark:text-green-400">{{ $income->income_number }}</td>
@@ -191,13 +196,24 @@
                                         @endif
                                     </td>
                                     <td class="td-cell font-bold text-green-600 dark:text-green-400">{{ number_format($income->amount, 0) }} MMK</td>
-                                    <td class="td-cell"><span class="payment-method-badge">{{ ucfirst(str_replace('_', ' ', $income->payment_method)) }}</span></td>
+                                    <td class="td-cell"><span class="payment-method-badge">{{ $income->paymentMethod?->name ?? '-' }}</span></td>
                                     <td class="td-cell">
-                                        <form method="POST" action="{{ route('finance.income.destroy', $income) }}" onsubmit="return confirm('{{ __('finance.Delete this income?') }}');">
-                                            @csrf
-                                            @method('DELETE')
-                                            <button type="submit" class="action-btn delete" title="{{ __('finance.Delete') }}"><i class="fas fa-trash"></i></button>
-                                        </form>
+                                        @if($isCurrentMonth)
+                                        <div class="flex items-center gap-2">
+                                            <button type="button" @click="editIncome({{ json_encode(array_merge($income->toArray(), ['income_date' => $formattedDate])) }})" class="action-btn edit" title="{{ __('finance.Edit') }}">
+                                                <i class="fas fa-edit"></i>
+                                            </button>
+                                            <form id="delete-form-income-{{ $income->id }}" method="POST" action="{{ route('finance.income.destroy', $income) }}" style="display: none;">
+                                                @csrf
+                                                @method('DELETE')
+                                            </form>
+                                            <button type="button" @click="confirmDelete('income', '{{ $income->id }}', '{{ $income->title }}')" class="action-btn delete" title="{{ __('finance.Delete') }}">
+                                                <i class="fas fa-trash"></i>
+                                            </button>
+                                        </div>
+                                        @else
+                                        <span class="text-xs text-gray-400 dark:text-gray-500">-</span>
+                                        @endif
                                     </td>
                                 </tr>
                                 @empty
@@ -256,6 +272,11 @@
                             </thead>
                             <tbody class="divide-y divide-gray-200 dark:divide-gray-700">
                                 @forelse($expenses as $expense)
+                                @php
+                                    $isCurrentMonth = $expense->expense_date?->isSameMonth(now());
+                                    // Format date for edit form (YYYY-MM-DD)
+                                    $formattedDate = $expense->expense_date?->format('Y-m-d');
+                                @endphp
                                 <tr class="bg-white dark:bg-gray-900 hover:bg-gray-50 dark:hover:bg-gray-800/50">
                                     <td class="td-cell">{{ $expense->expense_date?->format('M j, Y') }}</td>
                                     <td class="td-cell font-semibold text-red-600 dark:text-red-400">{{ $expense->expense_number }}</td>
@@ -269,13 +290,24 @@
                                         @endif
                                     </td>
                                     <td class="td-cell font-bold text-red-600 dark:text-red-400">{{ number_format($expense->amount, 0) }} MMK</td>
-                                    <td class="td-cell"><span class="payment-method-badge">{{ ucfirst(str_replace('_', ' ', $expense->payment_method)) }}</span></td>
+                                    <td class="td-cell"><span class="payment-method-badge">{{ $expense->paymentMethod?->name ?? '-' }}</span></td>
                                     <td class="td-cell">
-                                        <form method="POST" action="{{ route('finance.expense.destroy', $expense) }}" onsubmit="return confirm('{{ __('finance.Delete this expense?') }}');">
-                                            @csrf
-                                            @method('DELETE')
-                                            <button type="submit" class="action-btn delete" title="{{ __('finance.Delete') }}"><i class="fas fa-trash"></i></button>
-                                        </form>
+                                        @if($isCurrentMonth)
+                                        <div class="flex items-center gap-2">
+                                            <button type="button" @click="editExpense({{ json_encode(array_merge($expense->toArray(), ['expense_date' => $formattedDate])) }})" class="action-btn edit" title="{{ __('finance.Edit') }}">
+                                                <i class="fas fa-edit"></i>
+                                            </button>
+                                            <form id="delete-form-expense-{{ $expense->id }}" method="POST" action="{{ route('finance.expense.destroy', $expense) }}" style="display: none;">
+                                                @csrf
+                                                @method('DELETE')
+                                            </form>
+                                            <button type="button" @click="confirmDelete('expense', '{{ $expense->id }}', '{{ $expense->title }}')" class="action-btn delete" title="{{ __('finance.Delete') }}">
+                                                <i class="fas fa-trash"></i>
+                                            </button>
+                                        </div>
+                                        @else
+                                        <span class="text-xs text-gray-400 dark:text-gray-500">-</span>
+                                        @endif
                                     </td>
                                 </tr>
                                 @empty
@@ -502,12 +534,18 @@
                     <div x-show="showIncomeModal" class="fixed inset-0 bg-gray-500 bg-opacity-75 dark:bg-gray-900 dark:bg-opacity-75" @click="showIncomeModal = false"></div>
                     <span class="hidden sm:inline-block sm:align-middle sm:h-screen">&#8203;</span>
                     <div x-show="showIncomeModal" class="inline-block align-bottom bg-white dark:bg-gray-800 rounded-xl text-left overflow-hidden shadow-xl transform sm:my-8 sm:align-middle sm:max-w-lg sm:w-full">
-                        <form method="POST" action="{{ route('finance.income.store') }}">
+                        <form method="POST" x-bind:action="editingIncome ? '/finance/income/' + editingIncome.id : '{{ route('finance.income.store') }}'">
                             @csrf
+                            <template x-if="editingIncome">
+                                <input type="hidden" name="_method" value="PUT">
+                            </template>
                             <div class="bg-white dark:bg-gray-800 px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
                                 <div class="flex items-center justify-between mb-4">
-                                    <h3 class="text-lg font-semibold text-gray-900 dark:text-white"><i class="fas fa-plus-circle text-green-500 mr-2"></i>{{ __('finance.Add Income') }}</h3>
-                                    <button type="button" @click="showIncomeModal = false" class="text-gray-400 hover:text-gray-500"><i class="fas fa-times"></i></button>
+                                    <h3 class="text-lg font-semibold text-gray-900 dark:text-white">
+                                        <i class="fas" :class="editingIncome ? 'fa-edit text-blue-500' : 'fa-plus-circle text-green-500'" class="mr-2"></i>
+                                        <span x-text="editingIncome ? '{{ __('finance.Edit Income') }}' : '{{ __('finance.Add Income') }}'"></span>
+                                    </h3>
+                                    <button type="button" @click="resetIncomeModal()" class="text-gray-400 hover:text-gray-500"><i class="fas fa-times"></i></button>
                                 </div>
                                 <div class="space-y-4">
                                     <div class="grid grid-cols-2 gap-4">
@@ -544,7 +582,7 @@
                                             <select name="payment_method_id" class="form-input-modal">
                                                 @foreach($paymentMethods ?? [] as $method)
                                                     <option value="{{ $method->id }}">
-                                                        {{ $method->name }}{{ $method->account_number ? ' - ' . $method->account_number : '' }}
+                                                        {{ $method->name }}@if($method->account_number && $method->account_number !== 'N/A') - {{ $method->account_number }}@endif
                                                     </option>
                                                 @endforeach
                                             </select>
@@ -554,9 +592,9 @@
                             </div>
                             <div class="bg-gray-50 dark:bg-gray-900 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse gap-2">
                                 <button type="submit" class="w-full inline-flex justify-center rounded-lg border border-transparent shadow-sm px-4 py-2 bg-green-600 text-base font-medium text-white hover:bg-green-700 sm:ml-3 sm:w-auto sm:text-sm">
-                                    <i class="fas fa-check mr-2"></i>{{ __('finance.Save Income') }}
+                                    <i class="fas fa-check mr-2"></i><span x-text="editingIncome ? '{{ __('finance.Update Income') }}' : '{{ __('finance.Save Income') }}'"></span>
                                 </button>
-                                <button type="button" @click="showIncomeModal = false" class="mt-3 w-full inline-flex justify-center rounded-lg border border-gray-300 dark:border-gray-600 shadow-sm px-4 py-2 bg-white dark:bg-gray-700 text-base font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-600 sm:mt-0 sm:w-auto sm:text-sm">
+                                <button type="button" @click="resetIncomeModal()" class="mt-3 w-full inline-flex justify-center rounded-lg border border-gray-300 dark:border-gray-600 shadow-sm px-4 py-2 bg-white dark:bg-gray-700 text-base font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-600 sm:mt-0 sm:w-auto sm:text-sm">
                                     <i class="fas fa-times mr-2"></i>{{ __('finance.Cancel') }}
                                 </button>
                             </div>
@@ -571,12 +609,18 @@
                     <div x-show="showExpenseModal" class="fixed inset-0 bg-gray-500 bg-opacity-75 dark:bg-gray-900 dark:bg-opacity-75" @click="showExpenseModal = false"></div>
                     <span class="hidden sm:inline-block sm:align-middle sm:h-screen">&#8203;</span>
                     <div x-show="showExpenseModal" class="inline-block align-bottom bg-white dark:bg-gray-800 rounded-xl text-left overflow-hidden shadow-xl transform sm:my-8 sm:align-middle sm:max-w-lg sm:w-full">
-                        <form method="POST" action="{{ route('finance.expense.store') }}">
+                        <form method="POST" x-bind:action="editingExpense ? '/finance/expense/' + editingExpense.id : '{{ route('finance.expense.store') }}'">
                             @csrf
+                            <template x-if="editingExpense">
+                                <input type="hidden" name="_method" value="PUT">
+                            </template>
                             <div class="bg-white dark:bg-gray-800 px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
                                 <div class="flex items-center justify-between mb-4">
-                                    <h3 class="text-lg font-semibold text-gray-900 dark:text-white"><i class="fas fa-plus-circle text-red-500 mr-2"></i>{{ __('finance.Add Expense') }}</h3>
-                                    <button type="button" @click="showExpenseModal = false" class="text-gray-400 hover:text-gray-500"><i class="fas fa-times"></i></button>
+                                    <h3 class="text-lg font-semibold text-gray-900 dark:text-white">
+                                        <i class="fas" :class="editingExpense ? 'fa-edit text-blue-500' : 'fa-plus-circle text-red-500'" class="mr-2"></i>
+                                        <span x-text="editingExpense ? '{{ __('finance.Edit Expense') }}' : '{{ __('finance.Add Expense') }}'"></span>
+                                    </h3>
+                                    <button type="button" @click="resetExpenseModal()" class="text-gray-400 hover:text-gray-500"><i class="fas fa-times"></i></button>
                                 </div>
                                 <div class="space-y-4">
                                     <div class="grid grid-cols-2 gap-4">
@@ -612,7 +656,7 @@
                                             <select name="payment_method_id" class="form-input-modal">
                                                 @foreach($paymentMethods ?? [] as $method)
                                                     <option value="{{ $method->id }}">
-                                                        {{ $method->name }}{{ $method->account_number ? ' - ' . $method->account_number : '' }}
+                                                        {{ $method->name }}@if($method->account_number && $method->account_number !== 'N/A') - {{ $method->account_number }}@endif
                                                     </option>
                                                 @endforeach
                                             </select>
@@ -622,13 +666,49 @@
                             </div>
                             <div class="bg-gray-50 dark:bg-gray-900 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse gap-2">
                                 <button type="submit" class="w-full inline-flex justify-center rounded-lg border border-transparent shadow-sm px-4 py-2 bg-red-600 text-base font-medium text-white hover:bg-red-700 sm:ml-3 sm:w-auto sm:text-sm">
-                                    <i class="fas fa-check mr-2"></i>{{ __('finance.Save Expense') }}
+                                    <i class="fas fa-check mr-2"></i><span x-text="editingExpense ? '{{ __('finance.Update Expense') }}' : '{{ __('finance.Save Expense') }}'"></span>
                                 </button>
-                                <button type="button" @click="showExpenseModal = false" class="mt-3 w-full inline-flex justify-center rounded-lg border border-gray-300 dark:border-gray-600 shadow-sm px-4 py-2 bg-white dark:bg-gray-700 text-base font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-600 sm:mt-0 sm:w-auto sm:text-sm">
+                                <button type="button" @click="resetExpenseModal()" class="mt-3 w-full inline-flex justify-center rounded-lg border border-gray-300 dark:border-gray-600 shadow-sm px-4 py-2 bg-white dark:bg-gray-700 text-base font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-600 sm:mt-0 sm:w-auto sm:text-sm">
                                     <i class="fas fa-times mr-2"></i>{{ __('finance.Cancel') }}
                                 </button>
                             </div>
                         </form>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Delete Confirmation Modal -->
+            <div x-show="showDeleteConfirm" x-cloak class="fixed inset-0 z-50 overflow-y-auto">
+                <div class="flex items-center justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
+                    <div x-show="showDeleteConfirm" class="fixed inset-0 bg-gray-500 bg-opacity-75 dark:bg-gray-900 dark:bg-opacity-75" @click="cancelDelete()"></div>
+                    <span class="hidden sm:inline-block sm:align-middle sm:h-screen">&#8203;</span>
+                    <div x-show="showDeleteConfirm" class="inline-block align-bottom bg-white dark:bg-gray-800 rounded-xl text-left overflow-hidden shadow-xl transform sm:my-8 sm:align-middle sm:max-w-md sm:w-full">
+                        <div class="bg-white dark:bg-gray-800 px-6 pt-5 pb-4">
+                            <div class="flex items-start">
+                                <div class="flex-shrink-0 flex items-center justify-center h-12 w-12 rounded-full bg-red-100 dark:bg-red-900/30">
+                                    <i class="fas fa-exclamation-triangle text-red-600 dark:text-red-400 text-xl"></i>
+                                </div>
+                                <div class="ml-4 mt-0 text-left">
+                                    <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-2">
+                                        {{ __('finance.Confirm Delete') }}
+                                    </h3>
+                                    <p class="text-sm text-gray-500 dark:text-gray-400">
+                                        {{ __('finance.Are you sure you want to delete') }} "<span x-text="deleteTitle" class="font-medium text-gray-900 dark:text-white"></span>"?
+                                    </p>
+                                    <p class="text-sm text-gray-500 dark:text-gray-400 mt-2">
+                                        {{ __('finance.This action cannot be undone.') }}
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="bg-gray-50 dark:bg-gray-900 px-6 py-3 flex flex-row-reverse gap-3">
+                            <button type="button" @click="executeDelete()" class="inline-flex justify-center rounded-lg border border-transparent shadow-sm px-4 py-2 bg-red-600 text-sm font-medium text-white hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500">
+                                <i class="fas fa-trash mr-2"></i>{{ __('finance.Delete') }}
+                            </button>
+                            <button type="button" @click="cancelDelete()" class="inline-flex justify-center rounded-lg border border-gray-300 dark:border-gray-600 shadow-sm px-4 py-2 bg-white dark:bg-gray-700 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500">
+                                <i class="fas fa-times mr-2"></i>{{ __('finance.Cancel') }}
+                            </button>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -660,6 +740,9 @@
         .btn-add-expense { padding: 8px 16px; font-size: 13px; font-weight: 500; color: #fff; background: linear-gradient(135deg, #ef4444, #dc2626); border-radius: 8px; display: flex; align-items: center; gap: 6px; transition: all 0.2s; }
         .btn-add-expense:hover { opacity: 0.9; transform: translateY(-1px); }
         .action-btn { padding: 6px 10px; font-size: 12px; border-radius: 6px; transition: all 0.2s; }
+        .action-btn.edit { color: #3b82f6; background: #eff6ff; }
+        .action-btn.edit:hover { background: #dbeafe; }
+        .dark .action-btn.edit { background: #1e3a8a; color: #93c5fd; }
         .action-btn.delete { color: #ef4444; background: #fef2f2; }
         .action-btn.delete:hover { background: #fee2e2; }
         .dark .action-btn.delete { background: #450a0a; color: #fca5a5; }
@@ -679,6 +762,12 @@
                 toastType: 'success',
                 showIncomeModal: false,
                 showExpenseModal: false,
+                editingIncome: null,
+                editingExpense: null,
+                showDeleteConfirm: false,
+                deleteType: '',
+                deleteId: '',
+                deleteTitle: '',
                 init() {
                     // Watch for tab changes and update URL
                     this.$watch('activeTab', (value) => {
@@ -690,6 +779,58 @@
                     @if(session('status'))
                     this.showNotification('{{ session('status') }}', 'success');
                     @endif
+                },
+                editIncome(income) {
+                    this.editingIncome = income;
+                    this.showIncomeModal = true;
+                    this.$nextTick(() => {
+                        // Date is already formatted as YYYY-MM-DD from server
+                        document.querySelector('form[action*="income"] input[name="income_date"]').value = income.income_date || '';
+                        document.querySelector('form[action*="income"] select[name="category"]').value = income.category || '';
+                        document.querySelector('form[action*="income"] input[name="title"]').value = income.title || '';
+                        document.querySelector('form[action*="income"] textarea[name="description"]').value = income.description || '';
+                        document.querySelector('form[action*="income"] input[name="amount"]').value = income.amount || '';
+                        document.querySelector('form[action*="income"] select[name="payment_method_id"]').value = income.payment_method_id || '';
+                    });
+                },
+                editExpense(expense) {
+                    this.editingExpense = expense;
+                    this.showExpenseModal = true;
+                    this.$nextTick(() => {
+                        // Date is already formatted as YYYY-MM-DD from server
+                        document.querySelector('form[action*="expense"] input[name="expense_date"]').value = expense.expense_date || '';
+                        document.querySelector('form[action*="expense"] select[name="expense_category_id"]').value = expense.expense_category_id || '';
+                        document.querySelector('form[action*="expense"] input[name="title"]').value = expense.title || '';
+                        document.querySelector('form[action*="expense"] textarea[name="description"]').value = expense.description || '';
+                        document.querySelector('form[action*="expense"] input[name="amount"]').value = expense.amount || '';
+                        document.querySelector('form[action*="expense"] select[name="payment_method_id"]').value = expense.payment_method_id || '';
+                    });
+                },
+                resetIncomeModal() {
+                    this.editingIncome = null;
+                    this.showIncomeModal = false;
+                },
+                resetExpenseModal() {
+                    this.editingExpense = null;
+                    this.showExpenseModal = false;
+                },
+                confirmDelete(type, id, title) {
+                    this.deleteType = type;
+                    this.deleteId = id;
+                    this.deleteTitle = title;
+                    this.showDeleteConfirm = true;
+                },
+                cancelDelete() {
+                    this.showDeleteConfirm = false;
+                    this.deleteType = '';
+                    this.deleteId = '';
+                    this.deleteTitle = '';
+                },
+                executeDelete() {
+                    const form = document.getElementById('delete-form-' + this.deleteType + '-' + this.deleteId);
+                    if (form) {
+                        form.submit();
+                    }
                 },
                 showNotification(message, type = 'success') {
                     this.toastMessage = message;

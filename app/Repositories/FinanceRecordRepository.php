@@ -19,7 +19,7 @@ class FinanceRecordRepository implements FinanceRecordRepositoryInterface
     public function listIncomes(FinanceFilterData $filter): LengthAwarePaginator
     {
         $query = Income::query()
-            ->with(['invoice', 'grade', 'classModel'])
+            ->with(['invoice', 'grade', 'classModel', 'paymentMethod'])
             ->latest('income_date');
 
         $this->applyCommonFilters($query, $filter, 'income_date');
@@ -45,7 +45,7 @@ class FinanceRecordRepository implements FinanceRecordRepositoryInterface
     public function listExpenses(FinanceFilterData $filter): LengthAwarePaginator
     {
         $query = Expense::query()
-            ->with(['category'])
+            ->with(['category', 'paymentMethod'])
             ->latest('expense_date');
 
         $this->applyCommonFilters($query, $filter, 'expense_date');
@@ -112,7 +112,7 @@ class FinanceRecordRepository implements FinanceRecordRepositoryInterface
             'description' => $data->description,
             'amount' => $data->amount,
             'income_date' => $data->income_date,
-            'payment_method' => $data->payment_method,
+            'payment_method_id' => $data->payment_method_id,
             'reference_number' => $data->reference_number,
             'invoice_id' => $data->invoice_id,
             'grade_id' => $data->grade_id,
@@ -133,7 +133,7 @@ class FinanceRecordRepository implements FinanceRecordRepositoryInterface
             'description' => $data->description,
             'amount' => $data->amount,
             'income_date' => $data->income_date,
-            'payment_method' => $data->payment_method,
+            'payment_method_id' => $data->payment_method_id,
             'reference_number' => $data->reference_number,
             'invoice_id' => $data->invoice_id,
             'grade_id' => $data->grade_id,
@@ -159,7 +159,7 @@ class FinanceRecordRepository implements FinanceRecordRepositoryInterface
             'description' => $data->description,
             'amount' => $data->amount,
             'expense_date' => $data->expense_date,
-            'payment_method' => $data->payment_method,
+            'payment_method_id' => $data->payment_method_id,
             'vendor_name' => $data->vendor_name,
             'invoice_number' => $data->invoice_number,
             'receipt_file' => $data->receipt_file,
@@ -179,7 +179,7 @@ class FinanceRecordRepository implements FinanceRecordRepositoryInterface
             'description' => $data->description,
             'amount' => $data->amount,
             'expense_date' => $data->expense_date,
-            'payment_method' => $data->payment_method,
+            'payment_method_id' => $data->payment_method_id,
             'vendor_name' => $data->vendor_name,
             'invoice_number' => $data->invoice_number,
             'receipt_file' => $data->receipt_file,
