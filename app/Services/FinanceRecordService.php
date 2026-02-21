@@ -65,9 +65,9 @@ class FinanceRecordService
         return $this->repository->profitLossSummary($filter);
     }
 
-    public function profitLossByCategory(FinanceFilterData $filter): Collection
+    public function profitLossByMonth(FinanceFilterData $filter): Collection
     {
-        return $this->repository->profitLossByCategory($filter);
+        return $this->repository->profitLossByMonth($filter);
     }
 
     public function profitLossByCategoryForYear(int $year): Collection

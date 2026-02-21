@@ -1627,18 +1627,26 @@ class StudentFeeController extends Controller
         $remainingInvoiceNumber = null;
         
         if ($isPartialPayment && $payment->invoice) {
-            // Calculate remaining amount from original invoice
-            $remainingAmount = $subtotal - $payment->payment_amount;
-            
-            // Find the remaining balance invoice created for this payment
-            $remainingInvoice = \App\Models\PaymentSystem\Invoice::where('parent_invoice_id', $payment->invoice->id)
-                ->where('invoice_type', 'remaining_balance')
-                ->orderBy('created_at', 'desc')
-                ->first();
-            
-            if ($remainingInvoice) {
-                $remainingInvoiceNumber = $remainingInvoice->invoice_number;
-                $remainingAmount = $remainingInvoice->total_amount;
+            // For the first partial payment, get remaining amount from the original invoice
+            if ($payment->invoice->invoice_type !== 'remaining_balance') {
+                // This is the first partial payment on the original invoice
+                $remainingAmount = $payment->invoice->remaining_amount;
+            } else {
+                // This is a payment on a remaining balance invoice
+                // Find the next remaining balance invoice if it exists
+                $remainingInvoice = \App\Models\PaymentSystem\Invoice::where('parent_invoice_id', $payment->invoice->parent_invoice_id ?: $payment->invoice->id)
+                    ->where('invoice_type', 'remaining_balance')
+                    ->where('created_at', '>', $payment->invoice->created_at)
+                    ->orderBy('created_at', 'asc')
+                    ->first();
+                
+                if ($remainingInvoice) {
+                    $remainingInvoiceNumber = $remainingInvoice->invoice_number;
+                    $remainingAmount = $remainingInvoice->total_amount;
+                } else {
+                    // No more remaining invoices, calculate from current invoice
+                    $remainingAmount = $payment->invoice->remaining_amount;
+                }
             }
         }
         

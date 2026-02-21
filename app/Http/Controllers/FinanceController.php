@@ -32,7 +32,7 @@ class FinanceController extends Controller
         $expenses = $this->service->expenses($filter);
         $feePayments = $this->service->feePayments($filter);
         $summary = $this->service->profitLossSummary($filter);
-        $monthlyBreakdown = $this->service->profitLossByCategory($filter);
+        $monthlyBreakdown = $this->service->profitLossByMonth($filter);
         $annualBreakdown = $this->service->profitLossByCategoryForYear($filter->year ?? now()->year);
         $dailyBreakdown = $this->service->dailyProfitLoss($filter);
 
@@ -48,6 +48,7 @@ class FinanceController extends Controller
             'expenseCategories' => ExpenseCategory::orderBy('name')->get(),
             'grades' => Grade::orderBy('level')->get(),
             'classes' => SchoolClass::orderBy('name')->get(),
+            'paymentMethods' => \App\Models\PaymentMethod::active()->ordered()->get(),
         ]);
     }
 

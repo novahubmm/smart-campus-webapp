@@ -151,9 +151,19 @@
                             <h3 class="text-lg font-semibold text-gray-900 dark:text-white">{{ __('finance.Other Income') }}</h3>
                             <p class="text-sm text-gray-500 dark:text-gray-400">{{ __('finance.Manual income entries (donations, grants, etc.)') }}</p>
                         </div>
-                        <button type="button" class="btn-add-income" @click="showIncomeModal = true">
-                            <i class="fas fa-plus"></i> {{ __('finance.Add Income') }}
-                        </button>
+                        <div class="flex items-center gap-3">
+                            <form method="GET" action="{{ route('finance.index') }}" class="flex items-center gap-2">
+                                <input type="hidden" name="tab" value="income">
+                                <input type="month" name="month" value="{{ request('month', now()->format('Y-m')) }}" 
+                                    class="px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-900 text-gray-900 dark:text-white focus:ring-2 focus:ring-green-500">
+                                <button type="submit" class="px-4 py-2 text-sm font-medium text-white bg-green-600 rounded-lg hover:bg-green-700 focus:ring-2 focus:ring-green-500">
+                                    {{ __('finance.Apply') }}
+                                </button>
+                            </form>
+                            <button type="button" class="btn-add-income" @click="showIncomeModal = true">
+                                <i class="fas fa-plus"></i> {{ __('finance.Add Income') }}
+                            </button>
+                        </div>
                     </div>
                     <div class="overflow-x-auto">
                         <table class="min-w-full finance-table">
@@ -214,12 +224,22 @@
                 <div class="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl shadow-sm">
                     <div class="flex flex-wrap items-center justify-between gap-3 p-4 border-b border-gray-200 dark:border-gray-700">
                         <div>
-                            <h3 class="text-lg font-semibold text-gray-900 dark:text-white">{{ __('finance.Daily Expenses') }}</h3>
+                            <h3 class="text-lg font-semibold text-gray-900 dark:text-white">{{ __('finance.Expenses') }}</h3>
                             <p class="text-sm text-gray-500 dark:text-gray-400">{{ __('finance.Track all school expenses') }}</p>
                         </div>
-                        <button type="button" class="btn-add-expense" @click="showExpenseModal = true">
-                            <i class="fas fa-plus"></i> {{ __('finance.Add Expense') }}
-                        </button>
+                        <div class="flex items-center gap-3">
+                            <form method="GET" action="{{ route('finance.index') }}" class="flex items-center gap-2">
+                                <input type="hidden" name="tab" value="expenses">
+                                <input type="month" name="month" value="{{ request('month', now()->format('Y-m')) }}" 
+                                    class="px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-900 text-gray-900 dark:text-white focus:ring-2 focus:ring-red-500">
+                                <button type="submit" class="px-4 py-2 text-sm font-medium text-white bg-red-600 rounded-lg hover:bg-red-700 focus:ring-2 focus:ring-red-500">
+                                    {{ __('finance.Apply') }}
+                                </button>
+                            </form>
+                            <button type="button" class="btn-add-expense" @click="showExpenseModal = true">
+                                <i class="fas fa-plus"></i> {{ __('finance.Add Expense') }}
+                            </button>
+                        </div>
                     </div>
                     <div class="overflow-x-auto">
                         <table class="min-w-full finance-table">
@@ -315,19 +335,23 @@
                         <table class="min-w-full finance-table">
                             <thead class="bg-gray-50 dark:bg-gray-900">
                                 <tr>
-                                    <th class="th-cell">{{ __('finance.Date') }}</th>
-                                    <th class="th-cell text-right">{{ __('finance.Income') }}</th>
-                                    <th class="th-cell text-right">{{ __('finance.Expenses') }}</th>
-                                    <th class="th-cell text-right">{{ __('finance.Net') }}</th>
+                                    <th class="th-cell text-left">{{ __('finance.Category') }}</th>
+                                    <th class="th-cell" style="text-align: right;">{{ __('finance.Income (MMK)') }}</th>
+                                    <th class="th-cell" style="text-align: right;">{{ __('finance.Expense (MMK)') }}</th>
+                                    <th class="th-cell" style="text-align: right;">{{ __('finance.Net Profit (MMK)') }}</th>
                                 </tr>
                             </thead>
                             <tbody class="divide-y divide-gray-200 dark:divide-gray-700">
                                 @forelse($dailyBreakdown as $day)
+                                @php
+                                    $net = $day['net'] ?? 0;
+                                    $netFormatted = $net < 0 ? '(' . number_format(abs($net), 0) . ')' : number_format($net, 0);
+                                @endphp
                                 <tr class="bg-white dark:bg-gray-900 hover:bg-gray-50 dark:hover:bg-gray-800/50">
-                                    <td class="td-cell font-medium text-gray-900 dark:text-white">{{ \Carbon\Carbon::parse($day['date'])->format('M j, Y (D)') }}</td>
-                                    <td class="td-cell text-right text-green-600 dark:text-green-400">{{ number_format($day['income'] ?? 0, 0) }} MMK</td>
-                                    <td class="td-cell text-right text-red-600 dark:text-red-400">{{ number_format($day['expenses'] ?? 0, 0) }} MMK</td>
-                                    <td class="td-cell text-right font-semibold {{ ($day['net'] ?? 0) >= 0 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400' }}">{{ number_format($day['net'] ?? 0, 0) }} MMK</td>
+                                    <td class="td-cell font-medium text-gray-900 dark:text-white">{{ $day['date'] }}</td>
+                                    <td class="td-cell text-right text-green-600 dark:text-green-400">{{ number_format($day['income'] ?? 0, 0) }}</td>
+                                    <td class="td-cell text-right text-red-600 dark:text-red-400">{{ number_format($day['expenses'] ?? 0, 0) }}</td>
+                                    <td class="td-cell text-right font-semibold {{ $net >= 0 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400' }}">{{ $netFormatted }}</td>
                                 </tr>
                                 @empty
                                 <tr>
@@ -340,11 +364,15 @@
                                 </tr>
                                 @endforelse
                                 @if(count($dailyBreakdown) > 0)
+                                @php
+                                    $totalNet = $summary['net'] ?? 0;
+                                    $totalNetFormatted = $totalNet < 0 ? '(' . number_format(abs($totalNet), 0) . ')' : number_format($totalNet, 0);
+                                @endphp
                                 <tr class="bg-gray-100 dark:bg-gray-800 font-bold">
                                     <td class="td-cell text-gray-900 dark:text-white">{{ __('finance.Total') }}</td>
-                                    <td class="td-cell text-right text-green-600 dark:text-green-400">{{ number_format($summary['total_income'] ?? 0, 0) }} MMK</td>
-                                    <td class="td-cell text-right text-red-600 dark:text-red-400">{{ number_format($summary['total_expenses'] ?? 0, 0) }} MMK</td>
-                                    <td class="td-cell text-right {{ ($summary['net'] ?? 0) >= 0 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400' }}">{{ number_format($summary['net'] ?? 0, 0) }} MMK</td>
+                                    <td class="td-cell text-right text-green-600 dark:text-green-400">{{ number_format($summary['total_income'] ?? 0, 0) }}</td>
+                                    <td class="td-cell text-right text-red-600 dark:text-red-400">{{ number_format($summary['total_expenses'] ?? 0, 0) }}</td>
+                                    <td class="td-cell text-right {{ $totalNet >= 0 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400' }}">{{ $totalNetFormatted }}</td>
                                 </tr>
                                 @endif
                             </tbody>
@@ -362,28 +390,27 @@
                         <table class="min-w-full finance-table">
                             <thead class="bg-gray-50 dark:bg-gray-900">
                                 <tr>
-                                    <th class="th-cell">{{ __('finance.Category') }}</th>
-                                    <th class="th-cell text-right">{{ __('finance.Income') }}</th>
-                                    <th class="th-cell text-right">{{ __('finance.Expenses') }}</th>
-                                    <th class="th-cell text-right">{{ __('finance.Net') }}</th>
-                                    <th class="th-cell text-right">{{ __('finance.Percentage') }}</th>
+                                    <th class="th-cell text-left">{{ __('finance.Date') }}</th>
+                                    <th class="th-cell" style="text-align: right;">{{ __('finance.Income (MMK)') }}</th>
+                                    <th class="th-cell" style="text-align: right;">{{ __('finance.Expense (MMK)') }}</th>
+                                    <th class="th-cell" style="text-align: right;">{{ __('finance.Net Profit (MMK)') }}</th>
                                 </tr>
                             </thead>
                             <tbody class="divide-y divide-gray-200 dark:divide-gray-700">
-                                @forelse($monthlyBreakdown as $category => $data)
+                                @forelse($monthlyBreakdown as $date => $data)
+                                @php
+                                    $net = $data['net'] ?? 0;
+                                    $netFormatted = $net < 0 ? '(' . number_format(abs($net), 0) . ')' : number_format($net, 0);
+                                @endphp
                                 <tr class="bg-white dark:bg-gray-900 hover:bg-gray-50 dark:hover:bg-gray-800/50">
-                                    <td class="td-cell font-medium text-gray-900 dark:text-white">{{ $category }}</td>
-                                    <td class="td-cell text-right text-green-600 dark:text-green-400">{{ number_format($data['income'] ?? 0, 0) }} MMK</td>
-                                    <td class="td-cell text-right text-red-600 dark:text-red-400">{{ number_format($data['expenses'] ?? 0, 0) }} MMK</td>
-                                    <td class="td-cell text-right font-semibold {{ ($data['net'] ?? 0) >= 0 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400' }}">{{ number_format($data['net'] ?? 0, 0) }} MMK</td>
-                                    <td class="td-cell text-right">
-                                        @php $pct = ($summary['total_income'] ?? 0) > 0 ? (($data['income'] ?? 0) / $summary['total_income']) * 100 : 0; @endphp
-                                        <span class="text-gray-600 dark:text-gray-400">{{ number_format($pct, 1) }}%</span>
-                                    </td>
+                                    <td class="td-cell font-medium text-gray-900 dark:text-white">{{ \Carbon\Carbon::parse($date)->format('M j, Y (D)') }}</td>
+                                    <td class="td-cell text-right text-green-600 dark:text-green-400">{{ number_format($data['income'] ?? 0, 0) }}</td>
+                                    <td class="td-cell text-right text-red-600 dark:text-red-400">{{ number_format($data['expenses'] ?? 0, 0) }}</td>
+                                    <td class="td-cell text-right font-semibold {{ $net >= 0 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400' }}">{{ $netFormatted }}</td>
                                 </tr>
                                 @empty
                                 <tr>
-                                    <td colspan="5" class="td-empty">
+                                    <td colspan="4" class="td-empty">
                                         <div class="flex flex-col items-center py-8">
                                             <i class="fas fa-inbox text-4xl text-gray-300 dark:text-gray-600 mb-3"></i>
                                             <p class="text-gray-500 dark:text-gray-400">{{ __('finance.No data available for selected month') }}</p>
@@ -392,12 +419,15 @@
                                 </tr>
                                 @endforelse
                                 @if(count($monthlyBreakdown) > 0)
+                                @php
+                                    $totalNet = $summary['net'] ?? 0;
+                                    $totalNetFormatted = $totalNet < 0 ? '(' . number_format(abs($totalNet), 0) . ')' : number_format($totalNet, 0);
+                                @endphp
                                 <tr class="bg-gray-100 dark:bg-gray-800 font-bold">
                                     <td class="td-cell text-gray-900 dark:text-white">{{ __('finance.Total') }}</td>
-                                    <td class="td-cell text-right text-green-600 dark:text-green-400">{{ number_format($summary['total_income'] ?? 0, 0) }} MMK</td>
-                                    <td class="td-cell text-right text-red-600 dark:text-red-400">{{ number_format($summary['total_expenses'] ?? 0, 0) }} MMK</td>
-                                    <td class="td-cell text-right {{ ($summary['net'] ?? 0) >= 0 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400' }}">{{ number_format($summary['net'] ?? 0, 0) }} MMK</td>
-                                    <td class="td-cell text-right text-gray-600 dark:text-gray-400">100%</td>
+                                    <td class="td-cell text-right text-green-600 dark:text-green-400">{{ number_format($summary['total_income'] ?? 0, 0) }}</td>
+                                    <td class="td-cell text-right text-red-600 dark:text-red-400">{{ number_format($summary['total_expenses'] ?? 0, 0) }}</td>
+                                    <td class="td-cell text-right {{ $totalNet >= 0 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400' }}">{{ $totalNetFormatted }}</td>
                                 </tr>
                                 @endif
                             </tbody>
@@ -415,11 +445,10 @@
                         <table class="min-w-full finance-table">
                             <thead class="bg-gray-50 dark:bg-gray-900">
                                 <tr>
-                                    <th class="th-cell">{{ __('finance.Category') }}</th>
-                                    <th class="th-cell text-right">{{ __('finance.Income') }}</th>
-                                    <th class="th-cell text-right">{{ __('finance.Expenses') }}</th>
-                                    <th class="th-cell text-right">{{ __('finance.Net') }}</th>
-                                    <th class="th-cell text-right">{{ __('finance.Percentage') }}</th>
+                                    <th class="th-cell text-left">{{ __('finance.Month') }}</th>
+                                    <th class="th-cell" style="text-align: right;">{{ __('finance.Income (MMK)') }}</th>
+                                    <th class="th-cell" style="text-align: right;">{{ __('finance.Expense (MMK)') }}</th>
+                                    <th class="th-cell" style="text-align: right;">{{ __('finance.Net Profit (MMK)') }}</th>
                                 </tr>
                             </thead>
                             <tbody class="divide-y divide-gray-200 dark:divide-gray-700">
@@ -428,20 +457,20 @@
                                     $annualTotalExpenses = collect($annualBreakdown)->sum('expenses');
                                     $annualNet = $annualTotalIncome - $annualTotalExpenses;
                                 @endphp
-                                @forelse($annualBreakdown as $category => $data)
+                                @forelse($annualBreakdown as $monthName => $data)
+                                @php
+                                    $net = $data['net'] ?? 0;
+                                    $netFormatted = $net < 0 ? '(' . number_format(abs($net), 0) . ')' : number_format($net, 0);
+                                @endphp
                                 <tr class="bg-white dark:bg-gray-900 hover:bg-gray-50 dark:hover:bg-gray-800/50">
-                                    <td class="td-cell font-medium text-gray-900 dark:text-white">{{ $category }}</td>
-                                    <td class="td-cell text-right text-green-600 dark:text-green-400">{{ number_format($data['income'] ?? 0, 0) }} MMK</td>
-                                    <td class="td-cell text-right text-red-600 dark:text-red-400">{{ number_format($data['expenses'] ?? 0, 0) }} MMK</td>
-                                    <td class="td-cell text-right font-semibold {{ ($data['net'] ?? 0) >= 0 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400' }}">{{ number_format($data['net'] ?? 0, 0) }} MMK</td>
-                                    <td class="td-cell text-right">
-                                        @php $pct = $annualTotalIncome > 0 ? (($data['income'] ?? 0) / $annualTotalIncome) * 100 : 0; @endphp
-                                        <span class="text-gray-600 dark:text-gray-400">{{ number_format($pct, 1) }}%</span>
-                                    </td>
+                                    <td class="td-cell font-medium text-gray-900 dark:text-white">{{ $monthName }}</td>
+                                    <td class="td-cell text-right text-green-600 dark:text-green-400">{{ number_format($data['income'] ?? 0, 0) }}</td>
+                                    <td class="td-cell text-right text-red-600 dark:text-red-400">{{ number_format($data['expenses'] ?? 0, 0) }}</td>
+                                    <td class="td-cell text-right font-semibold {{ $net >= 0 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400' }}">{{ $netFormatted }}</td>
                                 </tr>
                                 @empty
                                 <tr>
-                                    <td colspan="5" class="td-empty">
+                                    <td colspan="4" class="td-empty">
                                         <div class="flex flex-col items-center py-8">
                                             <i class="fas fa-inbox text-4xl text-gray-300 dark:text-gray-600 mb-3"></i>
                                             <p class="text-gray-500 dark:text-gray-400">{{ __('finance.No annual data available') }}</p>
@@ -450,12 +479,14 @@
                                 </tr>
                                 @endforelse
                                 @if(count($annualBreakdown) > 0)
+                                @php
+                                    $annualNetFormatted = $annualNet < 0 ? '(' . number_format(abs($annualNet), 0) . ')' : number_format($annualNet, 0);
+                                @endphp
                                 <tr class="bg-gray-100 dark:bg-gray-800 font-bold">
                                     <td class="td-cell text-gray-900 dark:text-white">{{ __('finance.Total') }}</td>
-                                    <td class="td-cell text-right text-green-600 dark:text-green-400">{{ number_format($annualTotalIncome, 0) }} MMK</td>
-                                    <td class="td-cell text-right text-red-600 dark:text-red-400">{{ number_format($annualTotalExpenses, 0) }} MMK</td>
-                                    <td class="td-cell text-right {{ $annualNet >= 0 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400' }}">{{ number_format($annualNet, 0) }} MMK</td>
-                                    <td class="td-cell text-right text-gray-600 dark:text-gray-400">100%</td>
+                                    <td class="td-cell text-right text-green-600 dark:text-green-400">{{ number_format($annualTotalIncome, 0) }}</td>
+                                    <td class="td-cell text-right text-red-600 dark:text-red-400">{{ number_format($annualTotalExpenses, 0) }}</td>
+                                    <td class="td-cell text-right {{ $annualNet >= 0 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400' }}">{{ $annualNetFormatted }}</td>
                                 </tr>
                                 @endif
                             </tbody>
@@ -510,12 +541,12 @@
                                         </div>
                                         <div>
                                             <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{{ __('finance.Payment Method') }}</label>
-                                            <select name="payment_method" class="form-input-modal">
-                                                <option value="cash">{{ __('finance.Cash') }}</option>
-                                                <option value="bank_transfer">{{ __('finance.Bank Transfer') }}</option>
-                                                <option value="kbz_pay">{{ __('finance.KBZ Pay') }}</option>
-                                                <option value="wave_pay">{{ __('finance.Wave Pay') }}</option>
-                                                <option value="check">{{ __('finance.Check') }}</option>
+                                            <select name="payment_method_id" class="form-input-modal">
+                                                @foreach($paymentMethods ?? [] as $method)
+                                                    <option value="{{ $method->id }}">
+                                                        {{ $method->name }}{{ $method->account_number ? ' - ' . $method->account_number : '' }}
+                                                    </option>
+                                                @endforeach
                                             </select>
                                         </div>
                                     </div>
@@ -578,12 +609,12 @@
                                         </div>
                                         <div>
                                             <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{{ __('finance.Payment Method') }}</label>
-                                            <select name="payment_method" class="form-input-modal">
-                                                <option value="cash">{{ __('finance.Cash') }}</option>
-                                                <option value="bank_transfer">{{ __('finance.Bank Transfer') }}</option>
-                                                <option value="kbz_pay">{{ __('finance.KBZ Pay') }}</option>
-                                                <option value="wave_pay">{{ __('finance.Wave Pay') }}</option>
-                                                <option value="check">{{ __('finance.Check') }}</option>
+                                            <select name="payment_method_id" class="form-input-modal">
+                                                @foreach($paymentMethods ?? [] as $method)
+                                                    <option value="{{ $method->id }}">
+                                                        {{ $method->name }}{{ $method->account_number ? ' - ' . $method->account_number : '' }}
+                                                    </option>
+                                                @endforeach
                                             </select>
                                         </div>
                                     </div>

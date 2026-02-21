@@ -25,10 +25,6 @@
                 <div class="bg-gradient-to-r from-green-500 to-emerald-600 p-8 text-white">
                     <div class="text-center">
                         <h1 class="text-3xl font-bold mb-2">{{ __('finance.Payment Receipt') }}</h1>
-                        <p class="text-green-100">{{ __('finance.Payment Number') }}: {{ $payment->payment_number }}</p>
-                        @if($payment->invoice)
-                        <p class="text-green-100">{{ __('finance.Invoice Number') }}: {{ $payment->invoice->invoice_number }}</p>
-                        @endif
                     </div>
                 </div>
 
@@ -61,6 +57,10 @@
                                     <span class="text-gray-600 dark:text-gray-400">{{ __('finance.Guardian') }}:</span>
                                     <span class="font-medium text-gray-900 dark:text-white">{{ $guardianName }}</span>
                                 </div>
+                                <div class="flex justify-between">
+                                    <span class="text-gray-600 dark:text-gray-400">{{ __('finance.Guardian Phone No') }}:</span>
+                                    <span class="font-medium text-gray-900 dark:text-white">{{ $payment->student->guardians->first()->user->phone ?? '-' }}</span>
+                                </div>
                             </div>
                         </div>
 
@@ -76,12 +76,12 @@
                                     <span class="font-medium text-gray-900 dark:text-white">{{ $payment->invoice->invoice_number ?? '-' }}</span>
                                 </div>
                                 <div class="flex justify-between">
-                                    <span class="text-gray-600 dark:text-gray-400">{{ __('finance.Payment Method') }}:</span>
-                                    <span class="font-medium text-gray-900 dark:text-white">{{ $payment->paymentMethod->name }}</span>
+                                    <span class="text-gray-600 dark:text-gray-400">{{ __('finance.Payment Number') }}:</span>
+                                    <span class="font-medium text-gray-900 dark:text-white">{{ $payment->payment_number }}</span>
                                 </div>
                                 <div class="flex justify-between">
-                                    <span class="text-gray-600 dark:text-gray-400">{{ __('finance.Payment Duration') }}:</span>
-                                    <span class="font-medium text-gray-900 dark:text-white">{{ $paymentMonths }} {{ $paymentMonths > 1 ? __('finance.Months') : __('finance.Month') }}</span>
+                                    <span class="text-gray-600 dark:text-gray-400">{{ __('finance.Payment Method') }}:</span>
+                                    <span class="font-medium text-gray-900 dark:text-white">{{ $payment->paymentMethod->name }}</span>
                                 </div>
                                 <div class="flex justify-between">
                                     <span class="text-gray-600 dark:text-gray-400">{{ __('finance.Receptionist') }}:</span>
@@ -99,14 +99,18 @@
                                 <thead class="bg-gray-50 dark:bg-gray-900/50">
                                     <tr>
                                         <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 dark:text-gray-300 uppercase">{{ __('finance.Fee Type') }}</th>
+                                        <th class="px-4 py-3 text-right text-xs font-semibold text-gray-600 dark:text-gray-300 uppercase">{{ __('finance.Unit Price') }}</th>
+                                        <th class="px-4 py-3 text-center text-xs font-semibold text-gray-600 dark:text-gray-300 uppercase">{{ __('finance.Month') }}</th>
                                         <th class="px-4 py-3 text-right text-xs font-semibold text-gray-600 dark:text-gray-300 uppercase">{{ __('finance.Amount') }}</th>
                                     </tr>
                                 </thead>
                                 <tbody class="divide-y divide-gray-200 dark:divide-gray-700 bg-white dark:bg-gray-800">
-                                    @foreach($payment->invoice->fees as $fee)
+                                    @foreach($payment->feeDetails as $feeDetail)
                                     <tr>
-                                        <td class="px-4 py-3 text-gray-900 dark:text-white">{{ $fee->fee_name }}</td>
-                                        <td class="px-4 py-3 text-right text-gray-900 dark:text-white">{{ number_format($fee->amount) }} MMK</td>
+                                        <td class="px-4 py-3 text-gray-900 dark:text-white">{{ $feeDetail->fee_name }}</td>
+                                        <td class="px-4 py-3 text-right text-gray-900 dark:text-white">{{ number_format($feeDetail->full_amount) }} MMK</td>
+                                        <td class="px-4 py-3 text-center text-gray-900 dark:text-white">{{ $feeDetail->payment_months }}</td>
+                                        <td class="px-4 py-3 text-right text-gray-900 dark:text-white">{{ number_format($feeDetail->paid_amount) }} MMK</td>
                                     </tr>
                                     @endforeach
                                 </tbody>
@@ -116,19 +120,15 @@
 
                     <!-- Total Amount -->
                     <div class="border-t-2 border-gray-300 dark:border-gray-600 pt-4 space-y-2">
-                        @if($subtotal > 0)
                         <div class="flex justify-between items-center text-gray-700 dark:text-gray-300">
                             <span class="text-lg font-medium">{{ __('finance.Subtotal') }}:</span>
                             <span class="text-xl font-semibold">{{ number_format($subtotal) }} MMK</span>
                         </div>
-                        @endif
                         
-                        @if($discountAmount > 0)
                         <div class="flex justify-between items-center text-green-600 dark:text-green-400">
                             <span class="text-lg font-medium">{{ __('finance.Discount') }}:</span>
                             <span class="text-xl font-semibold">- {{ number_format($discountAmount) }} MMK</span>
                         </div>
-                        @endif
                         
                         <div class="flex justify-between items-center pt-2 border-t border-gray-200 dark:border-gray-700">
                             <span class="text-xl font-bold text-gray-900 dark:text-white">{{ __('finance.Total Amount Paid') }}:</span>
@@ -154,12 +154,6 @@
                                             <span class="text-amber-700 dark:text-amber-400">{{ __('finance.Remaining Amount') }}:</span>
                                             <span class="font-bold text-amber-900 dark:text-amber-200">{{ number_format($remainingAmount) }} MMK</span>
                                         </div>
-                                        @if($remainingInvoiceNumber)
-                                        <div class="flex justify-between items-center text-sm">
-                                            <span class="text-amber-700 dark:text-amber-400">{{ __('finance.New Invoice Number') }}:</span>
-                                            <span class="font-mono font-bold text-amber-900 dark:text-amber-200">{{ $remainingInvoiceNumber }}</span>
-                                        </div>
-                                        @endif
                                     </div>
                                 </div>
                             </div>

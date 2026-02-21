@@ -20,7 +20,7 @@ class IncomeRequest extends FormRequest
             'description' => ['nullable', 'string'],
             'amount' => ['required', 'numeric', 'min:0'],
             'income_date' => ['required', 'date'],
-            'payment_method' => ['required', Rule::in(['cash', 'bank_transfer', 'cheque', 'card', 'online', 'mobile_payment', 'kbz_pay', 'wave_pay', 'check', 'other'])],
+            'payment_method_id' => ['nullable', 'exists:payment_methods,id'],
             'reference_number' => ['nullable', 'string', 'max:255'],
             'invoice_id' => ['nullable', 'exists:invoices,id'],
             'grade_id' => ['nullable', 'exists:grades,id'],

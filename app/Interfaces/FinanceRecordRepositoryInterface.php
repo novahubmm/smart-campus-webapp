@@ -32,7 +32,7 @@ interface FinanceRecordRepositoryInterface
 
     public function profitLossSummary(FinanceFilterData $filter): array;
 
-    public function profitLossByCategory(FinanceFilterData $filter): Collection;
+    public function profitLossByMonth(FinanceFilterData $filter): Collection;
 
     public function profitLossByCategoryForYear(int $year): Collection;
 

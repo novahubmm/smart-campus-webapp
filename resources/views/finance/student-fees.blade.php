@@ -700,7 +700,6 @@
                                     <th class="th-cell">{{ __('finance.Grade') }}</th>
                                     <th class="th-cell">{{ __('finance.Monthly Fee') }}</th>
                                     <th class="th-cell">{{ __('finance.Students') }}</th>
-                                    <th class="th-cell">{{ __('finance.Collection %') }}</th>
                                     <th class="th-cell">{{ __('finance.Actions') }}</th>
                                 </tr>
                             </thead>
@@ -709,10 +708,6 @@
                                     @php
                                         $gradeFee = $grade->price_per_month ?? 0;
                                         $gradeStudents = $studentCountByGrade[$grade->id] ?? 0;
-                                        $gradeInvoices = $invoices->filter(fn($i) => $i->student && $i->student->grade_id === $grade->id);
-                                        $gradePaid = $gradeInvoices->where('status', 'paid')->count();
-                                        $gradeTotal = $gradeInvoices->count();
-                                        $collectionPct = $gradeTotal > 0 ? round(($gradePaid / $gradeTotal) * 100) : 0;
                                     @endphp
                                     <tr class="bg-white dark:bg-gray-900 hover:bg-gray-50 dark:hover:bg-gray-800/50">
                                         <td class="td-cell font-semibold">@gradeName($grade->level)</td>
@@ -724,9 +719,6 @@
                                             @endif
                                         </td>
                                         <td class="td-cell">{{ $gradeStudents }} {{ __('finance.students') }}</td>
-                                        <td class="td-cell">
-                                            <span class="collection-badge">{{ $collectionPct }}%</span>
-                                        </td>
                                         <td class="td-cell">
                                             <div class="flex items-center gap-1">
                                                 <button type="button" class="action-btn edit" @click="openEditGradeFeeModal(@js($grade))" title="{{ __('finance.Edit') }}">

@@ -129,6 +129,10 @@
                                                     'transport' => 'Transport',
                                                     'marketing' => 'Marketing',
                                                     'training' => 'Training',
+                                                    'electricity' => 'Electricity',
+                                                    'fuel' => 'Fuel',
+                                                    'teaching_aids' => 'Teaching Aids',
+                                                    'electronic_devices' => 'Electronic Devices',
                                                 ];
                                                 // Ensure we have a collection and convert to lowercase strings
                                                 $existingCategories = collect($expenseCategories)

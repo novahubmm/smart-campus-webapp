@@ -20,7 +20,7 @@ class ExpenseRequest extends FormRequest
             'description' => ['nullable', 'string'],
             'amount' => ['required', 'numeric', 'min:0'],
             'expense_date' => ['required', 'date'],
-            'payment_method' => ['required', Rule::in(['cash', 'bank_transfer', 'cheque', 'card', 'kbz_pay', 'wave_pay', 'check', 'other'])],
+            'payment_method_id' => ['nullable', 'exists:payment_methods,id'],
             'vendor_name' => ['nullable', 'string', 'max:255'],
             'invoice_number' => ['nullable', 'string', 'max:255'],
             'receipt_file' => ['nullable', 'string', 'max:255'],

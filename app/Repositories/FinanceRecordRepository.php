@@ -211,65 +211,7 @@ class FinanceRecordRepository implements FinanceRecordRepositoryInterface
         ];
     }
 
-    public function profitLossByCategory(FinanceFilterData $filter): Collection
-    {
-        [$year, $month] = [$filter->year, $filter->month];
-
-        $incomeGroups = Income::query()
-            ->selectRaw('COALESCE(category, "Other") as category, SUM(amount) as total')
-            ->when($year, fn($q) => $q->whereYear('income_date', $year))
-            ->when($month, fn($q) => $q->whereMonth('income_date', $month))
-            ->groupBy('category')
-            ->pluck('total', 'category');
-
-        $studentFeeTotal = $this->sumStudentFees($filter);
-        if ($studentFeeTotal > 0) {
-            $incomeGroups['Student Fees'] = $incomeGroups['Student Fees'] ?? 0;
-            $incomeGroups['Student Fees'] += $studentFeeTotal;
-        }
-
-        $expenseGroups = Expense::query()
-            ->join('expense_categories', 'expenses.expense_category_id', '=', 'expense_categories.id')
-            ->selectRaw('expense_categories.name as category, SUM(expenses.amount) as total')
-            ->when($year, fn($q) => $q->whereYear('expense_date', $year))
-            ->when($month, fn($q) => $q->whereMonth('expense_date', $month))
-            ->groupBy('expense_categories.name')
-            ->pluck('total', 'category');
-
-        $categories = collect($incomeGroups->keys())
-            ->merge($expenseGroups->keys())
-            ->unique()
-            ->values();
-
-        $totalIncome = $incomeGroups->sum();
-        $totalExpenses = $expenseGroups->sum();
-
-        $result = collect();
-        foreach ($categories as $category) {
-            $income = (float) ($incomeGroups[$category] ?? 0);
-            $expense = (float) ($expenseGroups[$category] ?? 0);
-            $net = $income - $expense;
-            $base = max($totalIncome + $totalExpenses, 1);
-
-            $result[$category] = [
-                'income' => $income,
-                'expenses' => $expense,
-                'net' => $net,
-                'percentage' => round(($income + $expense) / $base * 100, 1),
-            ];
-        }
-
-        return $result->sortByDesc('income');
-    }
-
-    public function profitLossByCategoryForYear(int $year): Collection
-    {
-        $filter = new FinanceFilterData(year: $year, month: null, category: null, paymentMethod: null, search: null, perPage: 12);
-
-        return $this->profitLossByCategory($filter);
-    }
-
-    public function dailyProfitLoss(FinanceFilterData $filter): Collection
+    public function profitLossByMonth(FinanceFilterData $filter): Collection
     {
         [$year, $month] = [$filter->year, $filter->month];
 
@@ -282,7 +224,7 @@ class FinanceRecordRepository implements FinanceRecordRepositoryInterface
             ->pluck('total', 'date');
 
         // Get daily student fee payments
-        $dailyFees = Payment::query()
+        $dailyFees = \App\Models\PaymentSystem\Payment::query()
             ->where('status', 'verified')
             ->whereHas('invoice', function ($q) {
                 $q->whereNotNull('batch_id');
@@ -319,14 +261,145 @@ class FinanceRecordRepository implements FinanceRecordRepositoryInterface
             $net = $totalIncome - $expenses;
 
             $result[$date] = [
-                'date' => $date,
                 'income' => $totalIncome,
                 'expenses' => $expenses,
                 'net' => $net,
             ];
         }
 
-        return $result->sortByDesc('date');
+        return $result->sortByDesc(function ($item, $key) {
+            return $key; // Sort by date descending
+        });
+    }
+
+    public function profitLossByCategoryForYear(int $year): Collection
+    {
+        $driver = config('database.default');
+        $connection = config("database.connections.{$driver}.driver");
+        
+        // Use appropriate SQL function based on database driver
+        $monthExpression = $connection === 'sqlite' 
+            ? "strftime('%m', income_date)" 
+            : 'MONTH(income_date)';
+        
+        $monthExpressionPayment = $connection === 'sqlite' 
+            ? "strftime('%m', payment_date)" 
+            : 'MONTH(payment_date)';
+        
+        $monthExpressionExpense = $connection === 'sqlite' 
+            ? "strftime('%m', expense_date)" 
+            : 'MONTH(expense_date)';
+
+        // Get monthly income breakdown
+        $monthlyIncome = Income::query()
+            ->selectRaw("{$monthExpression} as month, SUM(amount) as total")
+            ->whereYear('income_date', $year)
+            ->groupBy('month')
+            ->pluck('total', 'month');
+
+        // Get monthly student fee payments
+        $monthlyFees = \App\Models\PaymentSystem\Payment::query()
+            ->where('status', 'verified')
+            ->whereHas('invoice', function ($q) {
+                $q->whereNotNull('batch_id');
+            })
+            ->selectRaw("{$monthExpressionPayment} as month, SUM(payment_amount) as total")
+            ->whereYear('payment_date', $year)
+            ->groupBy('month')
+            ->pluck('total', 'month');
+
+        // Get monthly expenses
+        $monthlyExpenses = Expense::query()
+            ->selectRaw("{$monthExpressionExpense} as month, SUM(amount) as total")
+            ->whereYear('expense_date', $year)
+            ->groupBy('month')
+            ->pluck('total', 'month');
+
+        // Build monthly breakdown for the year
+        $result = collect();
+        for ($month = 1; $month <= 12; $month++) {
+            // SQLite returns month as '01', '02', etc., so we need to handle both formats
+            $monthKey = $connection === 'sqlite' ? str_pad($month, 2, '0', STR_PAD_LEFT) : $month;
+            
+            $income = (float) ($monthlyIncome[$monthKey] ?? 0);
+            $fees = (float) ($monthlyFees[$monthKey] ?? 0);
+            $totalIncome = $income + $fees;
+            $expenses = (float) ($monthlyExpenses[$monthKey] ?? 0);
+            $net = $totalIncome - $expenses;
+
+            // Only include months with data
+            if ($totalIncome > 0 || $expenses > 0) {
+                $monthName = \Carbon\Carbon::create($year, $month, 1)->format('F Y');
+                $result[$monthName] = [
+                    'income' => $totalIncome,
+                    'expenses' => $expenses,
+                    'net' => $net,
+                ];
+            }
+        }
+
+        return $result;
+    }
+
+    public function dailyProfitLoss(FinanceFilterData $filter): Collection
+    {
+        [$year, $month] = [$filter->year, $filter->month];
+
+        // Get income by category
+        $incomeByCategory = Income::query()
+            ->selectRaw('COALESCE(category, "Other") as category, SUM(amount) as total')
+            ->when($year, fn($q) => $q->whereYear('income_date', $year))
+            ->when($month, fn($q) => $q->whereMonth('income_date', $month))
+            ->groupBy('category')
+            ->pluck('total', 'category');
+
+        // Get student fee payments by fee type using the payment system tables
+        $feesByType = \App\Models\PaymentSystem\Payment::query()
+            ->where('payments_payment_system.status', 'verified')
+            ->join('payment_fee_details', 'payments_payment_system.id', '=', 'payment_fee_details.payment_id')
+            ->join('invoice_fees', 'payment_fee_details.invoice_fee_id', '=', 'invoice_fees.id')
+            ->join('fee_structures_payment_system', 'invoice_fees.fee_id', '=', 'fee_structures_payment_system.id')
+            ->selectRaw('fee_structures_payment_system.name as fee_type, SUM(payment_fee_details.paid_amount) as total')
+            ->when($year, fn($q) => $q->whereYear('payments_payment_system.payment_date', $year))
+            ->when($month, fn($q) => $q->whereMonth('payments_payment_system.payment_date', $month))
+            ->groupBy('fee_structures_payment_system.name')
+            ->pluck('total', 'fee_type');
+
+        // Get expenses by category
+        $expensesByCategory = Expense::query()
+            ->join('expense_categories', 'expenses.expense_category_id', '=', 'expense_categories.id')
+            ->selectRaw('expense_categories.name as category, SUM(expenses.amount) as total')
+            ->when($year, fn($q) => $q->whereYear('expenses.expense_date', $year))
+            ->when($month, fn($q) => $q->whereMonth('expenses.expense_date', $month))
+            ->groupBy('expense_categories.name')
+            ->pluck('total', 'category');
+
+        // Merge all categories
+        $allCategories = collect($incomeByCategory->keys())
+            ->merge($feesByType->keys())
+            ->merge($expensesByCategory->keys())
+            ->unique()
+            ->sort()
+            ->values();
+
+        // Build breakdown by category
+        $result = collect();
+        foreach ($allCategories as $category) {
+            $income = (float) ($incomeByCategory[$category] ?? 0);
+            $fees = (float) ($feesByType[$category] ?? 0);
+            $totalIncome = $income + $fees;
+            $expenses = (float) ($expensesByCategory[$category] ?? 0);
+            $net = $totalIncome - $expenses;
+
+            $result[$category] = [
+                'date' => $category, // Keep 'date' key for backward compatibility with view
+                'income' => $totalIncome,
+                'expenses' => $expenses,
+                'net' => $net,
+            ];
+        }
+
+        return $result->sortBy('date');
     }
 
     private function applyCommonFilters(Builder $query, FinanceFilterData $filter, string $dateColumn): void
