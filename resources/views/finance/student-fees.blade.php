@@ -1245,13 +1245,13 @@
                                 </div>
                             </div>
 
-                                <!-- Total Amount -->
-                                <div class="p-3 bg-gradient-to-br from-teal-500 to-emerald-500 rounded-lg">
-                                    <div class="flex items-center justify-between text-white">
-                                        <span class="text-sm font-medium">{{ __('finance.Total Amount') }}</span>
-                                        <span class="font-bold text-xl" x-text="paymentData.total.toLocaleString() + ' MMK'"></span>
-                                    </div>
+                            <!-- Total Amount -->
+                            <div class="p-3 bg-gradient-to-br from-teal-500 to-emerald-500 rounded-lg">
+                                <div class="flex items-center justify-between text-white">
+                                    <span class="text-sm font-medium">{{ __('finance.Total Amount') }}</span>
+                                    <span class="font-bold text-xl" x-text="paymentData.total.toLocaleString() + ' MMK'"></span>
                                 </div>
+                            </div>
 
                             <!-- Hidden inputs for fee payment months -->
                             <template x-for="(fee, index) in paymentData.fees" :key="fee.id">
@@ -1267,7 +1267,7 @@
                             <input type="hidden" name="payment_months" :value="Math.max(...paymentData.fees.map(f => f.payment_months || 1))">
                             
                             <!-- Hidden input for payment type -->
-                            <input type="hidden" name="payment_type" :value="paymentData.payment_type">>
+                            <input type="hidden" name="payment_type" :value="paymentData.payment_type">
 
                             <!-- Payment Method -->
                             <div>
