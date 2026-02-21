@@ -532,6 +532,8 @@ return [
     'Sending Invoices' => 'Sending Invoices',
     'Please wait...' => 'Please wait...',
     'Skipped' => 'Skipped',
-    'Errors' => 'Errors'
+    'Errors' => 'Errors',
+    'Choose Frequency' => 'Choose Frequency',
+    'Invoice already exists for this fee type' => 'Invoice already exists for this fee type',
 ];
 

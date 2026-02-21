@@ -295,42 +295,47 @@ class StudentFeeController extends Controller
         // Get batch_id for filtering (use target batch)
         $batchId = $targetBatch?->id;
         
-        // Calculate total receivable from unpaid invoices (status != 'paid')
-        $totalReceivable = \App\Models\PaymentSystem\Invoice::when($batchId, function ($query) use ($batchId) {
-                $query->where('batch_id', $batchId);
+        // Build base query for statistics with fee type filter
+        $statsBaseQuery = function ($query) use ($batchId, $request) {
+            $query->when($batchId, function ($q) use ($batchId) {
+                $q->where('batch_id', $batchId);
             })
-            ->where('status', '!=', 'paid')
             ->whereHas('student', function ($q) {
                 $q->where('status', 'active');
-            })
-            ->sum('total_amount');
+            });
+            
+            // Apply fee type filter if selected
+            if ($request->filled('fee_type')) {
+                $feeType = \App\Models\FeeType::find($request->fee_type);
+                if ($feeType) {
+                    $feeTypeCode = $feeType->code;
+                    $query->whereHas('fees', function ($q) use ($feeTypeCode) {
+                        $q->whereHas('feeStructure', function ($fq) use ($feeTypeCode) {
+                            $fq->where('fee_type', $feeTypeCode);
+                        });
+                    });
+                }
+            }
+        };
+        
+        // Calculate total receivable from unpaid invoices (status != 'paid')
+        $totalReceivableQuery = \App\Models\PaymentSystem\Invoice::where('status', '!=', 'paid');
+        $statsBaseQuery($totalReceivableQuery);
+        $totalReceivable = $totalReceivableQuery->sum('remaining_amount');
         
         // Calculate total received from paid invoices (paid_amount from invoices with status 'paid')
-        $totalReceived = \App\Models\PaymentSystem\Invoice::when($batchId, function ($query) use ($batchId) {
-                $query->where('batch_id', $batchId);
-            })
-            ->where('status', 'paid')
-            ->whereHas('student', function ($q) {
-                $q->where('status', 'active');
-            })
-            ->sum('paid_amount');
+        $totalReceivedQuery = \App\Models\PaymentSystem\Invoice::where('status', 'paid');
+        $statsBaseQuery($totalReceivedQuery);
+        $totalReceived = $totalReceivedQuery->sum('paid_amount');
         
         // Get payment counts for selected month (using PaymentSystem verified payments)
-        $paidInvoices = \App\Models\PaymentSystem\Invoice::when($batchId, function ($query) use ($batchId) {
-                $query->where('batch_id', $batchId);
-            })
-            ->where('status', 'paid')
-            ->whereHas('student', function ($q) {
-                $q->where('status', 'active');
-            })
-            ->count();
-        $totalInvoices = \App\Models\PaymentSystem\Invoice::when($batchId, function ($query) use ($batchId) {
-                $query->where('batch_id', $batchId);
-            })
-            ->whereHas('student', function ($q) {
-                $q->where('status', 'active');
-            })
-            ->count();
+        $paidInvoicesQuery = \App\Models\PaymentSystem\Invoice::where('status', 'paid');
+        $statsBaseQuery($paidInvoicesQuery);
+        $paidInvoices = $paidInvoicesQuery->count();
+        
+        $totalInvoicesQuery = \App\Models\PaymentSystem\Invoice::query();
+        $statsBaseQuery($totalInvoicesQuery);
+        $totalInvoices = $totalInvoicesQuery->count();
 
         // Student counts by grade for Fee Structure tab
         $studentCountByGrade = $allStudents->groupBy('grade_id')->map->count();
