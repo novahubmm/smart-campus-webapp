@@ -246,13 +246,14 @@ class GuardianTimetableRepository implements GuardianTimetableRepositoryInterfac
 
         // Get subjects
         $gradeSubjects = \App\Models\GradeSubject::where('grade_id', $student->grade_id)
-            ->with(['subject', 'teacher.user'])
+            ->with(['subject.subjectType', 'teacher.user'])
             ->get();
 
         $subjects = $gradeSubjects->map(function ($gs) {
             return [
                 'id' => $gs->subject?->id,
                 'name' => $gs->subject?->name ?? 'N/A',
+                'category' => $gs->subject?->subjectType?->name ?? 'Core',
                 'teacher' => [
                     'id' => $gs->teacher?->id,
                     'name' => $gs->teacher?->user?->name ?? 'N/A',

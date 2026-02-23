@@ -834,5 +834,62 @@ class GuardianStudentRepository implements GuardianStudentRepositoryInterface
 
         return $months[$month] ?? '';
     }
+
+    public function getFullProfile(StudentProfile $student): array
+    {
+        // Load all necessary relationships
+        $student->load(['user', 'grade', 'classModel', 'guardians']);
+
+        // Get the primary guardian
+        $primaryGuardian = $student->guardians()
+            ->wherePivot('is_primary', true)
+            ->with('user')
+            ->first();
+
+        // If no primary guardian, get the first guardian
+        if (!$primaryGuardian) {
+            $primaryGuardian = $student->guardians()->with('user')->first();
+        }
+
+        return [
+            'basic_information' => [
+                'name' => $student->user?->name ?? 'N/A',
+                'student_id' => $student->student_identifier ?? $student->student_id ?? 'N/A',
+                'date_of_joining' => $student->date_of_joining?->format('Y-m-d') ?? 'N/A',
+            ],
+            'personal_information' => [
+                'gender' => $student->gender ?? 'N/A',
+                'ethnicity' => $student->ethnicity ?? 'N/A',
+                'religion' => $student->religious ?? 'N/A',
+                'nrc' => $student->nrc ?? 'N/A',
+                'date_of_birth' => $student->dob?->format('Y-m-d') ?? 'N/A',
+            ],
+            'academic_information' => [
+                'starting_grade' => $student->starting_grade_at_school ?? 'N/A',
+                'current_grade' => $student->grade?->name ?? 'N/A',
+                'current_class' => $student->classModel?->name ?? $student->classModel?->section ?? 'N/A',
+                'previous_grade' => 'N/A', // Not stored in current schema
+                'previous_class' => 'N/A', // Not stored in current schema
+                'guardian_teacher' => $student->guardian_teacher ?? 'N/A',
+                'assistant_teacher' => $student->assistant_teacher ?? 'N/A',
+                'previous_school' => $student->previous_school_name ?? 'N/A',
+                'address' => $student->address ?? 'N/A',
+            ],
+            'medical' => [
+                'weight' => $student->weight ?? 'N/A',
+                'height' => $student->height ?? 'N/A',
+                'blood_type' => $student->blood_type ?? 'N/A',
+                'medicine_allergy' => $student->medicine_allergy ?? 'None',
+                'food_allergy' => $student->food_allergy ?? 'None',
+                'medical_history' => $student->medical_directory ?? 'None',
+            ],
+            'guardian_information' => [
+                'name' => $primaryGuardian?->user?->name ?? 'N/A',
+                'email' => $primaryGuardian?->user?->email ?? 'N/A',
+                'phone' => $primaryGuardian?->phone_no ?? 'N/A',
+                'relationship' => $primaryGuardian?->pivot?->relationship ?? 'N/A',
+            ],
+        ];
+    }
 }
 

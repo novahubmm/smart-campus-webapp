@@ -54,47 +54,91 @@ class SalaryPayrollService
 
     public function pay(PaySalaryPayrollData $data): Payroll
     {
+        return \DB::transaction(function () use ($data) {
+            // Check for existing pending payroll
+            $pending = $this->repository->findByEmployeePeriod(
+                $data->employeeType,
+                $data->employeeId,
+                $data->year,
+                $data->month
+            );
+
+            // Calculate cumulative paid amount
+            $paidSoFar = $pending ? $pending->paid_amount : 0;
+            $totalAmount = $data->totalAmount;
+            $newPaidAmount = $paidSoFar + $data->amount;
+            
+            // Validate payment doesn't exceed total
+            if ($newPaidAmount > $totalAmount) {
+                throw new \InvalidArgumentException(
+                    "Payment amount would exceed total salary. Remaining: " . ($totalAmount - $paidSoFar)
+                );
+            }
+            
+            // Create new 'paid' transaction record
+            $creationData = PayrollCreationData::fromPayData($data);
+            $payroll = $this->repository->createPayroll($creationData);
+
+            // Create expense entry for this payment
+            $this->createSalaryExpense($payroll, $data);
+
+            // Check if fully paid
+            $isFullyPaid = $newPaidAmount >= $totalAmount;
+            
+            if ($isFullyPaid) {
+                // Delete pending record if exists
+                if ($pending) {
+                    $pending->delete();
+                }
+            } else {
+                // Create/update pending record showing remaining balance
+                $remainingAmount = $totalAmount - $newPaidAmount;
+                $this->createRemainingPayroll($data, $newPaidAmount, $remainingAmount, $totalAmount);
+            }
+
+            return $payroll;
+        });
+    }
+
+    private function createRemainingPayroll(PaySalaryPayrollData $data, float $paidSoFar, float $remainingAmount, float $totalAmount): void
+    {
+        // Delete existing pending record if it exists
         $existing = $this->repository->findByEmployeePeriod(
             $data->employeeType,
             $data->employeeId,
             $data->year,
             $data->month
         );
-
+        
         if ($existing) {
-            // Update existing payroll with new values
-            $existing->working_days = $data->workingDays;
-            $existing->days_present = $data->daysPresent;
-            $existing->leave_days = $data->leaveDays;
-            $existing->annual_leave = $data->annualLeave;
-            $existing->days_absent = $data->daysAbsent;
-            $existing->basic_salary = $data->basicSalary;
-            $existing->attendance_allowance = $data->attendanceAllowance;
-            $existing->loyalty_bonus = $data->loyaltyBonus;
-            $existing->other_bonus = $data->otherBonus;
-            $existing->amount = $data->amount;
-            $existing->save();
-
-            $statusData = PayrollStatusUpdateData::fromPayData($data);
-            $payroll = $this->repository->updateStatus($existing, $statusData);
-
-            // Create expense entry for salary payment
-            $this->createSalaryExpense($payroll, $data);
-
-            return $payroll;
+            $existing->delete();
         }
-
-        // Create new payroll
-        $creationData = PayrollCreationData::fromPayData($data);
-        $payroll = $this->repository->createPayroll($creationData);
-
-        $statusData = PayrollStatusUpdateData::fromPayData($data);
-        $payroll = $this->repository->updateStatus($payroll, $statusData);
-
-        // Create expense entry for salary payment
-        $this->createSalaryExpense($payroll, $data);
-
-        return $payroll;
+        
+        // Create new pending record with updated cumulative paid amount
+        $creationData = new PayrollCreationData(
+            employeeType: $data->employeeType,
+            employeeId: $data->employeeId,
+            year: $data->year,
+            month: $data->month,
+            workingDays: $data->workingDays,
+            daysPresent: $data->daysPresent,
+            leaveDays: $data->leaveDays,
+            annualLeave: $data->annualLeave,
+            daysAbsent: $data->daysAbsent,
+            basicSalary: $data->basicSalary,
+            attendanceAllowance: $data->attendanceAllowance,
+            loyaltyBonus: $data->loyaltyBonus,
+            otherBonus: $data->otherBonus,
+            amount: $totalAmount, // Full monthly salary
+            totalAmount: $totalAmount, // Full monthly salary (not remaining)
+            paidAmount: $paidSoFar, // Cumulative amount paid so far
+            paymentCount: 0, // 0 for pending records
+            status: 'pending',
+            paymentMethod: null,
+            processedBy: null,
+        );
+        
+        $this->repository->createPayroll($creationData);
     }
 
     private function createSalaryExpense(Payroll $payroll, PaySalaryPayrollData $data): void
@@ -116,13 +160,13 @@ class SalaryPayrollService
         $expenseCount = Expense::withTrashed()->count() + 1;
         $expenseNumber = 'EXP-' . Str::padLeft((string) $expenseCount, 5, '0');
 
-        // Create expense entry
+        // Create expense entry using paid_amount from the payroll transaction
         Expense::create([
             'expense_number' => $expenseNumber,
             'expense_category_id' => $salaryCategory->id,
             'title' => "Salary Payment - {$employeeName}",
             'description' => "Salary payment for {$monthName}. Payroll ID: {$payroll->id}",
-            'amount' => $data->amount,
+            'amount' => $payroll->paid_amount, // Use paid_amount from transaction
             'expense_date' => now(),
             'payment_method' => $this->mapPaymentMethod($data->paymentMethod),
             'status' => true,

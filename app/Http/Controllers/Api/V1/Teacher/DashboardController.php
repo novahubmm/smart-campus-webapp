@@ -955,6 +955,7 @@ class DashboardController extends Controller
             $today = Carbon::today();
             $classId = $period->timetable?->schoolClass?->id;
             $counts = ['present' => 0, 'absent' => 0, 'leave' => 0, 'late' => 0];
+            $notificationService = app(\App\Services\AttendanceNotificationService::class);
 
             foreach ($request->attendance as $record) {
                 StudentAttendance::updateOrCreate(
@@ -971,6 +972,20 @@ class DashboardController extends Controller
                     ]
                 );
                 $counts[$record['status']]++;
+                
+                // Send notification to guardians
+                try {
+                    $notificationService->sendAttendanceNotification(
+                        $record['student_id'],
+                        $record['status'],
+                        $today->toDateString()
+                    );
+                } catch (\Exception $e) {
+                    \Log::error('Failed to send attendance notification', [
+                        'error' => $e->getMessage(),
+                        'student_id' => $record['student_id'],
+                    ]);
+                }
             }
 
             return response()->json([

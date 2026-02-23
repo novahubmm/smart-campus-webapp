@@ -21,8 +21,11 @@ class PayrollCreationData
         public readonly float $loyaltyBonus,
         public readonly float $otherBonus,
         public readonly float $amount,
+        public readonly float $totalAmount = 0,
+        public readonly float $paidAmount = 0,
+        public readonly int $paymentCount = 0,
         // Payment info
-        public readonly string $status = 'draft',
+        public readonly string $status = 'pending',
         public readonly ?string $paymentMethod = null,
         public readonly ?string $processedBy = null,
     ) {}
@@ -44,6 +47,9 @@ class PayrollCreationData
             loyaltyBonus: $data->loyaltyBonus,
             otherBonus: $data->otherBonus,
             amount: $data->amount,
+            totalAmount: $data->totalAmount,
+            paidAmount: $data->amount,
+            paymentCount: 1,
             status: 'paid',
             paymentMethod: $data->paymentMethod,
             processedBy: $data->processedBy,

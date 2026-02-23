@@ -180,11 +180,6 @@
                             <option value="teacher">{{ __('salary_payroll.Teachers Only') }}</option>
                             <option value="staff">{{ __('salary_payroll.Staff Only') }}</option>
                         </select>
-                        <select x-model="filters.status" @change="applyFilters()" class="rounded-lg border-gray-300 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-200 text-sm focus:border-blue-500 focus:ring-blue-500">
-                            <option value="all">{{ __('salary_payroll.All Status') }}</option>
-                            <option value="draft">{{ __('salary_payroll.Draft') }}</option>
-                            <option value="paid">{{ __('salary_payroll.Paid') }}</option>
-                        </select>
                         <input type="text" x-model="filters.search" @input.debounce.300ms="applyFilters()" class="rounded-lg border-gray-300 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-200 text-sm focus:border-blue-500 focus:ring-blue-500 min-w-[200px]" placeholder="{{ __('salary_payroll.Search by name or ID...') }}">
                         <button type="button" @click="resetFilters()" class="px-3 py-2 text-sm font-semibold rounded-lg border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700">{{ __('salary_payroll.Reset') }}</button>
                     </div>
@@ -208,8 +203,9 @@
                                 <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 dark:text-gray-300 whitespace-nowrap">{{ __('salary_payroll.Loyalty Bonus') }}</th>
                                 <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 dark:text-gray-300 whitespace-nowrap">{{ __('salary_payroll.Other Bonus') }}</th>
                                 <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 dark:text-gray-300 whitespace-nowrap">{{ __('salary_payroll.Total Salary') }}</th>
+                                <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 dark:text-gray-300 whitespace-nowrap">{{ __('salary_payroll.Paid Salary') }}</th>
+                                <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 dark:text-gray-300 whitespace-nowrap">{{ __('salary_payroll.Remaining Amount') }}</th>
                                 <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 dark:text-gray-300 whitespace-nowrap">{{ __('salary_payroll.Date of Joining') }}</th>
-                                <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 dark:text-gray-300 whitespace-nowrap">{{ __('salary_payroll.Status') }}</th>
                                 <th class="px-4 py-3 text-right text-xs font-semibold text-gray-600 dark:text-gray-300 whitespace-nowrap">{{ __('salary_payroll.Actions') }}</th>
                             </tr>
                         </thead>
@@ -222,7 +218,7 @@
                                             <div class="w-8 h-8 rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 text-white flex items-center justify-center text-xs font-semibold" x-text="entry.name.substring(0, 2).toUpperCase()"></div>
                                             <div>
                                                 <div class="text-sm font-medium text-gray-900 dark:text-white" x-text="entry.name"></div>
-                                                <div class="text-xs text-gray-500 dark:text-gray-400" x-text="entry.employee_id"></div>
+                                                <div class="text-xs text-gray-500 dark:text-gray-400" x-text="entry.display_employee_id || entry.employee_id"></div>
                                             </div>
                                         </div>
                                     </td>
@@ -237,26 +233,25 @@
                                     <td class="px-4 py-3 text-sm text-gray-700 dark:text-gray-300" x-text="formatNumber(entry.loyalty_bonus)"></td>
                                     <td class="px-4 py-3 text-sm text-gray-700 dark:text-gray-300" x-text="formatNumber(entry.other_bonus)"></td>
                                     <td class="px-4 py-3 text-sm font-semibold text-green-600 dark:text-green-400" x-text="formatNumber(entry.total_salary) + ' MMK'"></td>
-                                    <td class="px-4 py-3 text-sm text-gray-700 dark:text-gray-300" x-text="entry.hire_date || '-'"></td>
-                                    <td class="px-4 py-3">
-                                        <span x-show="entry.status === 'paid'" class="inline-flex items-center gap-1 px-2 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-300">
-                                            <i class="fas fa-check-circle"></i> {{ __('salary_payroll.Paid') }}
-                                        </span>
-                                        <span x-show="entry.status !== 'paid'" class="inline-flex items-center gap-1 px-2 py-1 text-xs font-semibold rounded-full bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-300">
-                                            <i class="fas fa-clock"></i> {{ __('salary_payroll.Draft') }}
-                                        </span>
+                                    <td class="px-4 py-3 text-sm text-gray-700 dark:text-gray-300">
+                                        <span x-show="entry.paid_amount > 0" x-text="formatNumber(entry.paid_amount) + ' MMK'"></span>
+                                        <span x-show="entry.paid_amount === 0" class="text-gray-400">-</span>
                                     </td>
+                                    <td class="px-4 py-3 text-sm font-semibold text-orange-600 dark:text-orange-400">
+                                        <span x-show="entry.remaining_amount > 0" x-text="formatNumber(entry.remaining_amount) + ' MMK'"></span>
+                                        <span x-show="entry.remaining_amount === 0" class="text-gray-400">-</span>
+                                    </td>
+                                    <td class="px-4 py-3 text-sm text-gray-700 dark:text-gray-300" x-text="entry.hire_date || '-'"></td>
                                     <td class="px-4 py-3 text-right">
-                                        <button x-show="entry.status !== 'paid'" @click="openPayModal(entry)" type="button" class="inline-flex items-center gap-1 px-3 py-1.5 text-xs font-semibold rounded-lg bg-green-100 text-green-700 hover:bg-green-200 dark:bg-green-900/40 dark:text-green-300 dark:hover:bg-green-900/60">
+                                        <button @click="openPayModal(entry)" type="button" class="inline-flex items-center gap-1 px-3 py-1.5 text-xs font-semibold rounded-lg bg-green-100 text-green-700 hover:bg-green-200 dark:bg-green-900/40 dark:text-green-300 dark:hover:bg-green-900/60">
                                             <i class="fas fa-hand-holding-usd"></i> {{ __('salary_payroll.Pay') }}
                                         </button>
-                                        <span x-show="entry.status === 'paid'" class="text-xs text-gray-400">{{ __('salary_payroll.Completed') }}</span>
                                     </td>
                                 </tr>
                             </template>
                             <template x-if="filteredEntries.length === 0">
                                 <tr>
-                                    <td colspan="16" class="px-4 py-12 text-center">
+                                    <td colspan="17" class="px-4 py-12 text-center">
                                         <div class="flex flex-col items-center justify-center text-gray-500 dark:text-gray-400">
                                             <i class="fas fa-inbox text-4xl mb-3 opacity-50"></i>
                                             <p class="text-sm">{{ __('salary_payroll.No payroll entries found.') }}</p>
@@ -353,11 +348,6 @@
                             <option value="teacher">{{ __('salary_payroll.Teachers') }}</option>
                             <option value="staff">{{ __('salary_payroll.Staff') }}</option>
                         </select>
-                        <select x-model="historyFilters.status" @change="applyHistoryFilters()" class="rounded-lg border-gray-300 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-200 text-sm focus:border-blue-500 focus:ring-blue-500">
-                            <option value="all">{{ __('salary_payroll.All Status') }}</option>
-                            <option value="paid">{{ __('salary_payroll.Withdrawn') }}</option>
-                            <option value="draft">{{ __('salary_payroll.Draft') }}</option>
-                        </select>
                         <input type="text" x-model="historyFilters.search" @input.debounce.300ms="applyHistoryFilters()" class="rounded-lg border-gray-300 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-200 text-sm focus:border-blue-500 focus:ring-blue-500 min-w-[200px]" placeholder="{{ __('salary_payroll.Search by name or ID...') }}">
                         <button type="button" @click="resetHistoryFilters()" class="px-3 py-2 text-sm font-semibold rounded-lg border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700">{{ __('salary_payroll.Reset') }}</button>
                     </div>
@@ -381,9 +371,9 @@
                                 <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 dark:text-gray-300 whitespace-nowrap">{{ __('salary_payroll.Loyalty Bonus') }}</th>
                                 <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 dark:text-gray-300 whitespace-nowrap">{{ __('salary_payroll.Other Bonus') }}</th>
                                 <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 dark:text-gray-300 whitespace-nowrap">{{ __('salary_payroll.Total Salary') }}</th>
+                                <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 dark:text-gray-300 whitespace-nowrap">{{ __('salary_payroll.Paid Salary') }}</th>
                                 <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 dark:text-gray-300 whitespace-nowrap">{{ __('salary_payroll.Payment Type') }}</th>
                                 <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 dark:text-gray-300 whitespace-nowrap">{{ __('salary_payroll.Withdrawal Date') }}</th>
-                                <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 dark:text-gray-300 whitespace-nowrap">{{ __('salary_payroll.Status') }}</th>
                             </tr>
                         </thead>
                         <tbody class="divide-y divide-gray-200 dark:divide-gray-700">
@@ -409,17 +399,10 @@
                                     <td class="px-4 py-3 text-sm text-gray-700 dark:text-gray-300" x-text="formatNumber(item.attendance_allowance)"></td>
                                     <td class="px-4 py-3 text-sm text-gray-700 dark:text-gray-300" x-text="formatNumber(item.loyalty_bonus)"></td>
                                     <td class="px-4 py-3 text-sm text-gray-700 dark:text-gray-300" x-text="formatNumber(item.other_bonus)"></td>
-                                    <td class="px-4 py-3 text-sm font-semibold text-green-600 dark:text-green-400" x-text="formatNumber(item.amount) + ' MMK'"></td>
+                                    <td class="px-4 py-3 text-sm font-semibold text-green-600 dark:text-green-400" x-text="formatNumber(item.total_salary) + ' MMK'"></td>
+                                    <td class="px-4 py-3 text-sm text-orange-600 dark:text-orange-400 font-semibold" x-text="formatNumber(item.paid_amount) + ' MMK'"></td>
                                     <td class="px-4 py-3 text-sm text-gray-700 dark:text-gray-300" x-text="item.payment_method || '-'"></td>
                                     <td class="px-4 py-3 text-sm text-gray-700 dark:text-gray-300" x-text="item.paid_at || '-'"></td>
-                                    <td class="px-4 py-3">
-                                        <span x-show="item.status === 'paid'" class="inline-flex items-center gap-1 px-2 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-300">
-                                            <i class="fas fa-check-circle"></i> {{ __('salary_payroll.Withdrawn') }}
-                                        </span>
-                                        <span x-show="item.status !== 'paid'" class="inline-flex items-center gap-1 px-2 py-1 text-xs font-semibold rounded-full bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-300">
-                                            <i class="fas fa-clock"></i> {{ __('salary_payroll.Draft') }}
-                                        </span>
-                                    </td>
                                 </tr>
                             </template>
                             <template x-if="filteredHistoryEntries.length === 0">
@@ -466,11 +449,37 @@
                             <p class="text-gray-700 dark:text-gray-300">
                                 {{ __('salary_payroll.Are you sure you want to process payment for') }} <strong x-text="selectedEntry?.name"></strong>?
                             </p>
-                            <div class="bg-gray-50 dark:bg-gray-900/50 rounded-lg p-4">
+                            <div class="bg-gray-50 dark:bg-gray-900/50 rounded-lg p-4 space-y-2">
                                 <div class="flex justify-between items-center">
-                                    <span class="text-sm text-gray-600 dark:text-gray-400">{{ __('salary_payroll.Total Amount') }}:</span>
-                                    <span class="font-bold text-lg text-green-600 dark:text-green-400" x-text="formatCurrency(selectedEntry?.total_salary || 0)"></span>
+                                    <span class="text-sm text-gray-600 dark:text-gray-400">{{ __('salary_payroll.Total Salary') }}:</span>
+                                    <span class="font-semibold text-gray-900 dark:text-gray-100" x-text="formatCurrency(selectedEntry?.total_salary || 0)"></span>
                                 </div>
+                                <div class="flex justify-between items-center" x-show="(selectedEntry?.paid_amount || 0) > 0">
+                                    <span class="text-sm text-gray-600 dark:text-gray-400">{{ __('salary_payroll.Already Paid') }}:</span>
+                                    <span class="font-semibold text-red-600 dark:text-red-400" x-text="'- ' + formatCurrency(selectedEntry?.paid_amount || 0)"></span>
+                                </div>
+                                <div class="flex justify-between items-center pt-2 border-t border-gray-200 dark:border-gray-700">
+                                    <span class="text-sm font-semibold text-gray-700 dark:text-gray-300">{{ __('salary_payroll.Remaining Amount') }}:</span>
+                                    <span class="font-bold text-lg text-green-600 dark:text-green-400" x-text="formatCurrency(remainingAmount)"></span>
+                                </div>
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-1.5">{{ __('salary_payroll.Payment Amount') }} <span class="text-red-500">*</span></label>
+                                <input 
+                                    type="number" 
+                                    x-model.number="paymentAmount" 
+                                    @input="validatePaymentAmount()"
+                                    :max="remainingAmount"
+                                    min="1"
+                                    step="1"
+                                    class="w-full rounded-lg border-gray-300 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-200 text-sm focus:border-blue-500 focus:ring-blue-500" 
+                                    placeholder="{{ __('salary_payroll.Enter amount to pay') }}"
+                                    required
+                                >
+                                <p class="text-xs text-gray-500 dark:text-gray-400 mt-1" x-show="paymentAmount > 0 && paymentAmount < remainingAmount">
+                                    {{ __('salary_payroll.Remaining after this payment') }}: <span class="font-semibold" x-text="formatCurrency(remainingAmount - paymentAmount)"></span>
+                                </p>
+                                <p class="text-xs text-red-500 mt-1" x-show="paymentAmountError" x-text="paymentAmountError"></p>
                             </div>
                             <div>
                                 <label class="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-1.5">{{ __('salary_payroll.Payment Method') }}</label>
@@ -490,7 +499,7 @@
                             <button type="button" class="px-4 py-2 text-sm font-medium rounded-lg border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700" @click="showPayModal = false">
                                 {{ __('salary_payroll.Cancel') }}
                             </button>
-                            <button type="submit" class="px-4 py-2 text-sm font-semibold rounded-lg text-white bg-blue-600 hover:bg-blue-700 disabled:opacity-50" :disabled="isSubmitting">
+                            <button type="submit" class="px-4 py-2 text-sm font-semibold rounded-lg text-white bg-blue-600 hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed" :disabled="isSubmitting || !paymentAmount || paymentAmount <= 0 || !!paymentAmountError">
                                 <span x-show="!isSubmitting"><i class="fas fa-check-circle mr-2"></i>{{ __('salary_payroll.Confirm Payment') }}</span>
                                 <span x-show="isSubmitting"><i class="fas fa-spinner fa-spin mr-2"></i>{{ __('salary_payroll.Processing...') }}</span>
                             </button>
@@ -511,6 +520,8 @@
                 selectedEntry: null,
                 paymentRemark: '',
                 paymentMethod: 'Cash',
+                paymentAmount: 0,
+                paymentAmountError: '',
                 selectedMonthDisplay: '{{ \Carbon\Carbon::createFromDate($selectedYear, $selectedMonth, 1)->format("F Y") }}',
                 
                 // Payroll entries from server
@@ -532,14 +543,12 @@
                 // Filters
                 filters: {
                     employeeType: 'all',
-                    status: 'all',
                     search: ''
                 },
                 historyFilters: {
                     month: '{{ $selectedMonth }}',
                     year: '{{ $selectedYear }}',
                     employeeType: 'all',
-                    status: 'all',
                     search: ''
                 },
 
@@ -621,12 +630,9 @@
                         if (this.filters.employeeType !== 'all' && entry.employee_type !== this.filters.employeeType) {
                             return false;
                         }
-                        if (this.filters.status !== 'all' && entry.status !== this.filters.status) {
-                            return false;
-                        }
                         if (this.filters.search) {
                             const search = this.filters.search.toLowerCase();
-                            if (!entry.name.toLowerCase().includes(search) && !entry.employee_id.toLowerCase().includes(search)) {
+                            if (!entry.name.toLowerCase().includes(search) && !(entry.display_employee_id || entry.employee_id).toLowerCase().includes(search)) {
                                 return false;
                             }
                         }
@@ -636,16 +642,13 @@
                 },
 
                 resetFilters() {
-                    this.filters = { employeeType: 'all', status: 'all', search: '' };
+                    this.filters = { employeeType: 'all', search: '' };
                     this.applyFilters();
                 },
 
                 applyHistoryFilters() {
                     this.filteredHistoryEntries = this.allHistoryEntries.filter(entry => {
                         if (this.historyFilters.employeeType !== 'all' && entry.employee_type !== this.historyFilters.employeeType) {
-                            return false;
-                        }
-                        if (this.historyFilters.status !== 'all' && entry.status !== this.historyFilters.status) {
                             return false;
                         }
                         if (this.historyFilters.search) {
@@ -661,7 +664,6 @@
 
                 resetHistoryFilters() {
                     this.historyFilters.employeeType = 'all';
-                    this.historyFilters.status = 'all';
                     this.historyFilters.search = '';
                     this.applyHistoryFilters();
                 },
@@ -685,15 +687,45 @@
                     return this.formatNumber(amount) + ' MMK';
                 },
 
+                get remainingAmount() {
+                    if (!this.selectedEntry) return 0;
+                    const totalSalary = this.selectedEntry.total_salary || 0;
+                    const paidAmount = this.selectedEntry.paid_amount || 0;
+                    return totalSalary - paidAmount;
+                },
+
+                validatePaymentAmount() {
+                    this.paymentAmountError = '';
+                    
+                    if (!this.paymentAmount || this.paymentAmount <= 0) {
+                        this.paymentAmountError = '{{ __("salary_payroll.Payment amount must be greater than 0") }}';
+                        return false;
+                    }
+                    
+                    if (this.paymentAmount > this.remainingAmount) {
+                        this.paymentAmountError = '{{ __("salary_payroll.Payment amount cannot exceed remaining amount") }}';
+                        return false;
+                    }
+                    
+                    return true;
+                },
+
                 openPayModal(entry) {
                     this.selectedEntry = entry;
                     this.paymentRemark = '';
                     this.paymentMethod = entry.payment_method || 'Cash';
+                    this.paymentAmount = (entry.total_salary || 0) - (entry.paid_amount || 0);
+                    this.paymentAmountError = '';
                     this.showPayModal = true;
                 },
 
                 async submitPayment() {
                     if (this.isSubmitting || !this.selectedEntry) return;
+                    
+                    if (!this.validatePaymentAmount()) {
+                        return;
+                    }
+                    
                     this.isSubmitting = true;
 
                     const formData = new FormData();
@@ -710,7 +742,8 @@
                     formData.append('attendance_allowance', this.selectedEntry.attendance_allowance || 0);
                     formData.append('loyalty_bonus', this.selectedEntry.loyalty_bonus || 0);
                     formData.append('other_bonus', this.selectedEntry.other_bonus || 0);
-                    formData.append('amount', this.selectedEntry.total_salary);
+                    formData.append('total_amount', this.selectedEntry.total_salary);
+                    formData.append('amount', this.paymentAmount);
                     formData.append('payment_method', this.paymentMethod);
                     formData.append('remark', this.paymentRemark || '');
 
@@ -724,13 +757,10 @@
                         if (data.success) {
                             this.showPayModal = false;
                             window.toast('{{ __("salary_payroll.Payroll payment processed successfully!") }}', 'success');
-                            // Update entry status locally
-                            const entry = this.allEntries.find(e => e.employee_id === this.selectedEntry.employee_id);
-                            if (entry) {
-                                entry.status = 'paid';
-                                entry.paid_at = data.payroll.paid_at;
-                            }
-                            this.applyFilters();
+                            // Redirect to history tab
+                            setTimeout(() => {
+                                window.location.href = '{{ route("salary-payroll.index") }}?tab=history';
+                            }, 1000);
                         } else {
                             window.toast(data.message || '{{ __("salary_payroll.Payment failed. Please try again.") }}', 'error');
                         }

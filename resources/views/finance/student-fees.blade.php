@@ -185,27 +185,33 @@
                     <!-- Filters -->
                     <div class="p-4 bg-gray-50 dark:bg-gray-900/50 border-b border-gray-200 dark:border-gray-700">
                         <form method="GET" action="{{ route('student-fees.index') }}" class="flex flex-wrap items-center gap-3" id="fee-filter-form">
+                            <!-- Preserve payment history filters -->
+                            <input type="hidden" name="history_date" value="{{ request('history_date', now()->format('Y-m-d')) }}">
+                            @if(request('history_grade'))
+                                <input type="hidden" name="history_grade" value="{{ request('history_grade') }}">
+                            @endif
+                            @if(request('history_fee_type'))
+                                <input type="hidden" name="history_fee_type" value="{{ request('history_fee_type') }}">
+                            @endif
+                            @if(request('history_search'))
+                                <input type="hidden" name="history_search" value="{{ request('history_search') }}">
+                            @endif
+                            
                             <span class="text-sm font-semibold text-gray-600 dark:text-gray-400">{{ __('finance.Filters:') }}</span>
-                            <select name="month" class="form-select-sm" onchange="this.form.submit()">
-                                @foreach($monthOptions as $option)
-                                    <option value="{{ $option['value'] }}" {{ $selectedMonth == $option['value'] ? 'selected' : '' }}>
-                                        {{ $option['label'] }}
-                                    </option>
-                                @endforeach
-                            </select>
-                            <select name="grade" class="form-select-sm" onchange="this.form.submit()">
+                            <input type="date" name="fee_date" value="{{ request('fee_date', now()->format('Y-m-d')) }}" class="form-input-sm" onchange="this.form.submit()">
+                            <select name="fee_grade" class="form-select-sm" onchange="this.form.submit()">
                                 <option value="">{{ __('finance.All Grades') }}</option>
                                 @foreach($grades as $grade)
-                                    <option value="{{ $grade->id }}" {{ request('grade') == $grade->id ? 'selected' : '' }}>{{ $grade->name }}</option>
+                                    <option value="{{ $grade->id }}" {{ request('fee_grade') == $grade->id ? 'selected' : '' }}>{{ $grade->name }}</option>
                                 @endforeach
                             </select>
-                            <select name="fee_type" class="form-select-sm" onchange="this.form.submit()">
+                            <select name="fee_fee_type" class="form-select-sm" onchange="this.form.submit()">
                                 <option value="">{{ __('finance.All Fee Types') }}</option>
                                 @foreach($feeTypes as $feeType)
-                                    <option value="{{ $feeType->id }}" {{ request('fee_type') == $feeType->id ? 'selected' : '' }}>{{ $feeType->name }}</option>
+                                    <option value="{{ $feeType->id }}" {{ request('fee_fee_type') == $feeType->id ? 'selected' : '' }}>{{ $feeType->name }}</option>
                                 @endforeach
                             </select>
-                            <input type="text" name="search" value="{{ request('search') }}" placeholder="{{ __('finance.Search by name or ID...') }}" class="form-input-sm" id="fee-search-input">
+                            <input type="text" name="fee_search" value="{{ request('fee_search') }}" placeholder="{{ __('finance.Search by name or ID...') }}" class="form-input-sm" id="fee-search-input">
                             <button type="submit" class="hidden">{{ __('finance.Apply') }}</button>
                             <a href="{{ route('student-fees.index') }}" class="btn-filter-reset">{{ __('finance.Reset') }}</a>
                         </form>
@@ -251,74 +257,76 @@
                                 </tr>
                             </thead>
                             <tbody class="divide-y divide-gray-200 dark:divide-gray-700">
-                                @forelse($unpaidInvoices as $index => $invoice)
-                                    @php
-                                        $student = $invoice->student;
-                                        $hasRejectedProof = isset($rejectedProofsByInvoice[$invoice->id]);
-                                        $rejectedProof = $hasRejectedProof ? $rejectedProofsByInvoice[$invoice->id] : null;
-                                    @endphp
-                                    <tr class="bg-white dark:bg-gray-900 hover:bg-gray-50 dark:hover:bg-gray-800/50 {{ $hasRejectedProof ? 'border-l-4 border-red-500' : '' }}">
-                                        <td class="td-cell text-center">{{ $unpaidInvoices->firstItem() + $index }}</td>
-                                        <td class="td-cell font-medium text-gray-900 dark:text-white">
-                                            <div>{{ $student->user?->name ?? '-' }}</div>
-                                            @if($hasRejectedProof)
-                                                <div class="flex items-center gap-1 mt-1">
-                                                    <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300">
-                                                        <i class="fas fa-times-circle mr-1"></i>
-                                                        {{ __('finance.Payment Rejected') }}
-                                                    </span>
-                                                </div>
-                                            @endif
-                                        </td>
-                                        <td class="td-cell text-gray-600 dark:text-gray-400">{{ $student->student_identifier }}</td>
-                                        <td class="td-cell">{{ $student->formatted_class_name }}</td>
-                                        <td class="td-cell font-mono text-xs text-gray-600 dark:text-gray-400">{{ $invoice->invoice_number ?? '-' }}</td>
-                                        <td class="td-cell">
-                                            @if($invoice->fees && $invoice->fees->isNotEmpty())
-                                                @foreach($invoice->fees as $fee)
-                                                    <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300">
-                                                        {{ $fee->fee_name }}
-                                                    </span>
-                                                @endforeach
-                                            @else
-                                                <span class="text-gray-500 dark:text-gray-400">-</span>
-                                            @endif
-                                        </td>
-                                        <td class="td-cell">
-                                            <div>{{ $invoice->invoice_date?->translatedFormat('F Y') ?? $currentMonth }}</div>
-                                            @if($hasRejectedProof && $rejectedProof->rejection_reason)
-                                                <div class="text-xs text-red-600 dark:text-red-400 mt-1">
-                                                    <i class="fas fa-info-circle"></i> {{ Str::limit($rejectedProof->rejection_reason, 30) }}
-                                                </div>
-                                            @endif
-                                        </td>
-                                        <td class="td-cell font-semibold text-green-600 dark:text-green-400">{{ number_format($invoice->total_amount, 0) }} MMK</td>
-                                        <!-- Actions -->
-                                        <td class="td-cell">
-                                            <div class="flex items-center gap-1">
-                                                <button type="button" class="action-btn process" @click="openPaymentModal(@js(['student' => $student, 'amount' => $invoice->total_amount, 'invoice' => $invoice]))" title="{{ __('finance.Process Payment') }}">
-                                                    <i class="fas fa-credit-card"></i> {{ __('finance.Pay') }}
-                                                </button>
-                                                <form method="POST" action="{{ route('student-fees.students.reinform', $student) }}" class="inline" id="reminder-form-{{ $student->id }}">
-                                                    @csrf
-                                                    <button type="button" class="action-btn" title="{{ __('finance.Remind again to parent') }}" 
-                                                        onclick="confirmAction('{{ route('student-fees.students.reinform', $student) }}', '{{ __('finance.Send Reminder') }}', '{{ __('finance.Send payment reminder to guardian?') }}', '{{ __('finance.Send Reminder') }}')">
-                                                        <i class="fas fa-bell"></i> {{ __('finance.Remind again to parent') }}
+                                @if($unpaidInvoices->count() > 0)
+                                    @foreach($unpaidInvoices as $index => $invoice)
+                                        @php
+                                            $student = $invoice->student;
+                                            $hasRejectedProof = isset($rejectedProofsByInvoice[$invoice->id]);
+                                            $rejectedProof = $hasRejectedProof ? $rejectedProofsByInvoice[$invoice->id] : null;
+                                        @endphp
+                                        <tr class="bg-white dark:bg-gray-900 hover:bg-gray-50 dark:hover:bg-gray-800/50 {{ $hasRejectedProof ? 'border-l-4 border-red-500' : '' }}">
+                                            <td class="td-cell text-center">{{ $unpaidInvoices->firstItem() + $index }}</td>
+                                            <td class="td-cell font-medium text-gray-900 dark:text-white">
+                                                <div>{{ $student->user?->name ?? '-' }}</div>
+                                                @if($hasRejectedProof)
+                                                    <div class="flex items-center gap-1 mt-1">
+                                                        <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300">
+                                                            <i class="fas fa-times-circle mr-1"></i>
+                                                            {{ __('finance.Payment Rejected') }}
+                                                        </span>
+                                                    </div>
+                                                @endif
+                                            </td>
+                                            <td class="td-cell text-gray-600 dark:text-gray-400">{{ $student->student_identifier }}</td>
+                                            <td class="td-cell">{{ $student->formatted_class_name }}</td>
+                                            <td class="td-cell font-mono text-xs text-gray-600 dark:text-gray-400">{{ $invoice->invoice_number ?? '-' }}</td>
+                                            <td class="td-cell">
+                                                @if($invoice->fees && $invoice->fees->isNotEmpty())
+                                                    @foreach($invoice->fees as $fee)
+                                                        <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300">
+                                                            {{ $fee->fee_name }}
+                                                        </span>
+                                                    @endforeach
+                                                @else
+                                                    <span class="text-gray-500 dark:text-gray-400">-</span>
+                                                @endif
+                                            </td>
+                                            <td class="td-cell">
+                                                <div>{{ $invoice->invoice_date?->translatedFormat('F Y') ?? $currentMonth }}</div>
+                                                @if($hasRejectedProof && $rejectedProof->rejection_reason)
+                                                    <div class="text-xs text-red-600 dark:text-red-400 mt-1">
+                                                        <i class="fas fa-info-circle"></i> {{ Str::limit($rejectedProof->rejection_reason, 30) }}
+                                                    </div>
+                                                @endif
+                                            </td>
+                                            <td class="td-cell font-semibold text-green-600 dark:text-green-400">{{ number_format($invoice->total_amount, 0) }} MMK</td>
+                                            <!-- Actions -->
+                                            <td class="td-cell">
+                                                <div class="flex items-center gap-1">
+                                                    <button type="button" class="action-btn process" @click="openPaymentModal(@js(['student' => $student, 'amount' => $invoice->total_amount, 'invoice' => $invoice]))" title="{{ __('finance.Process Payment') }}">
+                                                        <i class="fas fa-credit-card"></i> {{ __('finance.Pay') }}
                                                     </button>
-                                                </form>
-                                            </div>
-                                        </td>
-                                    </tr>
-                                @empty
+                                                    <form method="POST" action="{{ route('student-fees.students.reinform', $student) }}" class="inline" id="reminder-form-{{ $student->id }}">
+                                                        @csrf
+                                                        <button type="button" class="action-btn" title="{{ __('finance.Remind again to parent') }}" 
+                                                            onclick="confirmAction('{{ route('student-fees.students.reinform', $student) }}', '{{ __('finance.Send Reminder') }}', '{{ __('finance.Send payment reminder to guardian?') }}', '{{ __('finance.Send Reminder') }}')">
+                                                            <i class="fas fa-bell"></i> {{ __('finance.Remind again to parent') }}
+                                                        </button>
+                                                    </form>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    @endforeach
+                                @else
                                     <tr>
-                                        <td colspan="8" class="td-empty">
+                                        <td colspan="9" class="td-empty">
                                             <div class="flex flex-col items-center py-8">
                                                 <i class="fas fa-file-invoice text-4xl text-gray-300 dark:text-gray-600 mb-3"></i>
                                                 <p class="text-gray-500 dark:text-gray-400">{{ __('finance.No unpaid invoices found.') }}</p>
                                             </div>
                                         </td>
                                     </tr>
-                                @endforelse
+                                @endif
                             </tbody>
                         </table>
                     </div>
@@ -372,6 +380,55 @@
                         <h3 class="text-lg font-semibold text-gray-900 dark:text-white">{{ __('finance.Payment History Details') }} - {{ $currentMonth }}</h3>
                     </div>
 
+                    <!-- Filters for Payment History -->
+                    <div class="p-4 bg-gray-50 dark:bg-gray-900/50 border-b border-gray-200 dark:border-gray-700">
+                        <form method="GET" action="{{ route('student-fees.index') }}" id="history-filter-form" class="flex flex-wrap gap-3">
+                            <input type="hidden" name="tab" value="invoice">
+                            <!-- Preserve unpaid invoice filters -->
+                            <input type="hidden" name="fee_date" value="{{ request('fee_date', now()->format('Y-m-d')) }}">
+                            @if(request('fee_grade'))
+                                <input type="hidden" name="fee_grade" value="{{ request('fee_grade') }}">
+                            @endif
+                            @if(request('fee_fee_type'))
+                                <input type="hidden" name="fee_fee_type" value="{{ request('fee_fee_type') }}">
+                            @endif
+                            @if(request('fee_search'))
+                                <input type="hidden" name="fee_search" value="{{ request('fee_search') }}">
+                            @endif
+                            
+                            <input type="date" name="history_date" value="{{ request('history_date', now()->format('Y-m-d')) }}" class="form-input-sm" onchange="this.form.submit()">
+                            <select name="history_grade" class="form-select-sm" onchange="this.form.submit()">
+                                <option value="">{{ __('finance.All Grades') }}</option>
+                                @foreach($grades as $grade)
+                                    <option value="{{ $grade->id }}" {{ request('history_grade') == $grade->id ? 'selected' : '' }}>@gradeName($grade->level)</option>
+                                @endforeach
+                            </select>
+                            <select name="history_fee_type" class="form-select-sm" onchange="this.form.submit()">
+                                <option value="">{{ __('finance.All Fee Types') }}</option>
+                                @foreach($feeTypes as $feeType)
+                                    <option value="{{ $feeType->id }}" {{ request('history_fee_type') == $feeType->id ? 'selected' : '' }}>{{ $feeType->name }}</option>
+                                @endforeach
+                            </select>
+                            <input type="text" name="history_search" value="{{ request('history_search') }}" placeholder="{{ __('finance.Search by name or ID...') }}" class="form-input-sm" id="history-search-input">
+                            <button type="submit" class="hidden">{{ __('finance.Apply') }}</button>
+                            <a href="{{ route('student-fees.index') }}" class="btn-filter-reset">{{ __('finance.Reset') }}</a>
+                        </form>
+                    </div>
+
+                    <script>
+                        // Debounce search input for history
+                        const historySearchInput = document.getElementById('history-search-input');
+                        const historyFilterForm = document.getElementById('history-filter-form');
+                        let historyTimeout = null;
+
+                        historySearchInput.addEventListener('input', function() {
+                            clearTimeout(historyTimeout);
+                            historyTimeout = setTimeout(function() {
+                                historyFilterForm.submit();
+                            }, 500);
+                        });
+                    </script>
+
                     <!-- Payment History Table -->
                     <div class="overflow-x-auto">
                         <table class="min-w-full">
@@ -390,23 +447,24 @@
                                 </tr>
                             </thead>
                             <tbody class="divide-y divide-gray-200 dark:divide-gray-700">
-                                @forelse($paidPayments as $index => $invoice)
-                                    @php
-                                        // Get the most recent verified payment for this invoice
-                                        $latestPayment = $invoice->payments->first();
-                                        $paymentAmount = $latestPayment ? $latestPayment->payment_amount : $invoice->total_amount;
-                                    @endphp
-                                    <tr class="bg-white dark:bg-gray-900 hover:bg-gray-50 dark:hover:bg-gray-800/50">
-                                        <td class="td-cell text-center">{{ $paidPayments->firstItem() + $index }}</td>
-                                        <td class="td-cell font-medium text-gray-900 dark:text-white">{{ $invoice->student->user->name ?? '-' }}</td>
-                                        <td class="td-cell text-gray-600 dark:text-gray-400">{{ $invoice->student->student_identifier ?? '-' }}</td>
-                                        <td class="td-cell">{{ $invoice->student->formatted_class_name }}</td>
-                                        <td class="td-cell font-mono text-xs">{{ $invoice->invoice_number ?? '-' }}</td>
-                                        <td class="td-cell">
-                                            @if($invoice->fees && $invoice->fees->isNotEmpty())
-                                                @foreach($invoice->fees as $fee)
-                                                    <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300">
-                                                        {{ $fee->fee_name }}
+                                @if($paidPayments->count() > 0)
+                                    @foreach($paidPayments as $index => $invoice)
+                                        @php
+                                            // Get the most recent verified payment for this invoice
+                                            $latestPayment = $invoice->payments->first();
+                                            $paymentAmount = $latestPayment ? $latestPayment->payment_amount : $invoice->total_amount;
+                                        @endphp
+                                        <tr class="bg-white dark:bg-gray-900 hover:bg-gray-50 dark:hover:bg-gray-800/50">
+                                            <td class="td-cell text-center">{{ $paidPayments->firstItem() + $index }}</td>
+                                            <td class="td-cell font-medium text-gray-900 dark:text-white">{{ $invoice->student->user->name ?? '-' }}</td>
+                                            <td class="td-cell text-gray-600 dark:text-gray-400">{{ $invoice->student->student_identifier ?? '-' }}</td>
+                                            <td class="td-cell">{{ $invoice->student->formatted_class_name }}</td>
+                                            <td class="td-cell font-mono text-xs">{{ $invoice->invoice_number ?? '-' }}</td>
+                                            <td class="td-cell">
+                                                @if($invoice->fees && $invoice->fees->isNotEmpty())
+                                                    @foreach($invoice->fees as $fee)
+                                                        <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300">
+                                                            {{ $fee->fee_name }}
                                                     </span>
                                                 @endforeach
                                             @else
@@ -418,9 +476,19 @@
                                         <td class="td-cell">{{ $invoice->updated_at?->translatedFormat('M j, Y') }}</td>
                                         <td class="td-cell">
                                             @if($latestPayment)
-                                                <a href="{{ route('student-fees.payment-receipt', ['payment' => $latestPayment->id]) }}" class="action-btn view" title="{{ __('finance.View Receipt') }}">
-                                                    <i class="fas fa-receipt"></i> {{ __('finance.View Receipt') }}
-                                                </a>
+                                                <div class="flex gap-2">
+                                                    <button type="button" 
+                                                            onclick="viewPaymentProof('{{ $latestPayment->id }}')"
+                                                            class="action-btn view" 
+                                                            title="{{ __('finance.View Payment Details') }}">
+                                                        <i class="fas fa-eye"></i> {{ __('finance.View') }}
+                                                    </button>
+                                                    <a href="{{ route('student-fees.payment-receipt', ['payment' => $latestPayment->id]) }}" 
+                                                       class="action-btn view" 
+                                                       title="{{ __('finance.View Receipt') }}">
+                                                        <i class="fas fa-receipt"></i> {{ __('finance.Receipt') }}
+                                                    </a>
+                                                </div>
                                             @else
                                                 <button type="button" class="action-btn view" title="{{ __('finance.View Invoice') }}" @click="openInvoiceModal(@js($invoice))">
                                                     <i class="fas fa-file-invoice"></i> {{ __('finance.View Invoice') }}
@@ -428,7 +496,8 @@
                                             @endif
                                         </td>
                                     </tr>
-                                @empty
+                                    @endforeach
+                                @else
                                     <tr>
                                         <td colspan="10" class="td-empty">
                                             <div class="flex flex-col items-center py-8">
@@ -437,7 +506,7 @@
                                             </div>
                                         </td>
                                     </tr>
-                                @endforelse
+                                @endif
                             </tbody>
                         </table>
                     </div>
@@ -510,28 +579,55 @@
                     </div>
                 </div>
 
-                <!-- Filters for Pending & Rejected -->
-                <div class="mb-6 p-4 bg-gray-50 dark:bg-gray-900/50 border border-gray-200 dark:border-gray-700 rounded-xl">
-                    <form method="GET" action="{{ route('student-fees.index') }}" class="flex flex-wrap items-center gap-3" id="pending-filter-form">
-                        <input type="hidden" name="tab" value="pending_reject">
-                        <span class="text-sm font-semibold text-gray-600 dark:text-gray-400">{{ __('finance.Filters:') }}</span>
-                        <select name="month" class="form-select-sm" onchange="this.form.submit()">
-                            @foreach($monthOptions as $option)
-                                <option value="{{ $option['value'] }}" {{ $selectedMonth == $option['value'] ? 'selected' : '' }}>
-                                    {{ $option['label'] }}
-                                </option>
-                            @endforeach
-                        </select>
-                        <select name="grade" class="form-select-sm" onchange="this.form.submit()">
-                            <option value="">{{ __('finance.All Grades') }}</option>
-                            @foreach($grades as $grade)
-                                <option value="{{ $grade->id }}" {{ request('grade') == $grade->id ? 'selected' : '' }}>{{ $grade->name }}</option>
-                            @endforeach
-                        </select>
-                        <input type="text" name="search" value="{{ request('search') }}" placeholder="{{ __('finance.Search by name or ID...') }}" class="form-input-sm" id="pending-search-input">
-                        <button type="submit" class="hidden">{{ __('finance.Apply') }}</button>
-                        <a href="{{ route('student-fees.index', ['tab' => 'pending_reject']) }}" class="btn-filter-reset">{{ __('finance.Reset') }}</a>
-                    </form>
+                <!-- Pending Invoices Section -->
+                <div class="bg-white dark:bg-gray-800 border border-yellow-200 dark:border-yellow-700 rounded-xl shadow-sm mb-6">
+                    <div class="flex items-center justify-between p-4 border-b border-yellow-200 dark:border-yellow-700 bg-yellow-50 dark:bg-yellow-900/20">
+                        <div class="flex items-center gap-3">
+                            <div class="w-10 h-10 rounded-lg bg-yellow-500 text-white flex items-center justify-center">
+                                <i class="fas fa-clock"></i>
+                            </div>
+                            <div>
+                                <h3 class="text-lg font-semibold text-gray-900 dark:text-white">{{ __('finance.Pending Invoices List') }}</h3>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Filters for Pending Invoices -->
+                    <div class="p-4 bg-gray-50 dark:bg-gray-900/50 border-b border-gray-200 dark:border-gray-700">
+                        <form method="GET" action="{{ route('student-fees.index') }}" class="flex flex-wrap items-center gap-3" id="pending-filter-form">
+                            <input type="hidden" name="tab" value="pending_reject">
+                            <!-- Preserve rejected filters -->
+                            <input type="hidden" name="rejected_date" value="{{ request('rejected_date', now()->format('Y-m-d')) }}">
+                            @if(request('rejected_grade'))
+                                <input type="hidden" name="rejected_grade" value="{{ request('rejected_grade') }}">
+                            @endif
+                            @if(request('rejected_fee_type'))
+                                <input type="hidden" name="rejected_fee_type" value="{{ request('rejected_fee_type') }}">
+                            @endif
+                            @if(request('rejected_search'))
+                                <input type="hidden" name="rejected_search" value="{{ request('rejected_search') }}">
+                            @endif
+                            
+                            <span class="text-sm font-semibold text-gray-600 dark:text-gray-400">{{ __('finance.Filters:') }}</span>
+                            <input type="date" name="pending_date" value="{{ request('pending_date', now()->format('Y-m-d')) }}" class="form-input-sm" onchange="this.form.submit()">
+                            <select name="pending_grade" class="form-select-sm" onchange="this.form.submit()">
+                                <option value="">{{ __('finance.All Grades') }}</option>
+                                @foreach($grades as $grade)
+                                    <option value="{{ $grade->id }}" {{ request('pending_grade') == $grade->id ? 'selected' : '' }}>{{ $grade->name }}</option>
+                                @endforeach
+                            </select>
+                            <select name="pending_fee_type" class="form-select-sm" onchange="this.form.submit()">
+                                <option value="">{{ __('finance.All Fee Types') }}</option>
+                                @foreach($feeTypes as $feeType)
+                                    <option value="{{ $feeType->id }}" {{ request('pending_fee_type') == $feeType->id ? 'selected' : '' }}>{{ $feeType->name }}</option>
+                                @endforeach
+                            </select>
+                            <input type="text" name="pending_search" value="{{ request('pending_search') }}" placeholder="{{ __('finance.Search by name or ID...') }}" class="form-input-sm" id="pending-search-input">
+                            <button type="submit" class="hidden">{{ __('finance.Apply') }}</button>
+                            <a href="{{ route('student-fees.index', ['tab' => 'pending_reject']) }}" class="btn-filter-reset">{{ __('finance.Reset') }}</a>
+                        </form>
+                    </div>
+
                     <script>
                         // Debounce search input for pending tab
                         const pendingSearchInput = document.getElementById('pending-search-input');
@@ -545,20 +641,6 @@
                             }, 500);
                         });
                     </script>
-                </div>
-
-                <!-- Pending Invoices Section -->
-                <div class="bg-white dark:bg-gray-800 border border-yellow-200 dark:border-yellow-700 rounded-xl shadow-sm mb-6">
-                    <div class="flex items-center justify-between p-4 border-b border-yellow-200 dark:border-yellow-700 bg-yellow-50 dark:bg-yellow-900/20">
-                        <div class="flex items-center gap-3">
-                            <div class="w-10 h-10 rounded-lg bg-yellow-500 text-white flex items-center justify-center">
-                                <i class="fas fa-clock"></i>
-                            </div>
-                            <div>
-                                <h3 class="text-lg font-semibold text-gray-900 dark:text-white">{{ __('finance.Pending Invoices List') }}</h3>
-                            </div>
-                        </div>
-                    </div>
 
                     <div class="overflow-x-auto">
                         <table class="min-w-full">
@@ -576,23 +658,29 @@
                                 </tr>
                             </thead>
                             <tbody class="divide-y divide-gray-200 dark:divide-gray-700">
-                                @forelse($pendingPayments as $index => $payment)
-                                    <tr class="bg-white dark:bg-gray-900 hover:bg-gray-50 dark:hover:bg-gray-800/50">
-                                        <td class="td-cell text-center">{{ $pendingPayments->firstItem() + $index }}</td>
-                                        <td class="td-cell font-medium text-gray-900 dark:text-white">{{ $payment->student->user->name ?? '-' }}</td>
-                                        <td class="td-cell text-gray-600 dark:text-gray-400">{{ $payment->student->student_identifier ?? '-' }}</td>
-                                        <td class="td-cell">{{ $payment->student->formatted_class_name ?? '-' }}</td>
-                                        <td class="td-cell font-mono text-xs text-gray-600 dark:text-gray-400">{{ $payment->invoice ? $payment->invoice->invoice_number : '-' }}</td>
-                                        <td class="td-cell">{{ $payment->invoice ? ($payment->invoice->invoice_date?->translatedFormat('F Y') ?? '-') : '-' }}</td>
-                                        <td class="td-cell font-semibold text-gray-900 dark:text-white">{{ number_format($payment->payment_amount, 0) }} MMK</td>
-                                        <td class="td-cell text-gray-600 dark:text-gray-400">{{ $payment->created_at->translatedFormat('M j, Y') }}</td>
-                                        <td class="td-cell">
-                                            <button type="button" class="action-btn process" title="{{ __('finance.Verify') }}" onclick="viewPaymentProof('{{ $payment->id }}')">
-                                                <i class="fas fa-check-circle"></i> {{ __('finance.Verify') }}
-                                            </button>
-                                        </td>
-                                    </tr>
-                                @empty
+                                @if($pendingPayments->count() > 0)
+                                    @foreach($pendingPayments as $index => $payment)
+                                        <tr class="bg-white dark:bg-gray-900 hover:bg-gray-50 dark:hover:bg-gray-800/50">
+                                            <td class="td-cell text-center">{{ $pendingPayments->firstItem() + $index }}</td>
+                                            <td class="td-cell font-medium text-gray-900 dark:text-white">{{ $payment->student->user->name ?? '-' }}</td>
+                                            <td class="td-cell text-gray-600 dark:text-gray-400">{{ $payment->student->student_identifier ?? '-' }}</td>
+                                            <td class="td-cell">{{ $payment->student->formatted_class_name ?? '-' }}</td>
+                                            <td class="td-cell font-mono text-xs text-gray-600 dark:text-gray-400">{{ $payment->invoice ? $payment->invoice->invoice_number : '-' }}</td>
+                                            <td class="td-cell">
+                                                <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300">
+                                                    {{ $payment->payment_months }} {{ __('finance.month(s)') }}
+                                                </span>
+                                            </td>
+                                            <td class="td-cell font-semibold text-gray-900 dark:text-white">{{ number_format($payment->payment_amount, 0) }} MMK</td>
+                                            <td class="td-cell text-gray-600 dark:text-gray-400">{{ $payment->created_at->translatedFormat('M j, Y') }}</td>
+                                            <td class="td-cell">
+                                                <button type="button" class="action-btn view" title="{{ __('finance.View') }}" onclick="viewPaymentProof('{{ $payment->id }}')">
+                                                    <i class="fas fa-eye"></i> {{ __('finance.View') }}
+                                                </button>
+                                            </td>
+                                        </tr>
+                                    @endforeach
+                                @else
                                     <tr>
                                         <td colspan="9" class="td-empty">
                                             <div class="flex flex-col items-center py-8">
@@ -601,7 +689,7 @@
                                             </div>
                                         </td>
                                     </tr>
-                                @endforelse
+                                @endif
                             </tbody>
                         </table>
                     </div>
@@ -623,6 +711,56 @@
                         </div>
                     </div>
 
+                    <!-- Filters for Rejected Invoices -->
+                    <div class="p-4 bg-gray-50 dark:bg-gray-900/50 border-b border-gray-200 dark:border-gray-700">
+                        <form method="GET" action="{{ route('student-fees.index') }}" class="flex flex-wrap items-center gap-3" id="rejected-filter-form">
+                            <input type="hidden" name="tab" value="pending_reject">
+                            <!-- Preserve pending filters -->
+                            <input type="hidden" name="pending_date" value="{{ request('pending_date', now()->format('Y-m-d')) }}">
+                            @if(request('pending_grade'))
+                                <input type="hidden" name="pending_grade" value="{{ request('pending_grade') }}">
+                            @endif
+                            @if(request('pending_fee_type'))
+                                <input type="hidden" name="pending_fee_type" value="{{ request('pending_fee_type') }}">
+                            @endif
+                            @if(request('pending_search'))
+                                <input type="hidden" name="pending_search" value="{{ request('pending_search') }}">
+                            @endif
+                            
+                            <span class="text-sm font-semibold text-gray-600 dark:text-gray-400">{{ __('finance.Filters:') }}</span>
+                            <input type="date" name="rejected_date" value="{{ request('rejected_date', now()->format('Y-m-d')) }}" class="form-input-sm" onchange="this.form.submit()">
+                            <select name="rejected_grade" class="form-select-sm" onchange="this.form.submit()">
+                                <option value="">{{ __('finance.All Grades') }}</option>
+                                @foreach($grades as $grade)
+                                    <option value="{{ $grade->id }}" {{ request('rejected_grade') == $grade->id ? 'selected' : '' }}>{{ $grade->name }}</option>
+                                @endforeach
+                            </select>
+                            <select name="rejected_fee_type" class="form-select-sm" onchange="this.form.submit()">
+                                <option value="">{{ __('finance.All Fee Types') }}</option>
+                                @foreach($feeTypes as $feeType)
+                                    <option value="{{ $feeType->id }}" {{ request('rejected_fee_type') == $feeType->id ? 'selected' : '' }}>{{ $feeType->name }}</option>
+                                @endforeach
+                            </select>
+                            <input type="text" name="rejected_search" value="{{ request('rejected_search') }}" placeholder="{{ __('finance.Search by name or ID...') }}" class="form-input-sm" id="rejected-search-input">
+                            <button type="submit" class="hidden">{{ __('finance.Apply') }}</button>
+                            <a href="{{ route('student-fees.index', ['tab' => 'pending_reject']) }}" class="btn-filter-reset">{{ __('finance.Reset') }}</a>
+                        </form>
+                    </div>
+
+                    <script>
+                        // Debounce search input for rejected tab
+                        const rejectedSearchInput = document.getElementById('rejected-search-input');
+                        const rejectedFilterForm = document.getElementById('rejected-filter-form');
+                        let rejectedTimeout = null;
+
+                        rejectedSearchInput.addEventListener('input', function() {
+                            clearTimeout(rejectedTimeout);
+                            rejectedTimeout = setTimeout(function() {
+                                rejectedFilterForm.submit();
+                            }, 500);
+                        });
+                    </script>
+
                     <div class="overflow-x-auto">
                         <table class="min-w-full">
                             <thead class="bg-gray-50 dark:bg-gray-700">
@@ -639,30 +777,34 @@
                                 </tr>
                             </thead>
                             <tbody class="divide-y divide-gray-200 dark:divide-gray-700">
-                                @forelse($rejectedPayments as $index => $payment)
-                                    <tr class="bg-white dark:bg-gray-900 hover:bg-gray-50 dark:hover:bg-gray-800/50">
-                                        <td class="td-cell text-center">{{ $rejectedPayments->firstItem() + $index }}</td>
-                                        <td class="td-cell font-medium text-gray-900 dark:text-white">{{ $payment->student->user->name ?? '-' }}</td>
-                                        <td class="td-cell text-gray-600 dark:text-gray-400">{{ $payment->student->student_identifier ?? '-' }}</td>
-                                        <td class="td-cell">{{ $payment->student->formatted_class_name ?? '-' }}</td>
-                                        <td class="td-cell font-mono text-xs text-gray-600 dark:text-gray-400">{{ $payment->invoice ? $payment->invoice->invoice_number : '-' }}</td>
-                                        <td class="td-cell">
-                                            <div>{{ $payment->invoice ? ($payment->invoice->invoice_date?->translatedFormat('F Y') ?? '-') : '-' }}</div>
-                                            @if($payment->rejection_reason)
-                                                <div class="text-xs text-red-600 dark:text-red-400 mt-1">
-                                                    <i class="fas fa-info-circle"></i> {{ Str::limit($payment->rejection_reason, 30) }}
-                                                </div>
-                                            @endif
-                                        </td>
-                                        <td class="td-cell font-semibold text-red-600 dark:text-red-400">{{ number_format($payment->payment_amount, 0) }} MMK</td>
-                                        <td class="td-cell text-gray-600 dark:text-gray-400">{{ $payment->updated_at->translatedFormat('M j, Y') }}</td>
-                                        <td class="td-cell">
-                                            <button type="button" class="action-btn view" title="{{ __('finance.View') }}" onclick="viewPaymentProof('{{ $payment->id }}')">
-                                                <i class="fas fa-eye"></i> {{ __('finance.View') }}
-                                            </button>
-                                        </td>
-                                    </tr>
-                                @empty
+                                @if($rejectedPayments->count() > 0)
+                                    @foreach($rejectedPayments as $index => $payment)
+                                        <tr class="bg-white dark:bg-gray-900 hover:bg-gray-50 dark:hover:bg-gray-800/50">
+                                            <td class="td-cell text-center">{{ $rejectedPayments->firstItem() + $index }}</td>
+                                            <td class="td-cell font-medium text-gray-900 dark:text-white">{{ $payment->student->user->name ?? '-' }}</td>
+                                            <td class="td-cell text-gray-600 dark:text-gray-400">{{ $payment->student->student_identifier ?? '-' }}</td>
+                                            <td class="td-cell">{{ $payment->student->formatted_class_name ?? '-' }}</td>
+                                            <td class="td-cell font-mono text-xs text-gray-600 dark:text-gray-400">{{ $payment->invoice ? $payment->invoice->invoice_number : '-' }}</td>
+                                            <td class="td-cell">
+                                                <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300">
+                                                    {{ $payment->payment_months }} {{ __('finance.month(s)') }}
+                                                </span>
+                                                @if($payment->rejection_reason)
+                                                    <div class="text-xs text-red-600 dark:text-red-400 mt-1">
+                                                        <i class="fas fa-info-circle"></i> {{ Str::limit($payment->rejection_reason, 30) }}
+                                                    </div>
+                                                @endif
+                                            </td>
+                                            <td class="td-cell font-semibold text-red-600 dark:text-red-400">{{ number_format($payment->payment_amount, 0) }} MMK</td>
+                                            <td class="td-cell text-gray-600 dark:text-gray-400">{{ $payment->updated_at->translatedFormat('M j, Y') }}</td>
+                                            <td class="td-cell">
+                                                <button type="button" class="action-btn view" title="{{ __('finance.View') }}" onclick="viewPaymentProof('{{ $payment->id }}')">
+                                                    <i class="fas fa-eye"></i> {{ __('finance.View') }}
+                                                </button>
+                                            </td>
+                                        </tr>
+                                    @endforeach
+                                @else
                                     <tr>
                                         <td colspan="9" class="td-empty">
                                             <div class="flex flex-col items-center py-8">
@@ -671,7 +813,7 @@
                                             </div>
                                         </td>
                                     </tr>
-                                @endforelse
+                                @endif
                             </tbody>
                         </table>
                     </div>
@@ -2108,11 +2250,17 @@
         function studentFeeManager() {
             const currentDay = new Date().getDate(); // 1-31
             const currentMonth = new Date().getMonth() + 1; // 1-12
+            
+            // Get tab from URL and normalize old values
+            let urlTab = new URLSearchParams(window.location.search).get('tab') || 'invoice';
+            // Map old tab names to new ones
+            if (urlTab === 'fee-management') urlTab = 'invoice';
+            
             return {
                 initialized: false,
                 currentDay: currentDay,
                 currentMonth: currentMonth,
-                activeTab: new URLSearchParams(window.location.search).get('tab') || 'invoice',
+                activeTab: urlTab,
                 showPaymentModal: false,
                 // showStructureModal removed
                 showCategoryModal: false,
@@ -3134,6 +3282,14 @@
                                 <h4 class="font-semibold text-gray-900 dark:text-white border-b pb-2">{{ __('finance.Payment Information') }}</h4>
                                 <div class="space-y-2 text-sm">
                                     <div class="flex justify-between">
+                                        <span class="text-gray-600 dark:text-gray-400">{{ __('finance.Invoice No') }}:</span>
+                                        <span class="font-mono text-xs font-medium text-gray-900 dark:text-gray-100">${data.invoice_number || 'N/A'}</span>
+                                    </div>
+                                    <div class="flex justify-between">
+                                        <span class="text-gray-600 dark:text-gray-400">{{ __('finance.Payment No') }}:</span>
+                                        <span class="font-mono text-xs font-medium text-gray-900 dark:text-gray-100">${data.payment_number || 'N/A'}</span>
+                                    </div>
+                                    <div class="flex justify-between">
                                         <span class="text-gray-600 dark:text-gray-400">{{ __('finance.Amount') }}:</span>
                                         <span class="font-semibold text-lg text-gray-900 dark:text-gray-100">${Number(data.payment_amount).toLocaleString()} MMK</span>
                                     </div>
@@ -3183,6 +3339,7 @@
                                     class="px-4 py-2 bg-gray-200 hover:bg-gray-300 dark:bg-gray-700 dark:hover:bg-gray-600 text-gray-800 dark:text-gray-200 rounded-lg transition-colors">
                                 {{ __('finance.Cancel') }}
                             </button>
+                            ${data.status === 'pending_verification' ? `
                             <button type="button" 
                                     onclick="openRejectProofModal('${proofId}')"
                                     class="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg transition-colors">
@@ -3195,6 +3352,15 @@
                                 <i class="fas fa-check mr-1"></i>
                                 {{ __('finance.Approve') }}
                             </button>
+                            ` : ''}
+                            ${data.status === 'rejected' && data.rejection_reason ? `
+                            <div class="flex-1 text-left">
+                                <p class="text-sm text-red-600 dark:text-red-400">
+                                    <i class="fas fa-exclamation-circle mr-1"></i>
+                                    <strong>{{ __('finance.Rejection Reason') }}:</strong> ${data.rejection_reason}
+                                </p>
+                            </div>
+                            ` : ''}
                         </div>
                     `;
                 } else {

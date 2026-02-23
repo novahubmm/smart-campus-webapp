@@ -488,6 +488,26 @@ class StudentController extends Controller
     }
 
     /**
+     * Get Complete Student Profile (Full Profile Tab)
+     * GET /api/v1/guardian/students/{id}/profile/full
+     */
+    public function fullProfile(Request $request, string $id): JsonResponse
+    {
+        try {
+            $student = $this->getAuthorizedStudent($request, $id);
+            if (!$student) {
+                return ApiResponse::error('Student not found or unauthorized', 404);
+            }
+
+            $profile = $this->studentRepository->getFullProfile($student);
+
+            return ApiResponse::success($profile);
+        } catch (\Exception $e) {
+            return ApiResponse::error('Failed to retrieve full profile: ' . $e->getMessage(), 500);
+        }
+    }
+
+    /**
      * Helper to get authorized student
      */
     private function getAuthorizedStudent(Request $request, string $studentId): ?StudentProfile

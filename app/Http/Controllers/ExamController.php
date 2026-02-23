@@ -122,7 +122,7 @@ class ExamController extends Controller
     public function store(StoreExamRequest $request): RedirectResponse
     {
         $validated = $request->validated();
-        
+
         // Get batch_id from the selected grade
         if (isset($validated['grade_id'])) {
             $grade = Grade::find($validated['grade_id']);
@@ -130,11 +130,28 @@ class ExamController extends Controller
                 $validated['batch_id'] = $grade->batch_id;
             }
         }
-        
+
         $data = ExamData::from($validated);
         $exam = $this->service->create($data);
 
         $this->logCreate('Exam', $exam->id ?? '', $validated['name'] ?? null);
+
+        // Send notification to guardians
+        try {
+            $guardianNotificationService = app(\App\Services\GuardianNotificationService::class);
+            $guardianNotificationService->sendExamNotification(
+                $exam->id,
+                $exam->name,
+                $exam->grade_id,
+                $exam->class_id,
+                $exam->start_date?->format('Y-m-d')
+            );
+        } catch (\Exception $e) {
+            \Log::error('Failed to send guardian exam notification', [
+                'error' => $e->getMessage(),
+                'exam_id' => $exam->id,
+            ]);
+        }
 
         return redirect()->route('exams.index')->with('success', __('Exam created successfully.'));
     }

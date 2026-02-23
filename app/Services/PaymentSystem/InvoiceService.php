@@ -225,9 +225,70 @@ class InvoiceService
     }
 
     /**
+     * Create a duplicate invoice after payment rejection.
+     * This allows the guardian to resubmit payment with the same fees.
+     *
+     * @param Invoice $originalInvoice
+     * @return Invoice
+     */
+    public function createDuplicateInvoiceAfterRejection(Invoice $originalInvoice): Invoice
+    {
+        return DB::transaction(function () use ($originalInvoice) {
+            // Generate unique invoice number
+            $invoiceNumber = $this->generateInvoiceNumber();
+
+            // Get due date from configuration (default 30 days from now)
+            $dueDate = $this->calculateDueDate();
+
+            // Create the duplicate invoice with same amounts
+            $newInvoice = Invoice::create([
+                'invoice_number' => $invoiceNumber,
+                'student_id' => $originalInvoice->student_id,
+                'batch_id' => $originalInvoice->batch_id,
+                'total_amount' => $originalInvoice->total_amount,
+                'paid_amount' => 0,
+                'remaining_amount' => $originalInvoice->total_amount,
+                'due_date' => $dueDate,
+                'status' => 'pending',
+                'invoice_type' => $originalInvoice->invoice_type,
+                'academic_year' => $originalInvoice->academic_year,
+                'parent_invoice_id' => $originalInvoice->id,
+            ]);
+
+            // Duplicate all invoice fees
+            foreach ($originalInvoice->fees as $originalFee) {
+                InvoiceFee::create([
+                    'invoice_id' => $newInvoice->id,
+                    'fee_id' => $originalFee->fee_id,
+                    'fee_type_id' => $originalFee->fee_type_id,
+                    'fee_name' => $originalFee->fee_name,
+                    'fee_name_mm' => $originalFee->fee_name_mm,
+                    'amount' => $originalFee->amount,
+                    'paid_amount' => 0,
+                    'remaining_amount' => $originalFee->amount,
+                    'supports_payment_period' => $originalFee->supports_payment_period,
+                    'due_date' => $dueDate,
+                    'status' => 'unpaid',
+                ]);
+            }
+
+            Log::info('Duplicate invoice created after payment rejection', [
+                'original_invoice_id' => $originalInvoice->id,
+                'original_invoice_number' => $originalInvoice->invoice_number,
+                'new_invoice_id' => $newInvoice->id,
+                'new_invoice_number' => $newInvoice->invoice_number,
+                'total_amount' => $newInvoice->total_amount,
+                'fees_count' => $originalInvoice->fees->count(),
+            ]);
+
+            return $newInvoice;
+        });
+    }
+
+    /**
      * Generate a unique invoice number.
      *
-     * Format: INV-YYYYMMDD-XXXX
+     * Format: INVYYYYMMDD-XXXX
      * Where XXXX is a sequential number for the day.
      *
      * @return string
@@ -241,7 +302,7 @@ class InvoiceService
         $maxAttempts = 10;
         for ($attempt = 0; $attempt < $maxAttempts; $attempt++) {
             $sequence = $this->getNextInvoiceSequence();
-            $invoiceNumber = sprintf('%s-%s-%04d', $prefix, $date, $sequence);
+            $invoiceNumber = sprintf('%s%s-%04d', $prefix, $date, $sequence);
             
             // Check if this invoice number already exists
             if (!Invoice::where('invoice_number', $invoiceNumber)->exists()) {
@@ -254,7 +315,7 @@ class InvoiceService
         
         // Fallback: use a random component if we can't get a unique sequence
         $random = strtoupper(substr(md5(uniqid(mt_rand(), true)), 0, 4));
-        return sprintf('%s-%s-%s', $prefix, $date, $random);
+        return sprintf('%s%s-%s', $prefix, $date, $random);
     }
 
     /**
@@ -269,7 +330,7 @@ class InvoiceService
             ->lockForUpdate()
             ->first();
         
-        if ($lastInvoice && preg_match('/INV-\d{8}-(\d{4})/', $lastInvoice->invoice_number, $matches)) {
+        if ($lastInvoice && preg_match('/INV\d{8}-(\d{4})/', $lastInvoice->invoice_number, $matches)) {
             return intval($matches[1]) + 1;
         }
         

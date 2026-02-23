@@ -12,7 +12,8 @@ use Illuminate\Support\Facades\Log;
 class PaymentVerificationService
 {
     public function __construct(
-        protected NotificationService $notificationService
+        protected NotificationService $notificationService,
+        protected InvoiceService $invoiceService
     ) {}
 
     /**
@@ -202,7 +203,9 @@ class PaymentVerificationService
             );
         }
 
-        DB::transaction(function () use ($payment, $reason, $admin) {
+        $newInvoice = null;
+
+        DB::transaction(function () use ($payment, $reason, $admin, &$newInvoice) {
             // Update payment status
             $payment->status = 'rejected';
             $payment->rejection_reason = $reason;
@@ -210,8 +213,14 @@ class PaymentVerificationService
             $payment->verified_at = now();
             $payment->save();
             
-            // Rollback payment amounts
-            $this->rollbackPaymentAmounts($payment);
+            // Rollback payment amounts and set invoice status to 'rejected'
+            $this->rollbackPaymentAmounts($payment, true);
+
+            // Create a duplicate invoice for resubmission
+            $originalInvoice = $payment->invoice;
+            if ($originalInvoice) {
+                $newInvoice = $this->invoiceService->createDuplicateInvoiceAfterRejection($originalInvoice);
+            }
         });
 
         // Notify guardian — failure should not break the rejection flow
@@ -223,18 +232,29 @@ class PaymentVerificationService
                 'error' => $e->getMessage(),
             ]);
         }
+
+        // Log the new invoice creation
+        if ($newInvoice) {
+            Log::info('New invoice created after payment rejection', [
+                'rejected_payment_id' => $payment->id,
+                'original_invoice_id' => $payment->invoice_id,
+                'new_invoice_id' => $newInvoice->id,
+                'new_invoice_number' => $newInvoice->invoice_number,
+            ]);
+        }
     }
 
     /**
      * Rollback invoice and invoice_fee amounts after payment rejection.
      * 
-     * Subtracts the payment amounts from invoice_fees and invoices, recalculates
-     * remaining amounts, and updates statuses accordingly.
+     * Resets the payment amounts on invoice_fees and invoices back to unpaid state,
+     * and updates statuses accordingly.
      * 
      * @param Payment $payment The rejected payment
+     * @param bool $setRejectedStatus Whether to set invoice status to 'rejected'
      * @return void
      */
-    public function rollbackPaymentAmounts(Payment $payment): void
+    public function rollbackPaymentAmounts(Payment $payment, bool $setRejectedStatus = false): void
     {
         // Load payment with relationships
         $payment->load(['feeDetails.invoiceFee.invoice']);
@@ -242,16 +262,14 @@ class PaymentVerificationService
         // Track invoices that need to be updated
         $invoicesToUpdate = collect();
         
-        // Rollback each invoice_fee
+        // Rollback each invoice_fee - reset to unpaid state
         foreach ($payment->feeDetails as $feeDetail) {
             $invoiceFee = $feeDetail->invoiceFee;
             
-            // Rollback paid_amount and remaining_amount
-            $invoiceFee->paid_amount -= $feeDetail->paid_amount;
-            $invoiceFee->remaining_amount = $invoiceFee->amount - $invoiceFee->paid_amount;
-            
-            // Recalculate status
-            $invoiceFee->status = $this->calculateInvoiceFeeStatus($invoiceFee);
+            // Reset to unpaid state (assuming this was the first/only payment attempt)
+            $invoiceFee->paid_amount = 0;
+            $invoiceFee->remaining_amount = $invoiceFee->amount;
+            $invoiceFee->status = 'unpaid';
             $invoiceFee->save();
             
             // Track the invoice for later update
@@ -262,7 +280,7 @@ class PaymentVerificationService
         
         // Rollback and recalculate each affected invoice
         foreach ($invoicesToUpdate as $invoice) {
-            $this->recalculateInvoiceAmounts($invoice);
+            $this->recalculateInvoiceAmounts($invoice, $setRejectedStatus);
         }
     }
 
@@ -289,9 +307,10 @@ class PaymentVerificationService
      * Recalculate invoice amounts and status based on its invoice_fees.
      * 
      * @param Invoice $invoice
+     * @param bool $setRejectedStatus Whether to set status to 'rejected' instead of calculating
      * @return void
      */
-    private function recalculateInvoiceAmounts(Invoice $invoice): void
+    private function recalculateInvoiceAmounts(Invoice $invoice, bool $setRejectedStatus = false): void
     {
         // Reload fees to get fresh data
         $invoice->load('fees');
@@ -302,8 +321,12 @@ class PaymentVerificationService
         // Recalculate remaining_amount
         $invoice->remaining_amount = $invoice->total_amount - $invoice->paid_amount;
         
-        // Recalculate status
-        $invoice->status = $this->calculateInvoiceStatus($invoice);
+        // Set status
+        if ($setRejectedStatus) {
+            $invoice->status = 'rejected';
+        } else {
+            $invoice->status = $this->calculateInvoiceStatus($invoice);
+        }
         
         $invoice->save();
     }

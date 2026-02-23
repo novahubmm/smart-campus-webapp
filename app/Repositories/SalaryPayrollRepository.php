@@ -17,6 +17,7 @@ class SalaryPayrollRepository implements SalaryPayrollRepositoryInterface
         return Payroll::query()
             ->where('year', $year)
             ->where('month', $month)
+            ->where('status', 'pending') // Only show pending payrolls
             ->get()
             ->keyBy(function (Payroll $payroll) {
                 return $this->key($payroll->employee_type, $payroll->employee_id);
@@ -25,7 +26,10 @@ class SalaryPayrollRepository implements SalaryPayrollRepositoryInterface
 
     public function listHistory(PayrollFilterData $filter): LengthAwarePaginator
     {
-        $query = Payroll::query()->with('processedBy')->latest('paid_at');
+        $query = Payroll::query()
+            ->with('processedBy')
+            ->where('status', 'paid') // Only show paid invoices in history
+            ->latest('paid_at');
 
         if ($filter->year) {
             $query->where('year', $filter->year);
@@ -33,10 +37,6 @@ class SalaryPayrollRepository implements SalaryPayrollRepositoryInterface
 
         if ($filter->month) {
             $query->where('month', $filter->month);
-        }
-
-        if ($filter->status) {
-            $query->where('status', $filter->status);
         }
 
         return $query->paginate($filter->perPage);
@@ -78,6 +78,9 @@ class SalaryPayrollRepository implements SalaryPayrollRepositoryInterface
             'loyalty_bonus' => $data->loyaltyBonus,
             'other_bonus' => $data->otherBonus,
             'amount' => $data->amount,
+            'total_amount' => $data->totalAmount,
+            'paid_amount' => $data->paidAmount,
+            'payment_count' => $data->paymentCount,
             'status' => $data->status,
             'payment_method' => $data->paymentMethod,
             'processed_by' => $data->processedBy,
@@ -108,6 +111,7 @@ class SalaryPayrollRepository implements SalaryPayrollRepositoryInterface
             ->where('employee_id', $employeeId)
             ->where('year', $year)
             ->where('month', $month)
+            ->where('status', 'pending') // Only find pending records
             ->first();
     }
 

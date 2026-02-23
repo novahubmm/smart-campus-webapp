@@ -66,6 +66,12 @@ Schedule::job(new \App\Jobs\MarkAbsentStaffJob())
     ->dailyAt('01:20')
     ->withoutOverlapping();
 
+// Send weekly payment reminders every Monday at 9:00 AM
+Schedule::command('payments:send-weekly-reminders')
+    ->weeklyOn(1, '09:00')
+    ->withoutOverlapping()
+    ->runInBackground();
+
 Artisan::command('preflight:check {--quick : Skip database connectivity check}', function () {
     $results = [];
     $failed = 0;

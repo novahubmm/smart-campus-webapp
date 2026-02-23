@@ -44,10 +44,11 @@ class SalaryPayrollController extends Controller
             'staffCount' => $entries->filter(fn($e) => $e->employeeType === 'staff')->count(),
         ];
 
-        // Build payroll entries for Alpine.js
+        // Build payroll entries for Alpine.js (only show pending entries in management tab)
         $payrollEntries = $entries->map(fn($entry) => [
             'employee_type' => $entry->employeeType,
             'employee_id' => $entry->employeeId,
+            'display_employee_id' => $entry->displayEmployeeId,
             'name' => $entry->name,
             'position' => $entry->position,
             'department' => $entry->department ?? '-',
@@ -61,11 +62,13 @@ class SalaryPayrollController extends Controller
             'attendance_allowance' => (float) ($entry->payroll?->attendance_allowance ?? 0),
             'loyalty_bonus' => (float) ($entry->payroll?->loyalty_bonus ?? 0),
             'other_bonus' => (float) ($entry->payroll?->other_bonus ?? 0),
-            'total_salary' => (float) ($entry->payroll?->amount ?? $entry->basicSalary),
-            'status' => $entry->payroll?->status ?? 'draft',
+            'total_salary' => (float) ($entry->payroll?->total_amount ?? $entry->payroll?->amount ?? $entry->basicSalary),
+            'paid_amount' => (float) ($entry->payroll?->paid_amount ?? 0),
+            'remaining_amount' => (float) (($entry->payroll?->total_amount ?? $entry->payroll?->amount ?? $entry->basicSalary) - ($entry->payroll?->paid_amount ?? 0)),
+            'status' => $entry->payroll?->status ?? 'pending',
             'paid_at' => $entry->payroll?->paid_at?->format('M j, Y H:i'),
             'payroll_id' => $entry->payroll?->id,
-        ])->values()->toArray();
+        ])->filter(fn($entry) => $entry['status'] === 'pending')->values()->toArray();
 
         // History entries with employee details
         $historyCollection = $history->getCollection();
@@ -110,10 +113,11 @@ class SalaryPayrollController extends Controller
                 'attendance_allowance' => (float) ($record->attendance_allowance ?? 0),
                 'loyalty_bonus' => (float) ($record->loyalty_bonus ?? 0),
                 'other_bonus' => (float) ($record->other_bonus ?? 0),
-                'amount' => (float) ($record->amount ?? 0),
+                'total_salary' => (float) ($record->total_amount ?? $record->amount ?? 0),
+                'paid_amount' => (float) ($record->paid_amount ?? 0),
                 'payment_method' => $record->payment_method ?? '-',
                 'paid_at' => $record->paid_at?->format('M j, Y') ?? '-',
-                'status' => $record->status ?? 'draft',
+                'status' => $record->status ?? 'pending',
             ];
         })->values()->toArray();
 

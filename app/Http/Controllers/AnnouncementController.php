@@ -78,9 +78,9 @@ class AnnouncementController extends Controller
     public function store(StoreAnnouncementRequest $request): RedirectResponse
     {
         \Log::info('Announcement store called', ['target_roles' => $request->input('target_roles')]);
-        
+
         $data = AnnouncementData::from($request->validated(), $request->user()?->id);
-        
+
         // Handle publish date and time for immediate publishing
         if ($data->is_published && !$data->publish_date) {
             $payload = $request->validated();
@@ -102,11 +102,11 @@ class AnnouncementController extends Controller
         // Send push notifications if published
         if ($data->is_published && $request->has('target_roles')) {
             \Log::info('Sending push notifications', ['target_roles' => $request->input('target_roles')]);
-            
+
             // Parse target grades and departments from JSON
             $targetGrades = json_decode($request->input('target_grades_json', '["all"]'), true) ?: ['all'];
             $targetDepartments = json_decode($request->input('target_departments_json', '["all"]'), true) ?: ['all'];
-            
+
             $this->sendPushNotifications(
                 $announcement, 
                 $request->input('target_roles', []),
@@ -114,6 +114,24 @@ class AnnouncementController extends Controller
                 $targetDepartments
             );
             \Log::info('Push notifications sent');
+
+            // Send to guardians if they are in target roles
+            if (in_array('guardian', $request->input('target_roles', []))) {
+                try {
+                    $guardianNotificationService = app(\App\Services\GuardianNotificationService::class);
+                    $guardianNotificationService->sendAnnouncementNotification(
+                        $announcement->id,
+                        $announcement->title,
+                        strip_tags($announcement->content),
+                        $targetGrades
+                    );
+                } catch (\Exception $e) {
+                    \Log::error('Failed to send guardian announcement notification', [
+                        'error' => $e->getMessage(),
+                        'announcement_id' => $announcement->id,
+                    ]);
+                }
+            }
         }
 
         return redirect()->route('announcements.index')->with('status', __('Announcement saved.'));

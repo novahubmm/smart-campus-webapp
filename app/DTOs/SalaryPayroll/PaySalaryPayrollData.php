@@ -20,7 +20,8 @@ class PaySalaryPayrollData
         public readonly float $attendanceAllowance,
         public readonly float $loyaltyBonus,
         public readonly float $otherBonus,
-        public readonly float $amount, // total
+        public readonly float $totalAmount, // total salary for the month
+        public readonly float $amount, // payment amount for this transaction
         // Payment info
         public readonly ?string $paymentMethod,
         public readonly ?string $reference,
@@ -40,7 +41,8 @@ class PaySalaryPayrollData
         $attendanceAllowance = (float) ($payload['attendance_allowance'] ?? 0);
         $loyaltyBonus = (float) ($payload['loyalty_bonus'] ?? 0);
         $otherBonus = (float) ($payload['other_bonus'] ?? 0);
-        $amount = (float) ($payload['amount'] ?? ($basicSalary + $attendanceAllowance + $loyaltyBonus + $otherBonus));
+        $totalAmount = (float) ($payload['total_amount'] ?? ($basicSalary + $attendanceAllowance + $loyaltyBonus + $otherBonus));
+        $amount = (float) ($payload['amount'] ?? $totalAmount);
 
         return new self(
             employeeType: $payload['employee_type'],
@@ -56,6 +58,7 @@ class PaySalaryPayrollData
             attendanceAllowance: $attendanceAllowance,
             loyaltyBonus: $loyaltyBonus,
             otherBonus: $otherBonus,
+            totalAmount: $totalAmount,
             amount: $amount,
             paymentMethod: $payload['payment_method'] ?? null,
             reference: $payload['reference'] ?? null,

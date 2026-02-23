@@ -29,7 +29,10 @@ class Payroll extends Model
         'attendance_allowance',
         'loyalty_bonus',
         'other_bonus',
-        'amount', // total salary
+        'amount', // kept for backward compatibility, equals total_amount
+        'total_amount', // full monthly salary
+        'paid_amount', // amount paid in this transaction or cumulative
+        'payment_count', // number of payments made (0 for pending records)
         // Payment info
         'status',
         'processed_by',
@@ -54,9 +57,32 @@ class Payroll extends Model
         'attendance_allowance' => 'decimal:0',
         'loyalty_bonus' => 'decimal:0',
         'other_bonus' => 'decimal:0',
-        'amount' => 'decimal:0',
+        'amount' => 'decimal:2',
+        'total_amount' => 'decimal:2',
+        'paid_amount' => 'decimal:2',
+        'payment_count' => 'integer',
         'paid_at' => 'datetime',
     ];
+
+    protected static function booted(): void
+    {
+        // Prevent modification of paid transaction records
+        static::updating(function (Payroll $payroll) {
+            if ($payroll->getOriginal('status') === 'paid') {
+                // Prevent changes to paid_amount or status on paid records
+                if ($payroll->isDirty('paid_amount') || $payroll->isDirty('status')) {
+                    throw new \RuntimeException('Cannot modify paid transaction records');
+                }
+            }
+        });
+
+        // Prevent deletion of paid transaction records
+        static::deleting(function (Payroll $payroll) {
+            if ($payroll->status === 'paid') {
+                throw new \RuntimeException('Cannot delete paid transaction records');
+            }
+        });
+    }
 
     public function processedBy()
     {

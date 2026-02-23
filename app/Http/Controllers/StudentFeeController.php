@@ -79,60 +79,20 @@ class StudentFeeController extends Controller
 
     public function index(Request $request): View
     {
-        // 1. Determine active/target batch first to set intelligent defaults
-        $currentDate = now();
-        // Try to find batch covering current date
-        $currentBatch = \App\Models\Batch::where('start_date', '<=', $currentDate)
-            ->where('end_date', '>=', $currentDate)
-            ->first();
-        // Fallback to active batch
-        $targetBatch = $currentBatch ?? \App\Models\Batch::where('status', true)->first();
+        // Get separate dates for each table
+        $feeDate = $request->input('fee_date', now()->format('Y-m-d'));
+        $historyDate = $request->input('history_date', now()->format('Y-m-d'));
+        $pendingDate = $request->input('pending_date', now()->format('Y-m-d'));
+        $rejectedDate = $request->input('rejected_date', now()->format('Y-m-d'));
         
-        // 2. Determine default selected month
-        $defaultMonth = $currentDate->format('Y-m');
-        $monthOptions = collect();
+        // For display purposes (use fee_date as default)
+        $filterDate = \Carbon\Carbon::parse($feeDate);
+        $currentMonth = $filterDate->translatedFormat('F Y');
+        $currentMonthKey = $filterDate->format('Y-m');
         
-        if ($targetBatch) {
-            $batchStart = $targetBatch->start_date->copy()->startOfMonth();
-            $batchEnd = $targetBatch->end_date->copy()->startOfMonth();
-            
-            // If current date is before batch start (e.g. Feb vs June), default to batch start
-            if ($currentDate->lt($batchStart)) {
-                $defaultMonth = $batchStart->format('Y-m');
-            } 
-            // If current date is after batch end, default to batch end
-            elseif ($currentDate->gt($batchEnd)) {
-                $defaultMonth = $batchEnd->format('Y-m');
-            }
-            
-            // Generate options from Batch Start to Batch End (Ascending)
-            $date = $batchStart->copy();
-            while ($date->lte($batchEnd)) {
-                 $monthOptions->push([
-                    'value' => $date->format('Y-m'),
-                    'label' => $date->translatedFormat('F Y'),
-                ]);
-                $date->addMonth();
-            }
-        } else {
-             // Fallback if no batch found: Show last 12 months including current
-             $batchStart = $currentDate->copy()->subMonths(11)->startOfMonth();
-             $date = $batchStart->copy();
-             while ($date->lte($currentDate)) {
-                 $monthOptions->push([
-                    'value' => $date->format('Y-m'),
-                    'label' => $date->translatedFormat('F Y'),
-                ]);
-                $date->addMonth();
-             }
-        }
-
-        // Get selected month or default
-        $selectedMonth = $request->input('month', $defaultMonth);
-        
-        // Add month to request for DTO
+        // Add date to request for DTO
         $requestData = $request->all();
-        $requestData['month'] = $selectedMonth;
+        $requestData['date'] = $feeDate;
         
         $filter = FeeFilterData::from($requestData);
         
@@ -140,13 +100,13 @@ class StudentFeeController extends Controller
         $payments = $this->service->payments($filter);
         $structures = $this->service->structures();
 
-        // Build query for unpaid invoices in the selected month
-        $monthStart = \Carbon\Carbon::parse($selectedMonth . '-01')->startOfMonth();
-        $monthEnd = $monthStart->copy()->endOfMonth();
+        // Build query for unpaid invoices on the selected fee date
+        $feeDayStart = \Carbon\Carbon::parse($feeDate)->startOfDay();
+        $feeDayEnd = \Carbon\Carbon::parse($feeDate)->endOfDay();
         
-        // Get rejected payment proof invoice IDs for the selected month
+        // Get rejected payment proof invoice IDs for the selected fee date
         $rejectedProofInvoiceIds = \App\Models\PaymentProof::where('status', 'rejected')
-            ->whereBetween('payment_date', [$monthStart, $monthEnd])
+            ->whereBetween('payment_date', [$feeDayStart, $feeDayEnd])
             ->get()
             ->pluck('fee_ids')
             ->flatten()
@@ -164,9 +124,8 @@ class StudentFeeController extends Controller
             'fees.feeStructure' // Load invoice fees with fee structure
         ])
         ->where(function ($query) use ($rejectedProofInvoiceIds) {
-            // Include invoices that are NOT paid and have remaining amount
-            // This excludes original invoices that were partially paid (status='paid')
-            $query->where('status', '!=', 'paid')
+            // Include only pending invoices (exclude waiting, paid, and rejected)
+            $query->where('status', 'pending')
                   ->where('remaining_amount', '>', 0)
                   // OR invoices that have rejected payment proofs
                   ->orWhereIn('id', $rejectedProofInvoiceIds);
@@ -176,16 +135,16 @@ class StudentFeeController extends Controller
         });
 
         // Apply grade filter
-        if ($request->filled('grade')) {
+        if ($request->filled('fee_grade')) {
             $unpaidInvoicesQuery->whereHas('student', function ($q) use ($request) {
-                $q->where('grade_id', $request->grade);
+                $q->where('grade_id', $request->fee_grade);
             });
         }
 
         // Apply fee type filter
-        if ($request->filled('fee_type')) {
+        if ($request->filled('fee_fee_type')) {
             // Get the fee type code
-            $feeType = \App\Models\FeeType::find($request->fee_type);
+            $feeType = \App\Models\FeeType::find($request->fee_fee_type);
             if ($feeType) {
                 $feeTypeCode = $feeType->code;
                 $unpaidInvoicesQuery->whereHas('fees', function ($q) use ($feeTypeCode) {
@@ -197,8 +156,8 @@ class StudentFeeController extends Controller
         }
 
         // Apply search filter (Student Name, Student ID, Guardian Name)
-        if ($request->filled('search')) {
-            $search = $request->search;
+        if ($request->filled('fee_search')) {
+            $search = $request->fee_search;
             $unpaidInvoicesQuery->whereHas('student', function ($q) use ($search) {
                 $q->where('student_identifier', 'like', "%{$search}%")
                   ->orWhereHas('user', function ($q) use ($search) {
@@ -241,14 +200,14 @@ class StudentFeeController extends Controller
         // Get payment proofs for the displayed invoices in the selected month
         $studentIds = $unpaidInvoices->pluck('student_id')->unique();
         $paymentProofsByStudent = \App\Models\PaymentProof::whereIn('student_id', $studentIds)
-            ->whereBetween('payment_date', [$monthStart, $monthEnd])
+            ->whereBetween('payment_date', [$feeDayStart, $feeDayEnd])
             ->with('paymentMethod')
             ->get()
             ->groupBy('student_id');
         
-        // Get rejected payment proofs by invoice ID for the selected month
+        // Get rejected payment proofs by invoice ID for the selected fee date
         $rejectedProofsByInvoice = \App\Models\PaymentProof::where('status', 'rejected')
-            ->whereBetween('payment_date', [$monthStart, $monthEnd])
+            ->whereBetween('payment_date', [$feeDayStart, $feeDayEnd])
             ->with('paymentMethod')
             ->get()
             ->flatMap(function ($proof) {
@@ -284,57 +243,15 @@ class StudentFeeController extends Controller
         // Get fee from Grade's price_per_month field (set in academic management)
         $feeByGrade = $grades->pluck('price_per_month', 'id')->map(fn($v) => (float) ($v ?? 0));
 
-        // Current month info
-        $currentMonth = \Carbon\Carbon::parse($selectedMonth . '-01')->translatedFormat('F Y');
-        $currentMonthKey = $selectedMonth;
-
-        // Calculate stats for selected month
-        $monthStart = \Carbon\Carbon::parse($selectedMonth . '-01')->startOfMonth();
-        $monthEnd = $monthStart->copy()->endOfMonth();
+        // Calculate total receivable and received (all time stats)
+        $totalReceivable = \App\Models\PaymentSystem\Invoice::where('status', '!=', 'paid')->sum('remaining_amount');
+        $totalReceived = \App\Models\PaymentSystem\Invoice::where('status', 'paid')->sum('paid_amount');
         
-        // Get batch_id for filtering (use target batch)
-        $batchId = $targetBatch?->id;
-        
-        // Build base query for statistics with fee type filter
-        $statsBaseQuery = function ($query) use ($batchId, $request) {
-            $query->when($batchId, function ($q) use ($batchId) {
-                $q->where('batch_id', $batchId);
-            })
-            ->whereHas('student', function ($q) {
-                $q->where('status', 'active');
-            });
-            
-            // Apply fee type filter if selected
-            if ($request->filled('fee_type')) {
-                $feeType = \App\Models\FeeType::find($request->fee_type);
-                if ($feeType) {
-                    $feeTypeCode = $feeType->code;
-                    $query->whereHas('fees', function ($q) use ($feeTypeCode) {
-                        $q->whereHas('feeStructure', function ($fq) use ($feeTypeCode) {
-                            $fq->where('fee_type', $feeTypeCode);
-                        });
-                    });
-                }
-            }
-        };
-        
-        // Calculate total receivable from unpaid invoices (status != 'paid')
-        $totalReceivableQuery = \App\Models\PaymentSystem\Invoice::where('status', '!=', 'paid');
-        $statsBaseQuery($totalReceivableQuery);
-        $totalReceivable = $totalReceivableQuery->sum('remaining_amount');
-        
-        // Calculate total received from paid invoices (paid_amount from invoices with status 'paid')
-        $totalReceivedQuery = \App\Models\PaymentSystem\Invoice::where('status', 'paid');
-        $statsBaseQuery($totalReceivedQuery);
-        $totalReceived = $totalReceivedQuery->sum('paid_amount');
-        
-        // Get payment counts for selected month (using PaymentSystem verified payments)
+        // Get payment counts by date (using PaymentSystem verified payments)
         $paidInvoicesQuery = \App\Models\PaymentSystem\Invoice::where('status', 'paid');
-        $statsBaseQuery($paidInvoicesQuery);
         $paidInvoices = $paidInvoicesQuery->count();
         
         $totalInvoicesQuery = \App\Models\PaymentSystem\Invoice::query();
-        $statsBaseQuery($totalInvoicesQuery);
         $totalInvoices = $totalInvoicesQuery->count();
 
         // Student counts by grade for Fee Structure tab
@@ -347,15 +264,26 @@ class StudentFeeController extends Controller
             ->with(['student.user', 'student.grade', 'student.classModel', 'paymentMethod', 'feeDetails', 'invoice']);
             
         // Apply grade filter
-        if ($request->filled('grade')) {
+        if ($request->filled('pending_grade')) {
             $pendingPaymentsQuery->whereHas('student', function ($q) use ($request) {
-                $q->where('grade_id', $request->grade);
+                $q->where('grade_id', $request->pending_grade);
             });
         }
         
+        // Apply fee type filter
+        if ($request->filled('pending_fee_type')) {
+            $feeType = \App\Models\FeeType::find($request->pending_fee_type);
+            if ($feeType) {
+                $feeTypeCode = $feeType->code;
+                $pendingPaymentsQuery->whereHas('feeDetails', function ($q) use ($feeTypeCode) {
+                    $q->where('fee_type', $feeTypeCode);
+                });
+            }
+        }
+        
         // Apply search filter
-        if ($request->filled('search')) {
-            $search = $request->search;
+        if ($request->filled('pending_search')) {
+            $search = $request->pending_search;
             $pendingPaymentsQuery->whereHas('student', function ($q) use ($search) {
                 $q->where('student_identifier', 'like', "%{$search}%")
                   ->orWhereHas('user', function ($q) use ($search) {
@@ -374,21 +302,35 @@ class StudentFeeController extends Controller
             ->paginate(10, ['*'], 'pending_page')
             ->withQueryString();
 
-        // Get rejected payments (PaymentSystem)
+        // Get rejected payments (PaymentSystem) for the selected rejected date
+        $rejectedDayStart = \Carbon\Carbon::parse($rejectedDate)->startOfDay();
+        $rejectedDayEnd = \Carbon\Carbon::parse($rejectedDate)->endOfDay();
+        
         $rejectedPaymentsQuery = \App\Models\PaymentSystem\Payment::where('status', 'rejected')
             ->with(['student.user', 'student.grade', 'student.classModel', 'paymentMethod', 'feeDetails', 'invoice'])
-            ->whereBetween('payment_date', [$monthStart, $monthEnd]);
+            ->whereBetween('payment_date', [$rejectedDayStart, $rejectedDayEnd]);
 
         // Apply grade filter
-        if ($request->filled('grade')) {
+        if ($request->filled('rejected_grade')) {
             $rejectedPaymentsQuery->whereHas('student', function ($q) use ($request) {
-                $q->where('grade_id', $request->grade);
+                $q->where('grade_id', $request->rejected_grade);
             });
         }
         
+        // Apply fee type filter
+        if ($request->filled('rejected_fee_type')) {
+            $feeType = \App\Models\FeeType::find($request->rejected_fee_type);
+            if ($feeType) {
+                $feeTypeCode = $feeType->code;
+                $rejectedPaymentsQuery->whereHas('feeDetails', function ($q) use ($feeTypeCode) {
+                    $q->where('fee_type', $feeTypeCode);
+                });
+            }
+        }
+        
         // Apply search filter
-        if ($request->filled('search')) {
-            $search = $request->search;
+        if ($request->filled('rejected_search')) {
+            $search = $request->rejected_search;
             $rejectedPaymentsQuery->whereHas('student', function ($q) use ($search) {
                 $q->where('student_identifier', 'like', "%{$search}%")
                   ->orWhereHas('user', function ($q) use ($search) {
@@ -407,7 +349,10 @@ class StudentFeeController extends Controller
             ->paginate(10, ['*'], 'reject_page')
             ->withQueryString();
 
-        // Get paid payments history (PaymentSystem) - Show invoices with status 'paid'
+        // Get paid payments history (PaymentSystem) - Show invoices with status 'paid' AND have verified payments
+        $historyDayStart = \Carbon\Carbon::parse($historyDate)->startOfDay();
+        $historyDayEnd = \Carbon\Carbon::parse($historyDate)->endOfDay();
+        
         $paidPaymentsQuery = \App\Models\PaymentSystem\Invoice::with([
                 'student.user', 
                 'student.grade',
@@ -418,20 +363,37 @@ class StudentFeeController extends Controller
                 }
             ])
             ->where('status', 'paid') // Only show paid invoices
+            ->whereHas('payments', function($query) use ($historyDayStart, $historyDayEnd) {
+                $query->where('status', 'verified') // Must have at least one verified payment
+                      ->whereBetween('payment_date', [$historyDayStart, $historyDayEnd]); // Filter by history date
+            })
             ->whereHas('student', function ($q) {
                 $q->where('status', 'active');
             });
 
         // Apply grade filter to paid invoices
-        if ($request->filled('grade')) {
+        if ($request->filled('history_grade')) {
             $paidPaymentsQuery->whereHas('student', function ($q) use ($request) {
-                $q->where('grade_id', $request->grade);
+                $q->where('grade_id', $request->history_grade);
             });
         }
 
+        // Apply fee type filter to paid invoices
+        if ($request->filled('history_fee_type')) {
+            $feeType = \App\Models\FeeType::find($request->history_fee_type);
+            if ($feeType) {
+                $feeTypeCode = $feeType->code;
+                $paidPaymentsQuery->whereHas('fees', function ($q) use ($feeTypeCode) {
+                    $q->whereHas('feeStructure', function ($fq) use ($feeTypeCode) {
+                        $fq->where('fee_type', $feeTypeCode);
+                    });
+                });
+            }
+        }
+
         // Apply search filter to paid invoices
-        if ($request->filled('search')) {
-            $search = $request->search;
+        if ($request->filled('history_search')) {
+            $search = $request->history_search;
             $paidPaymentsQuery->whereHas('student', function ($q) use ($search) {
                 $q->where('student_identifier', 'like', "%{$search}%")
                   ->orWhereHas('user', function ($q) use ($search) {
@@ -450,7 +412,6 @@ class StudentFeeController extends Controller
             ->paginate(10, ['*'], 'history_page')
             ->withQueryString();
         
-        // Month options generated at start of method
         return view('finance.student-fees', [
             'filter' => $filter,
             'invoices' => $invoices,
@@ -465,6 +426,11 @@ class StudentFeeController extends Controller
             'feeByGrade' => $feeByGrade,
             'currentMonth' => $currentMonth,
             'currentMonthKey' => $currentMonthKey,
+            'selectedDate' => $feeDate,
+            'feeDate' => $feeDate,
+            'historyDate' => $historyDate,
+            'pendingDate' => $pendingDate,
+            'rejectedDate' => $rejectedDate,
             'totalReceivable' => $totalReceivable,
             'totalReceived' => $totalReceived,
             'paidInvoices' => $paidInvoices,
@@ -476,8 +442,6 @@ class StudentFeeController extends Controller
             'paidPayments' => $paidPayments,
             'paymentProofsByStudent' => $paymentProofsByStudent,
             'rejectedProofsByInvoice' => $rejectedProofsByInvoice,
-            'selectedMonth' => $selectedMonth,
-            'monthOptions' => $monthOptions,
         ]);
     }
 
@@ -1820,7 +1784,7 @@ class StudentFeeController extends Controller
 
             $this->logUpdate('PaymentSystemPayment', $payment->id, "Rejected payment: {$payment->payment_number} for student: {$payment->student->student_identifier}");
 
-            return redirect()->route('student-fees.index')->with('status', __('Payment rejected. Invoice remains unpaid and guardian has been notified.'));
+            return redirect()->route('student-fees.index')->with('status', __('Payment rejected. A new invoice has been created for the guardian to resubmit payment.'));
         } catch (\InvalidArgumentException $e) {
             return redirect()->route('student-fees.index')->with('error', $e->getMessage());
         } catch (\Exception $e) {
@@ -1840,6 +1804,9 @@ class StudentFeeController extends Controller
     {
         try {
             $data = [
+                'payment_number' => $payment->payment_number,
+                'invoice_number' => $payment->invoice->invoice_number ?? 'N/A',
+                'status' => $payment->status,
                 'student' => [
                     'name' => $payment->student->user->name ?? 'N/A',
                     'identifier' => $payment->student->student_identifier ?? 'N/A',
@@ -1853,6 +1820,7 @@ class StudentFeeController extends Controller
                 'receipt_image' => $payment->receipt_image_url,
                 'notes' => $payment->notes,
                 'submitted_at' => $payment->created_at->diffForHumans(),
+                'rejection_reason' => $payment->rejection_reason,
                 'fee_breakdown' => $payment->feeDetails->map(function ($detail) {
                     return [
                         'fee_name' => $detail->fee_name,
@@ -1927,6 +1895,63 @@ class StudentFeeController extends Controller
         } catch (\Exception $e) {
             \Log::error('Failed to get payment proof details', [
                 'payment_proof_id' => $paymentProof->id,
+                'error' => $e->getMessage(),
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'message' => $e->getMessage(),
+            ], 500);
+        }
+    }
+
+    /**
+     * Get PaymentSystem Payment Details (AJAX) - For mobile payments
+     */
+    public function getPaymentSystemDetails(\App\Models\PaymentSystem\Payment $payment): \Illuminate\Http\JsonResponse
+    {
+        try {
+            $payment->load(['student.user', 'student.grade', 'student.classModel', 'paymentMethod', 'invoice', 'feeDetails']);
+
+            $data = [
+                'id' => $payment->id,
+                'payment_number' => $payment->payment_number,
+                'status' => $payment->status,
+                'student' => [
+                    'name' => $payment->student->user->name ?? 'N/A',
+                    'identifier' => $payment->student->student_identifier ?? 'N/A',
+                    'grade' => $payment->student->grade ? __('grades.' . $payment->student->grade->level) : 'N/A',
+                    'class' => $payment->student->classModel->name ?? 'N/A',
+                ],
+                'invoice_number' => $payment->invoice->invoice_number ?? 'N/A',
+                'payment_amount' => $payment->payment_amount,
+                'payment_type' => $payment->payment_type,
+                'payment_months' => $payment->payment_months,
+                'payment_date' => $payment->payment_date->format('M j, Y'),
+                'payment_method' => $payment->paymentMethod->name ?? 'N/A',
+                'receipt_image' => $payment->receipt_image_url,
+                'notes' => $payment->notes,
+                'submitted_at' => $payment->created_at->diffForHumans(),
+                'rejection_reason' => $payment->rejection_reason,
+                'fee_details' => $payment->feeDetails->map(function ($detail) {
+                    return [
+                        'fee_name' => $detail->fee_name,
+                        'fee_name_mm' => $detail->fee_name_mm,
+                        'full_amount' => $detail->full_amount,
+                        'paid_amount' => $detail->paid_amount,
+                        'is_partial' => $detail->is_partial,
+                        'payment_months' => $detail->payment_months ?? 1,
+                    ];
+                }),
+            ];
+
+            return response()->json([
+                'success' => true,
+                'data' => $data,
+            ]);
+        } catch (\Exception $e) {
+            \Log::error('Failed to get payment system details', [
+                'payment_id' => $payment->id,
                 'error' => $e->getMessage(),
             ]);
 

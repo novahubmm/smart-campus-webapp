@@ -435,6 +435,18 @@ Route::middleware(['auth', 'ensure.active'])->group(function () {
     Route::get('/student-fees/payment-proofs/{paymentProof}/details', [\App\Http\Controllers\StudentFeeController::class, 'getPaymentProofDetails'])
         ->middleware('ensure.setup:finance')
         ->name('student-fees.payment-proofs.details');
+    
+    // PaymentSystem routes (new payment system from mobile)
+    Route::get('/student-fees/payment-system/{payment}/details', [\App\Http\Controllers\StudentFeeController::class, 'getPaymentSystemDetails'])
+        ->middleware('ensure.setup:finance')
+        ->name('student-fees.payment-system.details');
+    Route::post('/student-fees/payment-system/{payment}/approve', [\App\Http\Controllers\StudentFeeController::class, 'approvePaymentSystemPayment'])
+        ->middleware('ensure.setup:finance')
+        ->name('student-fees.payment-system.approve');
+    Route::post('/student-fees/payment-system/{payment}/reject', [\App\Http\Controllers\StudentFeeController::class, 'rejectPaymentSystemPayment'])
+        ->middleware('ensure.setup:finance')
+        ->name('student-fees.payment-system.reject');
+    
     Route::get('/student-fees/invoices/{invoice}/history', [\App\Http\Controllers\StudentFeeController::class, 'getInvoiceHistory'])
         ->middleware('ensure.setup:finance')
         ->name('student-fees.invoices.history');
@@ -468,6 +480,23 @@ Route::middleware(['auth', 'ensure.active'])->group(function () {
     Route::post('/salary-payroll/pay', [SalaryPayrollController::class, 'pay'])
         ->middleware('ensure.setup:finance')
         ->name('salary-payroll.pay');
+
+    // Temporary route to clear payroll data - remove after testing
+    Route::get('/salary-payroll/clear-data', function () {
+        try {
+            $count = \DB::table('payrolls')->count();
+            \DB::table('payrolls')->delete();
+            return response()->json([
+                'success' => true,
+                'message' => "Successfully deleted {$count} payroll records. Table structure is intact.",
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Error: ' . $e->getMessage(),
+            ], 500);
+        }
+    })->middleware('auth')->name('salary-payroll.clear');
 
     Route::prefix('finance')->middleware('ensure.setup:finance')->group(function () {
         Route::get('/', [\App\Http\Controllers\FinanceController::class, 'index'])->name('finance.index');

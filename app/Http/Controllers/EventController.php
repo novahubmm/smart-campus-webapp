@@ -78,6 +78,23 @@ class EventController extends Controller
 
         $this->logCreate('Event', $event->id, $request->validated()['title'] ?? null);
 
+        // Send notification to guardians
+        try {
+            $guardianNotificationService = app(\App\Services\GuardianNotificationService::class);
+            $guardianNotificationService->sendEventNotification(
+                $event->id,
+                $event->title,
+                strip_tags($event->description ?? ''),
+                $event->start_date->format('Y-m-d'),
+                $event->end_date->format('Y-m-d')
+            );
+        } catch (\Exception $e) {
+            \Log::error('Failed to send guardian event notification', [
+                'error' => $e->getMessage(),
+                'event_id' => $event->id,
+            ]);
+        }
+
         return redirect()->route('events.index')->with('status', __('Event created.'));
     }
 

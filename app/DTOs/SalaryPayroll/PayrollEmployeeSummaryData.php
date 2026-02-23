@@ -11,6 +11,7 @@ class PayrollEmployeeSummaryData
     public function __construct(
         public readonly string $employeeType,
         public readonly string $employeeId,
+        public readonly ?string $displayEmployeeId,
         public readonly string $name,
         public readonly string $position,
         public readonly ?string $department,
@@ -24,7 +25,8 @@ class PayrollEmployeeSummaryData
     {
         return new self(
             employeeType: 'staff',
-            employeeId: $profile->employee_id ?? $profile->id,
+            employeeId: $profile->id,
+            displayEmployeeId: $profile->employee_id,
             name: $profile->user?->name ?? __('Staff'),
             position: $profile->position ?? __('Staff'),
             department: $profile->department?->name,
@@ -39,7 +41,8 @@ class PayrollEmployeeSummaryData
     {
         return new self(
             employeeType: 'teacher',
-            employeeId: $profile->employee_id ?? $profile->id,
+            employeeId: $profile->id,
+            displayEmployeeId: $profile->employee_id,
             name: $profile->user?->name ?? __('Teacher'),
             position: $profile->position ?? __('Teacher'),
             department: $profile->department?->name,
@@ -48,5 +51,20 @@ class PayrollEmployeeSummaryData
             paymentMethod: 'Cash',
             payroll: $payroll,
         );
+    }
+
+    public function getTotalSalary(): float
+    {
+        return $this->payroll ? (float) $this->payroll->total_amount : 0;
+    }
+
+    public function getPaidAmount(): float
+    {
+        return $this->payroll ? (float) $this->payroll->paid_amount : 0;
+    }
+
+    public function getRemainingAmount(): float
+    {
+        return $this->getTotalSalary() - $this->getPaidAmount();
     }
 }

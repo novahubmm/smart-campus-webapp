@@ -49,4 +49,7 @@ interface GuardianStudentRepositoryInterface
     public function getAttendanceSummary(StudentProfile $student, int $months = 3): array;
 
     public function getRankingsData(StudentProfile $student): array;
+
+    // Full Profile Tab
+    public function getFullProfile(StudentProfile $student): array;
 }

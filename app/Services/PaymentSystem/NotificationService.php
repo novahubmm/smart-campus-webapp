@@ -147,12 +147,14 @@ class NotificationService
     {
         // Get guardian user from student
         $student = $payment->student;
-        $guardian = $student->guardian ?? $student->user;
-
-        if (!$guardian) {
-            Log::warning('No guardian found for student', ['student_id' => $student->id]);
+        $primaryGuardian = $student->guardian()->first(); // Get first primary guardian
+        
+        if (!$primaryGuardian || !$primaryGuardian->user) {
+            Log::warning('No primary guardian found for student', ['student_id' => $student->id]);
             return;
         }
+
+        $guardian = $primaryGuardian->user;
 
         $title = 'Payment Verified';
         $titleMm = 'ငွေပေးချေမှု အတည်ပြုပြီးပါပြီ';
@@ -193,12 +195,14 @@ class NotificationService
     {
         // Get guardian user from student
         $student = $payment->student;
-        $guardian = $student->guardian ?? $student->user;
-
-        if (!$guardian) {
-            Log::warning('No guardian found for student', ['student_id' => $student->id]);
+        $primaryGuardian = $student->guardian()->first(); // Get first primary guardian
+        
+        if (!$primaryGuardian || !$primaryGuardian->user) {
+            Log::warning('No primary guardian found for student', ['student_id' => $student->id]);
             return;
         }
+
+        $guardian = $primaryGuardian->user;
 
         $title = 'Payment Rejected';
         $titleMm = 'ငွေပေးချေမှု ပယ်ချခံရပါသည်';

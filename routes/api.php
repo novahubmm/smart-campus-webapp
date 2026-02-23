@@ -59,6 +59,7 @@ use App\Http\Controllers\Api\V1\Guardian\NotificationController as GuardianNotif
 use App\Http\Controllers\Api\V1\Guardian\CurriculumController as GuardianCurriculumController;
 use App\Http\Controllers\Api\V1\Guardian\ReportCardController as GuardianReportCardController;
 use App\Http\Controllers\Api\V1\Guardian\SettingsController as GuardianSettingsController;
+use App\Http\Controllers\Api\V1\Guardian\DeviceTokenController as GuardianDeviceTokenController;
 
 // Health endpoints - Public for monitoring
 Route::get('/health', [HealthController::class, 'index']);
@@ -456,6 +457,10 @@ Route::prefix('v1')->group(function () {
             Route::put('/auth/profile', [GuardianAuthController::class, 'updateProfile']);
             Route::post('/auth/change-password', [GuardianAuthController::class, 'changePassword']);
 
+            // Device Tokens (for push notifications)
+            Route::post('/device-tokens', [GuardianDeviceTokenController::class, 'register']);
+            Route::delete('/device-tokens', [GuardianDeviceTokenController::class, 'delete']);
+
             // Students (Guardian's children/wards)
             Route::get('/students', [GuardianAuthController::class, 'students']);
             Route::post('/students/switch', [GuardianAuthController::class, 'switchStudent']);
@@ -596,6 +601,7 @@ Route::prefix('v1')->group(function () {
 
                 // Student Profile
                 Route::get('/profile', [GuardianStudentController::class, 'profile']);
+                Route::get('/profile/full', [GuardianStudentController::class, 'fullProfile']);
                 Route::get('/profile/academic-data', [GuardianStudentController::class, 'academicSummary']);
                 Route::get('/profile/academic-summary', [GuardianStudentController::class, 'academicSummary']);
                 Route::get('/profile/subject-performance', [GuardianStudentController::class, 'subjectPerformance']);
