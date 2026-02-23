@@ -41,8 +41,12 @@ When you start work each day, communicate your task:
 Kiro will:
 1. Confirm branch creation or ask if needed
 2. Create appropriate branch with proper naming
-3. Make commits with standardized messages
-4. Wait for your testing/completion keywords
+3. Make the requested changes
+4. Run diagnostics to check for errors
+5. Ask for your approval before committing
+6. Make commits with standardized messages
+7. Wait for your testing/completion keywords
+8. Ask if you want a summary document created (don't create automatically)
 
 ### Keywords & Actions
 
@@ -411,10 +415,13 @@ Deleted: Immediately after merge
 ### DO ✅
 - Always pull latest before creating new branch
 - Use descriptive branch and commit names
+- Run diagnostics after making changes
+- Wait for approval before committing
 - Test thoroughly before saying "start testing"
 - Keep commits atomic and focused
 - Add feature flags for new features
 - Update this document when adding new schools
+- Ask before creating summary documents
 
 ### DON'T ❌
 - Don't commit directly to `main`
@@ -422,6 +429,8 @@ Deleted: Immediately after merge
 - Don't merge without testing
 - Don't skip feature flag implementation
 - Don't leave branches unmerged for weeks
+- Don't create summary documents without asking first
+- Don't commit without running diagnostics
 
 ---
 

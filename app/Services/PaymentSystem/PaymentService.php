@@ -141,6 +141,7 @@ class PaymentService
                     'full_amount' => $invoiceFee->amount,
                     'paid_amount' => $feeDetail['paid_amount'],
                     'is_partial' => $feeDetail['paid_amount'] < $invoiceFee->remaining_amount,
+                    'payment_months' => $feeDetail['payment_months'] ?? 1, // Per-fee payment months
                 ]);
 
                 // Update InvoiceFee

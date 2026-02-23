@@ -63,6 +63,7 @@ class SubmitPaymentRequest extends FormRequest
             'fee_payment_details.*.full_amount' => ['required', 'numeric'],
             'fee_payment_details.*.paid_amount' => ['required', 'numeric', 'min:0'], // Allow 0 for unpaid fees in partial payments
             'fee_payment_details.*.is_partial' => ['required', 'boolean'],
+            'fee_payment_details.*.payment_months' => ['nullable', 'integer', 'min:1', "max:{$maxMonths}"], // Per-fee payment months
         ];
     }
 

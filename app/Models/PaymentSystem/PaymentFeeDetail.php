@@ -31,6 +31,7 @@ class PaymentFeeDetail extends Model
         'full_amount',
         'paid_amount',
         'is_partial',
+        'payment_months',
     ];
 
     /**
@@ -42,6 +43,7 @@ class PaymentFeeDetail extends Model
         'full_amount' => 'decimal:2',
         'paid_amount' => 'decimal:2',
         'is_partial' => 'boolean',
+        'payment_months' => 'integer',
     ];
 
     /**

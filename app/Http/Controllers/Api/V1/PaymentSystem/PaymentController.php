@@ -67,6 +67,7 @@ class PaymentController extends Controller
                         'full_amount' => $detail->full_amount,
                         'paid_amount' => $detail->paid_amount,
                         'is_partial' => $detail->is_partial,
+                        'payment_months' => $detail->payment_months ?? 1,
                     ];
                 }),
             ];
@@ -159,6 +160,7 @@ class PaymentController extends Controller
                             'full_amount' => $detail->full_amount,
                             'paid_amount' => $detail->paid_amount,
                             'is_partial' => $detail->is_partial,
+                            'payment_months' => $detail->payment_months ?? 1,
                         ];
                     }),
                 ];
