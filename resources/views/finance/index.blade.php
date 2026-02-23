@@ -30,12 +30,6 @@
         </div>
 
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-6">
-            @if(session('status'))
-                <div class="rounded-lg border border-green-200 bg-green-50 px-4 py-3 text-green-800 dark:border-green-900/50 dark:bg-green-900/30 dark:text-green-100">
-                    {{ session('status') }}
-                </div>
-            @endif
-
             <!-- Stats Cards -->
             <div class="grid grid-cols-1 sm:grid-cols-4 gap-4">
                 <div class="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl p-4 flex items-center gap-4">
@@ -97,7 +91,26 @@
                             <p class="text-sm text-gray-500 dark:text-gray-400">{{ __('finance.Auto-synced from student fee payments') }}</p>
                         </div>
                         <form method="GET" action="{{ route('finance.index') }}" class="flex items-center gap-2">
-                            <input type="month" name="period" value="{{ request('period', now()->format('Y-m')) }}" class="form-select-sm">
+                            <input type="hidden" name="tab" value="income">
+                            <!-- Preserve other filters -->
+                            @if(request('income_date'))
+                                <input type="hidden" name="income_date" value="{{ request('income_date') }}">
+                            @endif
+                            @if(request('expense_date'))
+                                <input type="hidden" name="expense_date" value="{{ request('expense_date') }}">
+                            @endif
+                            @if(request('daily_pl_date'))
+                                <input type="hidden" name="daily_pl_date" value="{{ request('daily_pl_date') }}">
+                            @endif
+                            @if(request('monthly_pl_period'))
+                                <input type="hidden" name="monthly_pl_period" value="{{ request('monthly_pl_period') }}">
+                            @endif
+                            <input type="date" 
+                                   name="fee_payment_date" 
+                                   value="{{ request('fee_payment_date', now()->format('Y-m-d')) }}" 
+                                   min="{{ now()->subDays(15)->format('Y-m-d') }}" 
+                                   max="{{ now()->addDays(15)->format('Y-m-d') }}"
+                                   class="form-select-sm">
                             <button type="submit" class="btn-filter">{{ __('finance.Apply') }}</button>
                         </form>
                     </div>
@@ -154,8 +167,25 @@
                         <div class="flex items-center gap-3">
                             <form method="GET" action="{{ route('finance.index') }}" class="flex items-center gap-2">
                                 <input type="hidden" name="tab" value="income">
-                                <input type="month" name="month" value="{{ request('month', now()->format('Y-m')) }}" 
-                                    class="px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-900 text-gray-900 dark:text-white focus:ring-2 focus:ring-green-500">
+                                <!-- Preserve other filters -->
+                                @if(request('fee_payment_date'))
+                                    <input type="hidden" name="fee_payment_date" value="{{ request('fee_payment_date') }}">
+                                @endif
+                                @if(request('expense_date'))
+                                    <input type="hidden" name="expense_date" value="{{ request('expense_date') }}">
+                                @endif
+                                @if(request('daily_pl_date'))
+                                    <input type="hidden" name="daily_pl_date" value="{{ request('daily_pl_date') }}">
+                                @endif
+                                @if(request('monthly_pl_period'))
+                                    <input type="hidden" name="monthly_pl_period" value="{{ request('monthly_pl_period') }}">
+                                @endif
+                                <input type="date" 
+                                       name="income_date" 
+                                       value="{{ request('income_date', now()->format('Y-m-d')) }}" 
+                                       min="{{ now()->subDays(15)->format('Y-m-d') }}" 
+                                       max="{{ now()->addDays(15)->format('Y-m-d') }}"
+                                       class="px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-900 text-gray-900 dark:text-white focus:ring-2 focus:ring-green-500">
                                 <button type="submit" class="px-4 py-2 text-sm font-medium text-white bg-green-600 rounded-lg hover:bg-green-700 focus:ring-2 focus:ring-green-500">
                                     {{ __('finance.Apply') }}
                                 </button>
@@ -246,8 +276,25 @@
                         <div class="flex items-center gap-3">
                             <form method="GET" action="{{ route('finance.index') }}" class="flex items-center gap-2">
                                 <input type="hidden" name="tab" value="expenses">
-                                <input type="month" name="month" value="{{ request('month', now()->format('Y-m')) }}" 
-                                    class="px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-900 text-gray-900 dark:text-white focus:ring-2 focus:ring-red-500">
+                                <!-- Preserve other filters -->
+                                @if(request('fee_payment_date'))
+                                    <input type="hidden" name="fee_payment_date" value="{{ request('fee_payment_date') }}">
+                                @endif
+                                @if(request('income_date'))
+                                    <input type="hidden" name="income_date" value="{{ request('income_date') }}">
+                                @endif
+                                @if(request('daily_pl_date'))
+                                    <input type="hidden" name="daily_pl_date" value="{{ request('daily_pl_date') }}">
+                                @endif
+                                @if(request('monthly_pl_period'))
+                                    <input type="hidden" name="monthly_pl_period" value="{{ request('monthly_pl_period') }}">
+                                @endif
+                                <input type="date" 
+                                       name="expense_date" 
+                                       value="{{ request('expense_date', now()->format('Y-m-d')) }}" 
+                                       min="{{ now()->subDays(15)->format('Y-m-d') }}" 
+                                       max="{{ now()->addDays(15)->format('Y-m-d') }}"
+                                       class="px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-900 text-gray-900 dark:text-white focus:ring-2 focus:ring-red-500">
                                 <button type="submit" class="px-4 py-2 text-sm font-medium text-white bg-red-600 rounded-lg hover:bg-red-700 focus:ring-2 focus:ring-red-500">
                                     {{ __('finance.Apply') }}
                                 </button>
@@ -332,36 +379,38 @@
 
             <!-- Profit & Loss Tab -->
             <div x-show="activeTab === 'profit-loss'" x-cloak>
-                <!-- P&L Summary Cards -->
-                <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
-                    <div class="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-xl p-5">
-                        <div class="flex items-center justify-between mb-2">
-                            <span class="text-green-700 dark:text-green-300 font-semibold text-sm">{{ __('finance.Total Income') }}</span>
-                            <i class="fas fa-arrow-up text-green-500"></i>
-                        </div>
-                        <div class="text-2xl font-bold text-green-700 dark:text-green-300">{{ number_format($summary['total_income'] ?? 0, 0) }} MMK</div>
-                    </div>
-                    <div class="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-xl p-5">
-                        <div class="flex items-center justify-between mb-2">
-                            <span class="text-red-700 dark:text-red-300 font-semibold text-sm">{{ __('finance.Total Expenses') }}</span>
-                            <i class="fas fa-arrow-down text-red-500"></i>
-                        </div>
-                        <div class="text-2xl font-bold text-red-700 dark:text-red-300">{{ number_format($summary['total_expenses'] ?? 0, 0) }} MMK</div>
-                    </div>
-                    <div class="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-xl p-5">
-                        <div class="flex items-center justify-between mb-2">
-                            <span class="text-blue-700 dark:text-blue-300 font-semibold text-sm">{{ __('finance.Net Profit/Loss') }}</span>
-                            <i class="fas fa-chart-line text-blue-500"></i>
-                        </div>
-                        <div class="text-2xl font-bold {{ ($summary['net'] ?? 0) >= 0 ? 'text-green-700 dark:text-green-300' : 'text-red-700 dark:text-red-300' }}">{{ number_format($summary['net'] ?? 0, 0) }} MMK</div>
-                    </div>
-                </div>
-
                 <!-- Daily P&L Table -->
                 <div class="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl shadow-sm mb-6">
                     <div class="flex flex-wrap items-center justify-between gap-3 p-4 border-b border-gray-200 dark:border-gray-700">
-                        <h3 class="text-lg font-semibold text-gray-900 dark:text-white">{{ __('finance.Daily Profit & Loss') }}</h3>
-                        <span class="text-sm text-gray-500 dark:text-gray-400">{{ $filter->periodLabel() }}</span>
+                        <div>
+                            <h3 class="text-lg font-semibold text-gray-900 dark:text-white">{{ __('finance.Daily Profit & Loss') }}</h3>
+                            <p class="text-sm text-gray-500 dark:text-gray-400">{{ __('finance.Breakdown by category') }}</p>
+                        </div>
+                        <form method="GET" action="{{ route('finance.index') }}" class="flex items-center gap-2">
+                            <input type="hidden" name="tab" value="profit-loss">
+                            <!-- Preserve other filters -->
+                            @if(request('fee_payment_date'))
+                                <input type="hidden" name="fee_payment_date" value="{{ request('fee_payment_date') }}">
+                            @endif
+                            @if(request('income_date'))
+                                <input type="hidden" name="income_date" value="{{ request('income_date') }}">
+                            @endif
+                            @if(request('expense_date'))
+                                <input type="hidden" name="expense_date" value="{{ request('expense_date') }}">
+                            @endif
+                            @if(request('monthly_pl_period'))
+                                <input type="hidden" name="monthly_pl_period" value="{{ request('monthly_pl_period') }}">
+                            @endif
+                            <input type="date" 
+                                   name="daily_pl_date" 
+                                   value="{{ request('daily_pl_date', now()->format('Y-m-d')) }}" 
+                                   min="{{ now()->subDays(15)->format('Y-m-d') }}" 
+                                   max="{{ now()->addDays(15)->format('Y-m-d') }}"
+                                   class="px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-900 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500">
+                            <button type="submit" class="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 focus:ring-2 focus:ring-blue-500">
+                                {{ __('finance.Apply') }}
+                            </button>
+                        </form>
                     </div>
                     <div class="overflow-x-auto">
                         <table class="min-w-full finance-table">
@@ -397,14 +446,17 @@
                                 @endforelse
                                 @if(count($dailyBreakdown) > 0)
                                 @php
-                                    $totalNet = $summary['net'] ?? 0;
-                                    $totalNetFormatted = $totalNet < 0 ? '(' . number_format(abs($totalNet), 0) . ')' : number_format($totalNet, 0);
+                                    // Calculate totals from filtered data
+                                    $dailyTotalIncome = collect($dailyBreakdown)->sum('income');
+                                    $dailyTotalExpenses = collect($dailyBreakdown)->sum('expenses');
+                                    $dailyTotalNet = $dailyTotalIncome - $dailyTotalExpenses;
+                                    $dailyTotalNetFormatted = $dailyTotalNet < 0 ? '(' . number_format(abs($dailyTotalNet), 0) . ')' : number_format($dailyTotalNet, 0);
                                 @endphp
                                 <tr class="bg-gray-100 dark:bg-gray-800 font-bold">
                                     <td class="td-cell text-gray-900 dark:text-white">{{ __('finance.Total') }}</td>
-                                    <td class="td-cell text-right text-green-600 dark:text-green-400">{{ number_format($summary['total_income'] ?? 0, 0) }}</td>
-                                    <td class="td-cell text-right text-red-600 dark:text-red-400">{{ number_format($summary['total_expenses'] ?? 0, 0) }}</td>
-                                    <td class="td-cell text-right {{ $totalNet >= 0 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400' }}">{{ $totalNetFormatted }}</td>
+                                    <td class="td-cell text-right text-green-600 dark:text-green-400">{{ number_format($dailyTotalIncome, 0) }}</td>
+                                    <td class="td-cell text-right text-red-600 dark:text-red-400">{{ number_format($dailyTotalExpenses, 0) }}</td>
+                                    <td class="td-cell text-right {{ $dailyTotalNet >= 0 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400' }}">{{ $dailyTotalNetFormatted }}</td>
                                 </tr>
                                 @endif
                             </tbody>
@@ -415,8 +467,35 @@
                 <!-- Monthly P&L Table -->
                 <div class="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl shadow-sm mb-6">
                     <div class="flex flex-wrap items-center justify-between gap-3 p-4 border-b border-gray-200 dark:border-gray-700">
-                        <h3 class="text-lg font-semibold text-gray-900 dark:text-white">{{ __('finance.Monthly Profit & Loss') }}</h3>
-                        <span class="text-sm text-gray-500 dark:text-gray-400">{{ $filter->periodLabel() }}</span>
+                        <div>
+                            <h3 class="text-lg font-semibold text-gray-900 dark:text-white">{{ __('finance.Monthly Profit & Loss') }}</h3>
+                            <p class="text-sm text-gray-500 dark:text-gray-400">{{ __('finance.Daily breakdown for selected month') }}</p>
+                        </div>
+                        <form method="GET" action="{{ route('finance.index') }}" class="flex items-center gap-2">
+                            <input type="hidden" name="tab" value="profit-loss">
+                            <!-- Preserve other filters -->
+                            @if(request('fee_payment_date'))
+                                <input type="hidden" name="fee_payment_date" value="{{ request('fee_payment_date') }}">
+                            @endif
+                            @if(request('income_date'))
+                                <input type="hidden" name="income_date" value="{{ request('income_date') }}">
+                            @endif
+                            @if(request('expense_date'))
+                                <input type="hidden" name="expense_date" value="{{ request('expense_date') }}">
+                            @endif
+                            @if(request('daily_pl_date'))
+                                <input type="hidden" name="daily_pl_date" value="{{ request('daily_pl_date') }}">
+                            @endif
+                            <input type="month" 
+                                   name="monthly_pl_period" 
+                                   value="{{ request('monthly_pl_period', now()->format('Y-m')) }}" 
+                                   min="{{ now()->subDays(15)->format('Y-m') }}" 
+                                   max="{{ now()->addDays(15)->format('Y-m') }}"
+                                   class="px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-900 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500">
+                            <button type="submit" class="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 focus:ring-2 focus:ring-blue-500">
+                                {{ __('finance.Apply') }}
+                            </button>
+                        </form>
                     </div>
                     <div class="overflow-x-auto">
                         <table class="min-w-full finance-table">
@@ -452,14 +531,17 @@
                                 @endforelse
                                 @if(count($monthlyBreakdown) > 0)
                                 @php
-                                    $totalNet = $summary['net'] ?? 0;
-                                    $totalNetFormatted = $totalNet < 0 ? '(' . number_format(abs($totalNet), 0) . ')' : number_format($totalNet, 0);
+                                    // Calculate totals from filtered data
+                                    $monthlyTotalIncome = collect($monthlyBreakdown)->sum('income');
+                                    $monthlyTotalExpenses = collect($monthlyBreakdown)->sum('expenses');
+                                    $monthlyTotalNet = $monthlyTotalIncome - $monthlyTotalExpenses;
+                                    $monthlyTotalNetFormatted = $monthlyTotalNet < 0 ? '(' . number_format(abs($monthlyTotalNet), 0) . ')' : number_format($monthlyTotalNet, 0);
                                 @endphp
                                 <tr class="bg-gray-100 dark:bg-gray-800 font-bold">
                                     <td class="td-cell text-gray-900 dark:text-white">{{ __('finance.Total') }}</td>
-                                    <td class="td-cell text-right text-green-600 dark:text-green-400">{{ number_format($summary['total_income'] ?? 0, 0) }}</td>
-                                    <td class="td-cell text-right text-red-600 dark:text-red-400">{{ number_format($summary['total_expenses'] ?? 0, 0) }}</td>
-                                    <td class="td-cell text-right {{ $totalNet >= 0 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400' }}">{{ $totalNetFormatted }}</td>
+                                    <td class="td-cell text-right text-green-600 dark:text-green-400">{{ number_format($monthlyTotalIncome, 0) }}</td>
+                                    <td class="td-cell text-right text-red-600 dark:text-red-400">{{ number_format($monthlyTotalExpenses, 0) }}</td>
+                                    <td class="td-cell text-right {{ $monthlyTotalNet >= 0 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400' }}">{{ $monthlyTotalNetFormatted }}</td>
                                 </tr>
                                 @endif
                             </tbody>
@@ -551,7 +633,13 @@
                                     <div class="grid grid-cols-2 gap-4">
                                         <div>
                                             <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{{ __('finance.Date') }} <span class="text-red-500">*</span></label>
-                                            <input type="date" name="income_date" value="{{ now()->format('Y-m-d') }}" required class="form-input-modal">
+                                            <input type="date" 
+                                                   name="income_date" 
+                                                   value="{{ now()->format('Y-m-d') }}" 
+                                                   min="{{ now()->subDays(15)->format('Y-m-d') }}" 
+                                                   max="{{ now()->addDays(15)->format('Y-m-d') }}" 
+                                                   required 
+                                                   class="form-input-modal">
                                         </div>
                                         <div>
                                             <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{{ __('finance.Category') }} <span class="text-red-500">*</span></label>
@@ -626,7 +714,13 @@
                                     <div class="grid grid-cols-2 gap-4">
                                         <div>
                                             <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{{ __('finance.Date') }} <span class="text-red-500">*</span></label>
-                                            <input type="date" name="expense_date" value="{{ now()->format('Y-m-d') }}" required class="form-input-modal">
+                                            <input type="date" 
+                                                   name="expense_date" 
+                                                   value="{{ now()->format('Y-m-d') }}" 
+                                                   min="{{ now()->subDays(15)->format('Y-m-d') }}" 
+                                                   max="{{ now()->addDays(15)->format('Y-m-d') }}" 
+                                                   required 
+                                                   class="form-input-modal">
                                         </div>
                                         <div>
                                             <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{{ __('finance.Category') }} <span class="text-red-500">*</span></label>
@@ -775,10 +869,6 @@
                         url.searchParams.set('tab', value);
                         window.history.pushState({}, '', url);
                     });
-                    
-                    @if(session('status'))
-                    this.showNotification('{{ session('status') }}', 'success');
-                    @endif
                 },
                 editIncome(income) {
                     this.editingIncome = income;

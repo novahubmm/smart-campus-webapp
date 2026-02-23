@@ -59,7 +59,7 @@ class FinanceController extends Controller
 
         $this->logCreate('Income', $income->id ?? '', $data->description ?? 'Income record');
 
-        return back()->with('status', __('Income recorded successfully.'));
+        return back();
     }
 
     public function updateIncome(IncomeRequest $request, Income $income): RedirectResponse
@@ -69,7 +69,7 @@ class FinanceController extends Controller
 
         $this->logUpdate('Income', $income->id, $income->description ?? 'Income record');
 
-        return back()->with('status', __('Income updated successfully.'));
+        return back();
     }
 
     public function destroyIncome(Income $income): RedirectResponse
@@ -80,7 +80,7 @@ class FinanceController extends Controller
 
         $this->logDelete('Income', $incomeId, $incomeDesc);
 
-        return back()->with('status', __('Income deleted.'));
+        return back();
     }
 
     public function storeExpense(ExpenseRequest $request): RedirectResponse
@@ -90,7 +90,7 @@ class FinanceController extends Controller
 
         $this->logCreate('Expense', $expense->id ?? '', $data->description ?? 'Expense record');
 
-        return back()->with('status', __('Expense recorded successfully.'));
+        return back();
     }
 
     public function updateExpense(ExpenseRequest $request, Expense $expense): RedirectResponse
@@ -100,7 +100,7 @@ class FinanceController extends Controller
 
         $this->logUpdate('Expense', $expense->id, $expense->description ?? 'Expense record');
 
-        return back()->with('status', __('Expense updated successfully.'));
+        return back();
     }
 
     public function destroyExpense(Expense $expense): RedirectResponse
@@ -111,6 +111,6 @@ class FinanceController extends Controller
 
         $this->logDelete('Expense', $expenseId, $expenseDesc);
 
-        return back()->with('status', __('Expense deleted.'));
+        return back();
     }
 }

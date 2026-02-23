@@ -22,7 +22,12 @@ class FinanceRecordRepository implements FinanceRecordRepositoryInterface
             ->with(['invoice', 'grade', 'classModel', 'paymentMethod'])
             ->latest('income_date');
 
-        $this->applyCommonFilters($query, $filter, 'income_date');
+        // Use specific income date filter if provided
+        if ($filter->incomeDate) {
+            $query->whereDate('income_date', $filter->incomeDate);
+        } else {
+            $this->applyCommonFilters($query, $filter, 'income_date');
+        }
 
         if ($filter->category) {
             $query->where('category', $filter->category);
@@ -48,7 +53,12 @@ class FinanceRecordRepository implements FinanceRecordRepositoryInterface
             ->with(['category', 'paymentMethod'])
             ->latest('expense_date');
 
-        $this->applyCommonFilters($query, $filter, 'expense_date');
+        // Use specific expense date filter if provided
+        if ($filter->expenseDate) {
+            $query->whereDate('expense_date', $filter->expenseDate);
+        } else {
+            $this->applyCommonFilters($query, $filter, 'expense_date');
+        }
 
         if ($filter->category) {
             $query->whereHas('category', function (Builder $builder) use ($filter) {
@@ -80,7 +90,12 @@ class FinanceRecordRepository implements FinanceRecordRepositoryInterface
             })
             ->latest('payment_date');
 
-        $this->applyCommonFilters($query, $filter, 'payment_date');
+        // Use specific fee payment date filter if provided
+        if ($filter->feePaymentDate) {
+            $query->whereDate('payment_date', $filter->feePaymentDate);
+        } else {
+            $this->applyCommonFilters($query, $filter, 'payment_date');
+        }
 
         if ($filter->paymentMethod) {
             $query->where('payment_method_id', $filter->paymentMethod);
@@ -213,7 +228,14 @@ class FinanceRecordRepository implements FinanceRecordRepositoryInterface
 
     public function profitLossByMonth(FinanceFilterData $filter): Collection
     {
-        [$year, $month] = [$filter->year, $filter->month];
+        // Use specific monthly P&L period if provided, otherwise fall back to year/month
+        if ($filter->monthlyPlPeriod && preg_match('/^(\d{4})-(\d{2})$/', $filter->monthlyPlPeriod, $matches)) {
+            $year = (int) $matches[1];
+            $month = (int) $matches[2];
+        } else {
+            $year = $filter->year;
+            $month = $filter->month;
+        }
 
         // Get daily income breakdown
         $dailyIncome = Income::query()
@@ -343,13 +365,23 @@ class FinanceRecordRepository implements FinanceRecordRepositoryInterface
 
     public function dailyProfitLoss(FinanceFilterData $filter): Collection
     {
-        [$year, $month] = [$filter->year, $filter->month];
+        // Use specific daily P&L date if provided, otherwise fall back to year/month
+        if ($filter->dailyPlDate && preg_match('/^(\d{4})-(\d{2})-(\d{2})$/', $filter->dailyPlDate, $matches)) {
+            $year = (int) $matches[1];
+            $month = (int) $matches[2];
+            $day = (int) $matches[3];
+        } else {
+            $year = $filter->year;
+            $month = $filter->month;
+            $day = null;
+        }
 
         // Get income by category
         $incomeByCategory = Income::query()
             ->selectRaw('COALESCE(category, "Other") as category, SUM(amount) as total')
             ->when($year, fn($q) => $q->whereYear('income_date', $year))
             ->when($month, fn($q) => $q->whereMonth('income_date', $month))
+            ->when($day, fn($q) => $q->whereDay('income_date', $day))
             ->groupBy('category')
             ->pluck('total', 'category');
 
@@ -362,6 +394,7 @@ class FinanceRecordRepository implements FinanceRecordRepositoryInterface
             ->selectRaw('fee_structures_payment_system.name as fee_type, SUM(payment_fee_details.paid_amount) as total')
             ->when($year, fn($q) => $q->whereYear('payments_payment_system.payment_date', $year))
             ->when($month, fn($q) => $q->whereMonth('payments_payment_system.payment_date', $month))
+            ->when($day, fn($q) => $q->whereDay('payments_payment_system.payment_date', $day))
             ->groupBy('fee_structures_payment_system.name')
             ->pluck('total', 'fee_type');
 
@@ -371,6 +404,7 @@ class FinanceRecordRepository implements FinanceRecordRepositoryInterface
             ->selectRaw('expense_categories.name as category, SUM(expenses.amount) as total')
             ->when($year, fn($q) => $q->whereYear('expenses.expense_date', $year))
             ->when($month, fn($q) => $q->whereMonth('expenses.expense_date', $month))
+            ->when($day, fn($q) => $q->whereDay('expenses.expense_date', $day))
             ->groupBy('expense_categories.name')
             ->pluck('total', 'category');
 
@@ -410,6 +444,10 @@ class FinanceRecordRepository implements FinanceRecordRepositoryInterface
 
         if ($filter->month) {
             $query->whereMonth($dateColumn, $filter->month);
+        }
+
+        if ($filter->day) {
+            $query->whereDay($dateColumn, $filter->day);
         }
 
         if ($filter->paymentMethod) {
