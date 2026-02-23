@@ -71,6 +71,16 @@ class InvoiceFee extends Model
     }
 
     /**
+     * Get the fee type that this invoice fee belongs to.
+     *
+     * @return BelongsTo
+     */
+    public function feeType(): BelongsTo
+    {
+        return $this->belongsTo(\App\Models\FeeType::class, 'fee_type_id');
+    }
+
+    /**
      * Check if the invoice fee is overdue.
      *
      * @return bool

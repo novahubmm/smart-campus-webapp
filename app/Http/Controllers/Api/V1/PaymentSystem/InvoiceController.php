@@ -71,6 +71,7 @@ class InvoiceController extends Controller
                             'paid_amount' => $fee->paid_amount,
                             'remaining_amount' => $fee->remaining_amount,
                             'supports_payment_period' => $fee->supports_payment_period,
+                            'supports_discount' => $fee->feeType?->discount_status ?? false,
                             'due_date' => $fee->due_date->format('M j, Y'),
                             'due_date_raw' => $fee->due_date->format('Y-m-d'), // For date comparisons
                             'status' => $fee->status,

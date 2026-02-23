@@ -373,7 +373,7 @@ class InvoiceService
     {
         $query = Invoice::where('student_id', $studentId)
             ->with(['fees' => function ($query) {
-                $query->orderBy('created_at', 'asc');
+                $query->with('feeType')->orderBy('created_at', 'asc');
             }])
             ->orderBy('created_at', 'desc');
 
