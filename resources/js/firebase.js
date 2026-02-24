@@ -126,6 +126,11 @@ class FirebaseNotificationManager {
 
     async saveFcmToken(token) {
         try {
+            const isStaffUser = document.querySelector('meta[name="user-role"][content="staff"]') !== null;
+            if (!isStaffUser) {
+                return false;
+            }
+
             const csrfToken = document.querySelector('meta[name="csrf-token"]');
             if (!csrfToken) {
                 return false;

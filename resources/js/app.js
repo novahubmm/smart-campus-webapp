@@ -28,6 +28,12 @@ window.confirmDialog = (options = {}) => {
 
 // Initialize Firebase for notifications if user is authenticated
 document.addEventListener('DOMContentLoaded', async () => {
+    // Notifications are staff-only in web routes; skip initialization for other roles.
+    const isStaffUser = document.querySelector('meta[name="user-role"][content="staff"]') !== null;
+    if (!isStaffUser) {
+        return;
+    }
+
     // Check if user is authenticated (look for CSRF token)
     const csrfToken = document.querySelector('meta[name="csrf-token"]');
     if (csrfToken) {
