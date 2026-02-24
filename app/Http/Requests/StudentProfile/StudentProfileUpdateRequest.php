@@ -15,32 +15,24 @@ class StudentProfileUpdateRequest extends FormRequest
 
     public function rules(): array
     {
-        $profile = $this->route('student_profile');
+        // Get the student profile from route - Laravel automatically binds it
+        $studentProfile = $this->route('student_profile');
         
-        // Handle both model instance and string UUID
-        if ($profile instanceof \App\Models\StudentProfile) {
-            $profileId = $profile->id;
-            $userId = $profile->user_id;
-        } elseif (is_string($profile)) {
-            $studentProfile = \App\Models\StudentProfile::find($profile);
-            $profileId = $studentProfile?->id;
-            $userId = $studentProfile?->user_id;
-        } else {
-            $profileId = null;
-            $userId = null;
-        }
+        // Ensure we have a valid student profile instance
+        $profileId = $studentProfile ? $studentProfile->id : null;
+        $userId = $studentProfile ? $studentProfile->user_id : null;
 
         return [
             'user_id' => ['required', 'exists:users,id'],
             'name' => ['required', 'string', 'max:255'],
             'email' => [
-                'required',
+                'nullable',
                 'email',
                 'max:255',
                 Rule::unique('users', 'email')->ignore($userId),
             ],
             'phone' => [
-                'required',
+                'nullable',
                 'string',
                 'max:50',
                 Rule::unique('users', 'phone')->ignore($userId),
@@ -55,7 +47,7 @@ class StudentProfileUpdateRequest extends FormRequest
             'is_active' => ['sometimes', 'boolean'],
 
             'student_identifier' => [
-                'required',
+                'nullable',
                 'string',
                 'max:255',
                 Rule::unique('student_profiles', 'student_identifier')->ignore($profileId),

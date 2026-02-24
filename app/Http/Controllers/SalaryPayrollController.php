@@ -26,13 +26,33 @@ class SalaryPayrollController extends Controller
         $entries = $this->service->getCurrentMonthEntries($year, $month);
         $history = $this->service->getHistory($filter);
 
+        // Get paid payrolls for stats calculation
+        $paidPayrolls = \App\Models\Payroll::where('year', $year)
+            ->where('month', $month)
+            ->where('status', 'paid')
+            ->get();
+
+        // Create a set of fully paid employee keys
+        $fullyPaidKeys = $paidPayrolls->groupBy(function($p) {
+            return $p->employee_type . '-' . $p->employee_id;
+        })->filter(function($payments, $key) {
+            // Check if this employee has been fully paid (no pending record)
+            [$type, $id] = explode('-', $key, 2);
+            $pending = \App\Models\Payroll::where('employee_type', $type)
+                ->where('employee_id', $id)
+                ->where('year', $payments->first()->year)
+                ->where('month', $payments->first()->month)
+                ->where('status', 'pending')
+                ->exists();
+            return !$pending; // Only include if no pending record exists
+        })->keys();
+
         // Calculate stats
         $totalEmployees = $entries->count();
-        $paidCount = $entries->filter(fn($e) => $e->payroll?->status === 'paid')->count();
+        $paidCount = $fullyPaidKeys->count();
         $pendingCount = $totalEmployees - $paidCount;
-        $totalPayout = $entries->sum(fn($e) => $e->payroll?->amount ?? $e->basicSalary);
-        $withdrawnAmount = $entries->filter(fn($e) => $e->payroll?->status === 'paid')
-            ->sum(fn($e) => $e->payroll->amount);
+        $totalPayout = $entries->sum(fn($e) => $e->payroll?->total_amount ?? $e->payroll?->amount ?? $e->basicSalary);
+        $withdrawnAmount = $paidPayrolls->sum('amount');
 
         $stats = [
             'totalEmployees' => $totalEmployees,
@@ -45,7 +65,11 @@ class SalaryPayrollController extends Controller
         ];
 
         // Build payroll entries for Alpine.js (only show pending entries in management tab)
-        $payrollEntries = $entries->map(fn($entry) => [
+        $payrollEntries = $entries->filter(function($entry) use ($fullyPaidKeys) {
+            // Exclude fully paid employees
+            $key = $entry->employeeType . '-' . $entry->employeeId;
+            return !$fullyPaidKeys->contains($key);
+        })->map(fn($entry) => [
             'employee_type' => $entry->employeeType,
             'employee_id' => $entry->employeeId,
             'display_employee_id' => $entry->displayEmployeeId,
@@ -68,7 +92,7 @@ class SalaryPayrollController extends Controller
             'status' => $entry->payroll?->status ?? 'pending',
             'paid_at' => $entry->payroll?->paid_at?->format('M j, Y H:i'),
             'payroll_id' => $entry->payroll?->id,
-        ])->filter(fn($entry) => $entry['status'] === 'pending')->values()->toArray();
+        ])->values()->toArray();
 
         // History entries with employee details
         $historyCollection = $history->getCollection();

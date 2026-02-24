@@ -886,7 +886,7 @@ class GuardianStudentRepository implements GuardianStudentRepositoryInterface
             'guardian_information' => [
                 'name' => $primaryGuardian?->user?->name ?? 'N/A',
                 'email' => $primaryGuardian?->user?->email ?? 'N/A',
-                'phone' => $primaryGuardian?->phone_no ?? 'N/A',
+                'phone' => $primaryGuardian?->user?->phone ?? 'N/A',
                 'relationship' => $primaryGuardian?->pivot?->relationship ?? 'N/A',
             ],
         ];
