@@ -124,4 +124,24 @@ class Payment extends Model
     {
         return $this->status === 'rejected';
     }
+
+    /**
+     * Get the full URL for the receipt image.
+     *
+     * @return string|null
+     */
+    public function getReceiptImageUrlAttribute($value): ?string
+    {
+        if (!$value) {
+            return null;
+        }
+
+        // If it's already a full URL, return as is
+        if (str_starts_with($value, 'http://') || str_starts_with($value, 'https://')) {
+            return $value;
+        }
+
+        // Otherwise, generate the storage URL
+        return \Storage::url($value);
+    }
 }

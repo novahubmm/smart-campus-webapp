@@ -160,7 +160,7 @@
                 </div>
 
                 <!-- Page Content -->
-                <main class="flex-grow overflow-x-hidden">
+                <main class="flex-grow overflow-x-hidden bg-gray-50 dark:bg-gray-900">
                     {{ $slot }}
                 </main>
 

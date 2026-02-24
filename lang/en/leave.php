@@ -78,5 +78,13 @@ return array(
     'Reject Leave Request' => 'Reject Leave Request',
     'Reason for rejection' => 'Reason for rejection',
     'You are about to reject the leave request for' => 'You are about to reject the leave request for',
-    'Please provide a reason for rejection...' => 'Please provide a reason for rejection'
+    'Please provide a reason for rejection...' => 'Please provide a reason for rejection',
+    'View' => 'View',
+    'Leave Request Details' => 'Leave Request Details',
+    'Request Information' => 'Request Information',
+    'Role / Class' => 'Role / Class',
+    'Attachment' => 'Attachment',
+    'Download Attachment' => 'Download Attachment',
+    'Close' => 'Close',
+    'Please provide a reason for rejection' => 'Please provide a reason for rejection',
 );

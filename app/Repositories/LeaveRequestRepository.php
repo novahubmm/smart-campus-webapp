@@ -192,6 +192,7 @@ class LeaveRequestRepository implements LeaveRequestRepositoryInterface
             'total_days' => $this->resolveDays($leave),
             'status' => $leave->status,
             'reason' => $leave->reason,
+            'attachment_path' => $leave->attachment,
             'approved_by' => $leave->approvedBy?->name,
             'approved_at' => optional($leave->approved_at)->toDateString(),
         ];
@@ -217,6 +218,7 @@ class LeaveRequestRepository implements LeaveRequestRepositoryInterface
             'total_days' => $this->resolveDays($leave),
             'status' => $leave->status,
             'reason' => $leave->reason,
+            'attachment_path' => $leave->attachment,
             'approved_by' => $leave->approvedBy?->name,
             'approved_at' => optional($leave->approved_at)->toDateString(),
         ];

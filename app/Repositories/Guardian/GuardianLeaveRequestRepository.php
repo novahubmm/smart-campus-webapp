@@ -53,7 +53,7 @@ class GuardianLeaveRequestRepository implements GuardianLeaveRequestRepositoryIn
                 'total_days' => $request->total_days ?? 1,
                 'reason' => $request->reason,
                 'status' => $request->status,
-                'attachment' => $request->attachment ? asset($request->attachment) : null,
+                'attachment' => $request->attachment ? \Storage::disk('public')->url($request->attachment) : null,
                 'days_until' => $daysUntil,
                 'is_today' => $isToday,
                 'is_past' => $isPast,
@@ -78,7 +78,7 @@ class GuardianLeaveRequestRepository implements GuardianLeaveRequestRepositoryIn
             'total_days' => $request->total_days ?? 1,
             'reason' => $request->reason,
             'status' => $request->status,
-            'attachment' => $request->attachment ? asset($request->attachment) : null,
+            'attachment' => $request->attachment ? \Storage::disk('public')->url($request->attachment) : null,
             'approved_by' => $request->approvedBy ? [
                 'name' => $request->approvedBy->name ?? 'N/A',
             ] : null,
@@ -119,7 +119,7 @@ class GuardianLeaveRequestRepository implements GuardianLeaveRequestRepositoryIn
             'total_days' => $request->total_days ?? 1,
             'reason' => $request->reason,
             'status' => $request->status,
-            'attachment' => $request->attachment ? asset($request->attachment) : null,
+            'attachment' => $request->attachment ? \Storage::disk('public')->url($request->attachment) : null,
             'approved_by' => $request->approvedBy ? [
                 'name' => $request->approvedBy->name ?? 'N/A',
             ] : null,
@@ -237,25 +237,31 @@ class GuardianLeaveRequestRepository implements GuardianLeaveRequestRepositoryIn
     }
 
     public function updateLeaveRequest(string $requestId, array $data): array
-    {
-        $request = LeaveRequest::findOrFail($requestId);
+        {
+            $request = LeaveRequest::findOrFail($requestId);
 
-        // Only allow updates if status is pending
-        if ($request->status !== 'pending') {
-            throw new \Exception('Cannot update a leave request that is not pending');
+            // Only allow updates if status is pending
+            if ($request->status !== 'pending') {
+                throw new \Exception('Cannot update a leave request that is not pending');
+            }
+
+            // Calculate total days if dates are being updated
+            if (isset($data['start_date']) || isset($data['end_date'])) {
+                $startDate = Carbon::parse($data['start_date'] ?? $request->start_date);
+                $endDate = Carbon::parse($data['end_date'] ?? $request->end_date);
+                $data['total_days'] = $startDate->diffInDays($endDate) + 1;
+            }
+
+            // Handle attachment path
+            if (isset($data['attachment_path'])) {
+                $data['attachment'] = $data['attachment_path'];
+                unset($data['attachment_path']);
+            }
+
+            $request->update($data);
+
+            return $this->getLeaveRequestDetail($request->id);
         }
-
-        // Calculate total days if dates are being updated
-        if (isset($data['start_date']) || isset($data['end_date'])) {
-            $startDate = Carbon::parse($data['start_date'] ?? $request->start_date);
-            $endDate = Carbon::parse($data['end_date'] ?? $request->end_date);
-            $data['total_days'] = $startDate->diffInDays($endDate) + 1;
-        }
-
-        $request->update($data);
-
-        return $this->getLeaveRequestDetail($request->id);
-    }
 
     public function deleteLeaveRequest(string $requestId): bool
     {

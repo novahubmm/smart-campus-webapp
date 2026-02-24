@@ -160,6 +160,12 @@ class SalaryPayrollService
         $expenseCount = Expense::withTrashed()->count() + 1;
         $expenseNumber = 'EXP-' . Str::padLeft((string) $expenseCount, 5, '0');
 
+        // Get payment method ID by matching the name
+        $paymentMethodName = $data->paymentMethod; // e.g., "Cash", "Bank Transfer", "KBZ Pay"
+        $paymentMethod = \App\Models\PaymentMethod::where('name', $paymentMethodName)
+            ->orWhere('name', 'like', "%{$paymentMethodName}%")
+            ->first();
+
         // Create expense entry using paid_amount from the payroll transaction
         Expense::create([
             'expense_number' => $expenseNumber,
@@ -168,7 +174,7 @@ class SalaryPayrollService
             'description' => "Salary payment for {$monthName}. Payroll ID: {$payroll->id}",
             'amount' => $payroll->paid_amount, // Use paid_amount from transaction
             'expense_date' => now(),
-            'payment_method' => $this->mapPaymentMethod($data->paymentMethod),
+            'payment_method_id' => $paymentMethod?->id,
             'status' => true,
             'created_by' => $data->receptionistId,
             'notes' => $data->remark,

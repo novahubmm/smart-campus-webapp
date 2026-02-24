@@ -12,7 +12,7 @@ return new class extends Migration
             $table->uuid('id')->primary();
             $table->string('name');
             $table->string('name_mm')->nullable();
-            $table->enum('type', ['bank', 'mobile_wallet'])->default('bank');
+            $table->enum('type', ['bank', 'mobile_wallet', 'other'])->default('bank');
             $table->string('account_number');
             $table->string('account_name');
             $table->string('account_name_mm')->nullable();

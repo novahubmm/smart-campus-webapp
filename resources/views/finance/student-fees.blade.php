@@ -114,7 +114,7 @@
     </style>
     @endpush
 
-    <div class="py-6 sm:py-10 overflow-x-hidden" x-data="studentFeeManager()">
+    <div class="py-6 sm:py-10 overflow-x-hidden bg-gray-50 dark:bg-gray-900" x-data="studentFeeManager()">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-6">
             @if(session('status'))
                 <div class="rounded-lg border border-green-200 bg-green-50 px-4 py-3 text-green-800 dark:border-green-900/50 dark:bg-green-900/30 dark:text-green-100">
@@ -198,7 +198,7 @@
                             @endif
                             
                             <span class="text-sm font-semibold text-gray-600 dark:text-gray-400">{{ __('finance.Filters:') }}</span>
-                            <input type="date" name="fee_date" value="{{ request('fee_date', now()->format('Y-m-d')) }}" class="form-input-sm" onchange="this.form.submit()">
+                            <input type="month" name="fee_month" value="{{ request('fee_month', now()->format('Y-m')) }}" class="form-input-sm" onchange="this.form.submit()">
                             <select name="fee_grade" class="form-select-sm" onchange="this.form.submit()">
                                 <option value="">{{ __('finance.All Grades') }}</option>
                                 @foreach($grades as $grade)
@@ -841,6 +841,7 @@
                                 <tr>
                                     <th class="th-cell">{{ __('finance.Grade') }}</th>
                                     <th class="th-cell">{{ __('finance.Monthly Fee') }}</th>
+                                    <th class="th-cell">{{ __('finance.Due Date') }}</th>
                                     <th class="th-cell">{{ __('finance.Students') }}</th>
                                     <th class="th-cell">{{ __('finance.Actions') }}</th>
                                 </tr>
@@ -850,6 +851,7 @@
                                     @php
                                         $gradeFee = $grade->price_per_month ?? 0;
                                         $gradeStudents = $studentCountByGrade[$grade->id] ?? 0;
+                                        $dueDate = $grade->due_date;
                                     @endphp
                                     <tr class="bg-white dark:bg-gray-900 hover:bg-gray-50 dark:hover:bg-gray-800/50">
                                         <td class="td-cell font-semibold">@gradeName($grade->level)</td>
@@ -858,6 +860,13 @@
                                                 {{ number_format($gradeFee, 0) }} MMK
                                             @else
                                                 <span class="text-gray-400">{{ __('finance.Not set') }}</span>
+                                            @endif
+                                        </td>
+                                        <td class="td-cell">
+                                            @if($dueDate)
+                                                <span class="text-sm">{{ $dueDate }}<sup>{{ __('finance.th') }}</sup> / {{ __('finance.month') }}</span>
+                                            @else
+                                                <span class="text-gray-400 text-sm">-</span>
                                             @endif
                                         </td>
                                         <td class="td-cell">{{ $gradeStudents }} {{ __('finance.students') }}</td>
@@ -970,6 +979,7 @@
                                         <th class="th-cell">{{ __('finance.Partial') }}</th>
                                         <th class="th-cell">{{ __('finance.Discount') }}</th>
                                         <th class="th-cell">{{ __('finance.Status') }}</th>
+                                        <th class="th-cell">{{ __('finance.Created At') }}</th>
                                         <th class="th-cell">{{ __('finance.Actions') }}</th>
                                     </tr>
                                 </thead>
@@ -1028,6 +1038,16 @@
                                                     <span class="px-2 py-1 text-xs font-semibold rounded-md bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-300">
                                                         {{ __('finance.Inactive') }}
                                                     </span>
+                                                @endif
+                                            </td>
+                                            <td class="td-cell text-sm text-gray-600 dark:text-gray-400">
+                                                @if($feeType->created_at)
+                                                    <div class="flex flex-col">
+                                                        <span class="font-medium">{{ $feeType->created_at->format('M d, Y') }}</span>
+                                                        <span class="text-xs text-gray-400 dark:text-gray-500">{{ $feeType->created_at->format('h:i A') }}</span>
+                                                    </div>
+                                                @else
+                                                    -
                                                 @endif
                                             </td>
                                             <td class="td-cell">
@@ -1485,6 +1505,11 @@
                                 <label class="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-1.5">{{ __('finance.Monthly Fee (MMK)') }} <span class="text-red-500">*</span></label>
                                 <input type="number" step="1" min="0" name="price_per_month" class="form-input-full" x-model="gradeFeeForm.price_per_month" placeholder="15000" required>
                             </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-1.5">{{ __('finance.Due Date') }} <span class="text-gray-500 text-xs">({{ __('finance.Day of month') }})</span></label>
+                                <input type="number" step="1" min="1" max="31" name="due_date" class="form-input-full" x-model="gradeFeeForm.due_date" placeholder="10">
+                                <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">{{ __('finance.Enter the day of the month when the fee is due (1-31)') }}</p>
+                            </div>
                         </div>
                         <div class="flex items-center justify-between gap-3 p-5 border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900/50 rounded-b-xl">
                             <button type="button" class="px-4 py-2 text-sm font-medium rounded-lg border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700" @click="showGradeFeeModal = false">
@@ -1806,7 +1831,7 @@
             <div class="fixed inset-0 bg-black/50 backdrop-blur-sm"></div>
             <div class="flex min-h-full items-center justify-center p-4">
                 <div class="relative bg-white dark:bg-gray-800 rounded-xl w-full max-w-2xl shadow-2xl" @click.stop>
-                    <form method="POST" :action="paymentMethodFormAction">
+                    <form method="POST" :action="paymentMethodFormAction" enctype="multipart/form-data">
                         @csrf
                         <template x-if="paymentMethodFormMethod === 'PUT'"><input type="hidden" name="_method" value="PUT"></template>
                         
@@ -1839,6 +1864,7 @@
                                 <select name="type" x-model="paymentMethodForm.type" class="form-select-full" required>
                                     <option value="bank">{{ __('finance.Bank Transfer') }}</option>
                                     <option value="mobile_wallet">{{ __('finance.Mobile Wallet') }}</option>
+                                    <option value="other">{{ __('finance.Other') }}</option>
                                 </select>
                             </div>
 
@@ -1870,12 +1896,18 @@
                                 <textarea name="instructions_mm" x-model="paymentMethodForm.instructions_mm" rows="2" class="form-input-full" placeholder="e.g., ဒီ account ကို လွှဲပြီး ပြေစာ upload လုပ်ပါ"></textarea>
                             </div>
 
-                            <!-- Logo URL and Sort Order -->
+                            <!-- Logo Upload and Sort Order -->
                             <div class="grid grid-cols-2 gap-4">
                                 <div>
-                                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-1.5">{{ __('finance.Logo URL') }}</label>
-                                    <input type="text" name="logo_url" x-model="paymentMethodForm.logo_url" class="form-input-full" placeholder="/images/payment-methods/kbz.png">
-                                    <p class="text-xs text-gray-500 mt-1">{{ __('finance.Relative path to logo image') }}</p>
+                                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-1.5">{{ __('finance.Logo Image') }}</label>
+                                    <input type="file" name="logo" accept="image/jpeg,image/jpg,image/png,image/gif,image/webp" class="form-input-full">
+                                    <p class="text-xs text-gray-500 mt-1">{{ __('finance.Upload logo image (max 5MB, will be resized to 200x200px)') }}</p>
+                                    <template x-if="paymentMethodForm.logo_url">
+                                        <div class="mt-2">
+                                            <img :src="'/storage/' + paymentMethodForm.logo_url" alt="Current logo" class="h-16 w-16 object-contain border border-gray-300 dark:border-gray-600 rounded p-1">
+                                            <p class="text-xs text-gray-500 mt-1">{{ __('finance.Current logo') }}</p>
+                                        </div>
+                                    </template>
                                 </div>
                                 <div>
                                     <label class="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-1.5">{{ __('finance.Sort Order') }}</label>
@@ -2312,7 +2344,8 @@
                 categoryFormMethod: 'POST',
                 gradeFeeForm: {
                     gradeName: '',
-                    price_per_month: ''
+                    price_per_month: '',
+                    due_date: ''
                 },
                 gradeFeeFormAction: '',
                 promotionFormAction: '',
@@ -2694,7 +2727,8 @@
                     this.gradeFeeFormAction = '{{ url('student-fees/grades') }}/' + grade.id;
                     this.gradeFeeForm = {
                         gradeName: grade.name || '',
-                        price_per_month: grade.price_per_month || ''
+                        price_per_month: grade.price_per_month || '',
+                        due_date: grade.due_date || ''
                     };
                     this.showGradeFeeModal = true;
                 },

@@ -79,20 +79,20 @@ class StudentFeeController extends Controller
 
     public function index(Request $request): View
     {
-        // Get separate dates for each table
-        $feeDate = $request->input('fee_date', now()->format('Y-m-d'));
+        // Get month filter (default to current month)
+        $feeMonth = $request->input('fee_month', now()->format('Y-m'));
         $historyDate = $request->input('history_date', now()->format('Y-m-d'));
         $pendingDate = $request->input('pending_date', now()->format('Y-m-d'));
         $rejectedDate = $request->input('rejected_date', now()->format('Y-m-d'));
         
-        // For display purposes (use fee_date as default)
-        $filterDate = \Carbon\Carbon::parse($feeDate);
+        // For display purposes
+        $filterDate = \Carbon\Carbon::parse($feeMonth . '-01');
         $currentMonth = $filterDate->translatedFormat('F Y');
         $currentMonthKey = $filterDate->format('Y-m');
         
-        // Add date to request for DTO
+        // Add date to request for DTO (use first day of month)
         $requestData = $request->all();
-        $requestData['date'] = $feeDate;
+        $requestData['date'] = $filterDate->format('Y-m-d');
         
         $filter = FeeFilterData::from($requestData);
         
@@ -100,13 +100,13 @@ class StudentFeeController extends Controller
         $payments = $this->service->payments($filter);
         $structures = $this->service->structures();
 
-        // Build query for unpaid invoices on the selected fee date
-        $feeDayStart = \Carbon\Carbon::parse($feeDate)->startOfDay();
-        $feeDayEnd = \Carbon\Carbon::parse($feeDate)->endOfDay();
+        // Build query for unpaid invoices in the selected month
+        $monthStart = $filterDate->copy()->startOfMonth();
+        $monthEnd = $filterDate->copy()->endOfMonth();
         
-        // Get rejected payment proof invoice IDs for the selected fee date
+        // Get rejected payment proof invoice IDs for the selected month
         $rejectedProofInvoiceIds = \App\Models\PaymentProof::where('status', 'rejected')
-            ->whereBetween('payment_date', [$feeDayStart, $feeDayEnd])
+            ->whereBetween('payment_date', [$monthStart, $monthEnd])
             ->get()
             ->pluck('fee_ids')
             ->flatten()
@@ -115,14 +115,16 @@ class StudentFeeController extends Controller
             ->toArray();
         
         // Query unpaid invoices with relationships (using PaymentSystem)
+        // Filter by due_date month to show only invoices due in the selected month
         $unpaidInvoicesQuery = \App\Models\PaymentSystem\Invoice::with([
             'student.user', 
             'student.grade',
             'student.batch', // Add batch relationship
             'student.classModel', 
-            'student.classModel', 
             'fees.feeStructure' // Load invoice fees with fee structure
         ])
+        ->whereYear('due_date', $filterDate->year)
+        ->whereMonth('due_date', $filterDate->month)
         ->where(function ($query) use ($rejectedProofInvoiceIds) {
             // Include only pending invoices (exclude waiting, paid, and rejected)
             $query->where('status', 'pending')
@@ -200,14 +202,14 @@ class StudentFeeController extends Controller
         // Get payment proofs for the displayed invoices in the selected month
         $studentIds = $unpaidInvoices->pluck('student_id')->unique();
         $paymentProofsByStudent = \App\Models\PaymentProof::whereIn('student_id', $studentIds)
-            ->whereBetween('payment_date', [$feeDayStart, $feeDayEnd])
+            ->whereBetween('payment_date', [$monthStart, $monthEnd])
             ->with('paymentMethod')
             ->get()
             ->groupBy('student_id');
         
-        // Get rejected payment proofs by invoice ID for the selected fee date
+        // Get rejected payment proofs by invoice ID for the selected month
         $rejectedProofsByInvoice = \App\Models\PaymentProof::where('status', 'rejected')
-            ->whereBetween('payment_date', [$feeDayStart, $feeDayEnd])
+            ->whereBetween('payment_date', [$monthStart, $monthEnd])
             ->with('paymentMethod')
             ->get()
             ->flatMap(function ($proof) {
@@ -426,8 +428,8 @@ class StudentFeeController extends Controller
             'feeByGrade' => $feeByGrade,
             'currentMonth' => $currentMonth,
             'currentMonthKey' => $currentMonthKey,
-            'selectedDate' => $feeDate,
-            'feeDate' => $feeDate,
+            'selectedMonth' => $feeMonth,
+            'feeMonth' => $feeMonth,
             'historyDate' => $historyDate,
             'pendingDate' => $pendingDate,
             'rejectedDate' => $rejectedDate,
@@ -1631,6 +1633,7 @@ class StudentFeeController extends Controller
     {
         $validated = $request->validate([
             'price_per_month' => ['required', 'numeric', 'min:0'],
+            'due_date' => ['nullable', 'integer', 'min:1', 'max:31'],
         ]);
 
         // Check if trying to clear the fee (set to 0)
@@ -1645,7 +1648,10 @@ class StudentFeeController extends Controller
             }
         }
 
-        $grade->update(['price_per_month' => $validated['price_per_month']]);
+        $grade->update([
+            'price_per_month' => $validated['price_per_month'],
+            'due_date' => $validated['due_date'] ?? null,
+        ]);
 
         return redirect()->route('student-fees.index', ['tab' => 'structure'])->with('status', __('Grade fee updated.'));
     }
@@ -2055,50 +2061,64 @@ class StudentFeeController extends Controller
     }
 
     public function storePaymentMethod(Request $request): RedirectResponse
-    {
-        $validated = $request->validate([
-            'name' => 'required|string|max:255',
-            'name_mm' => 'nullable|string|max:255',
-            'type' => 'required|in:bank,mobile_wallet',
-            'account_number' => 'required|string|max:255',
-            'account_name' => 'required|string|max:255',
-            'account_name_mm' => 'nullable|string|max:255',
-            'logo_url' => 'nullable|string|max:255',
-            'is_active' => 'boolean',
-            'instructions' => 'nullable|string',
-            'instructions_mm' => 'nullable|string',
-            'sort_order' => 'nullable|integer|min:0',
-        ]);
+        {
+            $validated = $request->validate([
+                'name' => 'required|string|max:255',
+                'name_mm' => 'nullable|string|max:255',
+                'type' => 'required|in:bank,mobile_wallet,other',
+                'account_number' => 'required|string|max:255',
+                'account_name' => 'required|string|max:255',
+                'account_name_mm' => 'nullable|string|max:255',
+                'logo' => 'nullable|image|mimes:jpeg,jpg,png,gif,webp|max:5120',
+                'is_active' => 'boolean',
+                'instructions' => 'nullable|string',
+                'instructions_mm' => 'nullable|string',
+                'sort_order' => 'nullable|integer|min:0',
+            ]);
 
-        $validated['is_active'] = $request->has('is_active');
+            $validated['is_active'] = $request->has('is_active');
 
-        \App\Models\PaymentMethod::create($validated);
+            // Handle logo upload with compression
+            if ($request->hasFile('logo')) {
+                $validated['logo_url'] = $this->uploadAndCompressLogo($request->file('logo'));
+            }
 
-        return redirect()->route('student-fees.index', ['tab' => 'payment-methods'])->with('status', __('Payment method created successfully.'));
-    }
+            \App\Models\PaymentMethod::create($validated);
+
+            return redirect()->route('student-fees.index', ['tab' => 'payment-methods'])->with('status', __('Payment method created successfully.'));
+        }
 
     public function updatePaymentMethod(Request $request, \App\Models\PaymentMethod $paymentMethod): RedirectResponse
-    {
-        $validated = $request->validate([
-            'name' => 'required|string|max:255',
-            'name_mm' => 'nullable|string|max:255',
-            'type' => 'required|in:bank,mobile_wallet',
-            'account_number' => 'required|string|max:255',
-            'account_name' => 'required|string|max:255',
-            'account_name_mm' => 'nullable|string|max:255',
-            'logo_url' => 'nullable|string|max:255',
-            'is_active' => 'boolean',
-            'instructions' => 'nullable|string',
-            'instructions_mm' => 'nullable|string',
-            'sort_order' => 'nullable|integer|min:0',
-        ]);
+        {
+            $validated = $request->validate([
+                'name' => 'required|string|max:255',
+                'name_mm' => 'nullable|string|max:255',
+                'type' => 'required|in:bank,mobile_wallet,other',
+                'account_number' => 'required|string|max:255',
+                'account_name' => 'required|string|max:255',
+                'account_name_mm' => 'nullable|string|max:255',
+                'logo' => 'nullable|image|mimes:jpeg,jpg,png,gif,webp|max:5120',
+                'is_active' => 'boolean',
+                'instructions' => 'nullable|string',
+                'instructions_mm' => 'nullable|string',
+                'sort_order' => 'nullable|integer|min:0',
+            ]);
 
-        $validated['is_active'] = $request->has('is_active');
+            $validated['is_active'] = $request->has('is_active');
 
-        $paymentMethod->update($validated);
+            // Handle logo upload with compression
+            if ($request->hasFile('logo')) {
+                // Delete old logo if exists
+                if ($paymentMethod->logo_url && \Storage::disk('public')->exists($paymentMethod->logo_url)) {
+                    \Storage::disk('public')->delete($paymentMethod->logo_url);
+                }
+                $validated['logo_url'] = $this->uploadAndCompressLogo($request->file('logo'));
+            }
 
-        return redirect()->route('student-fees.index', ['tab' => 'payment-methods'])->with('status', __('Payment method updated successfully.'));
-    }
+            $paymentMethod->update($validated);
+
+            return redirect()->route('student-fees.index', ['tab' => 'payment-methods'])->with('status', __('Payment method updated successfully.'));
+        }
 
     public function destroyPaymentMethod(\App\Models\PaymentMethod $paymentMethod): RedirectResponse
     {
@@ -2140,5 +2160,93 @@ class StudentFeeController extends Controller
             ]);
             return redirect()->route('student-fees.index', ['tab' => 'structure'])->with('error', __('Failed to update promotion: ' . $e->getMessage()));
         }
+    }
+
+    /**
+     * Upload and compress payment method logo
+     */
+    private function uploadAndCompressLogo($file): string
+    {
+        $extension = strtolower($file->getClientOriginalExtension());
+        $filename = 'payment_logo_' . time() . '_' . uniqid() . '.' . $extension;
+        $path = 'payment_methods';
+        
+        // Read the uploaded file
+        $imageContent = file_get_contents($file->getRealPath());
+        
+        // Create image resource based on type
+        $image = null;
+        if (in_array($extension, ['jpg', 'jpeg'])) {
+            $image = imagecreatefromjpeg($file->getRealPath());
+        } elseif ($extension === 'png') {
+            $image = imagecreatefrompng($file->getRealPath());
+        } elseif ($extension === 'gif') {
+            $image = imagecreatefromgif($file->getRealPath());
+        } elseif ($extension === 'webp') {
+            $image = imagecreatefromwebp($file->getRealPath());
+        }
+        
+        if (!$image) {
+            // If can't process, just save original
+            $fullPath = $path . '/' . $filename;
+            \Storage::disk('public')->put($fullPath, $imageContent);
+            return $fullPath;
+        }
+        
+        // Get original dimensions
+        $originalWidth = imagesx($image);
+        $originalHeight = imagesy($image);
+        
+        // Calculate new dimensions (max 200x200, maintain aspect ratio)
+        $maxSize = 200;
+        if ($originalWidth > $maxSize || $originalHeight > $maxSize) {
+            if ($originalWidth > $originalHeight) {
+                $newWidth = $maxSize;
+                $newHeight = (int)(($maxSize / $originalWidth) * $originalHeight);
+            } else {
+                $newHeight = $maxSize;
+                $newWidth = (int)(($maxSize / $originalHeight) * $originalWidth);
+            }
+        } else {
+            $newWidth = $originalWidth;
+            $newHeight = $originalHeight;
+        }
+        
+        // Create new image with calculated dimensions
+        $resizedImage = imagecreatetruecolor($newWidth, $newHeight);
+        
+        // Preserve transparency for PNG and GIF
+        if (in_array($extension, ['png', 'gif'])) {
+            imagealphablending($resizedImage, false);
+            imagesavealpha($resizedImage, true);
+            $transparent = imagecolorallocatealpha($resizedImage, 255, 255, 255, 127);
+            imagefilledrectangle($resizedImage, 0, 0, $newWidth, $newHeight, $transparent);
+        }
+        
+        // Resize
+        imagecopyresampled($resizedImage, $image, 0, 0, 0, 0, $newWidth, $newHeight, $originalWidth, $originalHeight);
+        
+        // Save to temporary file with compression
+        $tempPath = sys_get_temp_dir() . '/' . $filename;
+        if (in_array($extension, ['jpg', 'jpeg'])) {
+            imagejpeg($resizedImage, $tempPath, 85); // 85% quality
+        } elseif ($extension === 'png') {
+            imagepng($resizedImage, $tempPath, 8); // Compression level 8
+        } elseif ($extension === 'gif') {
+            imagegif($resizedImage, $tempPath);
+        } elseif ($extension === 'webp') {
+            imagewebp($resizedImage, $tempPath, 85);
+        }
+        
+        // Clean up
+        imagedestroy($image);
+        imagedestroy($resizedImage);
+        
+        // Move to storage
+        $fullPath = $path . '/' . $filename;
+        \Storage::disk('public')->put($fullPath, file_get_contents($tempPath));
+        unlink($tempPath);
+        
+        return $fullPath;
     }
 }

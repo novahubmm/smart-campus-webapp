@@ -85,6 +85,9 @@
                                         <td class="px-4 py-3 text-sm text-gray-700 dark:text-gray-300 max-w-xs truncate" x-text="row.reason || '—'" :title="row.reason"></td>
                                         <td class="px-4 py-3 text-right">
                                             <div class="flex items-center justify-end gap-2">
+                                                <button type="button" @click="openViewModal(row)" class="inline-flex items-center px-3 py-1.5 rounded-lg bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-100 text-xs font-semibold hover:bg-blue-100 dark:hover:bg-blue-900/50">
+                                                    <i class="fas fa-eye mr-1"></i>{{ __('leave.View') }}
+                                                </button>
                                                 <button type="button" @click="openApproveModal(row)" class="inline-flex items-center px-3 py-1.5 rounded-lg bg-green-50 dark:bg-green-900/30 text-green-700 dark:text-green-100 text-xs font-semibold hover:bg-green-100 dark:hover:bg-green-900/50">
                                                     <i class="fas fa-check mr-1"></i>{{ __('leave.Approve') }}
                                                 </button>
@@ -229,6 +232,9 @@
                                         <td class="px-4 py-3 text-sm text-gray-700 dark:text-gray-300 max-w-xs truncate" x-text="row.reason || '—'" :title="row.reason"></td>
                                         <td class="px-4 py-3 text-right">
                                             <div class="flex items-center justify-end gap-2">
+                                                <button type="button" @click="openViewModal(row)" class="inline-flex items-center px-3 py-1.5 rounded-lg bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-100 text-xs font-semibold hover:bg-blue-100 dark:hover:bg-blue-900/50">
+                                                    <i class="fas fa-eye mr-1"></i>{{ __('leave.View') }}
+                                                </button>
                                                 <button type="button" @click="openApproveModal(row)" class="inline-flex items-center px-3 py-1.5 rounded-lg bg-green-50 dark:bg-green-900/30 text-green-700 dark:text-green-100 text-xs font-semibold hover:bg-green-100 dark:hover:bg-green-900/50">
                                                     <i class="fas fa-check mr-1"></i>{{ __('leave.Approve') }}
                                                 </button>
@@ -397,6 +403,110 @@
                 </div>
             </div>
         </div>
+
+        <!-- View Details Modal -->
+        <div x-show="showViewModal" class="fixed inset-0 z-50 overflow-y-auto" aria-labelledby="modal-title" role="dialog" aria-modal="true" @click.self="showViewModal = false">
+            <div class="flex items-center justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:p-0">
+                <div x-show="showViewModal" x-transition:enter="ease-out duration-300" x-transition:enter-start="opacity-0" x-transition:enter-end="opacity-100" x-transition:leave="ease-in duration-200" x-transition:leave-start="opacity-100" x-transition:leave-end="opacity-0" class="fixed inset-0 bg-gray-500 bg-opacity-75 dark:bg-gray-900 dark:bg-opacity-75 transition-opacity" aria-hidden="true"></div>
+                
+                <div x-show="showViewModal" x-transition:enter="ease-out duration-300" x-transition:enter-start="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95" x-transition:enter-end="opacity-100 translate-y-0 sm:scale-100" x-transition:leave="ease-in duration-200" x-transition:leave-start="opacity-100 translate-y-0 sm:scale-100" x-transition:leave-end="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95" class="relative inline-block align-middle bg-white dark:bg-gray-800 rounded-lg text-left overflow-hidden shadow-xl transform transition-all my-8 max-w-3xl w-full" @click.stop>
+                    <div class="bg-white dark:bg-gray-800 px-4 pt-5 pb-4 sm:p-6">
+                        <div class="flex items-start justify-between mb-4">
+                            <div class="flex items-center gap-3">
+                                <div class="flex-shrink-0 flex items-center justify-center h-12 w-12 rounded-full bg-blue-100 dark:bg-blue-900/30">
+                                    <i class="fas fa-file-alt text-blue-600 dark:text-blue-400"></i>
+                                </div>
+                                <div>
+                                    <h3 class="text-lg leading-6 font-medium text-gray-900 dark:text-white">{{ __('leave.Leave Request Details') }}</h3>
+                                    <p class="text-sm text-gray-500 dark:text-gray-400" x-text="selectedRequest?.reference"></p>
+                                </div>
+                            </div>
+                            <button @click="showViewModal = false" class="text-gray-400 hover:text-gray-500 dark:hover:text-gray-300">
+                                <i class="fas fa-times text-xl"></i>
+                            </button>
+                        </div>
+
+                        <div class="space-y-4">
+                            <!-- Request Information -->
+                            <div class="bg-gray-50 dark:bg-gray-700/50 rounded-lg p-4">
+                                <h4 class="text-sm font-semibold text-gray-900 dark:text-white mb-3">{{ __('leave.Request Information') }}</h4>
+                                <div class="grid grid-cols-2 gap-4">
+                                    <div>
+                                        <p class="text-xs text-gray-500 dark:text-gray-400">{{ __('leave.Requester') }}</p>
+                                        <p class="text-sm font-medium text-gray-900 dark:text-white" x-text="selectedRequest?.name"></p>
+                                    </div>
+                                    <div>
+                                        <p class="text-xs text-gray-500 dark:text-gray-400">{{ __('leave.Role / Class') }}</p>
+                                        <p class="text-sm font-medium text-gray-900 dark:text-white" x-text="selectedRequest?.role || selectedRequest?.class"></p>
+                                    </div>
+                                    <div>
+                                        <p class="text-xs text-gray-500 dark:text-gray-400">{{ __('leave.Leave Type') }}</p>
+                                        <p class="text-sm font-medium text-gray-900 dark:text-white" x-text="selectedRequest?.leave_type"></p>
+                                    </div>
+                                    <div>
+                                        <p class="text-xs text-gray-500 dark:text-gray-400">{{ __('leave.Status') }}</p>
+                                        <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-semibold" :class="statusClass(selectedRequest?.status)" x-text="titleCase(selectedRequest?.status)"></span>
+                                    </div>
+                                    <div>
+                                        <p class="text-xs text-gray-500 dark:text-gray-400">{{ __('leave.From Date') }}</p>
+                                        <p class="text-sm font-medium text-gray-900 dark:text-white" x-text="formatDate(selectedRequest?.start_date)"></p>
+                                    </div>
+                                    <div>
+                                        <p class="text-xs text-gray-500 dark:text-gray-400">{{ __('leave.To Date') }}</p>
+                                        <p class="text-sm font-medium text-gray-900 dark:text-white" x-text="formatDate(selectedRequest?.end_date)"></p>
+                                    </div>
+                                    <div>
+                                        <p class="text-xs text-gray-500 dark:text-gray-400">{{ __('leave.Total Days') }}</p>
+                                        <p class="text-sm font-medium text-gray-900 dark:text-white" x-text="selectedRequest?.total_days"></p>
+                                    </div>
+                                    <div>
+                                        <p class="text-xs text-gray-500 dark:text-gray-400">{{ __('leave.Submitted') }}</p>
+                                        <p class="text-sm font-medium text-gray-900 dark:text-white" x-text="formatDate(selectedRequest?.submitted_at)"></p>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Reason -->
+                            <div class="bg-gray-50 dark:bg-gray-700/50 rounded-lg p-4">
+                                <h4 class="text-sm font-semibold text-gray-900 dark:text-white mb-2">{{ __('leave.Reason') }}</h4>
+                                <p class="text-sm text-gray-700 dark:text-gray-300" x-text="selectedRequest?.reason || '—'"></p>
+                            </div>
+
+                            <!-- Attachment -->
+                            <template x-if="selectedRequest?.attachment_path">
+                                <div class="bg-gray-50 dark:bg-gray-700/50 rounded-lg p-4">
+                                    <h4 class="text-sm font-semibold text-gray-900 dark:text-white mb-3">{{ __('leave.Attachment') }}</h4>
+                                    <div class="text-center">
+                                        <img :src="'/storage/' + selectedRequest.attachment_path" alt="Attachment" class="max-w-full max-h-96 mx-auto rounded-lg border border-gray-300 dark:border-gray-600 cursor-pointer" @click="window.open('/storage/' + selectedRequest.attachment_path, '_blank')">
+                                        <a :href="'/storage/' + selectedRequest.attachment_path" download class="inline-flex items-center gap-2 mt-3 px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700">
+                                            <i class="fas fa-download"></i>
+                                            {{ __('leave.Download Attachment') }}
+                                        </a>
+                                    </div>
+                                </div>
+                            </template>
+                        </div>
+                    </div>
+                    <div class="bg-gray-50 dark:bg-gray-700 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse gap-2">
+                        <template x-if="selectedRequest?.status === 'pending'">
+                            <button type="button" @click="showViewModal = false; openApproveModal(selectedRequest)" class="w-full inline-flex justify-center rounded-lg border border-transparent shadow-sm px-4 py-2 bg-green-600 text-base font-medium text-white hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 sm:w-auto sm:text-sm">
+                                <i class="fas fa-check mr-2"></i>
+                                {{ __('leave.Approve') }}
+                            </button>
+                        </template>
+                        <template x-if="selectedRequest?.status === 'pending'">
+                            <button type="button" @click="showViewModal = false; openRejectModal(selectedRequest)" class="w-full inline-flex justify-center rounded-lg border border-transparent shadow-sm px-4 py-2 bg-red-600 text-base font-medium text-white hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 sm:w-auto sm:text-sm">
+                                <i class="fas fa-times mr-2"></i>
+                                {{ __('leave.Reject') }}
+                            </button>
+                        </template>
+                        <button type="button" @click="showViewModal = false" class="mt-3 w-full inline-flex justify-center rounded-lg border border-gray-300 dark:border-gray-600 shadow-sm px-4 py-2 bg-white dark:bg-gray-800 text-base font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 sm:mt-0 sm:w-auto sm:text-sm">
+                            {{ __('leave.Close') }}
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
     </div>
 
     <script>
@@ -426,6 +536,7 @@
                 // Modal state
                 showApproveModal: false,
                 showRejectModal: false,
+                showViewModal: false,
                 selectedRequest: null,
                 approveRemarks: '',
                 rejectRemarks: '',
@@ -534,6 +645,11 @@
                     this.rejectRemarks = '';
                     this.rejectError = '';
                     this.showRejectModal = true;
+                },
+
+                openViewModal(request) {
+                    this.selectedRequest = request;
+                    this.showViewModal = true;
                 },
 
                 async submitApprove() {

@@ -18,6 +18,7 @@ class Grade extends Model
         'batch_id',
         'grade_category_id',
         'price_per_month',
+        'due_date',
     ];
 
     protected $casts = [
