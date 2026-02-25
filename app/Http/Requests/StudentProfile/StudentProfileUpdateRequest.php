@@ -83,7 +83,7 @@ class StudentProfileUpdateRequest extends FormRequest
             'medicine_allergy' => ['nullable', 'string', 'max:255'],
             'food_allergy' => ['nullable', 'string', 'max:255'],
             'medical_directory' => ['nullable', 'string', 'max:1000'],
-            'photo' => ['nullable', 'image', 'mimes:jpeg,png,jpg,gif', 'max:2048'],
+            'photo' => ['nullable', 'image', 'mimes:jpeg,png,jpg,gif'],
             'photo_path' => ['nullable', 'string', 'max:500'],
             'class_id' => ['nullable', 'exists:classes,id'],
             'grade_id' => ['nullable', 'exists:grades,id'],

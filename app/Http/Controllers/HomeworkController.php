@@ -8,6 +8,7 @@ use App\Models\SchoolClass;
 use App\Models\Subject;
 use App\Models\Grade;
 use App\Models\TeacherProfile;
+use App\Services\Upload\FileUploadService;
 use App\Traits\LogsActivity;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -75,7 +76,7 @@ class HomeworkController extends Controller
             'subject_id' => 'required|exists:subjects,id',
             'due_date' => 'required|date|after_or_equal:today',
             'priority' => 'in:low,medium,high',
-            'attachment' => 'nullable|file|max:10240',
+            'attachment' => 'nullable|file|max:' . FileUploadService::MAX_UPLOAD_KB,
         ]);
 
         // Get teacher from current user
@@ -94,7 +95,12 @@ class HomeworkController extends Controller
         ]);
 
         if ($request->hasFile('attachment')) {
-            $path = $request->file('attachment')->store('homework', 'public');
+            $path = app(FileUploadService::class)->storeUploadedFile(
+                $request->file('attachment'),
+                'homework',
+                'public',
+                'homework_attachment'
+            );
             $homework->update(['attachment' => $path]);
         }
 

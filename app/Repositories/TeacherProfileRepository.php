@@ -6,6 +6,7 @@ use App\DTOs\TeacherProfile\TeacherProfileStoreData;
 use App\DTOs\TeacherProfile\TeacherProfileUpdateData;
 use App\Interfaces\TeacherProfileRepositoryInterface;
 use App\Models\TeacherProfile;
+use App\Services\Upload\FileUploadService;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Str;
 
@@ -57,7 +58,10 @@ class TeacherProfileRepository implements TeacherProfileRepositoryInterface
     public function create(TeacherProfileStoreData $data, string $userId): TeacherProfile
     {
         $employeeId = $data->employeeId ?: $this->generateEmployeeId();
-        $photoPath = $data->photo ? $data->photo->store('teacher-photos', 'public') : null;
+        $uploadService = app(FileUploadService::class);
+        $photoPath = $data->photo
+            ? $uploadService->storeOptimizedUploadedImage($data->photo, 'teacher-photos', 'public', 'teacher_photo')
+            : null;
 
         return TeacherProfile::create([
             'user_id' => $userId,
@@ -103,7 +107,10 @@ class TeacherProfileRepository implements TeacherProfileRepositoryInterface
 
     public function update(TeacherProfileUpdateData $data): TeacherProfile
     {
-        $photoPath = $data->photo ? $data->photo->store('teacher-photos', 'public') : $data->profile->photo_path;
+        $uploadService = app(FileUploadService::class);
+        $photoPath = $data->photo
+            ? $uploadService->storeOptimizedUploadedImage($data->photo, 'teacher-photos', 'public', 'teacher_photo')
+            : $data->profile->photo_path;
         $employeeId = $data->employeeId ?: $data->profile->employee_id ?: $this->generateEmployeeId();
 
         $data->profile->update([

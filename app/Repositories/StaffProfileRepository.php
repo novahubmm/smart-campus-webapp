@@ -6,6 +6,7 @@ use App\DTOs\StaffProfile\StaffProfileStoreData;
 use App\DTOs\StaffProfile\StaffProfileUpdateData;
 use App\Interfaces\StaffProfileRepositoryInterface;
 use App\Models\StaffProfile;
+use App\Services\Upload\FileUploadService;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Str;
 
@@ -56,7 +57,10 @@ class StaffProfileRepository implements StaffProfileRepositoryInterface
     public function create(StaffProfileStoreData $data, string $userId): StaffProfile
     {
         $employeeId = $data->employeeId ?: $this->generateEmployeeId();
-        $photoPath = $data->photo ? $data->photo->store('staff-photos', 'public') : null;
+        $uploadService = app(FileUploadService::class);
+        $photoPath = $data->photo
+            ? $uploadService->storeOptimizedUploadedImage($data->photo, 'staff-photos', 'public', 'staff_photo')
+            : null;
 
         return StaffProfile::create([
             'user_id' => $userId,
@@ -94,7 +98,10 @@ class StaffProfileRepository implements StaffProfileRepositoryInterface
 
     public function update(StaffProfileUpdateData $data): StaffProfile
     {
-        $photoPath = $data->photo ? $data->photo->store('staff-photos', 'public') : $data->profile->photo_path;
+        $uploadService = app(FileUploadService::class);
+        $photoPath = $data->photo
+            ? $uploadService->storeOptimizedUploadedImage($data->photo, 'staff-photos', 'public', 'staff_photo')
+            : $data->profile->photo_path;
         $employeeId = $data->employeeId ?: $data->profile->employee_id ?: $this->generateEmployeeId();
 
         $data->profile->update([

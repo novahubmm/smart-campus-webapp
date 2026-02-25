@@ -16,6 +16,7 @@ use App\Models\Batch;
 use App\Models\Grade;
 use App\Models\StudentProfile;
 use App\Models\FeeType;
+use App\Services\Upload\FileUploadService;
 use App\Services\StudentFeeService;
 use App\Services\Finance\PaymentProofService;
 use App\Services\Finance\NotificationService;
@@ -1428,7 +1429,7 @@ class StudentFeeController extends Controller
             'payment_method_id' => 'required|exists:payment_methods,id',
             'payment_date' => 'required|date',
             'reference_number' => 'nullable|string|max:255',
-            'receipt_image' => 'nullable|image|max:2048',
+            'receipt_image' => 'nullable|image',
             'notes' => 'nullable|string',
             'fee_amounts' => 'nullable|array', // For partial payment
             'fee_amounts.*' => 'nullable|numeric|min:0',
@@ -1476,7 +1477,12 @@ class StudentFeeController extends Controller
             // Handle receipt image upload
             $receiptImageUrl = null;
             if ($request->hasFile('receipt_image')) {
-                $receiptImageUrl = $request->file('receipt_image')->store('payment-receipts', 'public');
+                $receiptImageUrl = app(FileUploadService::class)->storeOptimizedUploadedImage(
+                    $request->file('receipt_image'),
+                    'payment-receipts',
+                    'public',
+                    'payment_receipt'
+                );
             }
 
             // Prepare payment data
@@ -2069,7 +2075,7 @@ class StudentFeeController extends Controller
                 'account_number' => 'required|string|max:255',
                 'account_name' => 'required|string|max:255',
                 'account_name_mm' => 'nullable|string|max:255',
-                'logo' => 'nullable|image|mimes:jpeg,jpg,png,gif,webp|max:5120',
+                'logo' => 'nullable|image|mimes:jpeg,jpg,png,gif,webp',
                 'is_active' => 'boolean',
                 'instructions' => 'nullable|string',
                 'instructions_mm' => 'nullable|string',
@@ -2097,7 +2103,7 @@ class StudentFeeController extends Controller
                 'account_number' => 'required|string|max:255',
                 'account_name' => 'required|string|max:255',
                 'account_name_mm' => 'nullable|string|max:255',
-                'logo' => 'nullable|image|mimes:jpeg,jpg,png,gif,webp|max:5120',
+                'logo' => 'nullable|image|mimes:jpeg,jpg,png,gif,webp',
                 'is_active' => 'boolean',
                 'instructions' => 'nullable|string',
                 'instructions_mm' => 'nullable|string',
@@ -2167,86 +2173,11 @@ class StudentFeeController extends Controller
      */
     private function uploadAndCompressLogo($file): string
     {
-        $extension = strtolower($file->getClientOriginalExtension());
-        $filename = 'payment_logo_' . time() . '_' . uniqid() . '.' . $extension;
-        $path = 'payment_methods';
-        
-        // Read the uploaded file
-        $imageContent = file_get_contents($file->getRealPath());
-        
-        // Create image resource based on type
-        $image = null;
-        if (in_array($extension, ['jpg', 'jpeg'])) {
-            $image = imagecreatefromjpeg($file->getRealPath());
-        } elseif ($extension === 'png') {
-            $image = imagecreatefrompng($file->getRealPath());
-        } elseif ($extension === 'gif') {
-            $image = imagecreatefromgif($file->getRealPath());
-        } elseif ($extension === 'webp') {
-            $image = imagecreatefromwebp($file->getRealPath());
-        }
-        
-        if (!$image) {
-            // If can't process, just save original
-            $fullPath = $path . '/' . $filename;
-            \Storage::disk('public')->put($fullPath, $imageContent);
-            return $fullPath;
-        }
-        
-        // Get original dimensions
-        $originalWidth = imagesx($image);
-        $originalHeight = imagesy($image);
-        
-        // Calculate new dimensions (max 200x200, maintain aspect ratio)
-        $maxSize = 200;
-        if ($originalWidth > $maxSize || $originalHeight > $maxSize) {
-            if ($originalWidth > $originalHeight) {
-                $newWidth = $maxSize;
-                $newHeight = (int)(($maxSize / $originalWidth) * $originalHeight);
-            } else {
-                $newHeight = $maxSize;
-                $newWidth = (int)(($maxSize / $originalHeight) * $originalWidth);
-            }
-        } else {
-            $newWidth = $originalWidth;
-            $newHeight = $originalHeight;
-        }
-        
-        // Create new image with calculated dimensions
-        $resizedImage = imagecreatetruecolor($newWidth, $newHeight);
-        
-        // Preserve transparency for PNG and GIF
-        if (in_array($extension, ['png', 'gif'])) {
-            imagealphablending($resizedImage, false);
-            imagesavealpha($resizedImage, true);
-            $transparent = imagecolorallocatealpha($resizedImage, 255, 255, 255, 127);
-            imagefilledrectangle($resizedImage, 0, 0, $newWidth, $newHeight, $transparent);
-        }
-        
-        // Resize
-        imagecopyresampled($resizedImage, $image, 0, 0, 0, 0, $newWidth, $newHeight, $originalWidth, $originalHeight);
-        
-        // Save to temporary file with compression
-        $tempPath = sys_get_temp_dir() . '/' . $filename;
-        if (in_array($extension, ['jpg', 'jpeg'])) {
-            imagejpeg($resizedImage, $tempPath, 85); // 85% quality
-        } elseif ($extension === 'png') {
-            imagepng($resizedImage, $tempPath, 8); // Compression level 8
-        } elseif ($extension === 'gif') {
-            imagegif($resizedImage, $tempPath);
-        } elseif ($extension === 'webp') {
-            imagewebp($resizedImage, $tempPath, 85);
-        }
-        
-        // Clean up
-        imagedestroy($image);
-        imagedestroy($resizedImage);
-        
-        // Move to storage
-        $fullPath = $path . '/' . $filename;
-        \Storage::disk('public')->put($fullPath, file_get_contents($tempPath));
-        unlink($tempPath);
-        
-        return $fullPath;
+        return app(FileUploadService::class)->storeOptimizedUploadedImage(
+            $file,
+            'payment_methods',
+            'public',
+            'payment_logo'
+        );
     }
 }

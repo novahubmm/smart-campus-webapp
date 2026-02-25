@@ -7,6 +7,7 @@ use App\Http\Requests\StudentProfile\StudentProfileStoreRequest;
 use App\Http\Requests\StudentProfile\StudentProfileUpdateRequest;
 use App\DTOs\StudentProfile\StudentProfileStoreData;
 use App\DTOs\StudentProfile\StudentProfileUpdateData;
+use App\Services\Upload\FileUploadService;
 use App\Services\StudentProfileService;
 use App\Enums\RoleEnum;
 use App\Models\Grade;
@@ -90,10 +91,16 @@ class StudentProfileController extends Controller
         $this->authorize('manage student profiles');
 
         $validated = $request->validated();
+        $uploadService = app(FileUploadService::class);
 
         // Handle photo upload
         if ($request->hasFile('photo')) {
-            $path = $request->file('photo')->store('student-photos', 'public');
+            $path = $uploadService->storeOptimizedUploadedImage(
+                $request->file('photo'),
+                'student-photos',
+                'public',
+                'student_photo'
+            );
             $validated['photo_path'] = $path;
         }
 
@@ -180,6 +187,7 @@ class StudentProfileController extends Controller
         $this->authorize('manage student profiles');
 
         $validated = $request->validated();
+        $uploadService = app(FileUploadService::class);
 
         // Handle photo upload
         if ($request->hasFile('photo')) {
@@ -189,7 +197,12 @@ class StudentProfileController extends Controller
             }
             
             // Store new photo
-            $path = $request->file('photo')->store('student-photos', 'public');
+            $path = $uploadService->storeOptimizedUploadedImage(
+                $request->file('photo'),
+                'student-photos',
+                'public',
+                'student_photo'
+            );
             $validated['photo_path'] = $path;
         }
 

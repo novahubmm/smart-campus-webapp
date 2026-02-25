@@ -34,12 +34,27 @@
                         @if(auth()->user()->hasRole('system_admin'))
                         <!-- Logo Upload Section - System Admin Only -->
                         <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 pb-4 border-b border-gray-200 dark:border-gray-700">
+                            @php
+                                $shortLogoUrl = null;
+                                if (!empty($setting?->school_short_logo_path)) {
+                                    $shortLogoUrl = str_starts_with($setting->school_short_logo_path, 'http')
+                                        ? $setting->school_short_logo_path
+                                        : storage_url($setting->school_short_logo_path);
+                                }
+
+                                $bannerLogoUrl = null;
+                                if (!empty($setting?->school_logo_path)) {
+                                    $bannerLogoUrl = str_starts_with($setting->school_logo_path, 'http')
+                                        ? $setting->school_logo_path
+                                        : storage_url($setting->school_logo_path);
+                                }
+                            @endphp
                             <div>
                                 <label class="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">{{ __('settings.Short Logo') }}</label>
                                 <p class="text-xs text-gray-500 dark:text-gray-400 mb-2">{{ __('settings.Used for favicon and navigation (recommended: square, 512x512px)') }}</p>
-                                @if($setting?->school_short_logo_path)
+                                @if($shortLogoUrl)
                                     <div class="mb-2">
-                                        <img src="{{ asset('storage/'.$setting->school_short_logo_path) }}" alt="Short Logo" class="h-16 w-16 object-contain border border-gray-300 dark:border-gray-600 rounded-lg p-2 bg-white dark:bg-gray-700">
+                                        <img src="{{ $shortLogoUrl }}" alt="Short Logo" class="h-16 w-16 object-contain border border-gray-300 dark:border-gray-600 rounded-lg p-2 bg-white dark:bg-gray-700">
                                     </div>
                                 @endif
                                 <input type="file" name="school_short_logo" accept="image/png,image/jpeg,image/jpg,image/svg+xml"
@@ -49,9 +64,9 @@
                             <div>
                                 <label class="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">{{ __('settings.Banner Logo') }}</label>
                                 <p class="text-xs text-gray-500 dark:text-gray-400 mb-2">{{ __('settings.Used for dashboard and headers (recommended: wide, 1200x400px)') }}</p>
-                                @if($setting?->school_logo_path)
+                                @if($bannerLogoUrl)
                                     <div class="mb-2">
-                                        <img src="{{ asset('storage/'.$setting->school_logo_path) }}" alt="Banner Logo" class="h-16 w-auto object-contain border border-gray-300 dark:border-gray-600 rounded-lg p-2 bg-white dark:bg-gray-700">
+                                        <img src="{{ $bannerLogoUrl }}" alt="Banner Logo" class="h-16 w-auto object-contain border border-gray-300 dark:border-gray-600 rounded-lg p-2 bg-white dark:bg-gray-700">
                                     </div>
                                 @endif
                                 <input type="file" name="school_logo" accept="image/png,image/jpeg,image/jpg,image/svg+xml"

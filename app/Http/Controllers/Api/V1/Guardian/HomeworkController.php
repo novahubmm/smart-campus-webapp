@@ -6,6 +6,7 @@ use App\Helpers\ApiResponse;
 use App\Http\Controllers\Controller;
 use App\Interfaces\Guardian\GuardianHomeworkRepositoryInterface;
 use App\Models\StudentProfile;
+use App\Services\Upload\FileUploadService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
@@ -159,7 +160,7 @@ class HomeworkController extends Controller
             'student_id' => $studentId ? 'nullable|string' : 'required|string',
             'notes' => 'nullable|string',
             'photos' => 'nullable|array',
-            'photos.*' => 'file|mimes:jpg,jpeg,png,pdf|max:10240', // 10MB max per file
+            'photos.*' => 'file|mimes:jpg,jpeg,png,pdf|max:' . FileUploadService::MAX_UPLOAD_KB,
         ]);
 
         try {

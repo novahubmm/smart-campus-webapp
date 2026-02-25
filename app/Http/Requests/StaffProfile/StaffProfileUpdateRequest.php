@@ -56,7 +56,7 @@ class StaffProfileUpdateRequest extends FormRequest
             'medicine_allergy' => ['nullable', 'string', 'max:255'],
             'food_allergy' => ['nullable', 'string', 'max:255'],
             'medical_directory' => ['nullable', 'string', 'max:500'],
-            'photo' => ['nullable', 'image', 'max:2048'],
+            'photo' => ['nullable', 'image'],
             'status' => ['nullable', Rule::in(['active', 'inactive'])],
         ];
     }

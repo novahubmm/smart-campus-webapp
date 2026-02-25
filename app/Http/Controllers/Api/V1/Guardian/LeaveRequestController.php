@@ -6,8 +6,11 @@ use App\Helpers\ApiResponse;
 use App\Http\Controllers\Controller;
 use App\Interfaces\Guardian\GuardianLeaveRequestRepositoryInterface;
 use App\Models\StudentProfile;
+use App\Services\Upload\FileUploadService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Http\UploadedFile;
+use Illuminate\Validation\ValidationException;
 
 class LeaveRequestController extends Controller
 {
@@ -115,7 +118,7 @@ class LeaveRequestController extends Controller
                 'start_date' => 'required|date',
                 'end_date' => 'required|date|after_or_equal:start_date',
                 'reason' => 'required|string|max:1000',
-                'attachment' => 'nullable|file|image|max:5120', // File upload (max 5MB)
+                'attachment' => 'nullable|file|image',
                 'attachment_base64' => 'nullable|string', // Base64 encoded image (alternative)
             ]);
 
@@ -421,6 +424,29 @@ class LeaveRequestController extends Controller
     }
 
     /**
+     * Save uploaded image file to storage
+     *
+     * @param UploadedFile $file Uploaded image file
+     * @param string $studentId Student ID for organizing files
+     * @return string Path to saved file
+     * @throws \Exception If file is invalid
+     */
+    private function saveUploadedFile(UploadedFile $file, string $studentId): string
+    {
+        try {
+            return app(FileUploadService::class)->storeOptimizedUploadedImage(
+                $file,
+                'leave_attachments/' . date('Y/m'),
+                'public',
+                'leave_' . $studentId
+            );
+        } catch (ValidationException $e) {
+            $message = collect($e->errors())->flatten()->first() ?? 'Invalid image attachment.';
+            throw new \Exception($message);
+        }
+    }
+
+    /**
      * Save base64 encoded image to storage
      * 
      * @param string $base64String Base64 encoded image with data URI prefix
@@ -430,39 +456,16 @@ class LeaveRequestController extends Controller
      */
     private function saveBase64Image(string $base64String, string $studentId): string
     {
-        // Extract base64 data and mime type
-        if (!preg_match('/^data:image\/(\w+);base64,/', $base64String, $matches)) {
-            throw new \Exception('Invalid base64 image format');
+        try {
+            return app(FileUploadService::class)->storeOptimizedBase64Image(
+                $base64String,
+                'leave_attachments/' . date('Y/m'),
+                'public',
+                'leave_' . $studentId
+            );
+        } catch (ValidationException $e) {
+            $message = collect($e->errors())->flatten()->first() ?? 'Invalid image attachment.';
+            throw new \Exception($message);
         }
-
-        $imageType = $matches[1];
-        $allowedTypes = ['jpeg', 'jpg', 'png', 'gif', 'webp'];
-        
-        if (!in_array(strtolower($imageType), $allowedTypes)) {
-            throw new \Exception('Invalid image type. Allowed: ' . implode(', ', $allowedTypes));
-        }
-
-        // Remove the data URI prefix
-        $base64Data = substr($base64String, strpos($base64String, ',') + 1);
-        $imageData = base64_decode($base64Data);
-
-        if ($imageData === false) {
-            throw new \Exception('Failed to decode base64 image');
-        }
-
-        // Validate image size (max 5MB)
-        $maxSize = 5 * 1024 * 1024; // 5MB
-        if (strlen($imageData) > $maxSize) {
-            throw new \Exception('Image size exceeds 5MB limit');
-        }
-
-        // Generate unique filename
-        $filename = 'leave_' . $studentId . '_' . time() . '_' . uniqid() . '.' . $imageType;
-        $path = 'leave_attachments/' . date('Y/m');
-        
-        // Save to storage
-        \Storage::disk('public')->put($path . '/' . $filename, $imageData);
-
-        return $path . '/' . $filename;
     }
 }

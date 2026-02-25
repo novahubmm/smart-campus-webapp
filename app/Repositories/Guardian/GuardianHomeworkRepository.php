@@ -6,6 +6,7 @@ use App\Interfaces\Guardian\GuardianHomeworkRepositoryInterface;
 use App\Models\Homework;
 use App\Models\HomeworkSubmission;
 use App\Models\StudentProfile;
+use App\Services\Upload\FileUploadService;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Storage;
 
@@ -163,8 +164,16 @@ class GuardianHomeworkRepository implements GuardianHomeworkRepositoryInterface
 
         // Handle file uploads
         $uploadedFiles = [];
+        $uploadService = app(FileUploadService::class);
         foreach ($photos as $photo) {
-            $path = $photo->store('homework_submissions/' . $student->id, 'public');
+            $path = $uploadService->storeUploadedFile(
+                $photo,
+                'homework_submissions/' . $student->id,
+                'public',
+                'homework_submission',
+                FileUploadService::MAX_UPLOAD_BYTES,
+                ['jpg', 'jpeg', 'png', 'pdf']
+            );
             $uploadedFiles[] = [
                 'path' => $path,
                 'original_name' => $photo->getClientOriginalName(),

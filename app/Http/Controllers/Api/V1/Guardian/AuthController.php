@@ -7,6 +7,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Auth\LoginRequest;
 use App\Http\Resources\Api\Guardian\GuardianProfileResource;
 use App\Interfaces\Guardian\GuardianAuthRepositoryInterface;
+use App\Services\Upload\FileUploadService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
@@ -190,18 +191,12 @@ class AuthController extends Controller
 
             // Handle photo upload if provided
             if ($request->has('photo') && $request->photo) {
-                $photoData = $request->photo;
-                if (preg_match('/^data:image\/(\w+);base64,/', $photoData, $matches)) {
-                    $extension = $matches[1];
-                    $photoData = substr($photoData, strpos($photoData, ',') + 1);
-                    $photoData = base64_decode($photoData);
-                    
-                    $filename = 'guardian_' . $user->id . '_' . time() . '.' . $extension;
-                    $path = 'profiles/' . $filename;
-                    
-                    \Storage::disk('public')->put($path, $photoData);
-                    $data['profile_photo_path'] = $path;
-                }
+                $data['profile_photo_path'] = app(FileUploadService::class)->storeOptimizedBase64Image(
+                    $request->photo,
+                    'profiles',
+                    'public',
+                    'guardian_' . $user->id
+                );
             }
 
             $user->update($data);

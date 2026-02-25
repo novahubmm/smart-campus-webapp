@@ -6,10 +6,10 @@ use App\Models\PaymentSystem\Invoice;
 use App\Models\PaymentSystem\InvoiceFee;
 use App\Models\PaymentSystem\Payment;
 use App\Models\PaymentSystem\PaymentFeeDetail;
+use App\Services\Upload\FileUploadService;
 use Carbon\Carbon;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
 
@@ -83,8 +83,9 @@ class PaymentService
                                 true
                             );
                         } else {
-                            // For other fees (Transport, etc.), full amount * months with NO discount
-                            $detail['paid_amount'] = $invoiceFee->amount * $paymentMonths;
+                            // For fees that don't support payment period (e.g. Transportation),
+                            // keep normal single-period behavior.
+                            $detail['paid_amount'] = (float) $invoiceFee->remaining_amount;
                         }
                     }
                 }
@@ -201,8 +202,8 @@ class PaymentService
      * 
      * If payment_months > 1 (Advance Payment):
      * - Allow paid_amount > remaining_amount
-     * - STRICTLY validate that paid_amount matches the calculated discounted amount for the given months
-     * - Requirement: "calculate and only correct amount will accept"
+     * - Require paid_amount to be at least the discounted amount for the selected months
+     * - Allow paying up to the non-discounted amount for the selected months
      * 
      * If payment_months == 1 (Standard/Partial Payment):
      * - Reject if paid_amount > remaining_amount
@@ -222,60 +223,35 @@ class PaymentService
 
             // Logic for Multi-Month (Advance) Payment
             if ($paymentMonths > 1) {
-                // Only allowed for fees that support it (e.g., School Fee)
                 if (!$invoiceFee->supports_payment_period) {
+                    // Multi-month option does not apply to this fee; validate using single-period rules.
+                    if ($paidAmount > ((float) $invoiceFee->remaining_amount + 1.0)) {
+                        throw ValidationException::withMessages([
+                            'fee_payment_details' => ['Payment amount exceeds remaining balance for fee: ' . $invoiceFee->fee_name],
+                        ]);
+                    }
+                    continue;
+                }
+
+                $baseAmount = (float) $invoiceFee->amount;
+                $minimumExpectedAmount = $this->applyPaymentPeriodDiscount($baseAmount, $paymentMonths, true);
+                $maximumAllowedAmount = $baseAmount * $paymentMonths;
+                $tolerance = 1.0;
+
+                if ($paidAmount + $tolerance < $minimumExpectedAmount) {
                     throw ValidationException::withMessages([
-                        'fee_payment_details' => ["Fee '{$invoiceFee->fee_name}' does not support multi-month payment."],
+                        'fee_payment_details' => [
+                            "Payment amount for {$paymentMonths} months of {$invoiceFee->fee_name} is too low. Minimum expected: " . number_format($minimumExpectedAmount) . " MMK, Received: " . number_format($paidAmount) . " MMK.",
+                            "{$invoiceFee->fee_name} အတွက် {$paymentMonths} လစာ ပေးသွင်းငွေ နည်းလွန်းပါသည်။ အနည်းဆုံး " . number_format($minimumExpectedAmount) . " ကျပ် ဖြစ်ရမည်။"
+                        ],
                     ]);
                 }
 
-                // Calculate expected amount
-                // Rate logic must match frontend/PaymentPromotionSeeder
-                $baseAmount = $invoiceFee->amount; 
-                
-                // Discount Logic (Interpolated from 3 to 12 months)
-                // 1-2 months: 0%
-                // 3 months: 5%
-                // 6 months: 10%
-                // 9 months: 15%
-                // 12 months: 20%
-                // Interpolation logic:
-                // < 3: 0
-                // < 6: 5 + ((m-3)/3)*5
-                // < 9: 10 + ((m-6)/3)*5
-                // < 12: 15 + ((m-9)/3)*5
-                // >= 12: 20
-                
-                $discountPercent = 0;
-                if ($paymentMonths >= 3 && $paymentMonths < 6) {
-                    $discountPercent = 5 + (($paymentMonths - 3) / 3) * 5;
-                } elseif ($paymentMonths >= 6 && $paymentMonths < 9) {
-                    $discountPercent = 10 + (($paymentMonths - 6) / 3) * 5;
-                } elseif ($paymentMonths >= 9 && $paymentMonths < 12) {
-                    $discountPercent = 15 + (($paymentMonths - 9) / 3) * 5;
-                } elseif ($paymentMonths >= 12) {
-                    $discountPercent = 20;
-                }
-                
-                // Ensure integer percent for display consistency, but calculation should be precise?
-                // The prompt says "need to calculate and only correct amount will accept".
-                // Let's use the logic found in PaymentPromotion::calculateDiscountForMonths earlier
-                // It returned float, but we cast to int for display. 
-                // Let's assume the frontend sends the exact amount calculated by this logic.
-                
-                // Re-implementing the exact logic from PaymentPromotion model to be safe
-                // or better, use a shared helper if possible, but inline is safer for now to avoid dependency
-                
-                $totalBeforeDiscount = $baseAmount * $paymentMonths;
-                $discountAmount = $totalBeforeDiscount * ($discountPercent / 100);
-                $expectedAmount = $totalBeforeDiscount - $discountAmount;
-                
-                // Allow small float difference (e.g. 1.0) due to precision
-                if (abs($paidAmount - $expectedAmount) > 1.0) {
-                     throw ValidationException::withMessages([
+                if ($paidAmount - $tolerance > $maximumAllowedAmount) {
+                    throw ValidationException::withMessages([
                         'fee_payment_details' => [
-                            "Incorrect payment amount for {$paymentMonths} months of {$invoiceFee->fee_name}. Expected: " . number_format($expectedAmount) . " MMK, Received: " . number_format($paidAmount) . " MMK.",
-                            "{$invoiceFee->fee_name} အတွက် {$paymentMonths} လစာ ပေးသွင်းငွေ မမှန်ကန်ပါ။ သင့်ငွေ: " . number_format($expectedAmount) . " ကျပ် ဖြစ်သင့်ပါသည်။"
+                            "Payment amount for {$paymentMonths} months of {$invoiceFee->fee_name} is too high. Maximum allowed: " . number_format($maximumAllowedAmount) . " MMK, Received: " . number_format($paidAmount) . " MMK.",
+                            "{$invoiceFee->fee_name} အတွက် {$paymentMonths} လစာ ပေးသွင်းငွေ များလွန်းပါသည်။ အများဆုံး " . number_format($maximumAllowedAmount) . " ကျပ် အထိသာ ခွင့်ပြုပါသည်။"
                         ],
                     ]);
                 }
@@ -450,16 +426,6 @@ class PaymentService
     }
 
     /**
-     * Valid image MIME types for receipt uploads.
-     */
-    private const VALID_IMAGE_TYPES = ['image/jpeg', 'image/png'];
-
-    /**
-     * Maximum file size in bytes (5MB).
-     */
-    private const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB in bytes
-
-    /**
      * Upload a receipt image to storage.
      * 
      * Supports both:
@@ -467,8 +433,8 @@ class PaymentService
      * - Base64 encoded strings (JSON payload)
      * 
      * Validates:
-     * - Image format (JPEG or PNG)
-     * - Image size (<= 5MB)
+     * - Image format
+     * - Image size (<= 3MB)
      * 
      * Generates a unique filename and stores in public storage.
      * Returns a publicly accessible URL.
@@ -510,71 +476,19 @@ class PaymentService
     private function uploadBase64Image(string $base64String): string
     {
         try {
-            // Remove data URI prefix if present (e.g., "data:image/jpeg;base64,")
-            if (preg_match('/^data:image\/(\w+);base64,/', $base64String, $matches)) {
-                $extension = $matches[1];
-                $base64String = substr($base64String, strpos($base64String, ',') + 1);
-            } else {
-                // Try to detect image type from decoded data
-                $imageData = base64_decode($base64String, true);
-                if ($imageData === false) {
-                    throw ValidationException::withMessages([
-                        'receipt_image' => ['Invalid base64 image data.'],
-                    ]);
-                }
-                
-                // Detect MIME type
-                $finfo = new \finfo(FILEINFO_MIME_TYPE);
-                $mimeType = $finfo->buffer($imageData);
-                
-                if (!in_array($mimeType, self::VALID_IMAGE_TYPES)) {
-                    throw ValidationException::withMessages([
-                        'receipt_image' => ['The receipt image must be a JPEG or PNG file.'],
-                    ]);
-                }
-                
-                $extension = $mimeType === 'image/jpeg' ? 'jpg' : 'png';
-            }
-            
-            // Decode base64 string
-            $imageData = base64_decode($base64String, true);
-            
-            if ($imageData === false) {
-                throw ValidationException::withMessages([
-                    'receipt_image' => ['Invalid base64 image data.'],
-                ]);
-            }
-            
-            // Validate image size
-            $imageSize = strlen($imageData);
-            if ($imageSize > self::MAX_FILE_SIZE) {
-                throw ValidationException::withMessages([
-                    'receipt_image' => ['The receipt image must not exceed 5MB.'],
-                ]);
-            }
-            
-            // Validate extension
-            if (!in_array($extension, ['jpg', 'jpeg', 'png'])) {
-                throw ValidationException::withMessages([
-                    'receipt_image' => ['The receipt image must be a JPEG or PNG file.'],
-                ]);
-            }
-            
-            // Generate unique filename
-            $filename = $this->generateUniqueReceiptFilename($extension);
-            
-            // Store in public disk under payment_receipts directory
-            $path = 'payment_receipts/' . $filename;
-            $stored = Storage::disk('public')->put($path, $imageData);
-            
-            if (!$stored) {
-                throw new \Exception('Failed to store receipt image');
-            }
-            
-            // Return public URL using asset() helper for consistent URL generation
+            $path = app(FileUploadService::class)->storeOptimizedBase64Image(
+                $base64String,
+                'payment_receipts',
+                'public',
+                'receipt'
+            );
+
             return asset('storage/' . $path);
         } catch (ValidationException $e) {
-            throw $e;
+            $message = collect($e->errors())->flatten()->first() ?? 'Invalid receipt image.';
+            throw ValidationException::withMessages([
+                'receipt_image' => [$message],
+            ]);
         } catch (\Exception $e) {
             // Log the error
             \Log::error('Base64 receipt image upload failed', [
@@ -582,7 +496,7 @@ class PaymentService
                 'trace' => $e->getTraceAsString(),
             ]);
             
-            throw new \Exception('Failed to upload receipt image: ' . $e->getMessage());
+            throw $e;
         }
     }
     
@@ -596,40 +510,19 @@ class PaymentService
      */
     private function uploadFileImage(UploadedFile $image): string
     {
-        // Validate image format
-        if (!in_array($image->getMimeType(), self::VALID_IMAGE_TYPES)) {
-            throw ValidationException::withMessages([
-                'receipt_image' => [
-                    'The receipt image must be a JPEG or PNG file.',
-                ],
-            ]);
-        }
-
-        // Validate image size
-        if ($image->getSize() > self::MAX_FILE_SIZE) {
-            throw ValidationException::withMessages([
-                'receipt_image' => [
-                    'The receipt image must not exceed 5MB.',
-                ],
-            ]);
-        }
-
         try {
-            // Generate unique filename
-            $extension = $image->getClientOriginalExtension();
-            $filename = $this->generateUniqueReceiptFilename($extension);
-
-            // Store in public disk under payment_receipts directory
-            $path = $image->storeAs('payment_receipts', $filename, 'public');
-
-            if (!$path) {
-                throw new \Exception('Failed to store receipt image');
-            }
-
-            // Return public URL using asset() helper for consistent URL generation
+            $path = app(FileUploadService::class)->storeOptimizedUploadedImage(
+                $image,
+                'payment_receipts',
+                'public',
+                'receipt'
+            );
             return asset('storage/' . $path);
         } catch (ValidationException $e) {
-            throw $e;
+            $message = collect($e->errors())->flatten()->first() ?? 'Invalid receipt image.';
+            throw ValidationException::withMessages([
+                'receipt_image' => [$message],
+            ]);
         } catch (\Exception $e) {
             // Log the error
             \Log::error('Receipt image upload failed', [
@@ -637,24 +530,8 @@ class PaymentService
                 'trace' => $e->getTraceAsString(),
             ]);
 
-            throw new \Exception('Failed to upload receipt image: ' . $e->getMessage());
+            throw $e;
         }
-    }
-
-    /**
-     * Generate a unique filename for the receipt image.
-     *
-     * Format: receipt_YYYYMMDD_HHMMSS_RANDOM.ext
-     *
-     * @param string $extension File extension
-     * @return string Unique filename
-     */
-    private function generateUniqueReceiptFilename(string $extension): string
-    {
-        $timestamp = now()->format('Ymd_His');
-        $random = strtoupper(substr(md5(uniqid(mt_rand(), true)), 0, 8));
-        
-        return sprintf('receipt_%s_%s.%s', $timestamp, $random, $extension);
     }
 
     public function generatePaymentNumber(): string

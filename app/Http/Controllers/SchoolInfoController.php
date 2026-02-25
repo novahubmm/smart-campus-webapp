@@ -6,6 +6,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Setting;
 use App\Models\KeyContact;
+use App\Services\Upload\FileUploadService;
 use App\Traits\LogsActivity;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -65,11 +66,12 @@ class SchoolInfoController extends Controller
             'accreditations.*.name_mm' => ['nullable', 'string', 'max:255'],
             'accreditations.*.year' => ['nullable', 'integer', 'min:1800', 'max:' . date('Y')],
             'accreditations.*.certificate_url' => ['nullable', 'string', 'max:500'],
-            'school_short_logo' => ['nullable', 'image', 'mimes:png,jpg,jpeg,svg', 'max:2048'],
-            'school_logo' => ['nullable', 'image', 'mimes:png,jpg,jpeg,svg', 'max:2048'],
+            'school_short_logo' => ['nullable', 'image', 'mimes:png,jpg,jpeg,svg'],
+            'school_logo' => ['nullable', 'image', 'mimes:png,jpg,jpeg,svg'],
         ]);
 
         $setting = Setting::firstOrCreate(['id' => '00000000-0000-0000-0000-000000000001']);
+        $uploadService = app(FileUploadService::class);
 
         // Handle logo uploads - only for system admin
         if (auth()->user()->hasRole('system_admin')) {
@@ -80,7 +82,12 @@ class SchoolInfoController extends Controller
                     \Storage::disk('public')->delete($setting->school_short_logo_path);
                 }
                 
-                $path = $request->file('school_short_logo')->store('logos', 'public');
+                $path = $uploadService->storeOptimizedUploadedImage(
+                    $request->file('school_short_logo'),
+                    'logos',
+                    'public',
+                    'school_short_logo'
+                );
                 $validated['school_short_logo_path'] = $path;
             }
 
@@ -91,7 +98,12 @@ class SchoolInfoController extends Controller
                     \Storage::disk('public')->delete($setting->school_logo_path);
                 }
                 
-                $path = $request->file('school_logo')->store('logos', 'public');
+                $path = $uploadService->storeOptimizedUploadedImage(
+                    $request->file('school_logo'),
+                    'logos',
+                    'public',
+                    'school_logo'
+                );
                 $validated['school_logo_path'] = $path;
             }
         }

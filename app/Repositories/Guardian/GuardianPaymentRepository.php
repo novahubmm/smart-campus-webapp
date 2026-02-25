@@ -8,9 +8,9 @@ use App\Models\FeeType;
 use App\Models\PaymentMethod;
 use App\Models\PaymentProof;
 use App\Models\StudentProfile;
+use App\Services\Upload\FileUploadService;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Storage;
-use Illuminate\Support\Str;
 
 class GuardianPaymentRepository implements GuardianPaymentRepositoryInterface
 {
@@ -253,26 +253,12 @@ class GuardianPaymentRepository implements GuardianPaymentRepositoryInterface
 
     private function uploadReceiptImage(string $imageData): string
     {
-        // Check if it's a base64 encoded image
-        if (preg_match('/^data:image\/(\w+);base64,/', $imageData, $type)) {
-            $imageData = substr($imageData, strpos($imageData, ',') + 1);
-            $type = strtolower($type[1]); // jpg, png, gif
-
-            $imageData = base64_decode($imageData);
-
-            if ($imageData === false) {
-                throw new \Exception('Base64 decode failed');
-            }
-
-            $fileName = 'receipt_' . Str::uuid() . '.' . $type;
-            $path = 'receipts/' . date('Y/m');
-            
-            Storage::disk('public')->put($path . '/' . $fileName, $imageData);
-
-            return $path . '/' . $fileName;
-        }
-
-        throw new \Exception('Invalid image format');
+        return app(FileUploadService::class)->storeOptimizedBase64Image(
+            $imageData,
+            'receipts/' . date('Y/m'),
+            'public',
+            'receipt'
+        );
     }
 
     public function getPaymentProofDetail(string $paymentProofId, StudentProfile $student): ?array

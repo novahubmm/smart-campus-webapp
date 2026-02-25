@@ -289,3 +289,285 @@ test('successful image upload followed by database transaction', function () {
         unlink($tempPath);
     }
 });
+
+test('multi-month payment accepts amount above discounted total from mobile', function () {
+    Storage::fake('public');
+
+    $paymentService = new PaymentService();
+
+    $grade = Grade::factory()->create(['level' => 1]);
+    $student = StudentProfile::factory()->create([
+        'grade_id' => $grade->id,
+        'status' => 'active',
+    ]);
+
+    $invoice = Invoice::create([
+        'invoice_number' => 'INV-' . strtoupper(substr((string) \Illuminate\Support\Str::uuid(), 0, 8)),
+        'student_id' => $student->id,
+        'batch_id' => null,
+        'total_amount' => 80000,
+        'paid_amount' => 0,
+        'remaining_amount' => 80000,
+        'due_date' => now()->addDays(30)->toDateString(),
+        'status' => 'pending',
+        'invoice_type' => 'monthly',
+    ]);
+
+    $invoiceFee = InvoiceFee::factory()->create([
+        'invoice_id' => $invoice->id,
+        'fee_name' => 'School Fee',
+        'amount' => 80000,
+        'paid_amount' => 0,
+        'remaining_amount' => 80000,
+        'supports_payment_period' => true,
+        'due_date' => now()->addDays(30),
+        'status' => 'unpaid',
+    ]);
+
+    $paymentMethod = PaymentMethod::factory()->create();
+    $receiptImage = UploadedFile::fake()->image('receipt.jpg', 800, 600);
+
+    // 6 months of 80,000 = 480,000 (non-discounted)
+    // Discounted total would be 432,000, and this test verifies over-discount payment is accepted.
+    $paymentData = [
+        'invoice_id' => $invoice->id,
+        'payment_method_id' => $paymentMethod->id,
+        'payment_amount' => 480000,
+        'payment_type' => 'full',
+        'payment_months' => 6,
+        'payment_date' => now()->toDateString(),
+        'receipt_image' => $receiptImage,
+        'fee_payment_details' => [
+            [
+                'invoice_fee_id' => $invoiceFee->id,
+                'paid_amount' => 480000,
+            ],
+        ],
+    ];
+
+    $payment = $paymentService->submitPayment($paymentData);
+
+    expect($payment)->toBeInstanceOf(Payment::class);
+    expect((float) $payment->payment_amount)->toBe(480000.0);
+    expect((float) $payment->feeDetails->first()->paid_amount)->toBe(480000.0);
+
+    $invoiceFee->refresh();
+    expect((float) $invoiceFee->paid_amount)->toBe(80000.0);
+    expect((float) $invoiceFee->remaining_amount)->toBe(0.0);
+    expect($invoiceFee->status)->toBe('paid');
+});
+
+test('multi-month payment below discounted minimum is rejected', function () {
+    Storage::fake('public');
+
+    $paymentService = new PaymentService();
+
+    $grade = Grade::factory()->create(['level' => 1]);
+    $student = StudentProfile::factory()->create([
+        'grade_id' => $grade->id,
+        'status' => 'active',
+    ]);
+
+    $invoice = Invoice::create([
+        'invoice_number' => 'INV-' . strtoupper(substr((string) \Illuminate\Support\Str::uuid(), 0, 8)),
+        'student_id' => $student->id,
+        'batch_id' => null,
+        'total_amount' => 80000,
+        'paid_amount' => 0,
+        'remaining_amount' => 80000,
+        'due_date' => now()->addDays(30)->toDateString(),
+        'status' => 'pending',
+        'invoice_type' => 'monthly',
+    ]);
+
+    $invoiceFee = InvoiceFee::factory()->create([
+        'invoice_id' => $invoice->id,
+        'fee_name' => 'School Fee',
+        'amount' => 80000,
+        'paid_amount' => 0,
+        'remaining_amount' => 80000,
+        'supports_payment_period' => true,
+        'due_date' => now()->addDays(30),
+        'status' => 'unpaid',
+    ]);
+
+    $paymentMethod = PaymentMethod::factory()->create();
+    $receiptImage = UploadedFile::fake()->image('receipt.jpg', 800, 600);
+
+    // 6-month discounted minimum for 80,000 is 432,000. Send less to verify rejection.
+    $paymentData = [
+        'invoice_id' => $invoice->id,
+        'payment_method_id' => $paymentMethod->id,
+        'payment_amount' => 430000,
+        'payment_type' => 'full',
+        'payment_months' => 6,
+        'payment_date' => now()->toDateString(),
+        'receipt_image' => $receiptImage,
+        'fee_payment_details' => [
+            [
+                'invoice_fee_id' => $invoiceFee->id,
+                'paid_amount' => 430000,
+            ],
+        ],
+    ];
+
+    try {
+        $paymentService->submitPayment($paymentData);
+        expect(false)->toBeTrue('Expected ValidationException for under-minimum multi-month amount');
+    } catch (ValidationException $e) {
+        expect($e->errors())->toHaveKey('fee_payment_details');
+    }
+});
+
+test('multi-month payment applies only to eligible fee and accepts transportation as single period', function () {
+    Storage::fake('public');
+
+    $paymentService = new PaymentService();
+
+    $grade = Grade::factory()->create(['level' => 1]);
+    $student = StudentProfile::factory()->create([
+        'grade_id' => $grade->id,
+        'status' => 'active',
+    ]);
+
+    $invoice = Invoice::create([
+        'invoice_number' => 'INV-' . strtoupper(substr((string) \Illuminate\Support\Str::uuid(), 0, 8)),
+        'student_id' => $student->id,
+        'batch_id' => null,
+        'total_amount' => 130000,
+        'paid_amount' => 0,
+        'remaining_amount' => 130000,
+        'due_date' => now()->addDays(30)->toDateString(),
+        'status' => 'pending',
+        'invoice_type' => 'monthly',
+    ]);
+
+    $schoolFee = InvoiceFee::factory()->create([
+        'invoice_id' => $invoice->id,
+        'fee_name' => 'School Fee',
+        'amount' => 80000,
+        'paid_amount' => 0,
+        'remaining_amount' => 80000,
+        'supports_payment_period' => true,
+        'due_date' => now()->addDays(30),
+        'status' => 'unpaid',
+    ]);
+
+    $transportFee = InvoiceFee::factory()->create([
+        'invoice_id' => $invoice->id,
+        'fee_name' => 'Transportation Fee',
+        'amount' => 50000,
+        'paid_amount' => 0,
+        'remaining_amount' => 50000,
+        'supports_payment_period' => false,
+        'due_date' => now()->addDays(30),
+        'status' => 'unpaid',
+    ]);
+
+    $paymentMethod = PaymentMethod::factory()->create();
+
+    $paymentData = [
+        'invoice_id' => $invoice->id,
+        'payment_method_id' => $paymentMethod->id,
+        'payment_amount' => 530000,
+        'payment_type' => 'full',
+        'payment_months' => 6,
+        'payment_date' => now()->toDateString(),
+        'receipt_image' => UploadedFile::fake()->image('receipt.jpg', 800, 600),
+        'fee_payment_details' => [
+            [
+                'invoice_fee_id' => $schoolFee->id,
+                'paid_amount' => 480000,
+            ],
+            [
+                'invoice_fee_id' => $transportFee->id,
+                'paid_amount' => 50000,
+            ],
+        ],
+    ];
+
+    $payment = $paymentService->submitPayment($paymentData);
+
+    expect($payment)->toBeInstanceOf(Payment::class);
+    expect((float) $payment->payment_amount)->toBe(530000.0);
+
+    $schoolFee->refresh();
+    $transportFee->refresh();
+    expect((float) $schoolFee->remaining_amount)->toBe(0.0);
+    expect((float) $transportFee->remaining_amount)->toBe(0.0);
+});
+
+test('multi-month payment rejects transportation over its remaining balance', function () {
+    Storage::fake('public');
+
+    $paymentService = new PaymentService();
+
+    $grade = Grade::factory()->create(['level' => 1]);
+    $student = StudentProfile::factory()->create([
+        'grade_id' => $grade->id,
+        'status' => 'active',
+    ]);
+
+    $invoice = Invoice::create([
+        'invoice_number' => 'INV-' . strtoupper(substr((string) \Illuminate\Support\Str::uuid(), 0, 8)),
+        'student_id' => $student->id,
+        'batch_id' => null,
+        'total_amount' => 130000,
+        'paid_amount' => 0,
+        'remaining_amount' => 130000,
+        'due_date' => now()->addDays(30)->toDateString(),
+        'status' => 'pending',
+        'invoice_type' => 'monthly',
+    ]);
+
+    $schoolFee = InvoiceFee::factory()->create([
+        'invoice_id' => $invoice->id,
+        'fee_name' => 'School Fee',
+        'amount' => 80000,
+        'paid_amount' => 0,
+        'remaining_amount' => 80000,
+        'supports_payment_period' => true,
+        'due_date' => now()->addDays(30),
+        'status' => 'unpaid',
+    ]);
+
+    $transportFee = InvoiceFee::factory()->create([
+        'invoice_id' => $invoice->id,
+        'fee_name' => 'Transportation Fee',
+        'amount' => 50000,
+        'paid_amount' => 0,
+        'remaining_amount' => 50000,
+        'supports_payment_period' => false,
+        'due_date' => now()->addDays(30),
+        'status' => 'unpaid',
+    ]);
+
+    $paymentMethod = PaymentMethod::factory()->create();
+
+    $paymentData = [
+        'invoice_id' => $invoice->id,
+        'payment_method_id' => $paymentMethod->id,
+        'payment_amount' => 600000,
+        'payment_type' => 'full',
+        'payment_months' => 6,
+        'payment_date' => now()->toDateString(),
+        'receipt_image' => UploadedFile::fake()->image('receipt.jpg', 800, 600),
+        'fee_payment_details' => [
+            [
+                'invoice_fee_id' => $schoolFee->id,
+                'paid_amount' => 480000,
+            ],
+            [
+                'invoice_fee_id' => $transportFee->id,
+                'paid_amount' => 120000,
+            ],
+        ],
+    ];
+
+    try {
+        $paymentService->submitPayment($paymentData);
+        expect(false)->toBeTrue('Expected ValidationException for transportation overpayment');
+    } catch (ValidationException $e) {
+        expect($e->errors())->toHaveKey('fee_payment_details');
+    }
+});

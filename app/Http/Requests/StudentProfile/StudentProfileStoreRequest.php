@@ -26,7 +26,7 @@ class StudentProfileStoreRequest extends FormRequest
             'password' => ['nullable', 'string', 'min:8'],
             'is_active' => ['sometimes', 'boolean'],
 
-            'photo' => ['nullable', 'image', 'mimes:jpeg,png,jpg,gif', 'max:2048'],
+            'photo' => ['nullable', 'image', 'mimes:jpeg,png,jpg,gif'],
             'student_identifier' => ['nullable', 'string', 'max:255', 'unique:student_profiles,student_identifier'],
             'starting_grade_at_school' => ['nullable', 'string', 'max:255'],
             'previous_grade' => ['nullable', 'string', 'max:255'],
