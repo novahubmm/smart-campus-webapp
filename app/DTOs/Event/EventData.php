@@ -18,7 +18,7 @@ class EventData
         public readonly ?string $venue,
         public readonly ?string $organized_by,
         public readonly ?string $banner_image,
-        public readonly bool $status,
+        public readonly string $status,
     ) {}
 
     public static function from(array $payload, ?string $organizedBy = null): self
@@ -35,7 +35,7 @@ class EventData
             venue: Arr::get($payload, 'venue'),
             organized_by: $payload['organized_by'] ?? $organizedBy,
             banner_image: Arr::get($payload, 'banner_image'),
-            status: (bool) ($payload['status'] ?? true),
+            status: $payload['status'] ?? 'upcoming',
         );
     }
 

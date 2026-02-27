@@ -143,4 +143,7 @@ return array(
     'Weight (kg)' => 'အလေးချိန် (ကီလိုဂရမ်)',
     'Back to Student Profiles' => 'ကျောင်းသားကိုယ်ရေးအချက်အလက်များသို့ပြန်သွားမည်',
     'You can revisit any step to adjust data. Passwords are optional when binding an existing user; providing one will reset the portal credentials.' => 'ဒေတာပြင်ဆင်ရန် မည်သည့်အဆင့်ကိုမဆို ပြန်လည်ကြည့်ရှုနိုင်သည်။ ရှိပြီးသားအသုံးပြုသူနှင့်ချိတ်ဆက်သည့်အခါ စကားဝှက်များသည် ရွေးချယ်နိုင်သည်; တစ်ခုပေးပါက ပေါ်တယ်အထောက်အထားများကို ပြန်လည်သတ်မှတ်မည်။',
+    'Current Guardians' => 'လက်ရှိအုပ်ထိန်းသူများ',
+    'The selected guardian will be linked to this student. No new account will be created.' => 'ရွေးချယ်ထားသော အုပ်ထိန်းသူကို ဤကျောင်းသားနှင့် ချိတ်ဆက်မည်။ အကောင့်အသစ်မဖန်တီးပါ။',
+    'JPG, PNG or GIF (MAX. 2MB)' => 'JPG, PNG သို့မဟုတ် GIF (အများဆုံး 2MB)',
 );

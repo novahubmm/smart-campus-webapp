@@ -138,6 +138,7 @@ Route::middleware(['auth', 'ensure.active'])->group(function () {
             Route::get('/{exam}', [\App\Http\Controllers\ExamController::class, 'show'])->name('show');
             Route::put('/{exam}', [\App\Http\Controllers\ExamController::class, 'update'])->name('update');
             Route::delete('/{exam}', [\App\Http\Controllers\ExamController::class, 'destroy'])->name('destroy');
+            Route::patch('/{exam}/publish-results', [\App\Http\Controllers\ExamController::class, 'publishResults'])->name('publish-results');
 
             Route::post('/marks', [\App\Http\Controllers\ExamController::class, 'storeMark'])->name('marks.store');
             Route::put('/marks/{examMark}', [\App\Http\Controllers\ExamController::class, 'updateMark'])->name('marks.update');
@@ -453,6 +454,9 @@ Route::middleware(['auth', 'ensure.active'])->group(function () {
     Route::post('/student-fees/students/{student}/reinform', [\App\Http\Controllers\StudentFeeController::class, 'reinform'])
         ->middleware('ensure.setup:finance')
         ->name('student-fees.students.reinform');
+    Route::post('/student-fees/remind-all', [\App\Http\Controllers\StudentFeeController::class, 'remindAll'])
+        ->middleware('ensure.setup:finance')
+        ->name('student-fees.remind-all');
     Route::put('/student-fees/grades/{grade}', [\App\Http\Controllers\StudentFeeController::class, 'updateGradeFee'])
         ->middleware('ensure.setup:finance')
         ->name('student-fees.grades.update');

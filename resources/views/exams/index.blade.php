@@ -66,7 +66,7 @@
                 </div>
 
                 <form method="GET" action="{{ route('exams.index') }}" class="p-4 bg-gray-50 dark:bg-gray-900/50 border-b border-gray-200 dark:border-gray-700" x-data="{ filterGradeId: '{{ $filter->grade_id ?? '' }}' }">
-                    <div class="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-3">
+                    <div class="grid grid-cols-4 sm:grid-cols-4 lg:grid-cols-7 gap-3">
                         <div class="flex flex-col gap-1">
                             <label for="filterExamType" class="text-xs font-semibold text-gray-600 dark:text-gray-400">{{ __('exams.Exam Type') }}</label>
                             <select id="filterExamType" name="exam_type_id" class="rounded-lg border-gray-300 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-200 text-sm focus:border-blue-500 focus:ring-blue-500">
@@ -221,10 +221,6 @@
                                         <input type="text" name="name" class="w-full rounded-lg border-gray-300 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-200 focus:border-blue-500 focus:ring-blue-500" x-model="examForm.name" placeholder="{{ __('exams.Enter exam name') }}" required>
                                     </div>
                                     <div>
-                                        <label class="block text-sm font-semibold text-gray-700 dark:text-gray-200 mb-1">{{ __('exams.Exam ID') }} <span class="text-red-500">*</span></label>
-                                        <input type="text" name="exam_id" class="w-full rounded-lg border-gray-300 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-200 focus:border-blue-500 focus:ring-blue-500" x-model="examForm.exam_id" placeholder="{{ __('exams.Enter exam ID') }}" required>
-                                    </div>
-                                    <div>
                                         <label class="block text-sm font-semibold text-gray-700 dark:text-gray-200 mb-1">{{ __('exams.Grade') }} <span class="text-red-500">*</span></label>
                                         <select name="grade_id" class="w-full rounded-lg border-gray-300 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-200 focus:border-blue-500 focus:ring-blue-500" x-model="examForm.grade_id" @change="onGradeChange()" required>
                                             <option value="">{{ __('exams.Select grade') }}</option>
@@ -272,9 +268,10 @@
                                             <i class="fas fa-calendar-alt text-blue-500"></i>{{ __('exams.Exam Schedule') }}
                                         </h4>
                                         <p class="text-xs text-gray-500 dark:text-gray-400 mt-1" x-show="!examForm.grade_id">{{ __('exams.Select a grade above to add subjects') }}</p>
+                                        <p class="text-xs text-gray-500 dark:text-gray-400 mt-1" x-show="examForm.grade_id && !examForm.start_date">{{ __('exams.Select a start date to add subjects') }}</p>
                                     </div>
-                                    <button type="button" class="inline-flex items-center gap-2 px-3 py-1.5 text-sm font-semibold rounded-lg text-blue-600 bg-blue-50 dark:bg-blue-900/30 dark:text-blue-400 hover:bg-blue-100 dark:hover:bg-blue-900/50" :class="{'opacity-50 cursor-not-allowed': !examForm.grade_id}" @click="addScheduleRow()">
-                                        <i class="fas fa-plus"></i>{{ __('exams.Add Subject') }}
+                                    <button type="button" class="inline-flex items-center gap-2 px-3 py-1.5 text-sm font-semibold rounded-lg text-blue-600 bg-blue-50 dark:bg-blue-900/30 dark:text-blue-400 hover:bg-blue-100 dark:hover:bg-blue-900/50" :class="{'opacity-50 cursor-not-allowed': !examForm.grade_id || !examForm.start_date}" @click="addAllSubjects()" :disabled="!examForm.grade_id || !examForm.start_date">
+                                        <i class="fas fa-plus"></i>{{ __('exams.Add Subjects') }}
                                     </button>
                                 </div>
 
@@ -283,77 +280,66 @@
                                     <div class="text-center py-8 text-gray-500 dark:text-gray-400">
                                         <i class="fas fa-calendar-times text-4xl mb-3 opacity-50"></i>
                                         <p class="text-sm" x-show="!examForm.grade_id">{{ __('exams.Please select a grade above first, then add subjects to the schedule.') }}</p>
-                                        <p class="text-sm" x-show="examForm.grade_id">{{ __('exams.No subjects added yet. Click "Add Subject" to create exam schedule.') }}</p>
+                                        <p class="text-sm" x-show="examForm.grade_id">{{ __('exams.No subjects added yet. Click "Add Subjects" to create exam schedule.') }}</p>
                                     </div>
                                 </template>
 
-                                <!-- Schedule Table -->
+                                <!-- Schedule Cards - Two Row Layout -->
                                 <template x-if="examForm.schedules.length">
-                                    <div class="overflow-x-auto">
-                                        <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
-                                            <thead class="bg-white dark:bg-gray-800">
-                                                <tr>
-                                                    <th class="px-3 py-2 text-left text-xs font-semibold text-gray-600 dark:text-gray-300">{{ __('exams.Subject') }}</th>
-                                                    <th class="px-3 py-2 text-left text-xs font-semibold text-gray-600 dark:text-gray-300">{{ __('exams.Marks') }}</th>
-                                                    <th class="px-3 py-2 text-left text-xs font-semibold text-gray-600 dark:text-gray-300">{{ __('exams.Date') }}</th>
-                                                    <th class="px-3 py-2 text-left text-xs font-semibold text-gray-600 dark:text-gray-300">{{ __('exams.Time') }}</th>
-                                                    <th class="px-3 py-2 text-left text-xs font-semibold text-gray-600 dark:text-gray-300">{{ __('exams.Room') }}</th>
-                                                    <th class="px-3 py-2 text-left text-xs font-semibold text-gray-600 dark:text-gray-300">{{ __('exams.Examiner') }}</th>
-                                                    <th class="px-3 py-2 text-center text-xs font-semibold text-gray-600 dark:text-gray-300 w-12"></th>
-                                                </tr>
-                                            </thead>
-                                            <tbody class="divide-y divide-gray-200 dark:divide-gray-700 bg-white dark:bg-gray-800">
-                                                <template x-for="(schedule, idx) in examForm.schedules" :key="idx">
-                                                    <tr>
-                                                        <td class="px-2 py-2">
-                                                            <select class="w-full text-sm rounded-lg border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200 focus:border-blue-500 focus:ring-blue-500" :name="`schedules[${idx}][subject_id]`" x-model="schedule.subject_id" required>
-                                                                <option value="">{{ __('exams.Select subject') }}</option>
-                                                                <template x-if="filteredSubjects.length === 0">
-                                                                    <option value="" disabled>{{ __('exams.No subjects available for this grade') }}</option>
-                                                                </template>
-                                                                <template x-for="subject in filteredSubjects" :key="subject.id">
-                                                                    <option :value="subject.id" x-text="subject.name"></option>
-                                                                </template>
-                                                            </select>
-                                                        </td>
-                                                        <td class="px-2 py-2">
-                                                            <input type="number" step="1" min="1" class="w-20 text-sm rounded-lg border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200 focus:border-blue-500 focus:ring-blue-500" :name="`schedules[${idx}][total_marks]`" x-model="schedule.total_marks" placeholder="100">
-                                                        </td>
-                                                        <td class="px-2 py-2">
-                                                            <input type="date" class="w-full text-sm rounded-lg border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200 focus:border-blue-500 focus:ring-blue-500" :name="`schedules[${idx}][exam_date]`" x-model="schedule.exam_date" required>
-                                                        </td>
-                                                        <td class="px-2 py-2">
-                                                            <div class="flex items-center gap-1">
-                                                                <input type="time" class="w-full text-sm rounded-lg border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200 focus:border-blue-500 focus:ring-blue-500" :name="`schedules[${idx}][start_time]`" x-model="schedule.start_time" required>
-                                                                <span class="text-gray-400 text-xs">-</span>
-                                                                <input type="time" class="w-full text-sm rounded-lg border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200 focus:border-blue-500 focus:ring-blue-500" :name="`schedules[${idx}][end_time]`" x-model="schedule.end_time" required>
-                                                            </div>
-                                                        </td>
-                                                        <td class="px-2 py-2">
-                                                            <select class="w-full text-sm rounded-lg border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200 focus:border-blue-500 focus:ring-blue-500" :name="`schedules[${idx}][room_id]`" x-model="schedule.room_id">
-                                                                <option value="">{{ __('exams.Select') }}</option>
-                                                                @foreach($rooms as $room)
-                                                                    <option value="{{ $room->id }}">{{ $room->name }}</option>
-                                                                @endforeach
-                                                            </select>
-                                                        </td>
-                                                        <td class="px-2 py-2">
-                                                            <select class="w-full text-sm rounded-lg border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200 focus:border-blue-500 focus:ring-blue-500" :name="`schedules[${idx}][teacher_id]`" x-model="schedule.teacher_id">
-                                                                <option value="">{{ __('exams.Select') }}</option>
-                                                                @foreach($teachers as $teacher)
-                                                                    <option value="{{ $teacher->id }}">{{ $teacher->user?->name ?? __('exams.Teacher') }}</option>
-                                                                @endforeach
-                                                            </select>
-                                                        </td>
-                                                        <td class="px-2 py-2 text-center">
-                                                            <button type="button" class="w-8 h-8 rounded-md text-red-500 hover:bg-red-50 dark:hover:bg-red-900/30 flex items-center justify-center" @click="removeScheduleRow(idx)" title="{{ __('exams.Remove') }}">
-                                                                <i class="fas fa-trash text-xs"></i>
-                                                            </button>
-                                                        </td>
-                                                    </tr>
-                                                </template>
-                                            </tbody>
-                                        </table>
+                                    <div class="space-y-4">
+                                        <template x-for="(schedule, idx) in examForm.schedules" :key="idx">
+                                            <div class="bg-gray-800 dark:bg-gray-900 border border-gray-700 dark:border-gray-600 rounded-lg p-4 space-y-3">
+                                                <!-- Hidden inputs -->
+                                                <input type="hidden" :name="`schedules[${idx}][subject_id]`" :value="schedule.subject_id">
+                                                
+                                                <!-- Row 1: Subject, Date, Time -->
+                                                <div class="flex flex-wrap items-end gap-3">
+                                                    <div class="flex-1 min-w-[200px]">
+                                                        <label class="block text-xs font-semibold text-gray-400 mb-1">{{ __('exams.Subject') }} <span class="text-red-500">*</span></label>
+                                                        <div class="text-base font-semibold text-white" x-text="getSubjectName(schedule.subject_id)"></div>
+                                                    </div>
+                                                    <div class="w-40">
+                                                        <label class="block text-xs font-semibold text-gray-400 mb-1">{{ __('exams.Date') }} <span class="text-red-500">*</span></label>
+                                                        <input type="date" class="w-full text-sm rounded-lg border-gray-600 bg-gray-700 text-gray-200 focus:border-blue-500 focus:ring-blue-500" :name="`schedules[${idx}][exam_date]`" x-model="schedule.exam_date" @change="autoReorderSchedules()" required>
+                                                    </div>
+                                                    <div class="w-64">
+                                                        <label class="block text-xs font-semibold text-gray-400 mb-1">{{ __('exams.Time') }} <span class="text-red-500">*</span></label>
+                                                        <div class="flex items-center gap-2">
+                                                            <input type="time" class="w-28 text-sm rounded-lg border-gray-600 bg-gray-700 text-gray-200 focus:border-blue-500 focus:ring-blue-500" :name="`schedules[${idx}][start_time]`" x-model="schedule.start_time" required>
+                                                            <span class="text-gray-400 text-xs">-</span>
+                                                            <input type="time" class="w-28 text-sm rounded-lg border-gray-600 bg-gray-700 text-gray-200 focus:border-blue-500 focus:ring-blue-500" :name="`schedules[${idx}][end_time]`" x-model="schedule.end_time" required>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                
+                                                <!-- Row 2: Room, Examiner, Delete -->
+                                                <div class="flex flex-wrap items-end gap-3">
+                                                    <div class="flex-1 min-w-[200px]">
+                                                        <label class="block text-xs font-semibold text-gray-400 mb-1">{{ __('exams.Room') }}</label>
+                                                        <select class="w-full text-sm rounded-lg border-gray-600 bg-gray-700 text-gray-200 focus:border-blue-500 focus:ring-blue-500" :name="`schedules[${idx}][room_id]`" x-model="schedule.room_id">
+                                                            <option value="">{{ __('exams.Select') }}</option>
+                                                            @foreach($rooms as $room)
+                                                                <option value="{{ $room->id }}">{{ $room->name }}</option>
+                                                            @endforeach
+                                                        </select>
+                                                    </div>
+                                                    <div class="flex-1 min-w-[200px]">
+                                                        <label class="block text-xs font-semibold text-gray-400 mb-1">{{ __('exams.Examiner') }}</label>
+                                                        <select class="w-full text-sm rounded-lg border-gray-600 bg-gray-700 text-gray-200 focus:border-blue-500 focus:ring-blue-500" :name="`schedules[${idx}][teacher_id]`" x-model="schedule.teacher_id">
+                                                            <option value="">{{ __('exams.Select') }}</option>
+                                                            @foreach($teachers as $teacher)
+                                                                <option value="{{ $teacher->id }}">{{ $teacher->user?->name ?? __('exams.Teacher') }}</option>
+                                                            @endforeach
+                                                        </select>
+                                                    </div>
+                                                    <div>
+                                                        <button type="button" class="px-4 py-2 text-sm font-semibold rounded-lg text-red-400 bg-red-900/30 hover:bg-red-900/50 flex items-center gap-2 whitespace-nowrap" @click="removeScheduleRow(idx)">
+                                                            <i class="fas fa-trash text-xs"></i>{{ __('exams.Remove') }}
+                                                        </button>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </template>
                                     </div>
                                 </template>
                             </div>
@@ -373,6 +359,7 @@
 
     </div>
 
+    <script src="{{ asset('js/exam-schedule.js') }}"></script>
     <script>
         function examManager(options) {
             return {
@@ -384,9 +371,9 @@
                 classes: options.classes || [],
                 subjects: options.subjects || [],
                 selectedGradeId: null,
+                scheduleManager: null,
                 examForm: {
                     name: '',
-                    exam_id: '',
                     grade_id: '',
                     class_id: '',
                     exam_type_id: '',
@@ -394,6 +381,17 @@
                     end_date: '',
                     status: 'upcoming',
                     schedules: []
+                },
+                init() {
+                    // Initialize schedule manager
+                    this.scheduleManager = new ExamScheduleManager({
+                        gradeId: this.examForm.grade_id,
+                        allSubjects: this.subjects,
+                        schedules: this.examForm.schedules,
+                        onSchedulesChange: (schedules) => {
+                            this.examForm.schedules = schedules;
+                        }
+                    });
                 },
                 get filteredClasses() {
                     if (!this.examForm.grade_id) return [];
@@ -411,6 +409,11 @@
                     // Reset class and schedules when grade changes
                     this.examForm.class_id = '';
                     this.examForm.schedules = [];
+                    
+                    // Update schedule manager
+                    if (this.scheduleManager) {
+                        this.scheduleManager.setGrade(this.examForm.grade_id);
+                    }
                 },
                 openExamModal() {
                     this.modals.exam = true;
@@ -418,6 +421,16 @@
                     this.examAction = this.endpoints.store;
                     this.examForm = this.defaultExamForm();
                     this.selectedGradeId = null;
+                    
+                    // Reinitialize schedule manager
+                    this.scheduleManager = new ExamScheduleManager({
+                        gradeId: this.examForm.grade_id,
+                        allSubjects: this.subjects,
+                        schedules: this.examForm.schedules,
+                        onSchedulesChange: (schedules) => {
+                            this.examForm.schedules = schedules;
+                        }
+                    });
                 },
                 closeExamModal() {
                     this.modals.exam = false;
@@ -425,43 +438,167 @@
                     this.selectedGradeId = null;
                 },
                 submitExam() {
+                    // Validate exam basic info
+                    if (!this.examForm.name || this.examForm.name.trim() === '') {
+                        showToast('{{ __('exams.Please enter exam name') }}', 'error');
+                        return false;
+                    }
+                    
+                    if (!this.examForm.exam_type_id) {
+                        showToast('{{ __('exams.Please select exam type') }}', 'error');
+                        return false;
+                    }
+                    
                     if (!this.examForm.grade_id) {
-                        alert('{{ __('exams.Please select a grade first') }}');
-                        return;
+                        showToast('{{ __('exams.Please select a grade first') }}', 'error');
+                        return false;
                     }
+                    
                     if (!this.examForm.class_id) {
-                        alert('{{ __('exams.Please select a class') }}');
-                        return;
+                        showToast('{{ __('exams.Please select a class') }}', 'error');
+                        return false;
                     }
+                    
+                    if (!this.examForm.start_date || this.examForm.start_date.trim() === '') {
+                        showToast('{{ __('exams.Please select start date') }}', 'error');
+                        return false;
+                    }
+                    
+                    if (!this.examForm.end_date || this.examForm.end_date.trim() === '') {
+                        showToast('{{ __('exams.Please select end date') }}', 'error');
+                        return false;
+                    }
+                    
+                    // Check if end date is after or equal to start date
+                    if (this.examForm.start_date && this.examForm.end_date) {
+                        const startDate = new Date(this.examForm.start_date);
+                        const endDate = new Date(this.examForm.end_date);
+                        if (endDate < startDate) {
+                            showToast('{{ __('exams.End date must be after or equal to start date') }}', 'error');
+                            return false;
+                        }
+                    }
+                    
                     if (!this.examForm.schedules.length) {
-                        alert('{{ __('exams.Please add at least one subject to the schedule') }}');
-                        return;
+                        showToast('{{ __('exams.Please add at least one subject to the schedule') }}', 'error');
+                        return false;
                     }
+                    
+                    // Validate each schedule
+                    for (let i = 0; i < this.examForm.schedules.length; i++) {
+                        const schedule = this.examForm.schedules[i];
+                        const subjectName = this.getSubjectName(schedule.subject_id);
+                        
+                        // Check if exam date is provided
+                        if (!schedule.exam_date) {
+                            showToast(`{{ __('exams.Please select exam date for') }} ${subjectName}`, 'error');
+                            return false;
+                        }
+                        
+                        // Check if start time is provided
+                        if (!schedule.start_time || schedule.start_time.trim() === '') {
+                            showToast(`{{ __('exams.Please select a start time for') }} ${subjectName}`, 'error');
+                            return false;
+                        }
+                        
+                        // Check if end time is provided
+                        if (!schedule.end_time || schedule.end_time.trim() === '') {
+                            showToast(`{{ __('exams.Please select an end time for') }} ${subjectName}`, 'error');
+                            return false;
+                        }
+                        
+                        // Check if end time is greater than start time
+                        if (schedule.end_time <= schedule.start_time) {
+                            showToast(`{{ __('exams.End time must be greater than start time for') }} ${subjectName}`, 'error');
+                            return false;
+                        }
+                        
+                        // Check if room is selected
+                        if (!schedule.room_id) {
+                            showToast(`{{ __('exams.Please select a room for') }} ${subjectName}`, 'error');
+                            return false;
+                        }
+                        
+                        // Check if examiner is selected
+                        if (!schedule.teacher_id) {
+                            showToast(`{{ __('exams.Please select an examiner for') }} ${subjectName}`, 'error');
+                            return false;
+                        }
+                        
+                        // Check for conflicts with other schedules
+                        for (let j = i + 1; j < this.examForm.schedules.length; j++) {
+                            const otherSchedule = this.examForm.schedules[j];
+                            const otherSubjectName = this.getSubjectName(otherSchedule.subject_id);
+                            
+                            // Only check if same date
+                            if (schedule.exam_date === otherSchedule.exam_date) {
+                                // Check if times overlap
+                                const start1 = schedule.start_time;
+                                const end1 = schedule.end_time;
+                                const start2 = otherSchedule.start_time;
+                                const end2 = otherSchedule.end_time;
+                                
+                                // Times overlap if: start1 < end2 AND start2 < end1
+                                const timesOverlap = start1 < end2 && start2 < end1;
+                                
+                                if (timesOverlap) {
+                                    // Check if same room
+                                    if (schedule.room_id === otherSchedule.room_id) {
+                                        showToast(`{{ __('exams.Room conflict') }}: ${subjectName} {{ __('exams.and') }} ${otherSubjectName} {{ __('exams.have overlapping times in the same room on') }} ${schedule.exam_date}`, 'error');
+                                        return false;
+                                    }
+                                    
+                                    // Check if same examiner
+                                    if (schedule.teacher_id === otherSchedule.teacher_id) {
+                                        showToast(`{{ __('exams.Examiner conflict') }}: ${subjectName} {{ __('exams.and') }} ${otherSubjectName} {{ __('exams.have overlapping times with the same examiner on') }} ${schedule.exam_date}`, 'error');
+                                        return false;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                    
+                    // All validations passed, submit the form
                     this.$refs.examForm?.submit();
                 },
-                addScheduleRow() {
+                addAllSubjects() {
                     if (!this.examForm.grade_id) {
-                        alert('{{ __('exams.Please select a grade first') }}');
+                        showToast('{{ __('exams.Please select a grade first') }}', 'error');
                         return;
                     }
-                    this.examForm.schedules.push({
-                        subject_id: '',
-                        room_id: '',
-                        teacher_id: '',
-                        exam_date: '',
-                        start_time: '',
-                        end_time: '',
-                        total_marks: 100,
-                        passing_marks: 40,
-                    });
+                    
+                    if (!this.examForm.start_date) {
+                        showToast('{{ __('exams.Please select a start date first') }}', 'error');
+                        return;
+                    }
+                    
+                    const result = this.scheduleManager.addAllSubjects(this.examForm.start_date);
+                    
+                    if (!result.success) {
+                        showToast(result.message, 'warning');
+                    } else {
+                        showToast(result.message, 'success');
+                    }
                 },
                 removeScheduleRow(index) {
-                    this.examForm.schedules.splice(index, 1);
+                    this.scheduleManager.removeSchedule(index);
+                    this.autoReorderSchedules();
+                },
+                autoReorderSchedules() {
+                    // Sort schedules by exam_date, then by start_time
+                    this.examForm.schedules.sort((a, b) => {
+                        if (a.exam_date !== b.exam_date) {
+                            return a.exam_date.localeCompare(b.exam_date);
+                        }
+                        return a.start_time.localeCompare(b.start_time);
+                    });
+                },
+                getSubjectName(subjectId) {
+                    return this.scheduleManager.getSubjectName(subjectId);
                 },
                 defaultExamForm() {
                     return {
                         name: '',
-                        exam_id: '',
                         grade_id: '',
                         class_id: '',
                         exam_type_id: '',

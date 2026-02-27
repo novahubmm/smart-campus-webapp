@@ -240,7 +240,7 @@ class TimetableController extends Controller
             return strtolower($day); // Ensure lowercase: monday, tuesday, etc.
         })->toArray();
 
-        $grades = Grade::with(['batch', 'subjects.teachers.user:id,name'])->orderBy('level')->get();
+        $grades = Grade::active()->with(['batch', 'subjects.teachers.user:id,name'])->orderBy('level')->get();
 
         $gradeSubjects = $grades->mapWithKeys(function ($grade) {
             return [

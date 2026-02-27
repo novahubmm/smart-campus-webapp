@@ -57,4 +57,41 @@ class Subject extends Model
             ->orderBy('order')
             ->get();
     }
+
+    /**
+     * Get periods where this subject is taught
+     */
+    public function periods()
+    {
+        return $this->hasMany(Period::class);
+    }
+
+    /**
+     * Get formatted class names for this subject based on timetable periods
+     * Returns class names like "Kindergarten A", "Grade 1 B"
+     */
+    public function getFormattedClassNamesAttribute(): string
+    {
+        $classNames = [];
+        
+        // Get unique classes from periods through timetables
+        $periods = $this->periods()->with(['timetable.schoolClass.grade'])->get();
+        
+        foreach ($periods as $period) {
+            if ($period->timetable && $period->timetable->schoolClass) {
+                $class = $period->timetable->schoolClass;
+                $gradeLevel = $class->grade?->level;
+                
+                if ($gradeLevel !== null) {
+                    $className = \App\Helpers\SectionHelper::formatFullClassName($class->name, $gradeLevel);
+                    $classNames[$className] = true; // Use array key to auto-deduplicate
+                }
+            }
+        }
+        
+        $classNames = array_keys($classNames);
+        sort($classNames);
+        
+        return !empty($classNames) ? implode(', ', $classNames) : '—';
+    }
 }

@@ -11,7 +11,7 @@ class ExamData
      */
     public function __construct(
         public readonly string $name,
-        public readonly string $exam_id,
+        public readonly ?string $exam_id,
         public readonly string $exam_type_id,
         public readonly string $batch_id,
         public readonly ?string $grade_id,
@@ -30,16 +30,33 @@ class ExamData
             ->values()
             ->all();
 
+        // Auto-determine status based on dates if not explicitly set or if set to 'upcoming'
+        $status = $payload['status'] ?? 'upcoming';
+        
+        if (!isset($payload['status']) || $payload['status'] === 'upcoming') {
+            $today = now()->startOfDay();
+            $startDate = \Carbon\Carbon::parse($payload['start_date'])->startOfDay();
+            $endDate = \Carbon\Carbon::parse($payload['end_date'])->endOfDay();
+            
+            if ($today->greaterThanOrEqualTo($startDate) && $today->lessThanOrEqualTo($endDate)) {
+                $status = 'ongoing';
+            } elseif ($today->greaterThan($endDate)) {
+                $status = 'completed';
+            } else {
+                $status = 'upcoming';
+            }
+        }
+
         return new self(
             name: $payload['name'],
-            exam_id: $payload['exam_id'],
+            exam_id: Arr::get($payload, 'exam_id'),
             exam_type_id: $payload['exam_type_id'],
             batch_id: $payload['batch_id'],
             grade_id: Arr::get($payload, 'grade_id'),
             class_id: Arr::get($payload, 'class_id'),
             start_date: $payload['start_date'],
             end_date: $payload['end_date'],
-            status: $payload['status'] ?? 'upcoming',
+            status: $status,
             schedules: $schedules,
         );
     }

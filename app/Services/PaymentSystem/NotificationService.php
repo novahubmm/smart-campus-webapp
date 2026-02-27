@@ -231,4 +231,70 @@ class NotificationService
             ]
         );
     }
+
+    /**
+     * Send payment reminder notification to guardian about unpaid invoices.
+     *
+     * @param string $studentId
+     * @param \Illuminate\Support\Collection $unpaidInvoices
+     * @return void
+     */
+    public function sendReinformNotification(string $studentId, $unpaidInvoices): void
+    {
+        try {
+            // Get student
+            $student = \App\Models\StudentProfile::find($studentId);
+            
+            if (!$student) {
+                Log::warning('Student not found for reminder', ['student_id' => $studentId]);
+                return;
+            }
+
+            // Get primary guardian
+            $primaryGuardian = $student->guardian()->first();
+            
+            if (!$primaryGuardian || !$primaryGuardian->user) {
+                Log::warning('No primary guardian found for student', ['student_id' => $studentId]);
+                return;
+            }
+
+            $guardian = $primaryGuardian->user;
+
+            // Calculate total unpaid amount
+            $totalUnpaid = $unpaidInvoices->sum('remaining_amount');
+            $invoiceCount = $unpaidInvoices->count();
+
+            $title = 'Payment Reminder';
+            $titleMm = 'ငွေပေးချေရန် သတိပေးစာ';
+            $body = sprintf(
+                'You have %d unpaid invoice(s) totaling %s MMK. Please make payment at your earliest convenience.',
+                $invoiceCount,
+                number_format($totalUnpaid)
+            );
+            $bodyMm = sprintf(
+                'သင့်တွင် ပေးချေရန်ကျန်ရှိသော ငွေတောင်းခံလွှာ %d စောင် ရှိပြီး စုစုပေါင်း %s ကျပ် ရှိပါသည်။ အချိန်ရရှိသည့်အခါ ငွေပေးချေပေးပါရန် မေတ္တာရပ်ခံအပ်ပါသည်။',
+                $invoiceCount,
+                number_format($totalUnpaid)
+            );
+
+            $this->sendFCMNotification(
+                $guardian,
+                $title,
+                $titleMm,
+                $body,
+                $bodyMm,
+                [
+                    'student_id' => $studentId,
+                    'invoice_count' => $invoiceCount,
+                    'total_amount' => $totalUnpaid,
+                    'action' => 'view_invoices',
+                ]
+            );
+        } catch (\Exception $e) {
+            Log::error('Failed to send reminder notification', [
+                'student_id' => $studentId,
+                'error' => $e->getMessage(),
+            ]);
+        }
+    }
 }

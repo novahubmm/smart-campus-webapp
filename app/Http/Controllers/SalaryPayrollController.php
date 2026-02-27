@@ -155,6 +155,7 @@ class SalaryPayrollController extends Controller
             'payrollEntries' => $payrollEntries,
             'historyEntries' => $historyEntries,
             'historyEntriesJson' => $historyEntriesJson,
+            'paymentMethods' => \App\Models\PaymentMethod::where('is_active', true)->orderBy('sort_order')->get(),
         ]);
     }
 

@@ -178,8 +178,9 @@ class StudentProfileController extends Controller
         $grades = Grade::orderBy('name')->get();
         $classes = SchoolClass::orderBy('name')->get();
         $studentUsers = User::role(RoleEnum::STUDENT->value)->orderBy('name')->get();
+        $guardians = \App\Models\GuardianProfile::with('user')->get();
 
-        return view('student-profiles.edit', compact('studentProfile', 'grades', 'classes', 'studentUsers'));
+        return view('student-profiles.edit', compact('studentProfile', 'grades', 'classes', 'studentUsers', 'guardians'));
     }
 
     public function update(StudentProfileUpdateRequest $request, StudentProfile $studentProfile): RedirectResponse

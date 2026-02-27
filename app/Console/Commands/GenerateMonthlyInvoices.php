@@ -2,7 +2,7 @@
 
 namespace App\Console\Commands;
 
-use App\Services\Finance\InvoiceService;
+use App\Services\PaymentSystem\InvoiceService;
 use Illuminate\Console\Command;
 
 class GenerateMonthlyInvoices extends Command
@@ -13,8 +13,7 @@ class GenerateMonthlyInvoices extends Command
      * @var string
      */
     protected $signature = 'invoices:generate-monthly 
-                            {--month= : Month in Y-m format (e.g., 2024-01)}
-                            {--academic-year= : Academic year (e.g., 2024)}';
+                            {--month= : Month in Y-m format (e.g., 2024-01)}';
 
     /**
      * The console command description.
@@ -28,14 +27,14 @@ class GenerateMonthlyInvoices extends Command
      */
     public function handle(InvoiceService $invoiceService): int
     {
-        $month = $this->option('month') ?? now()->format('Y-m');
-        $academicYear = $this->option('academic-year') ?? now()->format('Y');
+        $month = $this->option('month') ? \Carbon\Carbon::parse($this->option('month') . '-01') : now();
+        $monthDisplay = $month->format('F Y');
 
-        $this->info("Generating monthly invoices for {$month} (Academic Year: {$academicYear})...");
+        $this->info("Generating monthly invoices for {$monthDisplay}...");
         $this->newLine();
 
         try {
-            $stats = $invoiceService->generateMonthlyInvoices($month, $academicYear);
+            $invoicesCreated = $invoiceService->generateMonthlyInvoices($month);
 
             // Display results
             $this->info('Invoice Generation Complete!');
@@ -44,28 +43,9 @@ class GenerateMonthlyInvoices extends Command
             $this->table(
                 ['Metric', 'Count'],
                 [
-                    ['Total Students', $stats['total_students']],
-                    ['Invoices Created', $stats['invoices_created']],
-                    ['Invoices Skipped', $stats['invoices_skipped']],
-                    ['Errors', count($stats['errors'])],
+                    ['Invoices Created', $invoicesCreated],
                 ]
             );
-
-            // Display errors if any
-            if (count($stats['errors']) > 0) {
-                $this->newLine();
-                $this->error('Errors encountered:');
-                $this->table(
-                    ['Student ID', 'Student Name', 'Error'],
-                    array_map(function ($error) {
-                        return [
-                            $error['student_id'],
-                            $error['student_name'],
-                            $error['error'],
-                        ];
-                    }, $stats['errors'])
-                );
-            }
 
             $this->newLine();
             $this->info('✓ Invoice generation completed successfully!');

@@ -71,7 +71,12 @@ class TeacherProfileController extends Controller
     {
         $this->authorize(PermissionEnum::VIEW_DEPARTMENTS_PROFILES->value);
 
-        $teacherProfile->load('user', 'department');
+        $teacherProfile->load([
+            'user', 
+            'department',
+            'subjects.grades',
+            'classes.grade'
+        ]);
 
         return view('teacher-profiles.show', [
             'profile' => $teacherProfile,

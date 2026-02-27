@@ -180,6 +180,21 @@
                 <div class="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl shadow-sm student-fee-section">
                     <div class="flex flex-wrap items-center justify-between gap-3 p-4 border-b border-gray-200 dark:border-gray-700">
                         <h3 class="text-lg font-semibold text-gray-900 dark:text-white">{{ __('finance.Student Fee List') }} - {{ $currentMonth }}</h3>
+                        
+                        @if($unpaidInvoices->total() > 0)
+                        <form method="POST" action="{{ route('student-fees.remind-all') }}" id="remind-all-form">
+                            @csrf
+                            <input type="hidden" name="fee_month" value="{{ request('fee_month', now()->format('Y-m')) }}">
+                            <input type="hidden" name="fee_grade" value="{{ request('fee_grade') }}">
+                            <input type="hidden" name="fee_fee_type" value="{{ request('fee_fee_type') }}">
+                            <input type="hidden" name="fee_search" value="{{ request('fee_search') }}">
+                            <button type="button" class="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-600 text-white text-sm font-medium rounded-lg transition-colors duration-150 shadow-sm hover:shadow-md" 
+                                onclick="confirmAction('{{ route('student-fees.remind-all') }}', '{{ __('finance.Remind All') }}', '{{ __('finance.Are you sure you want to send payment reminders to all unpaid students in this list?') }}', '{{ __('finance.Send Reminders') }}', 'remind-all-form')">
+                                <i class="fas fa-bell"></i>
+                                <span>{{ __('finance.Remind All') }}</span>
+                            </button>
+                        </form>
+                        @endif
                     </div>
 
                     <!-- Filters -->
@@ -442,6 +457,8 @@
                                     <th class="th-cell">{{ __('finance.Fee Type') }}</th>
                                     <th class="th-cell">{{ __('finance.Month') }}</th>
                                     <th class="th-cell">{{ __('finance.Fee Amount') }}</th>
+                                    <th class="th-cell">{{ __('finance.Payment Method') }}</th>
+                                    <th class="th-cell">{{ __('finance.Payment Account') }}</th>
                                     <th class="th-cell">{{ __('finance.Date') }}</th>
                                     <th class="th-cell">{{ __('finance.Actions') }}</th>
                                 </tr>
@@ -473,6 +490,25 @@
                                         </td>
                                         <td class="td-cell">{{ $invoice->invoice_date?->translatedFormat('F Y') ?? $currentMonth }}</td>
                                         <td class="td-cell font-semibold text-green-600 dark:text-green-400">{{ number_format($paymentAmount, 0) }} MMK</td>
+                                        <td class="td-cell">
+                                            @if($latestPayment && $latestPayment->paymentMethod)
+                                                <span class="inline-flex items-center px-2 py-1 rounded text-xs font-medium bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-300">
+                                                    {{ $latestPayment->paymentMethod->name }}
+                                                </span>
+                                            @else
+                                                <span class="text-gray-500 dark:text-gray-400">-</span>
+                                            @endif
+                                        </td>
+                                        <td class="td-cell">
+                                            @if($latestPayment && $latestPayment->paymentMethod)
+                                                <div class="text-xs">
+                                                    <div class="font-medium text-gray-900 dark:text-white">{{ $latestPayment->paymentMethod->account_name }}</div>
+                                                    <div class="text-gray-500 dark:text-gray-400">{{ $latestPayment->paymentMethod->account_number }}</div>
+                                                </div>
+                                            @else
+                                                <span class="text-gray-500 dark:text-gray-400">-</span>
+                                            @endif
+                                        </td>
                                         <td class="td-cell">{{ $invoice->updated_at?->translatedFormat('M j, Y') }}</td>
                                         <td class="td-cell">
                                             @if($latestPayment)
@@ -499,7 +535,7 @@
                                     @endforeach
                                 @else
                                     <tr>
-                                        <td colspan="10" class="td-empty">
+                                        <td colspan="12" class="td-empty">
                                             <div class="flex flex-col items-center py-8">
                                                 <i class="fas fa-history text-4xl text-gray-300 dark:text-gray-600 mb-3"></i>
                                                 <p class="text-gray-500 dark:text-gray-400">{{ __('finance.No payments history found.') }}</p>
@@ -984,9 +1020,9 @@
                                     </tr>
                                 </thead>
                                 <tbody class="divide-y divide-gray-200 dark:divide-gray-700">
-                                    @forelse($feeTypes as $index => $feeType)
+                                    @forelse($feeTypes->where('code', '!=', 'SCHOOL_FEE') as $index => $feeType)
                                         <tr class="bg-white dark:bg-gray-900 hover:bg-gray-50 dark:hover:bg-gray-800/50">
-                                            <td class="td-cell text-center">{{ $index + 1 }}</td>
+                                            <td class="td-cell text-center">{{ $loop->iteration }}</td>
                                             <td class="td-cell">
                                                 <div class="font-semibold text-gray-900 dark:text-white">{{ $feeType->name }}</div>
                                                 @if($feeType->description)
@@ -1648,7 +1684,7 @@
             <div class="fixed inset-0 bg-black/50 backdrop-blur-sm"></div>
             <div class="flex min-h-full items-center justify-center p-4">
                 <div class="relative bg-white dark:bg-gray-800 rounded-xl w-full max-w-2xl shadow-2xl" @click.stop>
-                    <form method="POST" :action="categoryFormAction" x-ref="categoryForm">
+                    <form method="POST" :action="categoryFormAction" x-ref="categoryForm" @submit.prevent="submitCategoryForm">
                         @csrf
                         <template x-if="categoryFormMethod === 'PUT'"><input type="hidden" name="_method" value="PUT"></template>
                         <div class="flex items-center justify-between p-5 border-b border-gray-200 dark:border-gray-700">
@@ -2686,6 +2722,8 @@
 
                 
                 openCategoryModal() {
+                    const now = new Date();
+                    const currentMonth = now.getMonth() + 1; // Integer 1-12
                     this.categoryFormMethod = 'POST';
                     this.categoryFormAction = '{{ route('student-fees.categories.store') }}';
                     this.categoryForm = {
@@ -2697,13 +2735,52 @@
                         due_date: '1',
                         partial_status: false,
                         discount_status: false,
-                        status: 'active'
+                        status: 'active',
+                        frequency: 'monthly',
+                        start_month: String(currentMonth),
+                        end_month: String(currentMonth)
                     };
                     this.showCategoryModal = true;
                 },
                 
                 openEditCategoryModal(category) {
-                    const currentMonth = new Date().getMonth() + 1;
+                    console.log('=== Opening Edit Category Modal ===');
+                    console.log('Category data:', category);
+                    console.log('Category start_month:', category.start_month);
+                    console.log('Category end_month:', category.end_month);
+                    console.log('Category frequency:', category.frequency);
+                    
+                    const now = new Date();
+                    const currentMonth = now.getMonth() + 1; // Integer 1-12
+                    
+                    // Read start_month/end_month from FeeType or fall back to frequency relationship
+                    let startMonth = currentMonth;
+                    let endMonth = currentMonth;
+                    
+                    // Try FeeType.start_month first (Y-m string), then frequency.start_month (integer)
+                    const rawStartMonth = category.start_month || (category.frequency ? category.frequency.start_month : null);
+                    const rawEndMonth = category.end_month || (category.frequency ? category.frequency.end_month : null);
+                    
+                    if (rawStartMonth) {
+                        if (String(rawStartMonth).includes('-')) {
+                            startMonth = parseInt(String(rawStartMonth).split('-')[1]);
+                            console.log('Converted start_month from Y-m:', rawStartMonth, '->', startMonth);
+                        } else {
+                            startMonth = parseInt(rawStartMonth);
+                            console.log('Start_month as integer:', startMonth);
+                        }
+                    }
+                    
+                    if (rawEndMonth) {
+                        if (String(rawEndMonth).includes('-')) {
+                            endMonth = parseInt(String(rawEndMonth).split('-')[1]);
+                            console.log('Converted end_month from Y-m:', rawEndMonth, '->', endMonth);
+                        } else {
+                            endMonth = parseInt(rawEndMonth);
+                            console.log('End_month as integer:', endMonth);
+                        }
+                    }
+                    
                     this.categoryFormMethod = 'PUT';
                     this.categoryFormAction = '{{ url('student-fees/categories') }}/' + category.id;
                     this.categoryForm = {
@@ -2717,10 +2794,122 @@
                         discount_status: (category.discount_status === true || category.discount_status === 1 || category.discount_status === '1'),
                         status: category.status ? 'active' : 'inactive',
                         frequency: category.frequency?.frequency || 'monthly',
-                        start_month: category.frequency?.start_month || currentMonth,
-                        end_month: category.frequency?.end_month || currentMonth
+                        start_month: String(startMonth),
+                        end_month: String(endMonth)
                     };
+                    
+                    console.log('Final categoryForm:', this.categoryForm);
                     this.showCategoryModal = true;
+                },
+                
+                submitCategoryForm() {
+                    const form = this.$refs.categoryForm;
+                    const formData = new FormData(form);
+                    
+                    console.log('=== Category Form Submission Debug ===');
+                    console.log('Frequency:', this.categoryForm.frequency);
+                    console.log('Original start_month from form:', formData.get('start_month'));
+                    console.log('Original end_month from form:', formData.get('end_month'));
+                    
+                    // Convert integer month values to Y-m format if frequency is monthly
+                    if (this.categoryForm.frequency === 'monthly') {
+                        const now = new Date();
+                        const currentYear = now.getFullYear();
+                        console.log('Current year:', currentYear);
+                        
+                        const startMonth = formData.get('start_month');
+                        const endMonth = formData.get('end_month');
+                        
+                        // Convert start_month if it's a number (not already in Y-m format)
+                        if (startMonth && startMonth !== '' && startMonth !== 'null') {
+                            // Check if it's already in Y-m format (contains a dash)
+                            if (!startMonth.includes('-')) {
+                                const startMonthYm = currentYear + '-' + String(startMonth).padStart(2, '0');
+                                console.log('Converting start_month:', startMonth, '->', startMonthYm);
+                                formData.set('start_month', startMonthYm);
+                            } else {
+                                console.log('start_month already in Y-m format:', startMonth);
+                            }
+                        }
+                        
+                        // Convert end_month if it's a number (not already in Y-m format)
+                        if (endMonth && endMonth !== '' && endMonth !== 'null') {
+                            // Check if it's already in Y-m format (contains a dash)
+                            if (!endMonth.includes('-')) {
+                                const endMonthYm = currentYear + '-' + String(endMonth).padStart(2, '0');
+                                console.log('Converting end_month:', endMonth, '->', endMonthYm);
+                                formData.set('end_month', endMonthYm);
+                            } else {
+                                console.log('end_month already in Y-m format:', endMonth);
+                            }
+                        } else {
+                            // If end_month is empty for monthly frequency, set it to current month
+                            console.warn('end_month is empty for monthly frequency, setting to current month');
+                            const currentMonthYm = currentYear + '-' + String(now.getMonth() + 1).padStart(2, '0');
+                            formData.set('end_month', currentMonthYm);
+                        }
+                    } else {
+                        // For one_time frequency, remove month fields to avoid validation errors
+                        formData.delete('start_month');
+                        formData.delete('end_month');
+                        console.log('Removed start_month and end_month for one_time frequency');
+                    }
+                    
+                    console.log('Final start_month:', formData.get('start_month'));
+                    console.log('Final end_month:', formData.get('end_month'));
+                    console.log('Form action:', form.action);
+                    console.log('Form method:', form.method);
+                    
+                    // Log all form data
+                    console.log('All form data:');
+                    for (let [key, value] of formData.entries()) {
+                        console.log(`  ${key}: ${value}`);
+                    }
+                    
+                    // Submit the form with converted data
+                    fetch(form.action, {
+                        method: form.method,
+                        body: formData,
+                        headers: {
+                            'X-Requested-With': 'XMLHttpRequest',
+                            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+                        }
+                    }).then(response => {
+                        console.log('Response status:', response.status);
+                        console.log('Response redirected:', response.redirected);
+                        console.log('Response URL:', response.url);
+                        
+                        if (response.ok && response.redirected) {
+                            window.location.href = response.url;
+                        } else if (response.ok) {
+                            // Success but no redirect, reload to show success message
+                            window.location.reload();
+                        } else {
+                            // Error response, parse and show errors
+                            return response.json().then(data => {
+                                console.error('Validation errors:', data);
+                                let errorMessage = 'Validation errors:\n';
+                                if (data.errors) {
+                                    Object.keys(data.errors).forEach(key => {
+                                        errorMessage += `${key}: ${data.errors[key].join(', ')}\n`;
+                                    });
+                                } else if (data.message) {
+                                    errorMessage = data.message;
+                                }
+                                alert(errorMessage);
+                            }).catch(() => {
+                                // If JSON parsing fails, just reload to show errors
+                                window.location.reload();
+                            });
+                        }
+                    }).catch(error => {
+                        console.error('Form submission error:', error);
+                        alert('{{ __('finance.An error occurred. Please try again.') }}');
+                    });
+                },
+                
+                convertMonthsToYmFormat(event) {
+                    // This function is no longer used, kept for compatibility
                 },
                 
                 openEditGradeFeeModal(grade) {
@@ -3558,7 +3747,7 @@
             document.getElementById('invoiceHistoryModal').classList.add('hidden');
         }
 
-        function confirmAction(url, title, message, confirmText) {
+        function confirmAction(url, title, message, confirmText, formId = null) {
             if (typeof Alpine !== 'undefined') {
                 window.dispatchEvent(new CustomEvent('confirm-show', {
                     detail: {
@@ -3567,23 +3756,33 @@
                         confirmText: confirmText,
                         cancelText: '{{ __('finance.Cancel') }}',
                         onConfirm: () => {
-                            const form = document.createElement('form');
-                            form.method = 'POST';
-                            form.action = url;
-                            form.innerHTML = '@csrf';
-                            document.body.appendChild(form);
-                            form.submit();
+                            if (formId) {
+                                // Submit existing form by ID
+                                document.getElementById(formId).submit();
+                            } else {
+                                // Create and submit new form
+                                const form = document.createElement('form');
+                                form.method = 'POST';
+                                form.action = url;
+                                form.innerHTML = '@csrf';
+                                document.body.appendChild(form);
+                                form.submit();
+                            }
                         }
                     }
                 }));
             } else {
                 if (confirm(message)) {
-                    const form = document.createElement('form');
-                    form.method = 'POST';
-                    form.action = url;
-                    form.innerHTML = '@csrf';
-                    document.body.appendChild(form);
-                    form.submit();
+                    if (formId) {
+                        document.getElementById(formId).submit();
+                    } else {
+                        const form = document.createElement('form');
+                        form.method = 'POST';
+                        form.action = url;
+                        form.innerHTML = '@csrf';
+                        document.body.appendChild(form);
+                        form.submit();
+                    }
                 }
             }
         }

@@ -484,10 +484,15 @@
                             <div>
                                 <label class="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-1.5">{{ __('salary_payroll.Payment Method') }}</label>
                                 <select x-model="paymentMethod" class="w-full rounded-lg border-gray-300 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-200 text-sm focus:border-blue-500 focus:ring-blue-500">
-                                    <option value="Cash">{{ __('salary_payroll.Cash') }}</option>
-                                    <option value="Bank Transfer">{{ __('salary_payroll.Bank Transfer') }}</option>
-                                    <option value="KBZ Pay">{{ __('salary_payroll.KBZ Pay') }}</option>
-                                    <option value="Wave Pay">{{ __('salary_payroll.Wave Pay') }}</option>
+                                    @foreach($paymentMethods as $method)
+                                        <option value="{{ $method->name }}">
+                                            @if(strtolower($method->name) === 'cash')
+                                                {{ $method->name }}
+                                            @else
+                                                {{ $method->name }} ({{ $method->account_number }})
+                                            @endif
+                                        </option>
+                                    @endforeach
                                 </select>
                             </div>
                             <div>
@@ -519,7 +524,7 @@
                 isSubmitting: false,
                 selectedEntry: null,
                 paymentRemark: '',
-                paymentMethod: 'Cash',
+                paymentMethod: '{{ $paymentMethods->first()->name ?? "Cash" }}',
                 paymentAmount: 0,
                 paymentAmountError: '',
                 selectedMonthDisplay: '{{ \Carbon\Carbon::createFromDate($selectedYear, $selectedMonth, 1)->format("F Y") }}',

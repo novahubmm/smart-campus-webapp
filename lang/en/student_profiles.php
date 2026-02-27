@@ -163,5 +163,11 @@ return array(
     'Email address' => 'Email address',
     'Phone number' => 'Phone number',
     'Relationship type' => 'Relationship type',
+    'Select Existing Guardian' => 'Select Existing Guardian',
+    'Select a guardian' => 'Select a guardian',
+    'Select a grade first'=> 'Select a grade first',
     'You can revisit any step to adjust data. Passwords are optional when binding an existing user; providing one will reset the portal credentials.' => 'You can revisit any step to adjust data. Passwords are optional when binding an existing user; providing one will reset the portal credentials.',
+    'Current Guardians' => 'Current Guardians',
+    'The selected guardian will be linked to this student. No new account will be created.' => 'The selected guardian will be linked to this student. No new account will be created.',
+    'JPG, PNG or GIF (MAX. 2MB)' => 'JPG, PNG or GIF (MAX. 2MB)',
 );

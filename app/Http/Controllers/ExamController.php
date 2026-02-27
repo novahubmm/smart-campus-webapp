@@ -21,6 +21,7 @@ use App\Models\Subject;
 use App\Models\TeacherProfile;
 use App\Services\ExamService;
 use App\Traits\LogsActivity;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
@@ -39,8 +40,13 @@ class ExamController extends Controller
 
         $examTypes = ExamType::orderBy('name')->get();
         $batches = Batch::orderBy('name')->get();
-        $grades = Grade::orderBy('level')->get();
-        $classes = SchoolClass::with('grade')->orderBy('name')->get();
+        $grades = Grade::active()->orderBy('level')->get();
+        $classes = SchoolClass::with('grade')
+            ->join('grades', 'classes.grade_id', '=', 'grades.id')
+            ->orderBy('grades.level')
+            ->orderBy('classes.name')
+            ->select('classes.*')
+            ->get();
         $subjects = Subject::with('grades')->orderBy('name')->get();
         $rooms = Room::orderBy('name')->get();
         $students = StudentProfile::with('user', 'grade', 'classModel')->orderBy('student_identifier')->get();
@@ -105,13 +111,18 @@ class ExamController extends Controller
 
     public function show(Exam $exam): View
     {
-        $exam->load(['examType', 'batch', 'grade', 'schoolClass', 'schedules.subject', 'schedules.class', 'schedules.room', 'marks.student.user', 'marks.subject']);
+        $exam->load(['examType', 'batch', 'grade', 'schoolClass', 'schedules.subject', 'schedules.class', 'schedules.room', 'schedules.teacher.user', 'marks.student.user', 'marks.subject', 'marks.enteredBy']);
 
         $statusState = $this->resolveStatus($exam);
 
         $examTypes = ExamType::orderBy('name')->get();
-        $grades = Grade::orderBy('level')->get();
-        $classes = SchoolClass::with('grade')->orderBy('name')->get();
+        $grades = Grade::active()->orderBy('level')->get();
+        $classes = SchoolClass::with('grade')
+            ->join('grades', 'classes.grade_id', '=', 'grades.id')
+            ->orderBy('grades.level')
+            ->orderBy('classes.name')
+            ->select('classes.*')
+            ->get();
         $subjects = Subject::orderBy('name')->get();
         $rooms = Room::orderBy('name')->get();
         $teachers = TeacherProfile::with('user')->get();
@@ -160,6 +171,9 @@ class ExamController extends Controller
     {
         $validated = $request->validated();
         
+        // Preserve the existing exam_id
+        $validated['exam_id'] = $exam->exam_id;
+        
         // Get batch_id from the selected grade
         if (isset($validated['grade_id'])) {
             $grade = Grade::find($validated['grade_id']);
@@ -173,7 +187,7 @@ class ExamController extends Controller
 
         $this->logUpdate('Exam', $exam->id, $exam->name);
 
-        return redirect()->route('exams.index')->with('success', __('Exam updated successfully.'));
+        return redirect()->route('exams.show', $exam)->with('success', __('Exam updated successfully.'));
     }
 
     public function destroy(Exam $exam): RedirectResponse
@@ -188,15 +202,23 @@ class ExamController extends Controller
         return redirect()->route('exams.index')->with('success', __('Exam deleted successfully.'));
     }
 
-    public function storeMark(StoreExamMarkRequest $request): RedirectResponse
+    public function storeMark(StoreExamMarkRequest $request): RedirectResponse|JsonResponse
     {
         $data = ExamMarkData::from($request->validated(), $request->user()?->id);
-        $this->service->storeMark($data);
+        $mark = $this->service->storeMark($data);
+
+        if ($request->wantsJson() || $request->ajax()) {
+            return response()->json([
+                'success' => true,
+                'message' => __('Exam mark saved.'),
+                'mark_id' => $mark->id,
+            ]);
+        }
 
         return back()->with('success', __('Exam mark saved.'));
     }
 
-    public function updateMark(UpdateExamMarkRequest $request, ExamMark $examMark): RedirectResponse
+    public function updateMark(UpdateExamMarkRequest $request, ExamMark $examMark): RedirectResponse|JsonResponse
     {
         $validated = $request->validated();
         
@@ -218,6 +240,13 @@ class ExamController extends Controller
         $data = ExamMarkData::from($validated, $request->user()?->id);
         $this->service->updateMark($examMark, $data);
 
+        if ($request->wantsJson() || $request->ajax()) {
+            return response()->json([
+                'success' => true,
+                'message' => __('Exam mark updated.'),
+            ]);
+        }
+
         return back()->with('success', __('Exam mark updated.'));
     }
 
@@ -228,6 +257,39 @@ class ExamController extends Controller
         return back()->with('success', __('Exam mark deleted.'));
     }
 
+    public function publishResults(Exam $exam): RedirectResponse
+    {
+        // Check if exam is in completed status
+        if ($exam->status !== 'completed') {
+            return back()->with('error', __('exam.Only completed exams can have results published'));
+        }
+
+        // Update exam status to results
+        $exam->update(['status' => 'results']);
+
+        $this->logUpdate('Exam', $exam->id, $exam->name . ' - Results Published');
+
+        // Send notification to guardians
+        try {
+            $guardianNotificationService = app(\App\Services\GuardianNotificationService::class);
+            $guardianNotificationService->sendExamResultsNotification(
+                $exam->id,
+                $exam->name,
+                $exam->grade_id,
+                $exam->class_id
+            );
+        } catch (\Exception $e) {
+            \Log::error('Failed to send guardian exam results notification', [
+                'error' => $e->getMessage(),
+                'exam_id' => $exam->id,
+            ]);
+            
+            return back()->with('warning', __('exam.Results published but notification failed'));
+        }
+
+        return back()->with('success', __('exam.Results published and guardians notified'));
+    }
+
     private function resolveStatus(Exam $exam): array
     {
         $status = $exam->status;
@@ -236,6 +298,7 @@ class ExamController extends Controller
             'upcoming' => ['label' => __('Upcoming'), 'class' => 'upcoming'],
             'ongoing' => ['label' => __('Ongoing'), 'class' => 'ongoing'],
             'completed' => ['label' => __('Completed'), 'class' => 'completed'],
+            'results' => ['label' => __('Results'), 'class' => 'results'],
             default => ['label' => __('Upcoming'), 'class' => 'upcoming'],
         };
     }

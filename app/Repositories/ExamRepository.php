@@ -144,7 +144,8 @@ class ExamRepository implements ExamRepositoryInterface
             match ($filter->status) {
                 'active' => $query->whereDate('start_date', '<=', $today)->whereDate('end_date', '>=', $today),
                 'upcoming' => $query->where('status', 'upcoming'),
-                'completed' => $query->whereIn('status', ['completed', 'finished']),
+                'completed' => $query->where('status', 'completed'),
+                'results' => $query->where('status', 'results'),
                 default => null,
             };
         }

@@ -14,6 +14,7 @@ class ExamScheduleData
         public readonly string $start_time,
         public readonly string $end_time,
         public readonly ?string $room_id,
+        public readonly ?string $teacher_id,
         public readonly float $total_marks,
         public readonly float $passing_marks,
     ) {}
@@ -28,6 +29,7 @@ class ExamScheduleData
             start_time: $payload['start_time'],
             end_time: $payload['end_time'],
             room_id: Arr::get($payload, 'room_id'),
+            teacher_id: Arr::get($payload, 'teacher_id'),
             total_marks: (float) ($payload['total_marks'] ?? 100),
             passing_marks: (float) ($payload['passing_marks'] ?? 40),
         );
@@ -42,6 +44,7 @@ class ExamScheduleData
             'start_time' => $this->start_time,
             'end_time' => $this->end_time,
             'room_id' => $this->room_id,
+            'teacher_id' => $this->teacher_id,
             'total_marks' => $this->total_marks,
             'passing_marks' => $this->passing_marks,
         ];

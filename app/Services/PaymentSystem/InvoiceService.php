@@ -41,8 +41,27 @@ class InvoiceService
         try {
             DB::beginTransaction();
 
-            // Get all active students
+            // Get all active students with grades that are active during the target month
+            // A grade is active in the target month if:
+            // - start_date is null OR start_date <= end of target month
+            // - end_date is null OR end_date >= start of target month
+            $targetMonthStart = $month->copy()->startOfMonth();
+            $targetMonthEnd = $month->copy()->endOfMonth();
+            
             $students = StudentProfile::where('status', 'active')
+                ->whereHas('grade', function($query) use ($targetMonthStart, $targetMonthEnd) {
+                    $query->where(function($q) use ($targetMonthStart, $targetMonthEnd) {
+                        // Grade must overlap with the target month
+                        $q->where(function($startCheck) use ($targetMonthEnd) {
+                            $startCheck->whereNull('start_date')
+                                      ->orWhere('start_date', '<=', $targetMonthEnd);
+                        })
+                        ->where(function($endCheck) use ($targetMonthStart) {
+                            $endCheck->whereNull('end_date')
+                                    ->orWhere('end_date', '>=', $targetMonthStart);
+                        });
+                    });
+                })
                 ->with('grade')
                 ->get();
 
@@ -51,6 +70,38 @@ class InvoiceService
                 if (!$student->grade_id) {
                     Log::warning('Student has no grade assigned', [
                         'student_id' => $student->id,
+                    ]);
+                    continue;
+                }
+                
+                // Double-check grade is active during the target month (safety check)
+                if (!$student->grade) {
+                    Log::info('Skipping student with no grade', [
+                        'student_id' => $student->id,
+                        'grade_id' => $student->grade_id,
+                    ]);
+                    continue;
+                }
+                
+                $gradeStartDate = $student->grade->start_date;
+                $gradeEndDate = $student->grade->end_date;
+                $targetMonthStart = $month->copy()->startOfMonth();
+                $targetMonthEnd = $month->copy()->endOfMonth();
+                
+                // Check if grade overlaps with target month
+                $isActiveInTargetMonth = (
+                    (!$gradeStartDate || $gradeStartDate <= $targetMonthEnd) &&
+                    (!$gradeEndDate || $gradeEndDate >= $targetMonthStart)
+                );
+                
+                if (!$isActiveInTargetMonth) {
+                    Log::info('Skipping student - grade not active in target month', [
+                        'student_id' => $student->id,
+                        'grade_id' => $student->grade_id,
+                        'grade_level' => $student->grade->level,
+                        'grade_start' => $gradeStartDate?->format('Y-m-d'),
+                        'grade_end' => $gradeEndDate?->format('Y-m-d'),
+                        'target_month' => $monthString,
                     ]);
                     continue;
                 }
@@ -68,20 +119,22 @@ class InvoiceService
                     continue;
                 }
 
-                // Check if invoice already exists for this student and month
-                $existingInvoice = Invoice::where('student_id', $student->id)
+                // Check if invoice already exists for this student and target month
+                // Check by due_date month to allow multiple monthly invoices for different months
+                $targetMonthStart = $month->copy()->startOfMonth();
+                $targetMonthEnd = $month->copy()->endOfMonth();
+                
+                $existingInvoiceExists = Invoice::where('student_id', $student->id)
                     ->where('invoice_type', 'monthly')
-                    ->where('batch_id', $student->batch_id)
-                    ->whereHas('fees', function ($query) use ($monthString) {
-                        // Check if any fee in the invoice is for this month
-                        // We'll store month info in the invoice creation
-                    })
-                    ->first();
+                    ->whereYear('due_date', $month->year)
+                    ->whereMonth('due_date', $month->month)
+                    ->exists();
 
-                if ($existingInvoice) {
-                    Log::info('Monthly invoice already exists', [
+                if ($existingInvoiceExists) {
+                    Log::info('Monthly invoice already exists for student in target month', [
                         'student_id' => $student->id,
-                        'month' => $monthString,
+                        'student_name' => $student->user->name ?? 'Unknown',
+                        'target_month' => $monthString,
                     ]);
                     continue;
                 }
@@ -89,8 +142,9 @@ class InvoiceService
                 // Calculate total amount
                 $totalAmount = $monthlyFees->sum('amount');
 
-                // Get the earliest due date from all fees
-                $dueDate = $monthlyFees->min('due_date');
+                // Set due date to the last day of the target month
+                // This ensures invoices are grouped by the correct month
+                $dueDate = $month->copy()->endOfMonth();
 
                 // Create invoice
                 $invoice = Invoice::create([
@@ -116,7 +170,7 @@ class InvoiceService
                         'paid_amount' => 0,
                         'remaining_amount' => $fee->amount,
                         'supports_payment_period' => $fee->supports_payment_period,
-                        'due_date' => $fee->due_date,
+                        'due_date' => $dueDate, // Use the calculated due date for the target month
                         'status' => 'unpaid',
                     ]);
                 }

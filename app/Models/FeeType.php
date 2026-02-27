@@ -32,6 +32,8 @@ class FeeType extends Model
         'fee_type',
         'amount',
         'due_date',
+        'start_month',
+        'end_month',
         'partial_status',
         'discount_status',
         'is_mandatory',

@@ -67,7 +67,12 @@
             medicine_allergy: @js(old('medicine_allergy', $studentProfile->medicine_allergy)),
             food_allergy: @js(old('food_allergy', $studentProfile->food_allergy)),
             medical_directory: @js(old('medical_directory', $studentProfile->medical_directory)),
+            guardian_name: @js(old('guardian_name')),
+            guardian_phone: @js(old('guardian_phone')),
+            guardian_email: @js(old('guardian_email')),
+            existing_guardian_id: @js(old('existing_guardian_id')),
         },
+        useExistingGuardian: 'false',
         errors: {},
         
         nextStep() {
@@ -192,6 +197,54 @@
             // Clear errors and proceed to next step
             this.errors = {};
             this.step = Math.min(this.total, this.step + 1);
+        },
+
+        submitForm() {
+            // Validate step 7 before submission
+            this.errors = {};
+            let hasError = false;
+            let errorMessage = '';
+            
+            if (this.useExistingGuardian === 'true') {
+                // Validate existing guardian selection
+                if (!this.form.existing_guardian_id || this.form.existing_guardian_id === '') {
+                    this.errors.existing_guardian_id = '{{ __('student_profiles.Please select a guardian') }}';
+                    errorMessage = '{{ __('student_profiles.Please select a guardian') }}';
+                    hasError = true;
+                }
+            } else {
+                // Validate new guardian fields
+                if (!this.form.guardian_name || this.form.guardian_name.trim() === '') {
+                    this.errors.guardian_name = '{{ __('student_profiles.Guardian Name is required') }}';
+                    if (!errorMessage) errorMessage = '{{ __('student_profiles.Guardian Name is required') }}';
+                    hasError = true;
+                }
+                
+                if (!this.form.guardian_phone || this.form.guardian_phone.trim() === '') {
+                    this.errors.guardian_phone = '{{ __('student_profiles.Guardian Phone No. is required') }}';
+                    if (!errorMessage) errorMessage = '{{ __('student_profiles.Guardian Phone No. is required') }}';
+                    hasError = true;
+                }
+                
+                if (!this.form.guardian_email || this.form.guardian_email.trim() === '') {
+                    this.errors.guardian_email = '{{ __('student_profiles.Guardian Email is required') }}';
+                    if (!errorMessage) errorMessage = '{{ __('student_profiles.Guardian Email is required') }}';
+                    hasError = true;
+                } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(this.form.guardian_email)) {
+                    this.errors.guardian_email = '{{ __('student_profiles.Please enter a valid email address') }}';
+                    if (!errorMessage) errorMessage = '{{ __('student_profiles.Please enter a valid email address') }}';
+                    hasError = true;
+                }
+            }
+            
+            if (hasError) {
+                updateFieldErrorClasses(this.errors);
+                showNotification(errorMessage, 'error');
+                return;
+            }
+
+            // If all valid, submit the form
+            this.$el.closest('form').submit();
         }
     }">
         <div class="max-w-7xl mx-auto py-6 px-4 sm:px-6 lg:px-8 space-y-4">
@@ -306,7 +359,7 @@
                         <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                             <div>
                                 <label class="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1">{{ __('student_profiles.Grade') }} <span class="text-red-500">*</span></label>
-                                <select name="grade_id" x-model="form.grade_id" 
+                                <select name="grade_id" x-model="form.grade_id" @change="form.class_id = ''"
                                         class="w-full rounded-lg border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-200 focus:border-indigo-500 focus:ring-indigo-500"
                                         :class="errors.grade_id ? 'field-error' : ''">
                                     <option value="">{{ __('student_profiles.Select grade') }}</option>
@@ -318,28 +371,19 @@
                             </div>
                             <div>
                                 <label class="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1">{{ __('student_profiles.Class') }}</label>
-                                <select name="class_id" x-model="form.class_id" class="w-full rounded-lg border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-200 focus:border-indigo-500 focus:ring-indigo-500">
+                                <select name="class_id" x-model="form.class_id" :disabled="!form.grade_id" class="w-full rounded-lg border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-200 focus:border-indigo-500 focus:ring-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed">
                                     <option value="">{{ __('student_profiles.Select class') }}</option>
                                     @foreach($classes as $class)
-                                        <option value="{{ $class->id }}">{{ $class->name }}</option>
+                                        <option value="{{ $class->id }}" x-show="form.grade_id === '{{ $class->grade_id }}'">{{ $class->name }}</option>
                                     @endforeach
                                 </select>
+                                <p x-show="!form.grade_id" class="mt-1 text-xs text-gray-500 dark:text-gray-400">{{ __('student_profiles.Select a grade first') }}</p>
                             </div>
                         </div>
                         <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                             <div>
                                 <label class="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1">{{ __('student_profiles.Starting Grade at School') }}</label>
                                 <input type="text" name="starting_grade_at_school" x-model="form.starting_grade_at_school" class="w-full rounded-lg border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-200 focus:border-indigo-500 focus:ring-indigo-500">
-                            </div>
-                            <div>
-                                <label class="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1">{{ __('student_profiles.Current Grade') }}</label>
-                                <input type="text" name="current_grade" x-model="form.current_grade" class="w-full rounded-lg border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-200 focus:border-indigo-500 focus:ring-indigo-500">
-                            </div>
-                        </div>
-                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                            <div>
-                                <label class="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1">{{ __('student_profiles.Current Class') }}</label>
-                                <input type="text" name="current_class" x-model="form.current_class" class="w-full rounded-lg border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-200 focus:border-indigo-500 focus:ring-indigo-500">
                             </div>
                             <div>
                                 <label class="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1">{{ __('student_profiles.Date of Joining') }}</label>
@@ -561,54 +605,111 @@
                             <span>{{ __('student_profiles.Guardian Information') }}</span>
                         </div>
                         
-                        @if($studentProfile->guardians && $studentProfile->guardians->count() > 0)
-                            <div class="space-y-3">
-                                @foreach($studentProfile->guardians as $guardian)
-                                    <div class="rounded-lg border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900/50 p-4">
-                                        <div class="flex items-start justify-between gap-3">
-                                            <div class="flex items-start gap-3 flex-1">
-                                                <div class="w-12 h-12 rounded-full bg-indigo-100 dark:bg-indigo-900/30 flex items-center justify-center flex-shrink-0">
-                                                    <i class="fas fa-user-shield text-indigo-600 dark:text-indigo-400"></i>
-                                                </div>
-                                                <div class="flex-1 min-w-0">
-                                                    <h4 class="text-sm font-semibold text-gray-900 dark:text-gray-100">{{ $guardian->user->name }}</h4>
-                                                    <div class="mt-2 space-y-1">
-                                                        <div class="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400">
-                                                            <i class="fas fa-envelope w-4 text-gray-400"></i>
-                                                            <span>{{ $guardian->user->email }}</span>
-                                                        </div>
-                                                        @if($guardian->user->phone)
-                                                            <div class="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400">
-                                                                <i class="fas fa-phone w-4 text-gray-400"></i>
-                                                                <span>{{ $guardian->user->phone }}</span>
-                                                            </div>
-                                                        @endif
-                                                        @if($guardian->pivot && $guardian->pivot->relationship)
-                                                            <div class="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400">
-                                                                <i class="fas fa-link w-4 text-gray-400"></i>
-                                                                <span class="capitalize">{{ $guardian->pivot->relationship }}</span>
-                                                            </div>
-                                                        @endif
-                                                    </div>
-                                                </div>
+                        @if($studentProfile->guardians->isNotEmpty())
+                        <!-- Existing Guardians Display -->
+                        <div class="rounded-lg border border-green-200 dark:border-green-700 bg-green-50 dark:bg-green-900/20 p-4">
+                            <div class="flex items-start gap-3">
+                                <i class="fas fa-check-circle text-green-600 dark:text-green-400 mt-0.5"></i>
+                                <div class="flex-1">
+                                    <p class="text-sm font-semibold text-green-800 dark:text-green-300 mb-2">{{ __('student_profiles.Current Guardians') }}</p>
+                                    <div class="space-y-2">
+                                        @foreach($studentProfile->guardians as $guardian)
+                                        <div class="flex items-center justify-between p-2 bg-white dark:bg-gray-800 rounded border border-green-200 dark:border-green-700">
+                                            <div class="text-sm text-gray-700 dark:text-gray-300">
+                                                <span class="font-medium">{{ $guardian->user->name }}</span>
+                                                <span class="text-gray-500 dark:text-gray-400">— {{ $guardian->user->email }}</span>
+                                                @if($guardian->user->phone)
+                                                <span class="text-gray-500 dark:text-gray-400">— {{ $guardian->user->phone }}</span>
+                                                @endif
                                             </div>
                                         </div>
+                                        @endforeach
                                     </div>
-                                @endforeach
+                                </div>
                             </div>
-                        @else
-                            <div class="rounded-lg border border-dashed border-gray-300 dark:border-gray-700 bg-gray-50 dark:bg-gray-900 p-6 text-center">
-                                <i class="fas fa-user-shield text-3xl text-gray-400 dark:text-gray-600 mb-2"></i>
-                                <p class="text-sm text-gray-600 dark:text-gray-400">{{ __('student_profiles.No guardian linked to this student') }}</p>
-                            </div>
+                        </div>
                         @endif
                         
-                        <div class="rounded-lg border border-blue-200 dark:border-blue-700 bg-blue-50 dark:bg-blue-900/20 p-4">
-                            <div class="flex items-start gap-3">
-                                <i class="fas fa-info-circle text-blue-600 dark:text-blue-400 mt-0.5"></i>
-                                <div class="text-sm text-blue-800 dark:text-blue-300">
-                                    <p class="font-semibold mb-1">{{ __('student_profiles.Guardian Management') }}</p>
-                                    <p>{{ __('student_profiles.Guardian information is managed separately. To add or modify guardians, please use the Guardian Management section.') }}</p>
+                        <!-- Choose Guardian Type -->
+                        <div class="flex items-center gap-6 p-4 bg-gray-50 dark:bg-gray-900/50 rounded-lg border border-gray-200 dark:border-gray-700">
+                            <label class="inline-flex items-center cursor-pointer">
+                                <input type="radio" name="guardian_type" value="false" x-model="useExistingGuardian" checked class="w-4 h-4 text-indigo-600 border-gray-300 focus:ring-indigo-500 dark:border-gray-600 dark:bg-gray-700">
+                                <span class="ml-2 text-sm font-medium text-gray-700 dark:text-gray-300">{{ __('student_profiles.Create New Guardian') }}</span>
+                            </label>
+                            <label class="inline-flex items-center cursor-pointer">
+                                <input type="radio" name="guardian_type" value="true" x-model="useExistingGuardian" class="w-4 h-4 text-indigo-600 border-gray-300 focus:ring-indigo-500 dark:border-gray-600 dark:bg-gray-700">
+                                <span class="ml-2 text-sm font-medium text-gray-700 dark:text-gray-300">{{ __('student_profiles.Link Existing Guardian') }}</span>
+                            </label>
+                        </div>
+                        
+                        <!-- Existing Guardian Selection -->
+                        <div x-show="useExistingGuardian === 'true'" x-cloak>
+                            <label class="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1">{{ __('student_profiles.Select Existing Guardian') }} <span class="text-red-500">*</span></label>
+                            <select name="existing_guardian_id" x-model="form.existing_guardian_id"
+                                    class="w-full rounded-lg border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-200 focus:border-indigo-500 focus:ring-indigo-500"
+                                    :class="errors.existing_guardian_id ? 'field-error' : ''">
+                                <option value="">{{ __('student_profiles.Select a guardian') }}</option>
+                                @foreach($guardians as $guardian)
+                                    <option value="{{ $guardian->id }}">
+                                        {{ $guardian->user->name }} — {{ $guardian->user->email }} — {{ $guardian->user->phone }}
+                                    </option>
+                                @endforeach
+                            </select>
+                            <p x-show="errors.existing_guardian_id" x-text="errors.existing_guardian_id" class="mt-1 text-sm text-red-600 dark:text-red-400"></p>
+                            
+                            <div class="mt-4 rounded-lg border border-blue-200 dark:border-blue-700 bg-blue-50 dark:bg-blue-900/20 p-4">
+                                <div class="flex items-start gap-3">
+                                    <i class="fas fa-info-circle text-blue-600 dark:text-blue-400 mt-0.5"></i>
+                                    <div class="text-sm text-blue-800 dark:text-blue-300">
+                                        <p class="font-semibold mb-1">{{ __('student_profiles.Link Existing Guardian') }}</p>
+                                        <p>{{ __('student_profiles.The selected guardian will be linked to this student. No new account will be created.') }}</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- New Guardian Form -->
+                        <div x-show="useExistingGuardian === 'false'" x-cloak>
+                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                <div>
+                                    <label class="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1">{{ __('student_profiles.Guardian Name') }} <span class="text-red-500">*</span></label>
+                                    <input type="text" name="guardian_name" x-model="form.guardian_name" 
+                                           class="w-full rounded-lg border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-200 focus:border-indigo-500 focus:ring-indigo-500"
+                                           :class="errors.guardian_name ? 'field-error' : ''">
+                                    <p x-show="errors.guardian_name" x-text="errors.guardian_name" class="mt-1 text-sm text-red-600 dark:text-red-400"></p>
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1">{{ __('student_profiles.Guardian Phone No.') }} <span class="text-red-500">*</span></label>
+                                    <input type="text" name="guardian_phone" x-model="form.guardian_phone" 
+                                           class="w-full rounded-lg border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-200 focus:border-indigo-500 focus:ring-indigo-500"
+                                           :class="errors.guardian_phone ? 'field-error' : ''">
+                                    <p x-show="errors.guardian_phone" x-text="errors.guardian_phone" class="mt-1 text-sm text-red-600 dark:text-red-400"></p>
+                                </div>
+                            </div>
+                            
+                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-4">
+                                <div>
+                                    <label class="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1">{{ __('student_profiles.Guardian Email') }} <span class="text-red-500">*</span></label>
+                                    <input type="email" name="guardian_email" x-model="form.guardian_email" 
+                                           class="w-full rounded-lg border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-200 focus:border-indigo-500 focus:ring-indigo-500"
+                                           :class="errors.guardian_email ? 'field-error' : ''">
+                                    <p x-show="errors.guardian_email" x-text="errors.guardian_email" class="mt-1 text-sm text-red-600 dark:text-red-400"></p>
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1">{{ __('student_profiles.Guardian Password') }}</label>
+                                    <input type="text" name="guardian_password" value="12345678" readonly
+                                           class="w-full rounded-lg border-gray-300 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-400 focus:border-indigo-500 focus:ring-indigo-500 bg-gray-100 text-gray-600 cursor-not-allowed">
+                                    <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">{{ __('student_profiles.Default password: 12345678') }}</p>
+                                </div>
+                            </div>
+                            
+                            <div class="mt-4 rounded-lg border border-blue-200 dark:border-blue-700 bg-blue-50 dark:bg-blue-900/20 p-4">
+                                <div class="flex items-start gap-3">
+                                    <i class="fas fa-info-circle text-blue-600 dark:text-blue-400 mt-0.5"></i>
+                                    <div class="text-sm text-blue-800 dark:text-blue-300">
+                                        <p class="font-semibold mb-1">{{ __('student_profiles.Guardian Account Creation') }}</p>
+                                        <p>{{ __('student_profiles.A guardian account will be created with the provided information. The default password is 12345678 and should be changed after first login.') }}</p>
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -623,7 +724,7 @@
                             <button type="button" x-show="step < total" @click="nextStep()" class="flex-1 sm:flex-none px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold rounded-lg shadow-sm">
                                 {{ __('student_profiles.Next step') }} <i class="fas fa-chevron-right ml-2"></i>
                             </button>
-                            <button type="submit" x-show="step === total" class="flex-1 sm:flex-none px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold rounded-lg shadow-sm">
+                            <button type="button" @click="submitForm()" x-show="step === total" class="flex-1 sm:flex-none px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold rounded-lg shadow-sm">
                                 {{ __('student_profiles.Update Student') }}
                             </button>
                         </div>

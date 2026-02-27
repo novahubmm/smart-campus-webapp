@@ -18,8 +18,6 @@ use App\Models\StudentProfile;
 use App\Models\FeeType;
 use App\Services\Upload\FileUploadService;
 use App\Services\StudentFeeService;
-use App\Services\Finance\PaymentProofService;
-use App\Services\Finance\NotificationService;
 use App\Services\PaymentSystem\NotificationService as PaymentNotificationService;
 use App\Services\PaymentSystem\PaymentVerificationService;
 use App\Repositories\Finance\InvoiceRepository;
@@ -36,10 +34,7 @@ class StudentFeeController extends Controller
 
     public function __construct(
         private readonly StudentFeeService $service,
-        private readonly PaymentProofService $paymentProofService,
-        private readonly NotificationService $notificationService,
         private readonly InvoiceRepository $invoiceRepo,
-        private readonly \App\Services\Finance\InvoiceService $invoiceService,
         private readonly PaymentNotificationService $paymentNotificationService,
         private readonly PaymentVerificationService $verificationService
     ) {}
@@ -362,7 +357,9 @@ class StudentFeeController extends Controller
                 'student.classModel', 
                 'fees', // Load invoice fees
                 'payments' => function($query) {
-                    $query->where('status', 'verified')->orderBy('created_at', 'desc');
+                    $query->where('status', 'verified')
+                          ->with('paymentMethod') // Load payment method relationship
+                          ->orderBy('created_at', 'desc');
                 }
             ])
             ->where('status', 'paid') // Only show paid invoices
@@ -485,6 +482,9 @@ class StudentFeeController extends Controller
     {
         $students = \App\Models\StudentProfile::where('grade_id', $feeStructure->grade_id)
             ->where('status', 'active')
+            ->whereHas('grade', function($query) {
+                $query->active(); // Only students in active grades
+            })
             ->get();
 
         if ($students->isEmpty()) {
@@ -619,9 +619,33 @@ class StudentFeeController extends Controller
             'discount_status' => 'nullable|boolean',
             'status' => 'required|in:active,inactive',
             'frequency' => 'required|in:one_time,monthly',
-            'start_month' => 'nullable|integer|min:1|max:12',
-            'end_month' => 'nullable|integer|min:1|max:12',
+            'start_month' => 'nullable|date_format:Y-m',
+            'end_month' => 'nullable|date_format:Y-m|required_if:frequency,monthly',
         ]);
+
+        // Validate due date if start/end month is current month
+        if ($validated['frequency'] === 'monthly') {
+            $currentMonth = now()->format('Y-m');
+            $currentDay = now()->day;
+            $dueDate = (int) $validated['due_date'];
+            
+            $startMonth = $validated['start_month'] ?? null;
+            $endMonth = $validated['end_month'] ?? null;
+            
+            // Check if start month is current month and due date has passed
+            if ($startMonth === $currentMonth && $dueDate < $currentDay) {
+                return redirect()->back()
+                    ->withInput()
+                    ->withErrors(['due_date' => __('finance.Due date has already passed for the current month. Please select a future date or start from next month.')]);
+            }
+            
+            // Check if end month is before start month
+            if ($startMonth && $endMonth && $endMonth < $startMonth) {
+                return redirect()->back()
+                    ->withInput()
+                    ->withErrors(['end_month' => __('finance.End month cannot be before start month.')]);
+            }
+        }
 
         // Handle boolean fields
         $validated['status'] = $validated['status'] === 'active';
@@ -664,8 +688,8 @@ class StudentFeeController extends Controller
             $endMonth = $currentMonth;
         } else {
             // For monthly, use provided months or default to current month
-            $startMonth = $validated['start_month'] ?? $currentMonth;
-            $endMonth = $validated['end_month'] ?? $currentMonth;
+            $startMonth = $validated['start_month'] ? (int) date('n', strtotime($validated['start_month'] . '-01')) : $currentMonth;
+            $endMonth = $validated['end_month'] ? (int) date('n', strtotime($validated['end_month'] . '-01')) : $currentMonth;
         }
 
         // Create frequency record
@@ -680,7 +704,9 @@ class StudentFeeController extends Controller
 
     public function updateCategory(Request $request, \App\Models\FeeType $feeType): RedirectResponse
     {
+        \Illuminate\Support\Facades\Log::info('=== UPDATE CATEGORY START ===');
         \Illuminate\Support\Facades\Log::info('Update Category Request:', $request->all());
+        \Illuminate\Support\Facades\Log::info('FeeType ID:', ['id' => $feeType->id, 'name' => $feeType->name]);
         $validated = $request->validate([
             'name' => 'required|string|max:255',
             'name_mm' => 'nullable|string|max:255',
@@ -694,13 +720,55 @@ class StudentFeeController extends Controller
             'discount_status' => 'nullable|boolean',
             'status' => 'required|in:active,inactive',
             'frequency' => 'required|in:one_time,monthly',
-            'start_month' => 'nullable|integer|min:1|max:12',
-            'end_month' => 'nullable|integer|min:1|max:12',
+            'start_month' => 'nullable|date_format:Y-m',
+            'end_month' => 'nullable|date_format:Y-m|required_if:frequency,monthly',
         ]);
+
+        // Validate due date if start/end month is current month
+        if ($validated['frequency'] === 'monthly') {
+            $currentMonth = now()->format('Y-m');
+            $currentDay = now()->day;
+            $dueDate = (int) $validated['due_date'];
+            
+            $startMonth = $validated['start_month'] ?? null;
+            $endMonth = $validated['end_month'] ?? null;
+            
+            // Check if start month is current month and due date has passed
+            // Only block if start_month or due_date actually CHANGED from the existing values
+            $existingStartMonth = $feeType->start_month ?? ($feeType->frequency ? now()->format('Y') . '-' . str_pad($feeType->frequency->start_month, 2, '0', STR_PAD_LEFT) : null);
+            $existingDueDate = (int) $feeType->due_date;
+            $startMonthChanged = $startMonth !== $existingStartMonth;
+            $dueDateChanged = $dueDate !== $existingDueDate;
+            
+            if ($startMonth === $currentMonth && $dueDate < $currentDay && ($startMonthChanged || $dueDateChanged)) {
+                return redirect()->back()
+                    ->withInput()
+                    ->withErrors(['due_date' => __('finance.Due date has already passed for the current month. Please select a future date or start from next month.')]);
+            }
+            
+            // Check if end month is before start month
+            if ($startMonth && $endMonth && $endMonth < $startMonth) {
+                return redirect()->back()
+                    ->withInput()
+                    ->withErrors(['end_month' => __('finance.End month cannot be before start month.')]);
+            }
+        }
 
         // Preserve existing code if not provided
         if (!isset($validated['code']) || empty($validated['code'])) {
             $validated['code'] = $feeType->code;
+        }
+
+        // Handle frequency - compute months first so we can save on FeeType too
+        $frequency = $validated['frequency'];
+        $currentMonth = now()->month;
+        
+        if ($frequency === 'one_time') {
+            $startMonth = $currentMonth;
+            $endMonth = $currentMonth;
+        } else {
+            $startMonth = $validated['start_month'] ? (int) date('n', strtotime($validated['start_month'] . '-01')) : $currentMonth;
+            $endMonth = $validated['end_month'] ? (int) date('n', strtotime($validated['end_month'] . '-01')) : $currentMonth;
         }
 
         // Handle boolean fields
@@ -708,28 +776,25 @@ class StudentFeeController extends Controller
         $validated['partial_status'] = $request->boolean('partial_status');
         $validated['discount_status'] = $request->boolean('discount_status');
 
-        // Explicitly set boolean fields to ensure saving
+        // Explicitly set start_month/end_month in Y-m format on fee_types table
+        $validated['start_month'] = $validated['start_month'] ?? now()->format('Y') . '-' . str_pad($startMonth, 2, '0', STR_PAD_LEFT);
+        $validated['end_month'] = $validated['end_month'] ?? now()->format('Y') . '-' . str_pad($endMonth, 2, '0', STR_PAD_LEFT);
+
+        // Fill and save FeeType
         $feeType->fill($validated);
         $feeType->partial_status = $request->boolean('partial_status');
         $feeType->discount_status = $request->boolean('discount_status');
         $feeType->save();
 
-        // Handle frequency
-        $frequency = $validated['frequency'];
-        $currentMonth = now()->month;
-        
-        if ($frequency === 'one_time') {
-            // For one-time, set both start and end to current month
-            $startMonth = $currentMonth;
-            $endMonth = $currentMonth;
-        } else {
-            // For monthly, use provided months or default to current month
-            $startMonth = $validated['start_month'] ?? $currentMonth;
-            $endMonth = $validated['end_month'] ?? $currentMonth;
-        }
+        \Log::info('Frequency data to save:', [
+            'fee_type_id' => $feeType->id,
+            'frequency' => $frequency,
+            'start_month' => $startMonth,
+            'end_month' => $endMonth,
+        ]);
 
         // Update or create frequency record
-        $feeType->frequency()->updateOrCreate(
+        $frequencyRecord = $feeType->frequency()->updateOrCreate(
             ['fee_type_id' => $feeType->id],
             [
                 'frequency' => $frequency,
@@ -737,6 +802,16 @@ class StudentFeeController extends Controller
                 'end_month' => $endMonth,
             ]
         );
+
+        \Log::info('Frequency record after save:', [
+            'id' => $frequencyRecord->id,
+            'frequency' => $frequencyRecord->frequency,
+            'start_month' => $frequencyRecord->start_month,
+            'end_month' => $frequencyRecord->end_month,
+            'updated_at' => $frequencyRecord->updated_at,
+        ]);
+
+        \Log::info('=== UPDATE CATEGORY END - SUCCESS ===');
 
         // Check if request came from detail page
         $referer = $request->headers->get('referer');
@@ -829,7 +904,7 @@ class StudentFeeController extends Controller
         });
 
         // Get grades and classes for filter dropdowns
-        $grades = Grade::orderBy('level')->get();
+        $grades = Grade::active()->orderBy('level')->get();
         
         // Get classes filtered by selected grade
         $classesQuery = \App\Models\SchoolClass::orderBy('name');
@@ -950,6 +1025,14 @@ class StudentFeeController extends Controller
         try {
             $feeType = FeeType::with('frequency')->findOrFail($feeTypeId);
             $student = StudentProfile::with(['user', 'guardians.user', 'grade', 'batch'])->findOrFail($studentId);
+            
+            // Check if student's grade is active
+            if ($student->grade && $student->grade->hasEnded()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => __('finance.Cannot create invoice for inactive grade')
+                ]);
+            }
             
             // Check if student is activated for this fee type
             $assignment = \App\Models\StudentFeeTypeAssignment::where('student_id', $studentId)
@@ -1117,6 +1200,12 @@ class StudentFeeController extends Controller
                 $student = $assignment->student;
 
                 if (!$student) {
+                    $skippedCount++;
+                    continue;
+                }
+                
+                // Skip if student's grade has ended
+                if ($student->grade && $student->grade->hasEnded()) {
                     $skippedCount++;
                     continue;
                 }
@@ -1641,7 +1730,7 @@ class StudentFeeController extends Controller
             'price_per_month' => ['required', 'numeric', 'min:0'],
             'due_date' => ['nullable', 'integer', 'min:1', 'max:31'],
         ]);
-
+      
         // Check if trying to clear the fee (set to 0)
         if ($validated['price_per_month'] == 0) {
             // Count how many grades currently have fees set
@@ -1664,28 +1753,13 @@ class StudentFeeController extends Controller
 
     /**
      * Approve Payment Proof from Mobile API
+     * DEPRECATED: This method is for the old Finance system
      */
-    public function approvePaymentProof(Request $request, \App\Models\PaymentProof $paymentProof): RedirectResponse
-    {
-        try {
-            // Use PaymentProofService to handle approval
-            $payment = $this->paymentProofService->approvePaymentProof(
-                $paymentProof->id,
-                $request->user()->id
-            );
-
-            $this->logUpdate('PaymentProof', $paymentProof->id, "Approved payment proof for student: {$paymentProof->student->student_identifier}");
-
-            return redirect()->route('student-fees.index')->with('status', __('Payment approved successfully.'));
-        } catch (\Exception $e) {
-            \Log::error('Payment proof approval failed', [
-                'payment_proof_id' => $paymentProof->id,
-                'error' => $e->getMessage(),
-            ]);
-
-            return redirect()->route('student-fees.index')->with('error', $e->getMessage());
-        }
-    }
+    // public function approvePaymentProof(Request $request, \App\Models\PaymentProof $paymentProof): RedirectResponse
+    // {
+    //     // This method has been deprecated - use PaymentSystem instead
+    //     return redirect()->route('student-fees.index')->with('error', __('This feature is no longer available. Please use the new payment system.'));
+    // }
 
     /**
      * Approve PaymentSystem Payment from Mobile API
@@ -1863,59 +1937,26 @@ class StudentFeeController extends Controller
 
     /**
      * Reject Payment Proof from Mobile API
+     * DEPRECATED: This method is for the old Finance system
      */
-    public function rejectPaymentProof(RejectPaymentProofRequest $request, \App\Models\PaymentProof $paymentProof): RedirectResponse
-    {
-        $validated = $request->validated();
-
-        try {
-            // Use PaymentProofService to handle rejection
-            $paymentProof = $this->paymentProofService->rejectPaymentProof(
-                $paymentProof->id,
-                $request->user()->id,
-                $validated['rejection_reason']
-            );
-
-            // Send rejection notification after transaction completes
-            $this->paymentProofService->sendRejectionNotification($paymentProof);
-
-            $this->logUpdate('PaymentProof', $paymentProof->id, "Rejected payment proof for student: {$paymentProof->student->student_identifier}");
-
-            return redirect()->route('student-fees.index')->with('status', __('Payment rejected and guardian notified.'));
-        } catch (\Exception $e) {
-            \Log::error('Payment proof rejection failed', [
-                'payment_proof_id' => $paymentProof->id,
-                'error' => $e->getMessage(),
-            ]);
-
-            return redirect()->route('student-fees.index')->with('error', $e->getMessage());
-        }
-    }
+    // public function rejectPaymentProof(RejectPaymentProofRequest $request, \App\Models\PaymentProof $paymentProof): RedirectResponse
+    // {
+    //     // This method has been deprecated - use PaymentSystem instead
+    //     return redirect()->route('student-fees.index')->with('error', __('This feature is no longer available. Please use the new payment system.'));
+    // }
 
     /**
      * Get Payment Proof Details (AJAX)
+     * DEPRECATED: This method is for the old Finance system
      */
-    public function getPaymentProofDetails(\App\Models\PaymentProof $paymentProof): \Illuminate\Http\JsonResponse
-    {
-        try {
-            $data = $this->paymentProofService->getPaymentProofDetails($paymentProof->id);
-
-            return response()->json([
-                'success' => true,
-                'data' => $data,
-            ]);
-        } catch (\Exception $e) {
-            \Log::error('Failed to get payment proof details', [
-                'payment_proof_id' => $paymentProof->id,
-                'error' => $e->getMessage(),
-            ]);
-
-            return response()->json([
-                'success' => false,
-                'message' => $e->getMessage(),
-            ], 500);
-        }
-    }
+    // public function getPaymentProofDetails(\App\Models\PaymentProof $paymentProof): \Illuminate\Http\JsonResponse
+    // {
+    //     // This method has been deprecated - use PaymentSystem instead
+    //     return response()->json([
+    //         'success' => false,
+    //         'message' => __('This feature is no longer available. Please use the new payment system.'),
+    //     ], 410);
+    // }
 
     /**
      * Get PaymentSystem Payment Details (AJAX) - For mobile payments
@@ -2051,7 +2092,7 @@ class StudentFeeController extends Controller
             }
 
             // Send reinform notification
-            $this->notificationService->sendReinformNotification($student->id, $unpaidInvoices);
+            $this->paymentNotificationService->sendReinformNotification($student->id, $unpaidInvoices);
 
             $this->logCreate('NotificationLog', $student->id, "Sent reinform notification to guardian of student: {$student->student_identifier}");
 
@@ -2063,6 +2104,91 @@ class StudentFeeController extends Controller
             ]);
 
             return redirect()->route('student-fees.index')->with('error', __('Failed to send notification. Please try again.'));
+        }
+    }
+
+    /**
+     * Send reminder notifications to all unpaid students
+     */
+    public function remindAll(Request $request): RedirectResponse
+    {
+        try {
+            $feeMonth = $request->input('fee_month', now()->format('Y-m'));
+            $gradeId = $request->input('fee_grade');
+            $feeTypeId = $request->input('fee_fee_type');
+            $search = $request->input('fee_search');
+
+            // Build query for unpaid invoices
+            $invoicesQuery = \App\Models\PaymentSystem\Invoice::query()
+                ->where('status', '!=', 'paid')
+                ->where('remaining_amount', '>', 0)
+                ->whereYear('due_date', '=', substr($feeMonth, 0, 4))
+                ->whereMonth('due_date', '=', substr($feeMonth, 5, 2))
+                ->with(['student.user', 'fees.feeStructure']);
+
+            // Apply filters
+            if ($gradeId) {
+                $invoicesQuery->whereHas('student', function ($q) use ($gradeId) {
+                    $q->where('grade_id', $gradeId);
+                });
+            }
+
+            if ($feeTypeId) {
+                $invoicesQuery->whereHas('fees.feeStructure', function ($q) use ($feeTypeId) {
+                    $q->where('fee_type_id', $feeTypeId);
+                });
+            }
+
+            if ($search) {
+                $invoicesQuery->whereHas('student', function ($q) use ($search) {
+                    $q->where('student_identifier', 'like', "%{$search}%")
+                      ->orWhereHas('user', function ($userQuery) use ($search) {
+                          $userQuery->where('name', 'like', "%{$search}%");
+                      });
+                });
+            }
+
+            $invoices = $invoicesQuery->get();
+
+            if ($invoices->isEmpty()) {
+                return redirect()->route('student-fees.index')->with('error', __('finance.No unpaid students found with the selected filters.'));
+            }
+
+            // Group invoices by student
+            $studentInvoices = $invoices->groupBy('student_id');
+
+            $successCount = 0;
+            $failCount = 0;
+
+            foreach ($studentInvoices as $studentId => $studentInvoiceGroup) {
+                try {
+                    // Send reminder notification
+                    $this->paymentNotificationService->sendReinformNotification($studentId, $studentInvoiceGroup);
+                    $successCount++;
+                    
+                    $student = $studentInvoiceGroup->first()->student;
+                    $this->logCreate('NotificationLog', $studentId, "Sent bulk reminder notification to guardian of student: {$student->student_identifier}");
+                } catch (\Exception $e) {
+                    \Log::error('Failed to send reminder to student', [
+                        'student_id' => $studentId,
+                        'error' => $e->getMessage(),
+                    ]);
+                    $failCount++;
+                }
+            }
+
+            $message = __('finance.Sent :count reminder(s) successfully.', ['count' => $successCount]);
+            if ($failCount > 0) {
+                $message .= ' ' . __('finance.:count failed.', ['count' => $failCount]);
+            }
+
+            return redirect()->route('student-fees.index')->with('status', $message);
+        } catch (\Exception $e) {
+            \Log::error('Failed to send bulk reminders', [
+                'error' => $e->getMessage(),
+            ]);
+
+            return redirect()->route('student-fees.index')->with('error', __('finance.Failed to send reminders. Please try again.'));
         }
     }
 
@@ -2121,6 +2247,7 @@ class StudentFeeController extends Controller
                 $validated['logo_url'] = $this->uploadAndCompressLogo($request->file('logo'));
             }
 
+            // Update using Eloquent model (handles SQLite enum constraints properly)
             $paymentMethod->update($validated);
 
             return redirect()->route('student-fees.index', ['tab' => 'payment-methods'])->with('status', __('Payment method updated successfully.'));

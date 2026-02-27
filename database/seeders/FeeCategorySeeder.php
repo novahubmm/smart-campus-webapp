@@ -19,10 +19,21 @@ class FeeCategorySeeder extends Seeder
     public function run(): void
     {
         $this->command->info('Seeding fee categories and structures...');
-        $this->command->info('Note: School Fee comes from grade.price_per_month');
+        $this->command->info('Note: School Fee type is created for filtering, but amounts come from grade.price_per_month');
 
-        // Define fee categories (excluding School Fee)
+        // Define fee categories (including School Fee for filtering)
         $categories = [
+            [
+                'name' => 'School Fee',
+                'name_mm' => 'ကျောင်းလခ',
+                'code' => 'SCHOOL_FEE',
+                'description' => 'Monthly school tuition fee',
+                'description_mm' => 'လစဉ် ကျောင်းလခ',
+                'is_mandatory' => true,  // Mandatory
+                'status' => true,
+                'partial_status' => true,  // Allows partial payment
+                'due_date_type' => 'next_15_days',
+            ],
             [
                 'name' => 'Transportation Fee',
                 'name_mm' => 'ယာဉ်စီးခ',
@@ -119,6 +130,12 @@ class FeeCategorySeeder extends Seeder
             $mandatory = $category['is_mandatory'] ? '(Mandatory)' : '(Optional)';
             $this->command->info("✓ {$action}: {$feeType->name} {$mandatory}");
 
+            // Skip creating fee structures for School Fee (it comes from grade.price_per_month)
+            if ($category['code'] === 'SCHOOL_FEE') {
+                $this->command->info("  → Skipping fee structures (uses grade.price_per_month)");
+                continue;
+            }
+
             // Create fee structures for each grade
             $grades = Grade::where('batch_id', $currentBatch->id)->get();
             
@@ -148,6 +165,6 @@ class FeeCategorySeeder extends Seeder
 
         $this->command->newLine();
         $this->command->info('✓ Fee categories and structures seeded successfully!');
-        $this->command->info('Total: ' . count($categories) . ' fee categories (excluding School Fee)');
+        $this->command->info('Total: ' . count($categories) . ' fee categories');
     }
 }

@@ -13,20 +13,25 @@ class MonthlyInvoiceSeeder extends Seeder
      * 
      * Generates monthly invoices for all active students using the same logic
      * as the MonthlyInvoiceGenerationJob.
+     * 
+     * @param string|null $month Month in Y-m format (e.g., '2026-03' for March 2026)
      */
-    public function run(): void
+    public function run(?string $month = null): void
     {
-        $this->command->info('🔄 Generating monthly invoices for all active students...');
+        $targetMonth = $month ? \Carbon\Carbon::parse($month . '-01') : now();
+        $monthDisplay = $targetMonth->format('F Y');
+        
+        $this->command->info("🔄 Generating monthly invoices for {$monthDisplay}...");
         $this->command->newLine();
 
         try {
             $invoiceService = app(InvoiceService::class);
             
-            // Generate invoices for current month
-            $invoicesCreated = $invoiceService->generateMonthlyInvoices();
+            // Generate invoices for specified month
+            $invoicesCreated = $invoiceService->generateMonthlyInvoices($targetMonth);
 
             $this->command->newLine();
-            $this->command->info("✅ Monthly invoice generation completed!");
+            $this->command->info("✅ Monthly invoice generation completed for {$monthDisplay}!");
             $this->command->info("📊 Invoices created: {$invoicesCreated}");
             
             if ($invoicesCreated === 0) {
@@ -34,7 +39,7 @@ class MonthlyInvoiceSeeder extends Seeder
                 $this->command->warn('   - No active students found');
                 $this->command->warn('   - Students have no grade assigned');
                 $this->command->warn('   - No monthly fee structures configured');
-                $this->command->warn('   - Invoices already exist for this month');
+                $this->command->warn("   - Invoices already exist for {$monthDisplay}");
             }
 
         } catch (\Exception $e) {
@@ -42,6 +47,7 @@ class MonthlyInvoiceSeeder extends Seeder
             $this->command->error('Error: ' . $e->getMessage());
             
             Log::error('MonthlyInvoiceSeeder failed', [
+                'month' => $monthDisplay,
                 'error' => $e->getMessage(),
                 'trace' => $e->getTraceAsString(),
             ]);

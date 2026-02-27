@@ -19,8 +19,10 @@ class ExamSchedule extends Model
         'start_time',
         'end_time',
         'room_id',
+        'teacher_id',
         'total_marks',
         'passing_marks',
+        'order',
     ];
 
     protected $casts = [
@@ -46,6 +48,12 @@ class ExamSchedule extends Model
     {
         return $this->belongsTo(Room::class);
     }
+
+    public function teacher()
+    {
+        return $this->belongsTo(TeacherProfile::class, 'teacher_id');
+    }
+
 
     public function results()
     {

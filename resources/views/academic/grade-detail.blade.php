@@ -84,6 +84,14 @@
                         'value' => e($grade->gradeCategory->name ?? __('academic_management.Primary'))
                     ],
                     [
+                        'label' => __('academic_management.Start Date'),
+                        'value' => $grade->start_date ? $grade->start_date->format('F d, Y') : '—'
+                    ],
+                    [
+                        'label' => __('academic_management.End Date'),
+                        'value' => $grade->end_date ? $grade->end_date->format('F d, Y') : '—'
+                    ],
+                    [
                         'label' => __('academic_management.Total Classes'),
                         'value' => $totalClasses
                     ],

@@ -37,7 +37,19 @@ class StoreExamMarkRequest extends FormRequest
                 }
             ],
             'subject_id' => ['required', 'uuid', 'exists:subjects,id'],
-            'marks_obtained' => ['required_unless:is_absent,1', 'nullable', 'numeric', 'min:0'],
+            'marks_obtained' => [
+                'required_unless:is_absent,1', 
+                'nullable', 
+                'numeric', 
+                'min:0',
+                // Validate marks obtained cannot exceed total marks
+                function ($attribute, $value, $fail) {
+                    $totalMarks = $this->input('total_marks');
+                    if ($value !== null && $totalMarks !== null && $value > $totalMarks) {
+                        $fail("Marks obtained ({$value}) cannot exceed total marks ({$totalMarks}).");
+                    }
+                }
+            ],
             'total_marks' => ['required', 'numeric', 'min:1'],
             'grade' => ['nullable', 'string', 'max:50'],
             'remark' => ['nullable', 'string', 'max:255'],

@@ -83,8 +83,20 @@
                         'value' => $feeType->code ?? '—'
                     ],
                     [
+                        'label' => __('finance.Frequency'),
+                        'value' => $feeType->frequency ? ucfirst(str_replace('_', ' ', $feeType->frequency->frequency)) : '—'
+                    ],
+                    [
                         'label' => __('finance.Due Date'),
                         'value' => __('finance.Day') . ' ' . $feeType->due_date . ' ' . __('finance.of every month')
+                    ],
+                    [
+                        'label' => __('finance.Start Month'),
+                        'value' => $feeType->frequency && $feeType->frequency->start_month ? \Carbon\Carbon::create(null, $feeType->frequency->start_month, 1)->format('F') : '—'
+                    ],
+                    [
+                        'label' => __('finance.End Month'),
+                        'value' => $feeType->frequency && $feeType->frequency->end_month ? \Carbon\Carbon::create(null, $feeType->frequency->end_month, 1)->format('F') : '—'
                     ],
                     [
                         'label' => __('finance.Allow Partial Payment'),

@@ -117,6 +117,38 @@ class GuardianNotificationService
     }
     
     /**
+     * Send exam results published notification
+     */
+    public function sendExamResultsNotification(string $examId, string $examName, ?string $gradeId = null, ?string $classId = null): void
+    {
+        Log::info('Sending exam results notification to guardians', [
+            'exam_id' => $examId,
+            'grade_id' => $gradeId,
+            'class_id' => $classId,
+        ]);
+        
+        // Get guardians based on grade/class
+        $guardians = $this->getGuardiansByExam($gradeId, $classId);
+        
+        if ($guardians->isEmpty()) {
+            Log::info('No guardians found for exam results notification');
+            return;
+        }
+        
+        $notificationTitle = '📊 Exam Results Published: ' . $examName;
+        $notificationMessage = 'The results for ' . $examName . ' are now available. Check your child\'s performance.';
+        
+        $data = [
+            'type' => 'exam_results',
+            'exam_id' => $examId,
+            'exam_name' => $examName,
+            'timestamp' => now()->toIso8601String(),
+        ];
+        
+        $this->sendToGuardians($guardians, $notificationTitle, $notificationMessage, $data, 'App\\Notifications\\ExamResultsPublished');
+    }
+    
+    /**
      * Send payment reminder notification
      */
     public function sendPaymentReminder(string $studentId, string $studentName, float $amount, string $dueDate): void

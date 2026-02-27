@@ -28,6 +28,7 @@ class PaymentMethod extends Model
     protected $casts = [
         'is_active' => 'boolean',
         'sort_order' => 'integer',
+        'type' => 'string', // Cast to string to avoid SQLite enum issues
     ];
 
     public function scopeActive($query)

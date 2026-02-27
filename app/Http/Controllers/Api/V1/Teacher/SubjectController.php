@@ -51,14 +51,18 @@ class SubjectController extends Controller
                     // Calculate periods_per_timetable (total periods across all timetables)
                     $periodsPerTimetable = $periods->count();
 
+                    // Determine image based on subject type
+                    $subjectTypeName = $subject?->subjectType?->name ?? 'Core';
+                    $isCore = strtolower($subjectTypeName) === 'core';
+                    $image = $isCore ? 'core_subject.svg' : 'elective_subject.svg';
+
                     return [
                         'id' => $subject?->id,
                         'name' => $subject?->name ?? 'Unknown Subject',
                         'code' => $subject?->code,
                         'periods_per_timetable' => $periodsPerTimetable,
-                        'icon' => $subject?->icon ?? '📚',
-                        'icon_color' => $subject?->icon_color ?? '#6B7280',
-                        'progress_color' => $subject?->progress_color ?? '#6B7280',
+                        'category' => $subjectTypeName,
+                        'image' => url('images/subject_images/' . $image),
                         'classes' => $classes,
                         'classes_count' => $classes->count(),
                     ];
@@ -134,6 +138,11 @@ class SubjectController extends Controller
             // Calculate periods_per_timetable
             $periodsPerTimetable = $periods->count();
 
+            // Determine image based on subject type
+            $subjectTypeName = $subject->subjectType?->name ?? 'Core';
+            $isCore = strtolower($subjectTypeName) === 'core';
+            $image = $isCore ? 'core_subject.svg' : 'elective_subject.svg';
+
             // Load curriculum for progress calculation
             $subject->load('curriculumChapters.topics');
             $totalChapters = $subject->curriculumChapters->count();
@@ -150,9 +159,8 @@ class SubjectController extends Controller
                     'name' => $subject->name,
                     'code' => $subject->code,
                     'periods_per_timetable' => $periodsPerTimetable,
-                    'icon' => $subject->icon ?? '📚',
-                    'icon_color' => $subject->icon_color ?? '#6B7280',
-                    'progress_color' => $subject->progress_color ?? '#6B7280',
+                    'category' => $subjectTypeName,
+                    'image' => url('images/subject_images/' . $image),
                     'classes' => $classes,
                     'classes_count' => $classes->count(),
                     'total_students' => $classes->sum('student_count'),

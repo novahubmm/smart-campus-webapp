@@ -99,4 +99,9 @@ return array(
     'Married' => 'Married',
     'Divorced' => 'Divorced',
     'Widowed' => 'Widowed',
+    'Monthly Salary' => 'Monthly Salary',
+    'In-school Relative name' => 'In-school Relative name',
+    'Relationship' => 'Relationship',
+    'Height (cm)' => 'Height (cm)',
+    'Phone Number' => 'Phone Number' 
 );

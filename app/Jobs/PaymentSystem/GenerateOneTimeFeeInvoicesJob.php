@@ -44,10 +44,11 @@ class GenerateOneTimeFeeInvoicesJob implements ShouldQueue
         try {
             DB::beginTransaction();
 
-            // Query all active students in the target grade
+            // Query all active students in the target grade with active grades only
             $students = StudentProfile::where('status', 'active')
                 ->whereHas('grade', function ($query) {
-                    $query->where('level', $this->feeStructure->grade);
+                    $query->where('level', $this->feeStructure->grade)
+                          ->active(); // Only active grades
                 })
                 ->get();
 

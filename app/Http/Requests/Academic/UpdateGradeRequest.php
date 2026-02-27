@@ -36,6 +36,8 @@ class UpdateGradeRequest extends FormRequest
             ],
             'grade_category_id' => ['required', 'uuid', 'exists:grade_categories,id'],
             'price_per_month' => ['nullable', 'numeric', 'min:0'],
+            'start_date' => ['nullable', 'date'],
+            'end_date' => ['nullable', 'date', 'after_or_equal:start_date'],
             'subjects' => ['sometimes', 'array'],
             'subjects.*' => ['uuid', 'exists:subjects,id'],
             'classes' => ['sometimes', 'array'],

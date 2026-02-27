@@ -19,10 +19,14 @@ class Grade extends Model
         'grade_category_id',
         'price_per_month',
         'due_date',
+        'start_date',
+        'end_date',
     ];
 
     protected $casts = [
         'price_per_month' => 'decimal:2',
+        'start_date' => 'date',
+        'end_date' => 'date',
     ];
 
     // Computed attributes
@@ -31,6 +35,37 @@ class Grade extends Model
     public function getNameAttribute()
     {
         return GradeHelper::getLocalizedName($this->level);
+    }
+
+    // Scopes
+    public function scopeActive($query)
+    {
+        $today = now()->toDateString();
+        return $query->where(function ($q) use ($today) {
+            $q->whereNull('end_date')
+              ->orWhere('end_date', '>=', $today);
+        });
+    }
+
+    public function scopeEnded($query)
+    {
+        $today = now()->toDateString();
+        return $query->whereNotNull('end_date')
+                     ->where('end_date', '<', $today);
+    }
+
+    // Helper methods
+    public function isActive(): bool
+    {
+        if (is_null($this->end_date)) {
+            return true;
+        }
+        return $this->end_date >= now()->toDateString();
+    }
+
+    public function hasEnded(): bool
+    {
+        return !$this->isActive();
     }
 
     // Relationships

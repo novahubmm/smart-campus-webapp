@@ -35,12 +35,19 @@ class ExamController extends Controller
         }
         $status = $request->query('status');
 
-        // Get teacher's subject IDs first
+        // Get teacher's subject IDs
         $teacherSubjectIds = $teacher->subjects()->pluck('subjects.id');
+        
+        // Get teacher's grade IDs from their assigned classes
+        $teacherGradeIds = $teacher->classes()->pluck('grade_id')->unique();
 
         $query = Exam::with(['examType', 'grade', 'schoolClass', 'schedules.subject.teachers', 'schedules.room'])
-            ->whereHas('schedules', function ($q) use ($teacherSubjectIds) {
-                $q->whereIn('subject_id', $teacherSubjectIds);
+            ->where(function ($q) use ($teacherSubjectIds, $teacherGradeIds) {
+                // Show exams where teacher teaches a subject OR exams from teacher's grades
+                $q->whereHas('schedules', function ($subQ) use ($teacherSubjectIds) {
+                    $subQ->whereIn('subject_id', $teacherSubjectIds);
+                })
+                ->orWhereIn('grade_id', $teacherGradeIds);
             })
             ->orderBy('start_date', 'desc');
 
@@ -68,8 +75,21 @@ class ExamController extends Controller
 
             $status = $this->getExamStatus($exam);
             
-            // Use class name if available, otherwise fall back to grade
-            $className = $exam->schoolClass ? $exam->schoolClass->name : ($exam->grade->name ?? 'Unknown');
+            // Format class name with grade level prefix (e.g., "Kindergarten A", "Grade 1 A")
+            $className = 'Unknown';
+            if ($exam->schoolClass && $exam->grade) {
+                $gradeLevel = $exam->grade->level;
+                $section = \App\Helpers\SectionHelper::extractSection($exam->schoolClass->name);
+                
+                // If no section found and className is just a single letter, use it as the section
+                if ($section === null && preg_match('/^[A-Za-z]$/', trim($exam->schoolClass->name))) {
+                    $section = strtoupper(trim($exam->schoolClass->name));
+                }
+                
+                $className = \App\Helpers\GradeHelper::formatClassName($gradeLevel, $section);
+            } elseif ($exam->grade) {
+                $className = $exam->grade->name ?? 'Unknown';
+            }
             
             return [
                 'id' => $exam->id,
@@ -78,8 +98,8 @@ class ExamController extends Controller
                 'class' => $className,
                 'grade' => $exam->grade->name ?? 'Unknown Grade',
                 'subject_count' => $exam->schedules->count(),
-                'date' => $exam->start_date->format('Y-m-d'),
-                'time' => $exam->start_date->format('h:i A') . ' - ' . $exam->end_date->format('h:i A'),
+                'start_date' => $exam->start_date->format('Y-m-d'),
+                'end_date' => $exam->end_date->format('Y-m-d'),
                 'location' => $exam->schedules->first()->room->name ?? 'TBA',
                 'status' => $status,
                 'is_your_subject' => $teacherSubjects->isNotEmpty()
@@ -150,6 +170,9 @@ class ExamController extends Controller
                 'id' => $schedule->id,
                 'name' => $schedule->subject->name,
                 'marks' => $schedule->total_marks,
+                'date' => $schedule->exam_date ? $schedule->exam_date->format('Y-m-d') : null,
+                'start_time' => $schedule->start_time,
+                'end_time' => $schedule->end_time,
                 'is_your_subject' => $isTeacherSubject,
                 'grading_status' => $gradingStatus,
                 'pass_percentage' => $passPercentage
@@ -181,8 +204,8 @@ class ExamController extends Controller
             'type' => strtolower($exam->examType->name ?? 'exam'),
             'class' => $classData,
             'grade' => $exam->grade->name ?? 'Unknown Grade',
-            'date' => $exam->start_date->format('Y-m-d'),
-            'time' => $exam->start_date->format('h:i A') . ' - ' . $exam->end_date->format('h:i A'),
+            'start_date' => $exam->start_date->format('Y-m-d'),
+            'end_date' => $exam->end_date->format('Y-m-d'),
             'location' => $exam->schedules->first()->room->name ?? 'TBA',
             'status' => $this->getExamStatus($exam),
             'is_your_subject' => $subjects->where('is_your_subject', true)->isNotEmpty(),
@@ -437,13 +460,36 @@ class ExamController extends Controller
             return ApiResponse::error('Class not found', 404);
         }
 
-        // Get students from the specified class
-        $students = \App\Models\StudentProfile::with(['user'])
+        // Get students from the specified class with their exam marks
+        $students = \App\Models\StudentProfile::with(['user', 'examMarks' => function($query) use ($id) {
+                $query->where('exam_id', $id)->with('enteredBy');
+            }])
             ->where('class_id', $classId)
             ->orderBy('student_identifier')
             ->get();
 
-        $studentsData = $students->map(function ($student) {
+        $studentsData = $students->map(function ($student) use ($exam) {
+            // Get exam mark for this student (there might be multiple marks for different subjects)
+            // For now, we'll get the first one or aggregate if needed
+            $examMark = $student->examMarks->first();
+            
+            // Determine who graded
+            $gradedBy = null;
+            $gradedAt = null;
+            
+            if ($examMark) {
+                // Check if entered_by exists and determine role
+                if ($examMark->entered_by) {
+                    $grader = $examMark->enteredBy;
+                    if ($grader) {
+                        // Check user role to determine if admin or teacher
+                        $gradedBy = $grader->hasRole('admin') ? 'admin' : 'teacher';
+                    }
+                }
+                
+                $gradedAt = $examMark->updated_at ? $examMark->updated_at->toIso8601String() : null;
+            }
+            
             return [
                 'id' => $student->id,
                 'name' => $student->user->name ?? 'Unknown',
@@ -451,6 +497,11 @@ class ExamController extends Controller
                 'avatar' => $student->photo_path ? url('storage/' . $student->photo_path) : null,
                 'roll_number' => $student->student_identifier ?? '',
                 'gender' => $student->gender ?? 'N/A',
+                // New fields for exam results
+                'current_score' => $examMark ? $examMark->marks_obtained : null,
+                'current_remark' => $examMark ? ($examMark->remark ?? '') : '',
+                'graded_by' => $gradedBy,
+                'graded_at' => $gradedAt,
             ];
         });
 
@@ -516,6 +567,23 @@ class ExamController extends Controller
         // Get the first schedule to determine total marks
         $schedule = $exam->schedules->first();
         $totalMarks = $schedule?->total_marks ?? 100;
+
+        // Validate all grades before processing
+        foreach ($grades as $gradeData) {
+            if (!isset($gradeData['student_id']) || !isset($gradeData['score'])) {
+                continue;
+            }
+            
+            // Validate marks obtained cannot exceed total marks
+            if ($gradeData['score'] > $totalMarks) {
+                return ApiResponse::error("Marks obtained ({$gradeData['score']}) cannot exceed total marks ({$totalMarks})", 422);
+            }
+            
+            // Validate marks obtained cannot be negative
+            if ($gradeData['score'] < 0) {
+                return ApiResponse::error("Marks obtained cannot be negative", 422);
+            }
+        }
 
         DB::beginTransaction();
         try {
@@ -591,6 +659,16 @@ class ExamController extends Controller
         // Get the first schedule to determine total marks
         $schedule = $exam->schedules->first();
         $totalMarks = $schedule?->total_marks ?? 100;
+
+        // Validate marks obtained cannot exceed total marks
+        if ($score > $totalMarks) {
+            return ApiResponse::error("Marks obtained ({$score}) cannot exceed total marks ({$totalMarks})", 422);
+        }
+        
+        // Validate marks obtained cannot be negative
+        if ($score < 0) {
+            return ApiResponse::error("Marks obtained cannot be negative", 422);
+        }
 
         $mark = ExamMark::updateOrCreate(
             [
@@ -671,9 +749,17 @@ class ExamController extends Controller
         }
         
         // Fallback: calculate based on dates if status is not set
-        $now = now();
+        $now = now()->startOfDay();
+        $startDate = $exam->start_date ? $exam->start_date->startOfDay() : null;
+        $endDate = $exam->end_date ? $exam->end_date->startOfDay() : null;
         
-        if ($exam->end_date && $exam->end_date < $now) {
+        // Check if exam is ongoing (today is between start and end date, inclusive)
+        if ($startDate && $endDate && $now->greaterThanOrEqualTo($startDate) && $now->lessThanOrEqualTo($endDate)) {
+            return 'ongoing';
+        }
+        
+        // Check if exam is completed (today is after end date)
+        if ($endDate && $now->greaterThan($endDate)) {
             return 'completed';
         }
         

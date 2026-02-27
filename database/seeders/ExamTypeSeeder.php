@@ -11,16 +11,16 @@ class ExamTypeSeeder extends Seeder
     {
         $examTypes = [
             [
-                'name' => 'Tutorial (25 marks, 1 subject)',
+                'name' => 'Tutorial',
             ],
             [
-                'name' => 'Monthly (100 marks, 6 subjects)',
+                'name' => 'Monthly',
             ],
             [
-                'name' => 'Semester (100 marks, 6 subjects)',
+                'name' => 'Semester',
             ],
             [
-                'name' => 'Final (100 marks, 6 subjects)',
+                'name' => 'Final',
             ],
         ];
 

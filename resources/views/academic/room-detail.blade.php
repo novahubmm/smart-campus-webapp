@@ -74,6 +74,11 @@
                             $gradeLevel = $class->grade->level ?? 0;
                             $section = \App\Helpers\SectionHelper::extractSection($class->name);
                             
+                            // If no section found and className is just a single letter, use it as the section
+                            if ($section === null && preg_match('/^[A-Za-z]$/', trim($class->name))) {
+                                $section = strtoupper(trim($class->name));
+                            }
+                            
                             // Format using GradeHelper
                             $formattedName = \App\Helpers\GradeHelper::formatClassName($gradeLevel, $section);
                             

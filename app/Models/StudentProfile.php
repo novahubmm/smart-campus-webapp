@@ -52,7 +52,6 @@ class StudentProfile extends Model
         'medical_directory',
         'photo_path',
         'class_id',
-        'grade_id',
         'status',
     ];
 
@@ -115,6 +114,15 @@ class StudentProfile extends Model
     {
         return $this->hasMany(\App\Models\StudentFeeTypeAssignment::class, 'student_id');
     }
+
+    /**
+     * Get the exam marks for this student
+     */
+    public function examMarks()
+    {
+        return $this->hasMany(\App\Models\ExamMark::class, 'student_id');
+    }
+
 
 
     /**

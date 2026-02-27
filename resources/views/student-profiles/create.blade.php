@@ -330,7 +330,7 @@
                                     <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                         <div>
                                             <label class="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1">{{ __('student_profiles.Grade') }} <span class="text-red-500">*</span></label>
-                                            <select name="grade_id" x-model="form.grade_id" 
+                                            <select name="grade_id" x-model="form.grade_id" @change="form.class_id = ''"
                                                     class="w-full rounded-lg border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-200 focus:border-indigo-500 focus:ring-indigo-500"
                                                     :class="errors.grade_id ? 'field-error' : ''">
                                                 <option value="">{{ __('student_profiles.Select grade') }}</option>
@@ -342,28 +342,19 @@
                                         </div>
                                         <div>
                                             <label class="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1">{{ __('student_profiles.Class') }}</label>
-                                            <select name="class_id" x-model="form.class_id" class="w-full rounded-lg border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-200 focus:border-indigo-500 focus:ring-indigo-500">
+                                            <select name="class_id" x-model="form.class_id" :disabled="!form.grade_id" class="w-full rounded-lg border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-200 focus:border-indigo-500 focus:ring-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed">
                                                 <option value="">{{ __('student_profiles.Select class') }}</option>
                                                 @foreach($classes as $class)
-                                                    <option value="{{ $class->id }}">{{ $class->name }}</option>
+                                                    <option value="{{ $class->id }}" x-show="form.grade_id === '{{ $class->grade_id }}'">{{ $class->name }}</option>
                                                 @endforeach
                                             </select>
+                                            <p x-show="!form.grade_id" class="mt-1 text-xs text-gray-500 dark:text-gray-400">{{ __('student_profiles.Select a grade first') }}</p>
                                         </div>
                                     </div>
                                     <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                         <div>
                                             <label class="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1">{{ __('student_profiles.Starting Grade at School') }}</label>
                                             <input type="text" name="starting_grade_at_school" x-model="form.starting_grade_at_school" class="w-full rounded-lg border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-200 focus:border-indigo-500 focus:ring-indigo-500">
-                                        </div>
-                                        <div>
-                                            <label class="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1">{{ __('student_profiles.Current Grade') }}</label>
-                                            <input type="text" name="current_grade" x-model="form.current_grade" class="w-full rounded-lg border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-200 focus:border-indigo-500 focus:ring-indigo-500">
-                                        </div>
-                                    </div>
-                                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                                        <div>
-                                            <label class="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1">{{ __('student_profiles.Current Class') }}</label>
-                                            <input type="text" name="current_class" x-model="form.current_class" class="w-full rounded-lg border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-200 focus:border-indigo-500 focus:ring-indigo-500">
                                         </div>
                                         <div>
                                             <label class="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1">{{ __('student_profiles.Date of Joining') }}</label>

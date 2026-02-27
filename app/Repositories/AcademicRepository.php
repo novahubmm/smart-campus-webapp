@@ -49,6 +49,8 @@ class AcademicRepository implements AcademicRepositoryInterface
             'batch_id' => $data->batch_id,
             'grade_category_id' => $data->grade_category_id,
             'price_per_month' => $data->price_per_month,
+            'start_date' => $data->start_date,
+            'end_date' => $data->end_date,
         ]);
         // Create classes for this grade (if array of objects)
         foreach ($data->classes as $classData) {
@@ -79,6 +81,8 @@ class AcademicRepository implements AcademicRepositoryInterface
             'batch_id' => $data->batch_id,
             'grade_category_id' => $data->grade_category_id,
             'price_per_month' => $data->price_per_month,
+            'start_date' => $data->start_date,
+            'end_date' => $data->end_date,
         ]);
 
         return $grade->fresh();
@@ -204,10 +208,16 @@ class AcademicRepository implements AcademicRepositoryInterface
     /**
      * Get grades with details
      */
-    public function getGradesWithDetails(): array
-    {
-        return Grade::with(['gradeCategory', 'batch'])->orderBy('level')->get()->toArray();
-    }
+    public function getGradesWithDetails(bool $activeOnly = false): array
+        {
+            $query = Grade::with(['gradeCategory', 'batch']);
+
+            if ($activeOnly) {
+                $query->active();
+            }
+
+            return $query->orderBy('level')->get()->toArray();
+        }
 
     // Count methods for stat cards (total counts)
     public function getBatchesCount(): int
@@ -308,7 +318,7 @@ class AcademicRepository implements AcademicRepositoryInterface
 
     public function getSubjectsWithCounts()
     {
-        return Subject::with(['grades:id,level,batch_id', 'subjectType'])
+        return Subject::with(['grades:id,level,batch_id', 'grades.classes:id,name,grade_id', 'subjectType'])
             ->withCount(['teachers', 'grades'])
             ->orderByRaw('(SELECT MIN(level) FROM grades INNER JOIN grade_subject ON grades.id = grade_subject.grade_id WHERE grade_subject.subject_id = subjects.id)')
             ->paginate(10, ['*'], 'subjects_page')

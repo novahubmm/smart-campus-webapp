@@ -207,26 +207,6 @@
                             <i class="fas fa-chalkboard text-emerald-500"></i>
                             <span>{{ __('teacher_profiles.Academic Information') }}</span>
                         </div>
-                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                            <div>
-                                <label class="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1">{{ __('teacher_profiles.Current Grade') }}</label>
-                                <input type="text" name="current_grades" value="{{ old('current_grades') }}" class="w-full rounded-lg border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-200 focus:border-emerald-500 focus:ring-emerald-500" placeholder="e.g. Grade 7">
-                            </div>
-                            <div>
-                                <label class="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1">{{ __('teacher_profiles.Current Classes') }}</label>
-                                <input type="text" name="current_classes" value="{{ old('current_classes') }}" class="w-full rounded-lg border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-200 focus:border-emerald-500 focus:ring-emerald-500" placeholder="e.g. 7A, 7B">
-                            </div>
-                        </div>
-                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                            <div>
-                                <label class="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1">{{ __('teacher_profiles.Responsible Class') }}</label>
-                                <input type="text" name="responsible_class" value="{{ old('responsible_class') }}" class="w-full rounded-lg border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-200 focus:border-emerald-500 focus:ring-emerald-500">
-                            </div>
-                            <div>
-                                <label class="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1">{{ __('teacher_profiles.Subjects taught') }}</label>
-                                <input type="text" name="subjects_taught" value="{{ old('subjects_taught') }}" class="w-full rounded-lg border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-200 focus:border-emerald-500 focus:ring-emerald-500" placeholder="e.g. Math, Science">
-                            </div>
-                        </div>
                         <div>
                             <label class="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1">{{ __('teacher_profiles.Previous School') }}</label>
                             <input type="text" name="previous_school" value="{{ old('previous_school') }}" class="w-full rounded-lg border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-200 focus:border-emerald-500 focus:ring-emerald-500">

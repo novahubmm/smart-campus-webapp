@@ -31,6 +31,42 @@ class Exam extends Model
     ];
 
     /**
+     * Boot the model.
+     */
+    protected static function boot()
+    {
+        parent::boot();
+
+        static::creating(function ($exam) {
+            if (empty($exam->exam_id)) {
+                $exam->exam_id = self::generateExamId();
+            }
+        });
+    }
+
+    /**
+     * Generate a unique exam ID.
+     */
+    private static function generateExamId(): string
+    {
+        $year = now()->year;
+        $prefix = "EX-{$year}-";
+        
+        // Get the last exam ID for this year
+        $lastExam = self::where('exam_id', 'like', "{$prefix}%")
+            ->orderBy('exam_id', 'desc')
+            ->first();
+        
+        if ($lastExam && preg_match('/-(\d+)$/', $lastExam->exam_id, $matches)) {
+            $number = intval($matches[1]) + 1;
+        } else {
+            $number = 1;
+        }
+        
+        return $prefix . str_pad($number, 4, '0', STR_PAD_LEFT);
+    }
+
+    /**
      * Get the exam type.
      */
     public function examType(): BelongsTo
@@ -67,7 +103,7 @@ class Exam extends Model
      */
     public function schedules(): HasMany
     {
-        return $this->hasMany(ExamSchedule::class);
+        return $this->hasMany(ExamSchedule::class)->orderBy('exam_date')->orderBy('start_time');
     }
 
     /**

@@ -166,19 +166,56 @@
                             </tr>
                             <tr>
                                 <th class="w-48 px-4 py-3 text-left font-semibold text-gray-600 dark:text-gray-400 bg-gray-50 dark:bg-gray-900/50">{{ __('teacher_profiles.Current Grade') }}</th>
-                                <td class="px-4 py-3 text-gray-900 dark:text-gray-100">{{ is_array($profile->current_grades) ? implode(', ', $profile->current_grades) : ($profile->current_grades ?? '—') }}</td>
+                                <td class="px-4 py-3 text-gray-900 dark:text-gray-100">
+                                    @php
+                                        // Get unique grades from subjects taught
+                                        $grades = $profile->subjects->flatMap(function($subject) {
+                                            return $subject->grades->pluck('name');
+                                        })->unique()->sort()->values();
+                                    @endphp
+                                    {{ $grades->isNotEmpty() ? $grades->implode(', ') : '—' }}
+                                </td>
                             </tr>
                             <tr>
                                 <th class="w-48 px-4 py-3 text-left font-semibold text-gray-600 dark:text-gray-400 bg-gray-50 dark:bg-gray-900/50">{{ __('teacher_profiles.Current Classes') }}</th>
-                                <td class="px-4 py-3 text-gray-900 dark:text-gray-100">{{ is_array($profile->current_classes) ? implode(', ', $profile->current_classes) : ($profile->current_classes ?? '—') }}</td>
+                                <td class="px-4 py-3 text-gray-900 dark:text-gray-100">
+                                    @php
+                                        // Get unique classes from periods/timetables where this teacher teaches
+                                        $periods = \App\Models\Period::with(['timetable.schoolClass.grade'])
+                                            ->where('teacher_profile_id', $profile->id)
+                                            ->get();
+                                        
+                                        $classNames = $periods->map(function($period) {
+                                            if ($period->timetable && $period->timetable->schoolClass && $period->timetable->schoolClass->grade) {
+                                                return $period->timetable->schoolClass->grade->name . ' ' . $period->timetable->schoolClass->name;
+                                            }
+                                            return null;
+                                        })->filter()->unique()->sort()->values();
+                                    @endphp
+                                    {{ $classNames->isNotEmpty() ? $classNames->implode(', ') : '—' }}
+                                </td>
                             </tr>
                             <tr>
                                 <th class="w-48 px-4 py-3 text-left font-semibold text-gray-600 dark:text-gray-400 bg-gray-50 dark:bg-gray-900/50">{{ __('teacher_profiles.Responsible Class') }}</th>
-                                <td class="px-4 py-3 text-gray-900 dark:text-gray-100">{{ $profile->responsible_class ?? '—' }}</td>
+                                <td class="px-4 py-3 text-gray-900 dark:text-gray-100">
+                                    @php
+                                        // Get classes where this teacher is the class teacher (with grade name)
+                                        $responsibleClasses = $profile->classes->map(function($class) {
+                                            return $class->grade->name . ' ' . $class->name;
+                                        })->sort()->values();
+                                    @endphp
+                                    {{ $responsibleClasses->isNotEmpty() ? $responsibleClasses->implode(', ') : '—' }}
+                                </td>
                             </tr>
                             <tr>
                                 <th class="w-48 px-4 py-3 text-left font-semibold text-gray-600 dark:text-gray-400 bg-gray-50 dark:bg-gray-900/50">{{ __('teacher_profiles.Subjects taught') }}</th>
-                                <td class="px-4 py-3 text-gray-900 dark:text-gray-100">{{ is_array($profile->subjects_taught) ? implode(', ', $profile->subjects_taught) : ($profile->subjects_taught ?? '—') }}</td>
+                                <td class="px-4 py-3 text-gray-900 dark:text-gray-100">
+                                    @php
+                                        // Get subjects from subject_teacher pivot table
+                                        $subjectNames = $profile->subjects->pluck('name')->sort()->values();
+                                    @endphp
+                                    {{ $subjectNames->isNotEmpty() ? $subjectNames->implode(', ') : '—' }}
+                                </td>
                             </tr>
                             <tr>
                                 <th class="w-48 px-4 py-3 text-left font-semibold text-gray-600 dark:text-gray-400 bg-gray-50 dark:bg-gray-900/50">{{ __('teacher_profiles.Previous School') }}</th>
