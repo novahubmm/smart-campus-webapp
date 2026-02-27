@@ -134,18 +134,10 @@
                     
                     $tableActions[] = [
                         'type' => 'button',
-                        'icon' => 'fas fa-toggle-on',
-                        'color' => 'text-amber-500',
-                        'title' => __('Toggle Status'),
-                        'onclick' => function($user) {
-                            $action = $user->is_active ? 'deactivate' : 'activate';
-                            $route = route("users.{$action}", $user);
-                            $title = $user->is_active ? __('Deactivate user') : __('Activate user');
-                            $message = $user->is_active ? __('This will block login for this user.') : __('Re-enable login for this user.');
-                            $confirmText = $user->is_active ? __('Deactivate') : __('Activate');
-                            
-                            return "confirmAction('{$route}', '{$title}', '{$message}', '{$confirmText}')";
-                        },
+                        'onclick' => fn($user) => "toggleUserStatus('{$user->id}', '" . ($user->is_active ? 'inactive' : 'active') . "')",
+                        'icon' => fn($user) => $user->is_active ? 'fas fa-toggle-on' : 'fas fa-toggle-off',
+                        'title' => fn($user) => $user->is_active ? __('Deactivate') : __('Activate'),
+                        'color' => fn($user) => $user->is_active ? 'text-green-600 hover:text-green-700' : 'text-gray-400 hover:text-gray-500',
                     ];
                 }
             @endphp
@@ -291,6 +283,22 @@
         function closeResetPasswordModal() {
             document.getElementById('resetPasswordModal').classList.add('hidden');
             document.body.style.overflow = '';
+        }
+        
+        function toggleUserStatus(userId, newStatus) {
+            const action = newStatus === 'active' ? 'activate' : 'deactivate';
+            const title = newStatus === 'active' ? '{{ __('Activate user') }}' : '{{ __('Deactivate user') }}';
+            const message = newStatus === 'active' 
+                ? '{{ __('Re-enable login for this user.') }}'
+                : '{{ __('This will block login for this user.') }}';
+            const confirmText = newStatus === 'active' ? '{{ __('Activate') }}' : '{{ __('Deactivate') }}';
+            
+            confirmAction(
+                `/users/${userId}/${action}`,
+                title,
+                message,
+                confirmText
+            );
         }
         
         function confirmAction(url, title, message, confirmText) {

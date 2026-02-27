@@ -14,7 +14,10 @@ class TeacherAttendanceRepository implements TeacherAttendanceRepositoryInterfac
 
     public function getDailyRegister(Carbon $date): Collection
     {
-        $teachers = TeacherProfile::with(['user', 'department'])->orderBy('employee_id')->get();
+        $teachers = TeacherProfile::with(['user', 'department'])
+            ->where('status', 'active')
+            ->orderBy('employee_id')
+            ->get();
 
         $attendance = TeacherAttendance::whereDate('date', $date)->get()->keyBy('teacher_id');
 
@@ -43,7 +46,10 @@ class TeacherAttendanceRepository implements TeacherAttendanceRepositoryInterfac
 
     public function getRangeSummary(Carbon $start, Carbon $end): Collection
     {
-        $teachers = TeacherProfile::with(['user', 'department'])->orderBy('employee_id')->get();
+        $teachers = TeacherProfile::with(['user', 'department'])
+            ->where('status', 'active')
+            ->orderBy('employee_id')
+            ->get();
 
         $attendance = TeacherAttendance::select('teacher_id', 'status')
             ->whereBetween('date', [$start->toDateString(), $end->toDateString()])

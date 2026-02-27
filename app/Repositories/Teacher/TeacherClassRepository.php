@@ -781,7 +781,7 @@ class TeacherClassRepository implements TeacherClassRepositoryInterface
      */
     public function getStudentProfile(User $teacher, string $studentId): ?array
     {
-        $student = StudentProfile::with(['user', 'grade.gradeCategory', 'classModel'])->find($studentId);
+        $student = StudentProfile::with(['user', 'grade.gradeCategory', 'classModel', 'guardians'])->find($studentId);
         if (!$student) {
             return null;
         }
@@ -793,7 +793,27 @@ class TeacherClassRepository implements TeacherClassRepositoryInterface
         $class = $student->classModel;
         $gradeColor = $student->grade?->gradeCategory?->color ?? '#6B7280';
 
+        // Check if student is a class leader
+        $isClassLeader = false;
+        if ($class) {
+            $isClassLeader = $class->class_leader_id === $student->id 
+                          || $class->male_class_leader_id === $student->id 
+                          || $class->female_class_leader_id === $student->id;
+        }
+
+        // Get the primary guardian
+        $primaryGuardian = $student->guardians()
+            ->wherePivot('is_primary', true)
+            ->with('user')
+            ->first();
+
+        // If no primary guardian, get the first guardian
+        if (!$primaryGuardian) {
+            $primaryGuardian = $student->guardians()->with('user')->first();
+        }
+
         return [
+            // Header Info
             'id' => $student->id,
             'name' => $student->user?->name ?? 'Unknown',
             'roll_no' => $student->student_identifier ?? '',
@@ -805,9 +825,44 @@ class TeacherClassRepository implements TeacherClassRepositoryInterface
                 'section' => substr($class?->name ?? '', -1),
                 'grade_color' => $gradeColor,
             ],
-            'is_class_leader' => $class?->class_leader_id === $student->id,
+            'is_class_leader' => $isClassLeader,
             'badges' => $this->getStudentBadges($studentId),
             'achiever_status' => $this->getAchieverStatus($studentId),
+
+            // Basic Information
+            'student_id' => $student->student_identifier ?? $student->student_id ?? 'N/A',
+            'date_of_joining' => $student->date_of_joining?->format('Y-m-d') ?? 'N/A',
+
+            // Personal Information
+            'ethnicity' => $student->ethnicity ?? 'N/A',
+            'religion' => $student->religious ?? 'N/A',
+            'nrc' => $student->nrc ?? 'N/A',
+            'date_of_birth' => $student->dob?->format('Y-m-d') ?? 'N/A',
+
+            // Academic Information
+            'starting_grade' => $student->starting_grade_at_school ?? 'N/A',
+            'current_grade' => $student->grade?->name ?? 'N/A',
+            'current_class' => $class?->section ?? 'N/A',
+            'previous_grade' => 'N/A', // Not stored in current schema
+            'previous_section' => 'N/A', // Not stored in current schema
+            'guardian_teacher' => $student->guardian_teacher ?? 'N/A',
+            'assistant_teacher' => $student->assistant_teacher ?? 'N/A',
+            'previous_school' => $student->previous_school_name ?? 'N/A',
+            'address' => $student->address ?? 'N/A',
+
+            // Medical Information
+            'weight' => $student->weight ?? 'N/A',
+            'height' => $student->height ?? 'N/A',
+            'blood_type' => $student->blood_type ?? 'N/A',
+            'medicine_allergy' => $student->medicine_allergy ?? 'None',
+            'food_allergy' => $student->food_allergy ?? 'None',
+            'medical_history' => $student->medical_directory ?? 'None',
+
+            // Guardian Information
+            'guardian_name' => $primaryGuardian?->user?->name ?? 'N/A',
+            'guardian_email' => $primaryGuardian?->user?->email ?? 'N/A',
+            'guardian_phone' => $primaryGuardian?->user?->phone ?? 'N/A',
+            'guardian_relationship' => $primaryGuardian?->pivot?->relationship ?? 'N/A',
         ];
     }
 

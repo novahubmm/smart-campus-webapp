@@ -91,16 +91,10 @@
                             </div>
                         </div>
 
-                        <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                             <div>
-                                <label class="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1">{{ __('settings.School Code') }}</label>
-                                <input type="text" name="school_code" value="{{ old('school_code', $setting?->school_code) }}"
-                                       class="w-full px-4 py-2.5 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
-                                @error('school_code')<p class="text-sm text-red-600 mt-1">{{ $message }}</p>@enderror
-                            </div>
-                            <div>
-                                <label class="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1">{{ __('settings.Established Year') }}</label>
-                                <input type="number" name="established_year" value="{{ old('established_year', $setting?->established_year) }}" min="1800" max="{{ date('Y') }}"
+                                <label class="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1">{{ __('settings.Established') }}</label>
+                                <input type="date" name="established_year" value="{{ old('established_year', $setting?->established_year) }}"
                                        class="w-full px-4 py-2.5 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
                                 @error('established_year')<p class="text-sm text-red-600 mt-1">{{ $message }}</p>@enderror
                             </div>
@@ -201,20 +195,7 @@
                             </div>
                         </div>
 
-                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                            <div>
-                                <label class="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1">{{ __('settings.Pass Rate (%)') }}</label>
-                                <input type="number" name="pass_rate" value="{{ old('pass_rate', $setting?->pass_rate) }}" min="0" max="100" step="0.1"
-                                       class="w-full px-4 py-2.5 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
-                                @error('pass_rate')<p class="text-sm text-red-600 mt-1">{{ $message }}</p>@enderror
-                            </div>
-                            <div>
-                                <label class="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1">{{ __('settings.Average Attendance (%)') }}</label>
-                                <input type="number" name="average_attendance" value="{{ old('average_attendance', $setting?->average_attendance) }}" min="0" max="100" step="0.1"
-                                       class="w-full px-4 py-2.5 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
-                                @error('average_attendance')<p class="text-sm text-red-600 mt-1">{{ $message }}</p>@enderror
-                            </div>
-                        </div>
+                       
                     </div>
 
                     <!-- Form Actions -->

@@ -107,6 +107,23 @@ class TeacherProfileController extends Controller
 
         return redirect()->route('teacher-profiles.index')->with('success', __('Teacher profile updated successfully.'));
     }
+    
+    public function toggleStatus(TeacherProfile $teacherProfile): RedirectResponse
+    {
+        $this->authorize(PermissionEnum::MANAGE_TEACHER_PROFILES->value);
+
+        $newStatus = $teacherProfile->status === 'active' ? 'inactive' : 'active';
+        $teacherProfile->status = $newStatus;
+        $teacherProfile->save();
+
+        $this->logUpdate('TeacherProfile', $teacherProfile->id, "Status changed to {$newStatus}: {$teacherProfile->employee_id}");
+
+        $message = $newStatus === 'active'
+            ? __('teacher_profiles.Teacher activated successfully.') 
+            : __('teacher_profiles.Teacher deactivated successfully.');
+
+        return redirect()->route('teacher-profiles.index')->with('success', $message);
+    }
 
     public function activities(Request $request, TeacherProfile $teacherProfile): View
     {

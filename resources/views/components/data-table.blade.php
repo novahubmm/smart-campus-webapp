@@ -157,13 +157,19 @@
                                                     </button>
                                                 @endif
                                             @elseif($action['type'] === 'button')
+                                                @php
+                                                    $buttonIcon = is_callable($action['icon']) ? $action['icon']($row) : $action['icon'];
+                                                    $buttonTitle = is_callable($action['title']) ? $action['title']($row) : ($action['title'] ?? '');
+                                                    $buttonColor = is_callable($action['color']) ? $action['color']($row) : ($action['color'] ?? 'text-gray-500');
+                                                    $buttonOnclick = is_callable($action['onclick']) ? $action['onclick']($row) : $action['onclick'];
+                                                @endphp
                                                 <button 
                                                     type="button"
-                                                    class="w-8 h-8 rounded-md border border-gray-300 dark:border-gray-600 {{ $action['color'] ?? 'text-gray-500' }} flex items-center justify-center hover:border-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700" 
-                                                    title="{{ $action['title'] ?? '' }}"
-                                                    onclick="{{ $action['onclick']($row) }}"
+                                                    class="w-8 h-8 rounded-md border border-gray-300 dark:border-gray-600 {{ $buttonColor }} flex items-center justify-center hover:border-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700" 
+                                                    title="{{ $buttonTitle }}"
+                                                    onclick="{{ $buttonOnclick }}"
                                                 >
-                                                    <i class="{{ $action['icon'] }} text-xs"></i>
+                                                    <i class="{{ $buttonIcon }} text-xs"></i>
                                                 </button>
                                             @endif
                                         @endforeach

@@ -115,6 +115,12 @@ return array(
     'Father\'s Ph no.' => 'ဖခင်ဖုန်းနံပါတ်',
     'Mother\'s Ph no.' => 'မိခင်ဖုန်းနံပါတ်',
     'Partner\'s Ph no.' => 'အိမ်ထောင်ဖက်ဖုန်းနံပါတ်',
+    'Activate' => 'ဖွင့်မည်',
+    'Deactivate' => 'ပိတ်မည်',
+    'Are you sure you want to activate this teacher?' => 'ဤဆရာကို ဖွင့်လိုသည်မှာ သေချာပါသလား?',
+    'Are you sure you want to deactivate this teacher?' => 'ဤဆရာကို ပိတ်လိုသည်မှာ သေချာပါသလား?',
+    'Teacher activated successfully.' => 'ဆရာကို အောင်မြင်စွာ ဖွင့်ပြီးပါပြီ။',
+    'Teacher deactivated successfully.' => 'ဆရာကို အောင်မြင်စွာ ပိတ်ပြီးပါပြီ။',
     'Back to Teacher Profiles' => 'ဆရာကိုယ်ရေးအချက်အလက်များသို့ပြန်သွားမည်',
     
     // Activities page translations

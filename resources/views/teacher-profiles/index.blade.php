@@ -103,13 +103,6 @@
                         'icon' => 'fas fa-eye',
                         'title' => __('teacher_profiles.View Details'),
                     ];
-                    $tableActions[] = [
-                        'type' => 'link',
-                        'url' => fn($profile) => route('teacher-profiles.activities', $profile),
-                        'icon' => 'fas fa-clipboard-list',
-                        'title' => __('teacher_profiles.View Activities'),
-                        'class' => 'text-indigo-600 hover:text-indigo-800 dark:text-indigo-400 dark:hover:text-indigo-300',
-                    ];
                 }
                 
                 if (auth()->user()->can(App\Enums\PermissionEnum::MANAGE_TEACHER_PROFILES->value)) {
@@ -117,7 +110,15 @@
                         'type' => 'link',
                         'url' => fn($profile) => route('teacher-profiles.edit', $profile),
                         'icon' => 'fas fa-pen',
-                        'title' => 'Edit',
+                        'title' => __('teacher_profiles.Edit'),
+                    ];
+                    
+                    $tableActions[] = [
+                        'type' => 'button',
+                        'onclick' => fn($profile) => "toggleStatus('{$profile->id}', '" . ($profile->status === 'active' ? 'inactive' : 'active') . "')",
+                        'icon' => fn($profile) => $profile->status === 'active' ? 'fas fa-toggle-on' : 'fas fa-toggle-off',
+                        'title' => fn($profile) => $profile->status === 'active' ? __('teacher_profiles.Deactivate') : __('teacher_profiles.Activate'),
+                        'color' => fn($profile) => $profile->status === 'active' ? 'text-green-600 hover:text-green-700' : 'text-gray-400 hover:text-gray-500',
                     ];
                 }
             @endphp
@@ -137,6 +138,20 @@
     </div>
 
     <script>
+        function toggleStatus(profileId, newStatus) {
+            const action = newStatus === 'active' ? '{{ __('teacher_profiles.Activate') }}' : '{{ __('teacher_profiles.Deactivate') }}';
+            const message = newStatus === 'active'
+                ? '{{ __('teacher_profiles.Are you sure you want to activate this teacher?') }}'
+                : '{{ __('teacher_profiles.Are you sure you want to deactivate this teacher?') }}';
+            
+            confirmAction(
+                `/teacher-profiles/${profileId}/toggle-status`,
+                action,
+                message,
+                action
+            );
+        }
+        
         function confirmAction(url, title, message, confirmText) {
             if (typeof Alpine !== 'undefined') {
                 window.dispatchEvent(new CustomEvent('confirm-show', {

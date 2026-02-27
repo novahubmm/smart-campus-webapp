@@ -346,12 +346,16 @@ Route::middleware(['auth', 'ensure.active'])->group(function () {
         ->whereUuid('department');
 
     Route::resource('teacher-profiles', \App\Http\Controllers\TeacherProfileController::class)->except(['destroy']);
+    Route::post('teacher-profiles/{teacher_profile}/toggle-status', [\App\Http\Controllers\TeacherProfileController::class, 'toggleStatus'])
+        ->name('teacher-profiles.toggle-status');
     Route::get('teacher-profiles/{teacher_profile}/activities', [\App\Http\Controllers\TeacherProfileController::class, 'activities'])
         ->name('teacher-profiles.activities');
 
     Route::resource('student-profiles', \App\Http\Controllers\StudentProfileController::class)->except(['destroy']);
 
     Route::resource('staff-profiles', \App\Http\Controllers\StaffProfileController::class)->except(['destroy']);
+    Route::post('staff-profiles/{staffProfile}/toggle-status', [\App\Http\Controllers\StaffProfileController::class, 'toggleStatus'])
+        ->name('staff-profiles.toggle-status');
 
     Route::resource('daily-report-recipients', \App\Http\Controllers\DailyReportRecipientController::class)
         ->only(['index', 'store', 'update', 'destroy']);

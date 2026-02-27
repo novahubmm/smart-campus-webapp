@@ -15,22 +15,84 @@ class GuardianStudentRepository implements GuardianStudentRepositoryInterface
 {
     public function getStudentProfile(StudentProfile $student): array
     {
-        $student->load(['user', 'grade', 'classModel']);
+        $student->load(['user', 'grade.gradeCategory', 'classModel', 'guardians']);
+
+        $class = $student->classModel;
+        $gradeColor = $student->grade?->gradeCategory?->color ?? '#6B7280';
+
+        // Check if student is a class leader
+        $isClassLeader = false;
+        if ($class) {
+            $isClassLeader = $class->class_leader_id === $student->id 
+                          || $class->male_class_leader_id === $student->id 
+                          || $class->female_class_leader_id === $student->id;
+        }
+
+        // Get the primary guardian
+        $primaryGuardian = $student->guardians()
+            ->wherePivot('is_primary', true)
+            ->with('user')
+            ->first();
+
+        // If no primary guardian, get the first guardian
+        if (!$primaryGuardian) {
+            $primaryGuardian = $student->guardians()->with('user')->first();
+        }
 
         return [
+            // Header Info
             'id' => $student->id,
             'name' => $student->user?->name ?? 'N/A',
-            'student_id' => $student->student_identifier ?? $student->student_id,
-            'grade' => $student->grade?->name ?? 'N/A',
-            'section' => $student->classModel?->section ?? 'N/A',
+            'roll_no' => $student->student_identifier ?? $student->student_id ?? '',
+            'gender' => ucfirst($student->gender ?? 'N/A'),
+            'avatar' => avatar_url($student->photo_path, 'student'),
+            'class' => [
+                'id' => $class?->id,
+                'grade' => $student->grade?->level ?? '',
+                'section' => $class?->name ?? 'N/A',
+                'grade_color' => $gradeColor,
+            ],
+            'is_class_leader' => $isClassLeader ? 1 : 0,
+
+            // Basic Information
+            'student_id' => $student->student_identifier ?? $student->student_id ?? 'N/A',
+            'date_of_joining' => $student->date_of_joining?->format('Y-m-d') ?? 'N/A',
             'roll_number' => $student->roll_number ?? null,
-            'profile_image' => $student->photo_path ? asset($student->photo_path) : null,
-            'date_of_birth' => $student->dob?->format('Y-m-d'),
-            'blood_group' => $student->blood_type,
-            'gender' => $student->gender,
-            'address' => $student->address,
-            'previous_grade' => $student->previous_grade,
-            'previous_class' => $student->previous_class,
+
+            // Personal Information
+            'ethnicity' => $student->ethnicity ?? 'N/A',
+            'religion' => $student->religious ?? 'N/A',
+            'nrc' => $student->nrc ?? 'N/A',
+            'date_of_birth' => $student->dob?->format('Y-m-d') ?? 'N/A',
+            'blood_group' => $student->blood_type ?? 'N/A',
+
+            // Academic Information
+            'starting_grade' => $student->starting_grade_at_school ?? 'N/A',
+            'current_grade' => $student->grade?->name ?? 'N/A',
+            'current_class' => $class?->name ?? 'N/A',
+            'previous_grade' => $student->previous_grade ?? 'N/A',
+            'previous_class' => $student->previous_class ?? 'N/A',
+            'previous_section' => 'N/A', // Not stored in current schema
+            'guardian_teacher' => $student->guardian_teacher ?? 'N/A',
+            'assistant_teacher' => $student->assistant_teacher ?? 'N/A',
+            'previous_school' => $student->previous_school_name ?? 'N/A',
+            'address' => $student->address ?? 'N/A',
+
+            // Medical Information
+            'weight' => $student->weight ?? 'N/A',
+            'height' => $student->height ?? 'N/A',
+            'blood_type' => $student->blood_type ?? 'N/A',
+            'medicine_allergy' => $student->medicine_allergy ?? 'None',
+            'food_allergy' => $student->food_allergy ?? 'None',
+            'medical_history' => $student->medical_directory ?? 'None',
+
+            // Guardian Information
+            'guardian_name' => $primaryGuardian?->user?->name ?? 'N/A',
+            'guardian_email' => $primaryGuardian?->user?->email ?? 'N/A',
+            'guardian_phone' => $primaryGuardian?->user?->phone ?? 'N/A',
+            'guardian_relationship' => $primaryGuardian?->pivot?->relationship ?? 'N/A',
+
+            // Legacy parent fields (for backward compatibility)
             'father_name' => $student->father_name,
             'father_nrc' => $student->father_nrc,
             'father_religious' => $student->father_religious,
@@ -840,6 +902,14 @@ class GuardianStudentRepository implements GuardianStudentRepositoryInterface
         // Load all necessary relationships
         $student->load(['user', 'grade', 'classModel', 'guardians']);
 
+        // Check if student is a class leader
+        $isClassLeader = false;
+        if ($student->classModel) {
+            $isClassLeader = $student->classModel->class_leader_id === $student->id 
+                          || $student->classModel->male_class_leader_id === $student->id 
+                          || $student->classModel->female_class_leader_id === $student->id;
+        }
+
         // Get the primary guardian
         $primaryGuardian = $student->guardians()
             ->wherePivot('is_primary', true)
@@ -856,6 +926,7 @@ class GuardianStudentRepository implements GuardianStudentRepositoryInterface
                 'name' => $student->user?->name ?? 'N/A',
                 'student_id' => $student->student_identifier ?? $student->student_id ?? 'N/A',
                 'date_of_joining' => $student->date_of_joining?->format('Y-m-d') ?? 'N/A',
+                'is_class_leader' => $isClassLeader ? 1 : 0,
             ],
             'personal_information' => [
                 'gender' => $student->gender ?? 'N/A',
