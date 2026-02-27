@@ -21,6 +21,8 @@
             'location' => $a->location,
             'target_roles' => $a->target_roles ?? [],
             'target_grades' => $a->target_grades ?? ['all'],
+            'target_teacher_grades' => $a->target_teacher_grades ?? ['all'],
+            'target_guardian_grades' => $a->target_guardian_grades ?? ['all'],
             'target_departments' => $a->target_departments ?? ['all'],
             'publish_date' => $a->publish_date?->format('Y-m-d H:i:s'),
             'is_published' => $a->is_published,
@@ -79,6 +81,12 @@
                 <form method="GET" action="{{ route('announcements.index') }}" class="p-4 bg-gray-50 dark:bg-gray-900/50 border-b border-gray-200 dark:border-gray-700">
                     <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
                         <div class="flex flex-col gap-1">
+                            <label class="text-xs font-semibold text-gray-600 dark:text-gray-400">{{ __('announcements.Month') }}</label>
+                            <input type="month" name="month"
+                                class="rounded-lg border-gray-300 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-200 text-sm focus:border-amber-500 focus:ring-amber-500"
+                                value="{{ $filter->month ?? now()->format('Y-m') }}">
+                        </div>
+                        <div class="flex flex-col gap-1">
                             <label class="text-xs font-semibold text-gray-600 dark:text-gray-400">{{ __('announcements.Type') }}</label>
                             <select name="type" class="rounded-lg border-gray-300 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-200 text-sm focus:border-amber-500 focus:ring-amber-500">
                                 <option value="">{{ __('announcements.All Types') }}</option>
@@ -104,24 +112,8 @@
                                 <option value="draft" @selected(request('status') === 'draft')>{{ __('announcements.Draft') }}</option>
                             </select>
                         </div>
-                        <div class="flex flex-col gap-1">
-                            <label class="text-xs font-semibold text-gray-600 dark:text-gray-400">{{ __('announcements.Target') }}</label>
-                            <select name="target" class="rounded-lg border-gray-300 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-200 text-sm focus:border-amber-500 focus:ring-amber-500">
-                                <option value="">{{ __('announcements.All Targets') }}</option>
-                                <optgroup label="{{ __('announcements.Grades') }}">
-                                    @foreach($grades as $grade)
-                                        <option value="grade:{{ $grade->id }}" @selected(request('target') === 'grade:'.$grade->id)>{{ $grade->name }}</option>
-                                    @endforeach
-                                </optgroup>
-                                <optgroup label="{{ __('announcements.Departments') }}">
-                                    @foreach($departments as $department)
-                                        <option value="dept:{{ $department->id }}" @selected(request('target') === 'dept:'.$department->id)>{{ $department->name }}</option>
-                                    @endforeach
-                                </optgroup>
-                            </select>
-                        </div>
                         <div class="flex items-end gap-2">
-                            <button type="submit" class="flex-1 px-3 py-2 text-sm font-semibold rounded-lg text-white bg-gray-800 dark:bg-gray-700 hover:bg-gray-900 dark:hover:bg-gray-600">{{ __('announcements.Apply') }}</button>
+                            <button type="submit" class="flex-1 px-3 py-2 text-sm font-semibold rounded-lg text-white bg-amber-600 hover:bg-amber-700">{{ __('announcements.Apply') }}</button>
                             <a href="{{ route('announcements.index') }}" class="px-3 py-2 text-sm font-semibold rounded-lg border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700">{{ __('announcements.Reset') }}</a>
                         </div>
                     </div>
@@ -135,8 +127,7 @@
                                 <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 dark:text-gray-300 whitespace-nowrap">{{ __('announcements.Type') }}</th>
                                 <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 dark:text-gray-300 whitespace-nowrap">{{ __('announcements.Title') }}</th>
                                 <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 dark:text-gray-300 whitespace-nowrap">{{ __('announcements.Priority') }}</th>
-                                <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 dark:text-gray-300 whitespace-nowrap">{{ __('announcements.Participants') }}</th>
-                                <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 dark:text-gray-300 whitespace-nowrap">{{ __('announcements.Target') }}</th>
+                                <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 dark:text-gray-300 whitespace-nowrap">{{ __('announcements.Date') }}</th>
                                 <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 dark:text-gray-300 whitespace-nowrap">{{ __('announcements.Status') }}</th>
                                 <th class="px-4 py-3 text-right text-xs font-semibold text-gray-600 dark:text-gray-300 whitespace-nowrap">{{ __('announcements.Actions') }}</th>
                             </tr>
@@ -172,70 +163,16 @@
                                             {{ ucfirst($announcement->priority) }}
                                         </span>
                                     </td>
-                                    <td class="px-4 py-3">
-                                        <div class="flex flex-wrap gap-1">
-                                            @foreach($announcement->target_roles ?? [] as $role)
-                                                <span class="inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-300">
-                                                    {{ ucfirst($role) }}
-                                                </span>
-                                            @endforeach
-                                            @if(empty($announcement->target_roles))
-                                                <span class="text-gray-400 text-xs">—</span>
-                                            @endif
-                                        </div>
-                                    </td>
-                                    <td class="px-4 py-3">
-                                        <div class="flex flex-wrap gap-1">
-                                            @php
-                                                $targetGrades = $announcement->target_grades ?? ['all'];
-                                                $targetDepts = $announcement->target_departments ?? ['all'];
-                                                $hasTeacherOrGuardian = collect($announcement->target_roles ?? [])->intersect(['teacher', 'guardian'])->isNotEmpty();
-                                                $hasStaff = in_array('staff', $announcement->target_roles ?? []);
-                                            @endphp
-                                            @if($hasTeacherOrGuardian)
-                                                @if(in_array('all', $targetGrades))
-                                                    <span class="inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300">
-                                                        <i class="fas fa-graduation-cap mr-1 text-[10px]"></i>{{ __('announcements.All Grades') }}
-                                                    </span>
-                                                @else
-                                                    @foreach($grades->whereIn('id', $targetGrades)->take(2) as $grade)
-                                                        <span class="inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300">
-                                                            {{ $grade->name }}
-                                                        </span>
-                                                    @endforeach
-                                                    @if(count($targetGrades) > 2)
-                                                        <span class="text-xs text-gray-500">+{{ count($targetGrades) - 2 }}</span>
-                                                    @endif
-                                                @endif
-                                            @endif
-                                            @if($hasStaff)
-                                                @if(in_array('all', $targetDepts))
-                                                    <span class="inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-300">
-                                                        <i class="fas fa-building mr-1 text-[10px]"></i>{{ __('announcements.All Departments') }}
-                                                    </span>
-                                                @else
-                                                    @foreach($departments->whereIn('id', $targetDepts)->take(2) as $dept)
-                                                        <span class="inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-300">
-                                                            {{ Str::limit($dept->name, 10) }}
-                                                        </span>
-                                                    @endforeach
-                                                    @if(count($targetDepts) > 2)
-                                                        <span class="text-xs text-gray-500">+{{ count($targetDepts) - 2 }}</span>
-                                                    @endif
-                                                @endif
-                                            @endif
-                                            @if(!$hasTeacherOrGuardian && !$hasStaff)
-                                                <span class="text-gray-400 text-xs">—</span>
-                                            @endif
-                                        </div>
+                                    <td class="px-4 py-3 text-sm text-gray-900 dark:text-white leading-tight">
+                                        <span class="font-bold">{{ $announcement->publish_date?->format('M j, Y') ?? '—' }}</span>
                                     </td>
                                     <td class="px-4 py-3">
                                         @if($announcement->is_published)
-                                            <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-semibold bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300">
+                                            <span class="inline-flex px-2 py-0.5 rounded text-xs font-medium bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300">
                                                 {{ __('announcements.Published') }}
                                             </span>
                                         @else
-                                            <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-semibold bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-300">
+                                            <span class="inline-flex px-2 py-0.5 rounded text-xs font-medium bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-300">
                                                 {{ __('announcements.Draft') }}
                                             </span>
                                         @endif
@@ -256,7 +193,7 @@
                                 </tr>
                             @empty
                                 <tr>
-                                    <td colspan="7" class="px-4 py-12 text-center">
+                                    <td colspan="5" class="px-4 py-12 text-center">
                                         <div class="flex flex-col items-center justify-center text-gray-500 dark:text-gray-400">
                                             <i class="fas fa-bullhorn text-4xl mb-3 opacity-50"></i>
                                             <p class="text-sm">{{ __('announcements.No announcements found') }}</p>
@@ -363,29 +300,51 @@
                                     @endforeach
                                 </div>
 
-                                <!-- Grade Selection for Teacher/Guardian -->
-                                <div x-show="form.target_roles.includes('teacher') || form.target_roles.includes('guardian')" x-collapse class="mt-4 p-3 bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700">
-                                    <label class="block text-sm font-semibold text-gray-700 dark:text-gray-200 mb-2">
-                                        <i class="fas fa-graduation-cap text-amber-500 mr-1"></i>
-                                        {{ __('announcements.Select Grades') }}
-                                        <span class="text-xs text-gray-400 font-normal ml-1">(for Teacher & Guardian)</span>
-                                    </label>
-                                    <div class="flex flex-wrap gap-2">
-                                        <label class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border cursor-pointer transition-all"
-                                               :class="form.target_grades.length === 0 || form.target_grades.includes('all') ? 'border-amber-500 bg-amber-50 dark:bg-amber-900/20 text-amber-700 dark:text-amber-300' : 'border-gray-300 dark:border-gray-600 hover:border-amber-300'">
-                                            <input type="checkbox" value="all" class="hidden" x-model="form.target_grades" @change="if(form.target_grades.includes('all')) form.target_grades = ['all']">
-                                            <span class="text-sm font-medium">{{ __('announcements.All Grades') }}</span>
-                                        </label>
-                                        @foreach($grades as $grade)
-                                            <label class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border cursor-pointer transition-all"
-                                                   :class="form.target_grades.includes('{{ $grade->id }}') ? 'border-amber-500 bg-amber-50 dark:bg-amber-900/20 text-amber-700 dark:text-amber-300' : 'border-gray-300 dark:border-gray-600 hover:border-amber-300'">
-                                                <input type="checkbox" name="target_grades[]" value="{{ $grade->id }}" class="hidden" x-model="form.target_grades" @change="form.target_grades = form.target_grades.filter(g => g !== 'all')">
-                                                <span class="text-sm font-medium">{{ $grade->name }}</span>
-                                            </label>
-                                        @endforeach
-                                    </div>
-                                    <input type="hidden" name="target_grades_json" :value="JSON.stringify(form.target_grades)">
-                                </div>
+                                 <!-- Grade Selection for Teacher -->
+                                 <div x-show="form.target_roles.includes('teacher')" x-collapse class="mt-4 p-3 bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700">
+                                     <label class="block text-sm font-semibold text-gray-700 dark:text-gray-200 mb-2">
+                                         <i class="fas fa-graduation-cap text-amber-500 mr-1"></i>
+                                         {{ __('announcements.Select Teacher Grades') }}
+                                     </label>
+                                     <div class="flex flex-wrap gap-2">
+                                         <label class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border cursor-pointer transition-all"
+                                                :class="form.target_teacher_grades.length === 0 || form.target_teacher_grades.includes('all') ? 'border-amber-500 bg-amber-50 dark:bg-amber-900/20 text-amber-700 dark:text-amber-300' : 'border-gray-300 dark:border-gray-600 hover:border-amber-300'">
+                                             <input type="checkbox" value="all" class="hidden" x-model="form.target_teacher_grades" @change="if(form.target_teacher_grades.includes('all')) form.target_teacher_grades = ['all']">
+                                             <span class="text-sm font-medium">{{ __('announcements.All Grades') }}</span>
+                                         </label>
+                                         @foreach($grades as $grade)
+                                             <label class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border cursor-pointer transition-all"
+                                                    :class="form.target_teacher_grades.includes('{{ $grade->id }}') ? 'border-amber-500 bg-amber-50 dark:bg-amber-900/20 text-amber-700 dark:text-amber-300' : 'border-gray-300 dark:border-gray-600 hover:border-amber-300'">
+                                                 <input type="checkbox" name="target_teacher_grades[]" value="{{ $grade->id }}" class="hidden" x-model="form.target_teacher_grades" @change="form.target_teacher_grades = form.target_teacher_grades.filter(g => g !== 'all')">
+                                                 <span class="text-sm font-medium">{{ $grade->name }}</span>
+                                             </label>
+                                         @endforeach
+                                     </div>
+                                     <input type="hidden" name="target_teacher_grades_json" :value="JSON.stringify(form.target_teacher_grades)">
+                                 </div>
+
+                                 <!-- Grade Selection for Guardian -->
+                                 <div x-show="form.target_roles.includes('guardian')" x-collapse class="mt-4 p-3 bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700">
+                                     <label class="block text-sm font-semibold text-gray-700 dark:text-gray-200 mb-2">
+                                         <i class="fas fa-child text-amber-500 mr-1"></i>
+                                         {{ __('announcements.Select Guardian Grades') }}
+                                     </label>
+                                     <div class="flex flex-wrap gap-2">
+                                         <label class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border cursor-pointer transition-all"
+                                                :class="form.target_guardian_grades.length === 0 || form.target_guardian_grades.includes('all') ? 'border-amber-500 bg-amber-50 dark:bg-amber-900/20 text-amber-700 dark:text-amber-300' : 'border-gray-300 dark:border-gray-600 hover:border-amber-300'">
+                                             <input type="checkbox" value="all" class="hidden" x-model="form.target_guardian_grades" @change="if(form.target_guardian_grades.includes('all')) form.target_guardian_grades = ['all']">
+                                             <span class="text-sm font-medium">{{ __('announcements.All Grades') }}</span>
+                                         </label>
+                                         @foreach($grades as $grade)
+                                             <label class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border cursor-pointer transition-all"
+                                                    :class="form.target_guardian_grades.includes('{{ $grade->id }}') ? 'border-amber-500 bg-amber-50 dark:bg-amber-900/20 text-amber-700 dark:text-amber-300' : 'border-gray-300 dark:border-gray-600 hover:border-amber-300'">
+                                                 <input type="checkbox" name="target_guardian_grades[]" value="{{ $grade->id }}" class="hidden" x-model="form.target_guardian_grades" @change="form.target_guardian_grades = form.target_guardian_grades.filter(g => g !== 'all')">
+                                                 <span class="text-sm font-medium">{{ $grade->name }}</span>
+                                             </label>
+                                         @endforeach
+                                     </div>
+                                     <input type="hidden" name="target_guardian_grades_json" :value="JSON.stringify(form.target_guardian_grades)">
+                                 </div>
 
                                 <!-- Department Selection for Staff -->
                                 <div x-show="form.target_roles.includes('staff')" x-collapse class="mt-4 p-3 bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700">
@@ -494,6 +453,8 @@
                     location: '',
                     target_roles: [],
                     target_grades: ['all'],
+                    target_teacher_grades: ['all'],
+                    target_guardian_grades: ['all'],
                     target_departments: ['all'],
                     publish_date: '',
                     publish_time: ''
@@ -520,6 +481,8 @@
                         location: announcement.location || '',
                         target_roles: announcement.target_roles || [],
                         target_grades: announcement.target_grades || ['all'],
+                        target_teacher_grades: announcement.target_teacher_grades || ['all'],
+                        target_guardian_grades: announcement.target_guardian_grades || ['all'],
                         target_departments: announcement.target_departments || ['all'],
                         publish_date: announcement.publish_date ? announcement.publish_date.split(' ')[0] : '',
                         publish_time: announcement.publish_date ? announcement.publish_date.split(' ')[1]?.substring(0, 5) : ''
@@ -574,6 +537,8 @@
                         location: '',
                         target_roles: [],
                         target_grades: ['all'],
+                        target_teacher_grades: ['all'],
+                        target_guardian_grades: ['all'],
                         target_departments: ['all'],
                         publish_date: '',
                         publish_time: ''

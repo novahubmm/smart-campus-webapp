@@ -19,6 +19,10 @@ class AnnouncementRepository implements AnnouncementRepositoryInterface
             $query->where('priority', $filter->priority);
         }
 
+        if ($filter->type && $filter->type !== 'all') {
+            $query->where('announcement_type_id', $filter->type);
+        }
+
         if ($filter->role && $filter->role !== 'all') {
             $query->whereJsonContains('target_roles', $filter->role);
         }
@@ -31,10 +35,10 @@ class AnnouncementRepository implements AnnouncementRepositoryInterface
                     // Must target teacher or guardian roles AND have the specific grade
                     $q->where(function ($subQ) use ($gradeId) {
                         $subQ->whereJsonContains('target_roles', 'teacher')
-                             ->orWhereJsonContains('target_roles', 'guardian');
+                            ->orWhereJsonContains('target_roles', 'guardian');
                     })->where(function ($subQ) use ($gradeId) {
                         $subQ->whereJsonContains('target_grades', $gradeId)
-                             ->orWhereJsonContains('target_grades', 'all');
+                            ->orWhereJsonContains('target_grades', 'all');
                     });
                 });
             } elseif (str_starts_with($filter->target, 'dept:')) {
@@ -42,16 +46,17 @@ class AnnouncementRepository implements AnnouncementRepositoryInterface
                 $query->where(function ($q) use ($deptId) {
                     // Must target staff role AND have the specific department
                     $q->whereJsonContains('target_roles', 'staff')
-                      ->where(function ($subQ) use ($deptId) {
-                          $subQ->whereJsonContains('target_departments', $deptId)
-                               ->orWhereJsonContains('target_departments', 'all');
-                      });
+                        ->where(function ($subQ) use ($deptId) {
+                            $subQ->whereJsonContains('target_departments', $deptId)
+                                ->orWhereJsonContains('target_departments', 'all');
+                        });
                 });
             }
         }
 
         $this->applyStatusFilter($query, $filter->status);
         $this->applyPeriodFilter($query, $filter->period);
+        $this->applyMonthFilter($query, $filter->month);
 
         return $query->paginate($perPage);
     }
@@ -104,7 +109,23 @@ class AnnouncementRepository implements AnnouncementRepositoryInterface
             'this_week' => $query->whereBetween('publish_date', [$today->copy()->startOfWeek(), $today->copy()->endOfWeek()]),
             'this_month' => $query->whereBetween('publish_date', [$today->copy()->startOfMonth(), $today->copy()->endOfMonth()]),
             'next_month' => $query->whereBetween('publish_date', [$today->copy()->startOfMonth()->addMonth(), $today->copy()->addMonth()->endOfMonth()]),
+            'this_year' => $query->whereYear('publish_date', $today->year),
             default => null,
         };
+    }
+
+    private function applyMonthFilter($query, ?string $month): void
+    {
+        if (!$month) {
+            return;
+        }
+
+        try {
+            $date = Carbon::createFromFormat('Y-m', $month);
+            $query->whereYear('publish_date', $date->year)
+                ->whereMonth('publish_date', $date->month);
+        } catch (\Exception $e) {
+            // Ignore invalid month format
+        }
     }
 }
