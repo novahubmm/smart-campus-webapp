@@ -77,9 +77,9 @@ class StudentFeeController extends Controller
     {
         // Get month filter (default to current month)
         $feeMonth = $request->input('fee_month', now()->format('Y-m'));
-        $historyDate = $request->input('history_date', now()->format('Y-m-d'));
-        $pendingDate = $request->input('pending_date', now()->format('Y-m-d'));
-        $rejectedDate = $request->input('rejected_date', now()->format('Y-m-d'));
+        $historyMonth = $request->input('history_month', now()->format('Y-m'));
+        $pendingMonth = $request->input('pending_month', now()->format('Y-m'));
+        $rejectedMonth = $request->input('rejected_month', now()->format('Y-m'));
         
         // For display purposes
         $filterDate = \Carbon\Carbon::parse($feeMonth . '-01');
@@ -111,22 +111,40 @@ class StudentFeeController extends Controller
             ->toArray();
         
         // Query unpaid invoices with relationships (using PaymentSystem)
-        // Filter by due_date month to show only invoices due in the selected month
+        // Show invoices that:
+        // 1. Have due_date in the selected month (original invoices)
+        // 2. OR are remaining_balance invoices created from payments in the selected month
         $unpaidInvoicesQuery = \App\Models\PaymentSystem\Invoice::with([
             'student.user', 
             'student.grade',
             'student.batch', // Add batch relationship
             'student.classModel', 
-            'fees.feeStructure' // Load invoice fees with fee structure
+            'fees.feeStructure', // Load invoice fees with fee structure
+            'fees.feeType' // Load fee type for discount status check
         ])
-        ->whereYear('due_date', $filterDate->year)
-        ->whereMonth('due_date', $filterDate->month)
-        ->where(function ($query) use ($rejectedProofInvoiceIds) {
-            // Include only pending invoices (exclude waiting, paid, and rejected)
-            $query->where('status', 'pending')
-                  ->where('remaining_amount', '>', 0)
-                  // OR invoices that have rejected payment proofs
-                  ->orWhereIn('id', $rejectedProofInvoiceIds);
+        ->where(function ($query) use ($filterDate, $monthStart, $monthEnd, $rejectedProofInvoiceIds) {
+            // Original invoices due in the selected month
+            $query->where(function ($q) use ($filterDate) {
+                $q->whereYear('due_date', $filterDate->year)
+                  ->whereMonth('due_date', $filterDate->month);
+            })
+            // OR remaining balance invoices created in the selected month
+            ->orWhere(function ($q) use ($monthStart, $monthEnd) {
+                $q->where('invoice_type', 'remaining_balance')
+                  ->whereBetween('created_at', [$monthStart, $monthEnd]);
+            })
+            // OR one-time invoices created in the selected month
+            ->orWhere(function ($q) use ($monthStart, $monthEnd) {
+                $q->where('invoice_type', 'one_time')
+                  ->whereBetween('created_at', [$monthStart, $monthEnd]);
+            })
+            // OR invoices with rejected payment proofs in the selected month
+            ->orWhereIn('id', $rejectedProofInvoiceIds);
+        })
+        ->where(function ($query) {
+            // Only show pending/unpaid invoices with remaining balance
+            $query->whereIn('status', ['pending', 'unpaid'])
+                  ->where('remaining_amount', '>', 0);
         })
         ->whereHas('student', function ($q) {
             $q->where('status', 'active');
@@ -300,13 +318,14 @@ class StudentFeeController extends Controller
             ->paginate(10, ['*'], 'pending_page')
             ->withQueryString();
 
-        // Get rejected payments (PaymentSystem) for the selected rejected date
-        $rejectedDayStart = \Carbon\Carbon::parse($rejectedDate)->startOfDay();
-        $rejectedDayEnd = \Carbon\Carbon::parse($rejectedDate)->endOfDay();
+        // Get rejected payments (PaymentSystem) for the selected rejected month
+        $rejectedFilterDate = \Carbon\Carbon::parse($rejectedMonth . '-01');
+        $rejectedMonthStart = $rejectedFilterDate->copy()->startOfMonth();
+        $rejectedMonthEnd = $rejectedFilterDate->copy()->endOfMonth();
         
         $rejectedPaymentsQuery = \App\Models\PaymentSystem\Payment::where('status', 'rejected')
             ->with(['student.user', 'student.grade', 'student.classModel', 'paymentMethod', 'feeDetails', 'invoice'])
-            ->whereBetween('payment_date', [$rejectedDayStart, $rejectedDayEnd]);
+            ->whereBetween('payment_date', [$rejectedMonthStart, $rejectedMonthEnd]);
 
         // Apply grade filter
         if ($request->filled('rejected_grade')) {
@@ -348,8 +367,9 @@ class StudentFeeController extends Controller
             ->withQueryString();
 
         // Get paid payments history (PaymentSystem) - Show invoices with status 'paid' AND have verified payments
-        $historyDayStart = \Carbon\Carbon::parse($historyDate)->startOfDay();
-        $historyDayEnd = \Carbon\Carbon::parse($historyDate)->endOfDay();
+        $historyFilterDate = \Carbon\Carbon::parse($historyMonth . '-01');
+        $historyMonthStart = $historyFilterDate->copy()->startOfMonth();
+        $historyMonthEnd = $historyFilterDate->copy()->endOfMonth();
         
         $paidPaymentsQuery = \App\Models\PaymentSystem\Invoice::with([
                 'student.user', 
@@ -363,9 +383,9 @@ class StudentFeeController extends Controller
                 }
             ])
             ->where('status', 'paid') // Only show paid invoices
-            ->whereHas('payments', function($query) use ($historyDayStart, $historyDayEnd) {
+            ->whereHas('payments', function($query) use ($historyMonthStart, $historyMonthEnd) {
                 $query->where('status', 'verified') // Must have at least one verified payment
-                      ->whereBetween('payment_date', [$historyDayStart, $historyDayEnd]); // Filter by history date
+                      ->whereBetween('payment_date', [$historyMonthStart, $historyMonthEnd]); // Filter by history month
             })
             ->whereHas('student', function ($q) {
                 $q->where('status', 'active');
@@ -428,9 +448,9 @@ class StudentFeeController extends Controller
             'currentMonthKey' => $currentMonthKey,
             'selectedMonth' => $feeMonth,
             'feeMonth' => $feeMonth,
-            'historyDate' => $historyDate,
-            'pendingDate' => $pendingDate,
-            'rejectedDate' => $rejectedDate,
+            'historyMonth' => $historyMonth,
+            'pendingMonth' => $pendingMonth,
+            'rejectedMonth' => $rejectedMonth,
             'totalReceivable' => $totalReceivable,
             'totalReceived' => $totalReceived,
             'paidInvoices' => $paidInvoices,
@@ -623,21 +643,10 @@ class StudentFeeController extends Controller
             'end_month' => 'nullable|date_format:Y-m|required_if:frequency,monthly',
         ]);
 
-        // Validate due date if start/end month is current month
+        // Validate month range if frequency is monthly
         if ($validated['frequency'] === 'monthly') {
-            $currentMonth = now()->format('Y-m');
-            $currentDay = now()->day;
-            $dueDate = (int) $validated['due_date'];
-            
             $startMonth = $validated['start_month'] ?? null;
             $endMonth = $validated['end_month'] ?? null;
-            
-            // Check if start month is current month and due date has passed
-            if ($startMonth === $currentMonth && $dueDate < $currentDay) {
-                return redirect()->back()
-                    ->withInput()
-                    ->withErrors(['due_date' => __('finance.Due date has already passed for the current month. Please select a future date or start from next month.')]);
-            }
             
             // Check if end month is before start month
             if ($startMonth && $endMonth && $endMonth < $startMonth) {
@@ -1049,7 +1058,8 @@ class StudentFeeController extends Controller
             
             // Get current date and month
             $currentDate = now();
-            $currentMonth = $currentDate->format('Y-m');
+            $currentMonthStart = $currentDate->copy()->startOfMonth();
+            $currentMonthEnd = $currentDate->copy()->endOfMonth();
             
             // Check if invoice already exists for this student and fee type for current month
             // Check both unpaid invoices and invoices from this month
@@ -1057,12 +1067,10 @@ class StudentFeeController extends Controller
                 ->whereHas('fees', function($query) use ($feeTypeId) {
                     $query->where('fee_type_id', $feeTypeId);
                 })
-                ->where(function($query) use ($currentMonth) {
+                ->where(function($query) use ($currentMonthStart, $currentMonthEnd) {
                     // Either has remaining amount OR was created this month
                     $query->where('remaining_amount', '>', 0)
-                          ->orWhere(function($q) use ($currentMonth) {
-                              $q->whereRaw("strftime('%Y-%m', created_at) = ?", [$currentMonth]);
-                          });
+                          ->orWhereBetween('created_at', [$currentMonthStart, $currentMonthEnd]);
                 })
                 ->first();
                 
@@ -1212,8 +1220,9 @@ class StudentFeeController extends Controller
 
                 try {
                     // Calculate due date based on fee type
-                    $currentMonth = $currentDate->format('Y-m');
                     $dueDate = $currentDate->copy()->addDays($feeType->due_date ?? 15);
+                    $currentMonthStart = $currentDate->copy()->startOfMonth();
+                    $currentMonthEnd = $currentDate->copy()->endOfMonth();
 
                     // Find or create the corresponding fee structure in payment system first
                     // This is needed for the duplicate check
@@ -1237,14 +1246,16 @@ class StudentFeeController extends Controller
                         ]
                     );
                     
-                    // Check if invoice already exists for this student, fee type, fee_id, and month
-                    // We check based on due_date month, not created_at
+                    // Check if invoice already exists for this student and fee type in current month
                     $existingInvoice = \App\Models\PaymentSystem\Invoice::where('student_id', $student->id)
-                        ->whereHas('fees', function($query) use ($feeTypeId, $feeStructure) {
-                            $query->where('fee_type_id', $feeTypeId)
-                                  ->where('fee_id', $feeStructure->id);
+                        ->whereHas('fees', function($query) use ($feeTypeId) {
+                            $query->where('fee_type_id', $feeTypeId);
                         })
-                        ->whereRaw("strftime('%Y-%m', due_date) = ?", [$currentMonth])
+                        ->where(function($query) use ($currentMonthStart, $currentMonthEnd) {
+                            // Either has remaining amount OR was created this month
+                            $query->where('remaining_amount', '>', 0)
+                                  ->orWhereBetween('created_at', [$currentMonthStart, $currentMonthEnd]);
+                        })
                         ->first();
 
                     if ($existingInvoice) {
@@ -1442,26 +1453,70 @@ class StudentFeeController extends Controller
             }
 
             if ($invoice) {
+                // Check if this is a remaining balance invoice (partial payment invoice)
+                if (!$isLegacy) {
+                    $isRemainingInvoice = $invoice->invoice_type === 'remaining_balance' || $invoice->parent_invoice_id !== null;
+                    
+                    if ($isRemainingInvoice) {
+                        return redirect()->route('student-fees.index')
+                            ->with('error', __('finance.Cannot delete remaining balance invoices - this represents a partial payment that has been made.'));
+                    }
+                }
+                
+                // Check if this is a School Fee invoice (cannot be deleted)
+                if (!$isLegacy) {
+                    $isSchoolFee = $invoice->fees()->whereHas('feeType', function($q) {
+                        $q->where('code', 'SCHOOL_FEE');
+                    })->exists();
+                    
+                    if ($isSchoolFee) {
+                        return redirect()->route('student-fees.index')
+                            ->with('error', __('finance.Cannot delete School Fee invoices.'));
+                    }
+                }
+                
                 // Validation logic depending on system
                 if (!$isLegacy) {
-                    // New Payment System: Check for VERIFIED payments
-                    // We allow deleting invoices that only have pending or rejected payments
+                    // New Payment System: Check for VERIFIED payments on THIS invoice
                     $hasVerifiedPayments = $invoice->payments()->where('status', 'verified')->exists();
                     
                     if ($hasVerifiedPayments) {
                          return redirect()->route('student-fees.index')
-                            ->with('error', __('Cannot delete invoice that has verified payments.'));
+                            ->with('error', __('finance.Cannot delete invoice that has verified payments.'));
+                    }
+                    
+                    // Check if there are OTHER verified payments for the same fee type and month
+                    // Get the fee type ID from this invoice
+                    $invoiceFee = $invoice->fees()->first();
+                    if ($invoiceFee && $invoiceFee->fee_type_id) {
+                        $invoiceMonthStart = $invoice->created_at->startOfMonth();
+                        $invoiceMonthEnd = $invoice->created_at->copy()->endOfMonth();
+                        
+                        // Check if student has other verified payments for this fee type in this month
+                        $hasOtherPayments = \App\Models\PaymentSystem\Payment::where('student_id', $invoice->student_id)
+                            ->where('status', 'verified')
+                            ->where('invoice_id', '!=', $invoice->id) // Exclude current invoice's payments
+                            ->whereHas('invoice.fees', function($q) use ($invoiceFee) {
+                                $q->where('fee_type_id', $invoiceFee->fee_type_id);
+                            })
+                            ->whereBetween('created_at', [$invoiceMonthStart, $invoiceMonthEnd])
+                            ->exists();
+                        
+                        if ($hasOtherPayments) {
+                            return redirect()->route('student-fees.index')
+                                ->with('error', __('finance.Cannot delete invoice - student has already made payments for this fee type in this month.'));
+                        }
                     }
                 } else {
                     // Legacy System: Check paid_amount
                     if ($invoice->paid_amount > 0) {
                         return redirect()->route('student-fees.index')
-                            ->with('error', __('Cannot delete invoice that has payments. Please delete payments first.'));
+                            ->with('error', __('finance.Cannot delete invoice that has payments. Please delete payments first.'));
                     }
                 }
             } else {
                  return redirect()->route('student-fees.index')
-                    ->with('error', __('Invoice not found.'));
+                    ->with('error', __('finance.Invoice not found.'));
             }
 
             $invoiceNumber = $invoice->invoice_number;
@@ -1660,27 +1715,19 @@ class StudentFeeController extends Controller
         // Use feeDetails to get the actual fees included in this payment
         if ($payment->feeDetails && $payment->feeDetails->count() > 0) {
             foreach ($payment->feeDetails as $feeDetail) {
-                $subtotal += $feeDetail->full_amount;
+                // For multi-month payments, subtotal = unit price × months
+                $months = $feeDetail->payment_months ?? 1;
+                $subtotal += $feeDetail->full_amount * $months;
             }
         } elseif ($payment->invoice && $payment->invoice->fees) {
             // Fallback: use invoice fees
             foreach ($payment->invoice->fees as $fee) {
-                $subtotal += $fee->amount;
+                $subtotal += $fee->amount * $paymentMonths;
             }
         }
         
-        // Calculate discount only if payment amount is less than subtotal
-        // This represents an actual discount, not a partial payment
-        if ($subtotal > 0 && $payment->payment_amount < $subtotal) {
-            // Check if this is a partial payment (remaining balance exists)
-            $isPartialPayment = $payment->invoice && $payment->invoice->remaining_amount > 0;
-            
-            // Only show discount if it's not a partial payment
-            // For partial payments, the difference is the remaining balance, not a discount
-            if (!$isPartialPayment) {
-                $discountAmount = $subtotal - $payment->payment_amount;
-            }
-        }
+        // Calculate discount: subtotal - actual payment amount
+        $discountAmount = $subtotal - $payment->payment_amount;
         
         // Check if this is a partial payment and get remaining invoice info
         $isPartialPayment = $payment->payment_type === 'partial';

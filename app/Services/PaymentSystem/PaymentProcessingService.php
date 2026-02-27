@@ -31,6 +31,20 @@ class PaymentProcessingService
             $feeAmounts = $paymentData['fee_amounts'] ?? []; // For partial payment
             $feePaymentMonths = $paymentData['fee_payment_months'] ?? []; // For full payment with variable months
             
+            // Debug logging
+            \Log::info('PaymentProcessingService - Processing Payment:', [
+                'payment_type' => $paymentType,
+                'payment_months_raw' => $paymentData['payment_months'] ?? 'not set',
+                'fee_payment_months' => $feePaymentMonths,
+                'invoice_id' => $invoice->id,
+            ]);
+            
+            // For full payment with fee-specific months, use the maximum months for the payment record
+            if ($paymentType === 'full' && !empty($feePaymentMonths)) {
+                $paymentMonths = max($feePaymentMonths);
+                \Log::info('Updated payment_months to max:', ['payment_months' => $paymentMonths]);
+            }
+            
             // Calculate payment amount and prepare fee details
             $totalPaymentAmount = 0;
             $totalDiscountAmount = 0;
@@ -62,70 +76,9 @@ class PaymentProcessingService
                             'fee_name' => $fee->fee_name,
                             'fee_name_mm' => $fee->fee_name_mm,
                             'full_amount' => $fee->amount,
-                            'paid_amount' => $fee->remaining_amount, // Mark as fully paid for this invoice context (logic might need refinement for multi-month tracking if schema supports it, but for now assuming invoice based)
-                             // Wait, if paying for multiple months, does it clear future invoices? 
-                             // The current system seems to generate invoices monthly. 
-                             // If paying for 3 months, we are essentially paying 3 * monthly_fee.
-                             // However, the invoice_fees table likely tracks the "current month" fee.
-                             // If we pay 3 months, we are paying current + 2 future.
-                             // BUT, the `paid_amount` on `invoice_fees` is capped at `amount` usually?
-                             // Let's look at `calculateFullPayment` original logic.
-                             // It set 'paid_amount' => $fee->remaining_amount.
-                             // If we pay 3 months, are we overpaying this invoice?
-                             // Yes, effectively pre-paying.
-                             // For now, let's treat `paid_amount` as the amount contributing to THIS invoice, 
-                             // and any excess would be handled... how?
-                             // Actually, the requirement mentions "Pay for 3 months". 
-                             // If the system generates distinct invoices per month, paying 3 months means clearing 3 invoices.
-                             // BUT, the current UI allows selecting months on a SINGLE invoice view.
-                             // This implies the payment is attached to the current invoice but covers future periods OR just collects the money.
-                             // The `Payment` record stores `payment_amount`.
-                             // `InvoiceFee` has `paid_amount` and `remaining_amount`.
-                             // If I pay 300 for a 100 fee, `paid_amount` becomes 300? 
-                             // If so, `remaining_amount` becomes -200?
-                             // The original code: `$invoiceFee->paid_amount += $feePayment['paid_amount'];`
-                             // and `$invoiceFee->remaining_amount = $invoiceFee->amount - $invoiceFee->paid_amount;`
-                             // If I pay 3x, remaining becomes negative.
-                             // This might be intended for "Advance Payment" or the invoice amount itself should have been 3x?
-                             // No, the invoice seems to be for 1 month usually.
-                             // Let's follow the immediate requirement: Fix calculation.
-                             // I will set `paid_amount` to what is actually being paid (net after discount).
-                             // WAIT. `paid_amount` usually tracks the GROSS amount covered? or NET?
-                             // Usually `paid_amount` on invoice tracks how much of the DEBT is cleared.
-                             // If I owe 100, and get 10% discount, I pay 90. 
-                             // Does `paid_amount` go up by 90 or 100?
-                             // If it goes by 90, I still owe 10.
-                             // So `paid_amount` should probably be the "value" cleared (100).
-                             // But here we are paying for FUTURE months too?
-                             // The previous developer's code:
-                             // $paymentAmount = $invoice->remaining_amount; (This implies 1 month clearing)
-                             // But the UI allows selecting 3 months.
-                             // If the user selects 3 months, the total jumps to 3x.
-                             // This suggests we ARE overpaying this invoice or credit is created.
-                             // Let's look at how `InvoiceFee` is updated.
-                             // The code I read earlier: 
-                             // $invoice->paid_amount += $finalAmount;
-                             // This adds the NET amount paid.
-                             // So if I pay 3 months (300) - discount (30) = 270.
-                             // Invoice paid_amount += 270.
-                             // If Invoice total was 100, now remaining is 100 - 270 = -170.
-                             // This acts as credit. This seems to be the existing logic for multi-month payment on single invoice.
-                             // I will stick to this pattern: Calculate NET amount user pays, and log that.
-                            
-                            // actually `calculateFullPayment` logic in original code:
-                            // 'paid_amount' => $fee->remaining_amount
-                            // This was just for 1 month.
-                            
-                            // New Logic: 
-                            // The amount stored in `PaymentFeeDetail` (`paid_amount`) should be the contribution of this payment to that fee.
-                            // Which is `feeFinal`.
                             'paid_amount' => $feeFinal,
                             'is_partial' => false,
-                             // We also need to store how many months this payment covers?
-                             // `Payment` table has `payment_months`. But here it's per fee.
-                             // The PaymentFeeDetail model doesn't seem to have `months` column based on code I saw.
-                             // But `Payment` model has it.
-                             // We'll stick to calculating the correct money for now.
+                            'payment_months' => $months, // Store the number of months for this fee
                         ];
                     }
                 }
@@ -173,6 +126,7 @@ class PaymentProcessingService
                     'full_amount' => $feePayment['full_amount'],
                     'paid_amount' => $feePayment['paid_amount'],
                     'is_partial' => $feePayment['is_partial'],
+                    'payment_months' => $feePayment['payment_months'] ?? 1,
                 ]);
                 
                 // Update invoice fee
@@ -240,11 +194,50 @@ class PaymentProcessingService
      */
     private function calculateDiscount(int $months): float
     {
+        // Try to find exact match in promotions table
         $promotion = PaymentPromotion::where('months', $months)
             ->where('is_active', true)
             ->first();
             
-        return $promotion ? (float) $promotion->discount_percent : 0;
+        if ($promotion) {
+            return (float) $promotion->discount_percent;
+        }
+        
+        // If no exact match, interpolate based on tiers
+        // Tiers: 1-2 months = 0%, 3 months = 1%, 6 months = 10%, 9 months = 15%, 12+ months = 20%
+        if ($months < 3) {
+            return 0;
+        }
+        
+        if ($months == 3) {
+            return 1;
+        }
+        
+        if ($months < 6) {
+            // Interpolate between 3 (1%) and 6 (10%)
+            return 1 + (($months - 3) / 3) * 9;
+        }
+        
+        if ($months == 6) {
+            return 10;
+        }
+        
+        if ($months < 9) {
+            // Interpolate between 6 (10%) and 9 (15%)
+            return 10 + (($months - 6) / 3) * 5;
+        }
+        
+        if ($months == 9) {
+            return 15;
+        }
+        
+        if ($months < 12) {
+            // Interpolate between 9 (15%) and 12 (20%)
+            return 15 + (($months - 9) / 3) * 5;
+        }
+        
+        // 12 or more months = 20%
+        return 20;
     }
 
     /**
@@ -252,7 +245,22 @@ class PaymentProcessingService
      */
     private function shouldApplyDiscount($fee): bool
     {
-        return stripos($fee->fee_name, 'School Fee') !== false;
+        // Load fee type if not already loaded
+        if (!$fee->relationLoaded('feeType')) {
+            $fee->load('feeType');
+        }
+        
+        $feeType = $fee->feeType;
+        
+        if (!$feeType) {
+            return false;
+        }
+        
+        // School Fee (SCHOOL_FEE) always supports discounts
+        $isSchoolFee = $feeType->code === 'SCHOOL_FEE';
+        
+        // Check discount_status for other fee types
+        return $isSchoolFee || ($feeType->discount_status === true || $feeType->discount_status === 1);
     }
     
     /**

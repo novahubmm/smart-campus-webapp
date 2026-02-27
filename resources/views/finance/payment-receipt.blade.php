@@ -125,10 +125,12 @@
                             <span class="text-xl font-semibold">{{ number_format($subtotal) }} MMK</span>
                         </div>
                         
+                        @if(!$isPartialPayment && $discountAmount > 0)
                         <div class="flex justify-between items-center text-green-600 dark:text-green-400">
                             <span class="text-lg font-medium">{{ __('finance.Discount') }}:</span>
                             <span class="text-xl font-semibold">- {{ number_format($discountAmount) }} MMK</span>
                         </div>
+                        @endif
                         
                         <div class="flex justify-between items-center pt-2 border-t border-gray-200 dark:border-gray-700">
                             <span class="text-xl font-bold text-gray-900 dark:text-white">{{ __('finance.Total Amount Paid') }}:</span>

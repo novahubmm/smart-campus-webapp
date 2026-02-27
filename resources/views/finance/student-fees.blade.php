@@ -13,6 +13,16 @@
 
     @push('styles')
     <style>
+        /* Hide number input spinner arrows */
+        input[type=number]::-webkit-inner-spin-button,
+        input[type=number]::-webkit-outer-spin-button {
+            -webkit-appearance: none;
+            margin: 0;
+        }
+        input[type=number] {
+            -moz-appearance: textfield;
+        }
+
         /* Prevent page horizontal scroll */
         .student-fee-section {
             overflow: hidden;
@@ -201,7 +211,7 @@
                     <div class="p-4 bg-gray-50 dark:bg-gray-900/50 border-b border-gray-200 dark:border-gray-700">
                         <form method="GET" action="{{ route('student-fees.index') }}" class="flex flex-wrap items-center gap-3" id="fee-filter-form">
                             <!-- Preserve payment history filters -->
-                            <input type="hidden" name="history_date" value="{{ request('history_date', now()->format('Y-m-d')) }}">
+                            <input type="hidden" name="history_month" value="{{ request('history_month', now()->format('Y-m')) }}">
                             @if(request('history_grade'))
                                 <input type="hidden" name="history_grade" value="{{ request('history_grade') }}">
                             @endif
@@ -328,6 +338,27 @@
                                                             <i class="fas fa-bell"></i> {{ __('finance.Remind again to parent') }}
                                                         </button>
                                                     </form>
+                                                    
+                                                    @php
+                                                        // Check if this is a School Fee invoice
+                                                        $isSchoolFee = $invoice->fees->contains(function($fee) {
+                                                            return $fee->feeType && $fee->feeType->code === 'SCHOOL_FEE';
+                                                        });
+                                                        
+                                                        // Check if this is a remaining balance invoice (partial payment invoice)
+                                                        $isRemainingInvoice = $invoice->invoice_type === 'remaining_balance' || $invoice->parent_invoice_id !== null;
+                                                    @endphp
+                                                    
+                                                    @if(!$isSchoolFee && !$isRemainingInvoice)
+                                                    <form method="POST" action="{{ route('student-fees.invoices.destroy', $invoice) }}" class="inline" id="delete-invoice-form-{{ $invoice->id }}">
+                                                        @csrf
+                                                        @method('DELETE')
+                                                        <button type="button" class="action-btn delete" title="{{ __('finance.Delete Invoice') }}" 
+                                                            onclick="confirmAction('{{ route('student-fees.invoices.destroy', $invoice) }}', '{{ __('finance.Delete Invoice') }}', '{{ __('finance.Are you sure you want to delete invoice') }} {{ $invoice->invoice_number }}? {{ __('finance.This action cannot be undone.') }}', '{{ __('finance.Delete') }}', 'delete-invoice-form-{{ $invoice->id }}')">
+                                                            <i class="fas fa-trash"></i>
+                                                        </button>
+                                                    </form>
+                                                    @endif
                                                 </div>
                                             </td>
                                         </tr>
@@ -400,7 +431,7 @@
                         <form method="GET" action="{{ route('student-fees.index') }}" id="history-filter-form" class="flex flex-wrap gap-3">
                             <input type="hidden" name="tab" value="invoice">
                             <!-- Preserve unpaid invoice filters -->
-                            <input type="hidden" name="fee_date" value="{{ request('fee_date', now()->format('Y-m-d')) }}">
+                            <input type="hidden" name="fee_month" value="{{ request('fee_month', now()->format('Y-m')) }}">
                             @if(request('fee_grade'))
                                 <input type="hidden" name="fee_grade" value="{{ request('fee_grade') }}">
                             @endif
@@ -411,7 +442,7 @@
                                 <input type="hidden" name="fee_search" value="{{ request('fee_search') }}">
                             @endif
                             
-                            <input type="date" name="history_date" value="{{ request('history_date', now()->format('Y-m-d')) }}" class="form-input-sm" onchange="this.form.submit()">
+                            <input type="month" name="history_month" value="{{ request('history_month', now()->format('Y-m')) }}" class="form-input-sm" onchange="this.form.submit()">
                             <select name="history_grade" class="form-select-sm" onchange="this.form.submit()">
                                 <option value="">{{ __('finance.All Grades') }}</option>
                                 @foreach($grades as $grade)
@@ -633,7 +664,7 @@
                         <form method="GET" action="{{ route('student-fees.index') }}" class="flex flex-wrap items-center gap-3" id="pending-filter-form">
                             <input type="hidden" name="tab" value="pending_reject">
                             <!-- Preserve rejected filters -->
-                            <input type="hidden" name="rejected_date" value="{{ request('rejected_date', now()->format('Y-m-d')) }}">
+                            <input type="hidden" name="rejected_month" value="{{ request('rejected_month', now()->format('Y-m')) }}">
                             @if(request('rejected_grade'))
                                 <input type="hidden" name="rejected_grade" value="{{ request('rejected_grade') }}">
                             @endif
@@ -645,7 +676,7 @@
                             @endif
                             
                             <span class="text-sm font-semibold text-gray-600 dark:text-gray-400">{{ __('finance.Filters:') }}</span>
-                            <input type="date" name="pending_date" value="{{ request('pending_date', now()->format('Y-m-d')) }}" class="form-input-sm" onchange="this.form.submit()">
+                            <input type="month" name="pending_month" value="{{ request('pending_month', now()->format('Y-m')) }}" class="form-input-sm" onchange="this.form.submit()">
                             <select name="pending_grade" class="form-select-sm" onchange="this.form.submit()">
                                 <option value="">{{ __('finance.All Grades') }}</option>
                                 @foreach($grades as $grade)
@@ -752,7 +783,7 @@
                         <form method="GET" action="{{ route('student-fees.index') }}" class="flex flex-wrap items-center gap-3" id="rejected-filter-form">
                             <input type="hidden" name="tab" value="pending_reject">
                             <!-- Preserve pending filters -->
-                            <input type="hidden" name="pending_date" value="{{ request('pending_date', now()->format('Y-m-d')) }}">
+                            <input type="hidden" name="pending_month" value="{{ request('pending_month', now()->format('Y-m')) }}">
                             @if(request('pending_grade'))
                                 <input type="hidden" name="pending_grade" value="{{ request('pending_grade') }}">
                             @endif
@@ -764,7 +795,7 @@
                             @endif
                             
                             <span class="text-sm font-semibold text-gray-600 dark:text-gray-400">{{ __('finance.Filters:') }}</span>
-                            <input type="date" name="rejected_date" value="{{ request('rejected_date', now()->format('Y-m-d')) }}" class="form-input-sm" onchange="this.form.submit()">
+                            <input type="month" name="rejected_month" value="{{ request('rejected_month', now()->format('Y-m')) }}" class="form-input-sm" onchange="this.form.submit()">
                             <select name="rejected_grade" class="form-select-sm" onchange="this.form.submit()">
                                 <option value="">{{ __('finance.All Grades') }}</option>
                                 @foreach($grades as $grade)
@@ -1094,10 +1125,17 @@
                                                     <button type="button" class="action-btn edit" @click="openEditCategoryModal(@js($feeType))" title="{{ __('finance.Edit') }}">
                                                         <i class="fas fa-edit"></i>
                                                     </button>
-                                                    <form method="POST" action="{{ route('student-fees.categories.destroy', $feeType) }}" class="inline" onsubmit="return confirm('{{ __('finance.Delete this fee?') }}')">
+                                                    <form method="POST" action="{{ route('student-fees.categories.destroy', $feeType) }}" class="inline" x-ref="deleteForm_{{ $loop->index }}">
                                                         @csrf
                                                         @method('DELETE')
-                                                        <button type="submit" class="action-btn delete" title="{{ __('finance.Delete') }}">
+                                                        <button type="button" class="action-btn delete" title="{{ __('finance.Delete') }}"
+                                                            @click="$dispatch('confirm-show', {
+                                                                title: '{{ __('finance.Delete Fee') }}',
+                                                                message: '{{ __('finance.Are you sure you want to delete this fee?') }}',
+                                                                confirmText: '{{ __('finance.Delete') }}',
+                                                                cancelText: '{{ __('finance.Cancel') }}',
+                                                                onConfirm: () => $refs.deleteForm_{{ $loop->index }}.submit()
+                                                            })">
                                                             <i class="fas fa-trash"></i>
                                                         </button>
                                                     </form>
@@ -1242,9 +1280,19 @@
                     <form @submit.prevent="submitPayment" x-ref="paymentForm" enctype="multipart/form-data">
                         <!-- Header -->
                         <div class="flex items-center justify-between p-5 border-b border-gray-200 dark:border-gray-700">
-                            <h4 class="text-lg font-semibold text-gray-900 dark:text-white flex items-center gap-2">
-                                <i class="fas fa-money-check-alt text-green-600"></i> {{ __('finance.Payment') }}
-                            </h4>
+                            <div>
+                                <h4 class="text-lg font-semibold text-gray-900 dark:text-white flex items-center gap-2">
+                                    <i class="fas fa-money-check-alt text-green-600"></i> {{ __('finance.Payment') }}
+                                </h4>
+                                <div class="mt-1 flex items-center gap-3 text-sm text-gray-600 dark:text-gray-400">
+                                    <span class="flex items-center gap-1">
+                                        <i class="fas fa-file-invoice text-xs"></i>
+                                        <span x-text="paymentInvoiceNumber"></span>
+                                    </span>
+                                    <span class="text-gray-400">•</span>
+                                    <span x-text="paymentFeeTypeName"></span>
+                                </div>
+                            </div>
                             <button type="button" class="w-8 h-8 rounded-lg flex items-center justify-center text-gray-500 hover:bg-gray-200 dark:hover:bg-gray-700" @click="showPaymentModal = false">
                                 <i class="fas fa-times"></i>
                             </button>
@@ -1296,10 +1344,12 @@
                                 </p>
                             </div>
 
-                            <!-- Payment Period Selection - Full Payment Only (Hidden for Remaining Invoices) -->
+                            <!-- Payment Period Selection - Full Payment Only (Hidden for Remaining Invoices or Non-Discount Fees) -->
                             <div x-show="paymentData.payment_type === 'full' && !paymentData.isRemainingInvoice">
-                                <label class="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-3">{{ __('finance.Payment Period') }}</label>
-                                <p class="text-xs text-gray-500 dark:text-gray-400 mb-3">{{ __('finance.Select payment period for each fee type') }}</p>
+                                
+                                <div x-show="paymentSupportsDiscount">
+                                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-3">{{ __('finance.Payment Promotions') }}</label>
+                                    <p class="text-xs text-gray-500 dark:text-gray-400 mb-3">{{ __('finance.Select payment period to get discount') }}</p>
                                 
                                 <!-- Fee-specific payment period selection -->
                                 <div class="space-y-2">
@@ -1321,11 +1371,10 @@
                                                         <template x-if="fee.payment_months == 1">
                                                             <span>/{{ __('finance.month') }}</span>
                                                         </template>
-                                                        <!-- Add discount notice -->
+                                                        <!-- Add discount notice if supported -->
                                                         <template x-if="(() => {
-                                                            const isSchoolFee = fee.fee_name && fee.fee_name.toLowerCase().includes('school fee');
                                                             const discountOption = paymentPeriodOptions.find(opt => opt.months == (fee.payment_months || 1));
-                                                            return isSchoolFee && discountOption && discountOption.discount_percent > 0;
+                                                            return paymentSupportsDiscount && discountOption && discountOption.discount_percent > 0;
                                                         })()">
                                                             <span class="text-green-600 dark:text-green-400 ml-1" x-text="'(' + parseInt(paymentPeriodOptions.find(opt => opt.months == (fee.payment_months || 1)).discount_percent) + '% {{ __('finance.off') }})'"></span>
                                                         </template>
@@ -1334,17 +1383,15 @@
                                                 <div class="text-right">
                                                     <span class="text-sm font-bold text-gray-900 dark:text-white" x-text="(() => {
                                                         let amount = fee.remaining_amount * fee.payment_months;
-                                                        const isSchoolFee = fee.fee_name && fee.fee_name.toLowerCase().includes('school fee');
                                                         const discountOption = paymentPeriodOptions.find(opt => opt.months == (fee.payment_months || 1));
-                                                        if (isSchoolFee && discountOption && discountOption.discount_percent > 0) {
+                                                        if (paymentSupportsDiscount && discountOption && discountOption.discount_percent > 0) {
                                                             amount = amount * (1 - discountOption.discount_percent / 100);
                                                         }
                                                         return amount.toLocaleString() + ' MMK';
                                                     })()"></span>
                                                     <template x-if="(() => {
-                                                        const isSchoolFee = fee.fee_name && fee.fee_name.toLowerCase().includes('school fee');
                                                         const discountOption = paymentPeriodOptions.find(opt => opt.months == (fee.payment_months || 1));
-                                                        return isSchoolFee && discountOption && discountOption.discount_percent > 0;
+                                                        return paymentSupportsDiscount && discountOption && discountOption.discount_percent > 0;
                                                     })()">
                                                         <div class="text-xs text-gray-500 line-through" x-text="(fee.remaining_amount * fee.payment_months).toLocaleString() + ' MMK'"></div>
                                                     </template>
@@ -1359,7 +1406,7 @@
                                                         <div class="flex flex-row items-center justify-center gap-1">
                                                             <span class="font-bold text-sm text-gray-900 dark:text-white" x-text="option.months"></span>
                                                             <span class="text-xs text-gray-600 dark:text-gray-400" x-text="option.months === 1 ? '{{ __('finance.month') }}' : '{{ __('finance.months') }}'"></span>
-                                                            <template x-if="option.discount_percent > 0 && fee.fee_name && fee.fee_name.toLowerCase().includes('school fee')">
+                                                            <template x-if="option.discount_percent > 0 && paymentSupportsDiscount">
                                                                 <span class="text-xs font-medium text-green-600 dark:text-green-400" x-text="'(-' + parseInt(option.discount_percent) + '%)'"></span>
                                                             </template>
                                                         </div>
@@ -1368,6 +1415,7 @@
                                             </div>
                                         </div>
                                     </template>
+                                </div>
                                 </div>
                             </div>
 
@@ -2407,6 +2455,9 @@
                 paymentMethodFormAction: '',
                 paymentMethodFormMethod: 'POST',
                 paymentInfo: '',
+                paymentInvoiceNumber: '',
+                paymentFeeTypeName: '',
+                paymentSupportsDiscount: false,
                 paymentStudentId: '',
                 paymentInvoiceId: '',
                 paymentAmount: '',
@@ -2447,9 +2498,23 @@
                     const student = data.student;
                     const invoice = data.invoice;
                     
+                    // Get fee type information from first fee
+                    const firstFee = invoice.fees && invoice.fees[0];
+                    const feeType = firstFee?.fee_type; // Access feeType relationship
+                    const feeTypeName = feeType?.name || firstFee?.fee_name || 'Fee';
+                    const feeTypeCode = feeType?.code || '';
+                    
+                    // Check if this fee type supports discounts
+                    // School Fee (SCHOOL_FEE) always supports discounts
+                    const isSchoolFee = feeTypeCode === 'SCHOOL_FEE';
+                    const supportsDiscount = isSchoolFee || (feeType?.discount_status === true || feeType?.discount_status === 1);
+                    
                     this.paymentInfo = `${student.user?.name || 'Student'} (${student.student_identifier}) - ${student.grade?.name || ''} ${student.class_model?.name || ''}`;
+                    this.paymentInvoiceNumber = invoice.invoice_number || '';
+                    this.paymentFeeTypeName = feeTypeName;
                     this.paymentStudentId = student.id;
                     this.paymentInvoiceId = invoice?.id || '';
+                    this.paymentSupportsDiscount = supportsDiscount;
                     
                     // Safety check for fees
                     if (!invoice || !invoice.fees || !Array.isArray(invoice.fees)) {
@@ -2458,9 +2523,9 @@
                         return;
                     }
                     
-                    // Check if this is a remaining balance invoice (invoice number ends with -1 or -2)
-                    const isRemainingInvoice = invoice.invoice_type === 'remaining_balance' || 
-                                              (invoice.invoice_number && invoice.invoice_number.match(/-\d+$/));
+                    // Check if this is a remaining balance invoice
+                    // Remaining invoices have invoice_type = 'remaining_balance' OR end with -1, -2, -3 (single digit after dash)
+                    const isRemainingInvoice = invoice.invoice_type === 'remaining_balance';
                     
                     // Calculate remaining months based on batch end date
                     const batchEndDate = student.batch?.end_date || '{{ now()->addMonths(10)->format('Y-m-d') }}';
@@ -2508,6 +2573,7 @@
                         hasNonPartialFee: hasNonPartialFee,
                         hasReachedPartialLimit: hasReachedPartialLimit,
                         isRemainingInvoice: isRemainingInvoice,
+                        supportsDiscount: supportsDiscount,
                         subtotal: 0,
                         discount: 0,
                         discountPercent: 0,
@@ -2535,9 +2601,8 @@
                         
                         subtotal += feeAmount;
                         
-                        // Apply discount ONLY to School Fee based on its payment_months
-                        const isSchoolFee = fee.fee_name && fee.fee_name.toLowerCase().includes('school fee');
-                        if (isSchoolFee) {
+                        // Apply discount ONLY for full payment AND if this invoice supports discounts
+                        if (this.paymentData.payment_type === 'full' && this.paymentSupportsDiscount) {
                             const discountOption = this.paymentPeriodOptions.find(opt => opt.months == (fee.payment_months || 1));
                             if (discountOption && discountOption.discount_percent > 0) {
                                 const feeDiscount = feeAmount * (discountOption.discount_percent / 100);
@@ -2693,6 +2758,26 @@
                     try {
                         const formData = new FormData(this.$refs.paymentForm);
                         formData.append('_token', '{{ csrf_token() }}');
+                        
+                        // Add payment type
+                        formData.append('payment_type', this.paymentData.payment_type);
+                        
+                        // For full payment, send fee-specific payment months
+                        if (this.paymentData.payment_type === 'full') {
+                            // Send payment_months as the first fee's months (for backward compatibility)
+                            formData.append('payment_months', this.paymentData.fees[0]?.payment_months || 1);
+                            
+                            // Send fee-specific payment months
+                            this.paymentData.fees.forEach((fee, index) => {
+                                formData.append(`fee_payment_months[${fee.id}]`, fee.payment_months || 1);
+                            });
+                        } else {
+                            // For partial payment, send fee amounts
+                            formData.append('payment_months', 1); // Default to 1 for partial
+                            this.paymentData.fees.forEach((fee, index) => {
+                                formData.append(`fee_amounts[${fee.id}]`, fee.payment_amount);
+                            });
+                        }
                         
                         const response = await fetch(`/student-fees/payment-system/invoices/${this.paymentInvoiceId}/process`, {
                             method: 'POST',

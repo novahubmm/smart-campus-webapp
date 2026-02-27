@@ -111,9 +111,19 @@ class StudentProfileController extends Controller
         if (!empty($validated['existing_guardian_id'])) {
             // Link existing guardian to student
             try {
-                $profile->guardians()->attach($validated['existing_guardian_id'], [
-                    'relationship' => 'parent', // Default relationship
-                ]);
+                // Ensure the guardian profile exists and user has guardian role
+                $guardianProfile = \App\Models\GuardianProfile::find($validated['existing_guardian_id']);
+                if ($guardianProfile && $guardianProfile->user) {
+                    // Ensure user has guardian role
+                    if (!$guardianProfile->user->hasRole(RoleEnum::GUARDIAN->value)) {
+                        $guardianProfile->user->assignRole(RoleEnum::GUARDIAN->value);
+                    }
+                    
+                    // Link guardian to student
+                    $profile->guardians()->attach($validated['existing_guardian_id'], [
+                        'relationship' => 'parent', // Default relationship
+                    ]);
+                }
             } catch (\Exception $e) {
                 \Log::error('Guardian linking failed', [
                     'student_id' => $profile->id,
@@ -122,25 +132,43 @@ class StudentProfileController extends Controller
                 ]);
             }
         } elseif (!empty($validated['guardian_name']) && !empty($validated['guardian_email'])) {
-            // Create new guardian profile
+            // Create new guardian profile or use existing user
             try {
-                // Create guardian user account
-                $guardianUser = User::create([
-                    'name' => $validated['guardian_name'],
-                    'email' => $validated['guardian_email'],
-                    'phone' => $validated['guardian_phone'] ?? null,
-                    'password' => bcrypt('12345678'), // Default password
-                    'is_active' => true,
-                ]);
+                // Check if user already exists
+                $guardianUser = User::where('email', $validated['guardian_email'])->first();
+                
+                if ($guardianUser) {
+                    // User exists, ensure they have guardian role
+                    if (!$guardianUser->hasRole(RoleEnum::GUARDIAN->value)) {
+                        $guardianUser->assignRole(RoleEnum::GUARDIAN->value);
+                    }
+                    
+                    // Check if guardian profile exists
+                    $guardianProfile = $guardianUser->guardianProfile;
+                    if (!$guardianProfile) {
+                        // Create guardian profile for existing user
+                        $guardianProfile = \App\Models\GuardianProfile::create([
+                            'user_id' => $guardianUser->id,
+                        ]);
+                    }
+                } else {
+                    // Create new guardian user account
+                    $guardianUser = User::create([
+                        'name' => $validated['guardian_name'],
+                        'email' => $validated['guardian_email'],
+                        'phone' => $validated['guardian_phone'] ?? null,
+                        'password' => bcrypt('12345678'), // Default password
+                        'is_active' => true,
+                    ]);
 
-                // Assign guardian role
-                $guardianUser->assignRole(RoleEnum::GUARDIAN->value);
+                    // Assign guardian role
+                    $guardianUser->assignRole(RoleEnum::GUARDIAN->value);
 
-                // Create guardian profile
-                $guardianProfile = \App\Models\GuardianProfile::create([
-                    'user_id' => $guardianUser->id,
-                    'status' => 'active',
-                ]);
+                    // Create guardian profile
+                    $guardianProfile = \App\Models\GuardianProfile::create([
+                        'user_id' => $guardianUser->id,
+                    ]);
+                }
 
                 // Link guardian to student
                 $profile->guardians()->attach($guardianProfile->id, [

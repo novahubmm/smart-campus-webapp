@@ -30,178 +30,224 @@ class InvoiceService
      * @param Carbon|null $month The month to generate invoices for (defaults to current month)
      * @return int Number of invoices created
      */
-    public function generateMonthlyInvoices(?Carbon $month = null): int
-    {
-        $month = $month ?? now();
-        $monthString = $month->format('Y-m');
-        $academicYear = $month->format('Y');
-        
-        $invoicesCreated = 0;
+    /**
+         * Generate monthly invoices for all active students.
+         * Creates separate invoices for each fee structure (one invoice per fee).
+         *
+         * @param Carbon|null $month The month to generate invoices for (defaults to current month)
+         * @return int Number of invoices created
+         */
+        /**
+             * Generate monthly invoices for all active students.
+             * Creates separate invoices for each fee structure (one invoice per fee).
+             * 
+             * Logic:
+             * - School Fee (SCHOOL_FEE) is always generated for all students in the grade
+             * - All other fees require student activation via StudentFeeTypeAssignment
+             *
+             * @param Carbon|null $month The month to generate invoices for (defaults to current month)
+             * @return int Number of invoices created
+             */
+            public function generateMonthlyInvoices(?Carbon $month = null): int
+            {
+                $month = $month ?? now();
+                $monthString = $month->format('Y-m');
+                $academicYear = $month->format('Y');
 
-        try {
-            DB::beginTransaction();
+                $invoicesCreated = 0;
 
-            // Get all active students with grades that are active during the target month
-            // A grade is active in the target month if:
-            // - start_date is null OR start_date <= end of target month
-            // - end_date is null OR end_date >= start of target month
-            $targetMonthStart = $month->copy()->startOfMonth();
-            $targetMonthEnd = $month->copy()->endOfMonth();
-            
-            $students = StudentProfile::where('status', 'active')
-                ->whereHas('grade', function($query) use ($targetMonthStart, $targetMonthEnd) {
-                    $query->where(function($q) use ($targetMonthStart, $targetMonthEnd) {
-                        // Grade must overlap with the target month
-                        $q->where(function($startCheck) use ($targetMonthEnd) {
-                            $startCheck->whereNull('start_date')
-                                      ->orWhere('start_date', '<=', $targetMonthEnd);
+                try {
+                    DB::beginTransaction();
+
+                    // Get all active students with grades that are active during the target month
+                    $targetMonthStart = $month->copy()->startOfMonth();
+                    $targetMonthEnd = $month->copy()->endOfMonth();
+
+                    $students = StudentProfile::where('status', 'active')
+                        ->whereHas('grade', function($query) use ($targetMonthStart, $targetMonthEnd) {
+                            $query->where(function($q) use ($targetMonthStart, $targetMonthEnd) {
+                                // Grade must overlap with the target month
+                                $q->where(function($startCheck) use ($targetMonthEnd) {
+                                    $startCheck->whereNull('start_date')
+                                              ->orWhere('start_date', '<=', $targetMonthEnd);
+                                })
+                                ->where(function($endCheck) use ($targetMonthStart) {
+                                    $endCheck->whereNull('end_date')
+                                            ->orWhere('end_date', '>=', $targetMonthStart);
+                                });
+                            });
                         })
-                        ->where(function($endCheck) use ($targetMonthStart) {
-                            $endCheck->whereNull('end_date')
-                                    ->orWhere('end_date', '>=', $targetMonthStart);
-                        });
-                    });
-                })
-                ->with('grade')
-                ->get();
+                        ->with('grade')
+                        ->get();
 
-            foreach ($students as $student) {
-                // Skip students without a grade
-                if (!$student->grade_id) {
-                    Log::warning('Student has no grade assigned', [
-                        'student_id' => $student->id,
+                    foreach ($students as $student) {
+                        // Skip students without a grade
+                        if (!$student->grade_id || !$student->grade) {
+                            Log::warning('Student has no grade assigned', [
+                                'student_id' => $student->id,
+                            ]);
+                            continue;
+                        }
+
+                        // Double-check grade is active during the target month
+                        $gradeStartDate = $student->grade->start_date;
+                        $gradeEndDate = $student->grade->end_date;
+
+                        $isActiveInTargetMonth = (
+                            (!$gradeStartDate || $gradeStartDate <= $targetMonthEnd) &&
+                            (!$gradeEndDate || $gradeEndDate >= $targetMonthStart)
+                        );
+
+                        if (!$isActiveInTargetMonth) {
+                            Log::info('Skipping student - grade not active in target month', [
+                                'student_id' => $student->id,
+                                'grade_id' => $student->grade_id,
+                                'target_month' => $monthString,
+                            ]);
+                            continue;
+                        }
+
+                        // Get all monthly fee structures for this student's grade
+                        $monthlyFees = FeeStructure::where('grade', $student->grade->level)
+                            ->where('frequency', 'monthly')
+                            ->where('is_active', true)
+                            ->where('amount', '>', 0)
+                            ->get();
+
+                        // Skip if no monthly fees for this grade
+                        if ($monthlyFees->isEmpty()) {
+                            continue;
+                        }
+
+                        // Group fees by fee_type to create separate invoices
+                        $feesByType = $monthlyFees->groupBy('fee_type');
+
+                        foreach ($feesByType as $feeTypeCode => $fees) {
+                            // SCHOOL_FEE is always generated, all others require activation
+                            $isSchoolFee = ($feeTypeCode === 'SCHOOL_FEE');
+                            
+                            // Load fee type for all fee types (needed for fee_type_id and due_date)
+                            $feeType = \App\Models\FeeType::where('code', $feeTypeCode)->first();
+                            
+                            if (!$feeType) {
+                                // If no FeeType record exists, skip
+                                Log::warning('Fee type code has no matching FeeType record', [
+                                    'student_id' => $student->id,
+                                    'fee_type_code' => $feeTypeCode,
+                                ]);
+                                continue;
+                            }
+
+                            if (!$isSchoolFee) {
+                                // For non-school fees, check if student is activated
+                                $assignment = \App\Models\StudentFeeTypeAssignment::where('student_id', $student->id)
+                                    ->where('fee_type_id', $feeType->id)
+                                    ->first();
+
+                                // Skip if student is not activated for this fee type
+                                if (!$assignment || !$assignment->is_active) {
+                                    Log::info('Skipping optional fee type - student not activated', [
+                                        'student_id' => $student->id,
+                                        'fee_type_code' => $feeTypeCode,
+                                        'fee_type_id' => $feeType->id,
+                                    ]);
+                                    continue;
+                                }
+                            }
+
+                            // Check if invoice already exists for this student, fee type, and month
+                            $existingInvoiceExists = Invoice::where('student_id', $student->id)
+                                ->where('invoice_type', 'monthly')
+                                ->whereYear('due_date', $month->year)
+                                ->whereMonth('due_date', $month->month)
+                                ->whereHas('fees', function($query) use ($feeTypeCode) {
+                                    $query->whereHas('feeStructure', function($q) use ($feeTypeCode) {
+                                        $q->where('fee_type', $feeTypeCode);
+                                    });
+                                })
+                                ->exists();
+
+                            if ($existingInvoiceExists) {
+                                Log::info('Monthly invoice already exists for student and fee type', [
+                                    'student_id' => $student->id,
+                                    'fee_type' => $feeTypeCode,
+                                    'target_month' => $monthString,
+                                ]);
+                                continue;
+                            }
+
+                            // Calculate total amount for this fee type
+                            $totalAmount = $fees->sum('amount');
+
+                            // Get due date from fee type or use end of month as default
+                            $dueDate = $month->copy()->endOfMonth();
+                            if ($feeType->due_date) {
+                                // due_date is stored as day of month (1-31)
+                                $dueDay = min($feeType->due_date, $month->daysInMonth);
+                                $dueDate = $month->copy()->day($dueDay);
+                            }
+
+                            // Create separate invoice for this fee type
+                            $invoice = Invoice::create([
+                                'invoice_number' => $this->generateInvoiceNumber(),
+                                'student_id' => $student->id,
+                                'batch_id' => $student->grade?->batch_id,
+                                'total_amount' => $totalAmount,
+                                'paid_amount' => 0,
+                                'remaining_amount' => $totalAmount,
+                                'due_date' => $dueDate,
+                                'status' => 'pending',
+                                'invoice_type' => 'monthly',
+                            ]);
+
+                            // Create invoice_fees for each fee in this type
+                            foreach ($fees as $fee) {
+                                InvoiceFee::create([
+                                    'invoice_id' => $invoice->id,
+                                    'fee_id' => $fee->id,
+                                    'fee_type_id' => $feeType->id, // Add fee_type_id for relationship
+                                    'fee_name' => $fee->name,
+                                    'fee_name_mm' => $fee->name_mm,
+                                    'amount' => $fee->amount,
+                                    'paid_amount' => 0,
+                                    'remaining_amount' => $fee->amount,
+                                    'supports_payment_period' => $fee->supports_payment_period,
+                                    'due_date' => $dueDate,
+                                    'status' => 'unpaid',
+                                ]);
+                            }
+
+                            $invoicesCreated++;
+
+                            Log::info('Monthly invoice created for fee type', [
+                                'invoice_id' => $invoice->id,
+                                'student_id' => $student->id,
+                                'fee_type' => $feeTypeCode,
+                                'is_school_fee' => $isSchoolFee,
+                                'month' => $monthString,
+                                'total_amount' => $totalAmount,
+                                'fees_count' => $fees->count(),
+                            ]);
+                        }
+                    }
+
+                    DB::commit();
+
+                    Log::info('Monthly invoices generation completed', [
+                        'month' => $monthString,
+                        'invoices_created' => $invoicesCreated,
                     ]);
-                    continue;
-                }
-                
-                // Double-check grade is active during the target month (safety check)
-                if (!$student->grade) {
-                    Log::info('Skipping student with no grade', [
-                        'student_id' => $student->id,
-                        'grade_id' => $student->grade_id,
+
+                    return $invoicesCreated;
+                } catch (\Exception $e) {
+                    DB::rollBack();
+                    Log::error('Failed to generate monthly invoices', [
+                        'error' => $e->getMessage(),
+                        'trace' => $e->getTraceAsString(),
                     ]);
-                    continue;
+                    throw $e;
                 }
-                
-                $gradeStartDate = $student->grade->start_date;
-                $gradeEndDate = $student->grade->end_date;
-                $targetMonthStart = $month->copy()->startOfMonth();
-                $targetMonthEnd = $month->copy()->endOfMonth();
-                
-                // Check if grade overlaps with target month
-                $isActiveInTargetMonth = (
-                    (!$gradeStartDate || $gradeStartDate <= $targetMonthEnd) &&
-                    (!$gradeEndDate || $gradeEndDate >= $targetMonthStart)
-                );
-                
-                if (!$isActiveInTargetMonth) {
-                    Log::info('Skipping student - grade not active in target month', [
-                        'student_id' => $student->id,
-                        'grade_id' => $student->grade_id,
-                        'grade_level' => $student->grade->level,
-                        'grade_start' => $gradeStartDate?->format('Y-m-d'),
-                        'grade_end' => $gradeEndDate?->format('Y-m-d'),
-                        'target_month' => $monthString,
-                    ]);
-                    continue;
-                }
-
-                // Get monthly fees for this student's grade
-                $monthlyFees = FeeStructure::where('grade', $student->grade->level)
-                    ->where('frequency', 'monthly')
-                    ->where('is_active', true)
-                    ->where('amount', '>', 0) // Ensure fee has an amount
-                    ->where('name', '!=', 'Special Course Fee') // Exclude Special Course Fee
-                    ->get();
-
-                // Skip if no monthly fees for this grade
-                if ($monthlyFees->isEmpty()) {
-                    continue;
-                }
-
-                // Check if invoice already exists for this student and target month
-                // Check by due_date month to allow multiple monthly invoices for different months
-                $targetMonthStart = $month->copy()->startOfMonth();
-                $targetMonthEnd = $month->copy()->endOfMonth();
-                
-                $existingInvoiceExists = Invoice::where('student_id', $student->id)
-                    ->where('invoice_type', 'monthly')
-                    ->whereYear('due_date', $month->year)
-                    ->whereMonth('due_date', $month->month)
-                    ->exists();
-
-                if ($existingInvoiceExists) {
-                    Log::info('Monthly invoice already exists for student in target month', [
-                        'student_id' => $student->id,
-                        'student_name' => $student->user->name ?? 'Unknown',
-                        'target_month' => $monthString,
-                    ]);
-                    continue;
-                }
-
-                // Calculate total amount
-                $totalAmount = $monthlyFees->sum('amount');
-
-                // Set due date to the last day of the target month
-                // This ensures invoices are grouped by the correct month
-                $dueDate = $month->copy()->endOfMonth();
-
-                // Create invoice
-                $invoice = Invoice::create([
-                    'invoice_number' => $this->generateInvoiceNumber(),
-                    'student_id' => $student->id,
-                    'batch_id' => $student->grade?->batch_id,
-                    'total_amount' => $totalAmount,
-                    'paid_amount' => 0,
-                    'remaining_amount' => $totalAmount,
-                    'due_date' => $dueDate,
-                    'status' => 'pending',
-                    'invoice_type' => 'monthly',
-                ]);
-
-                // Create invoice_fees for each monthly fee
-                foreach ($monthlyFees as $fee) {
-                    InvoiceFee::create([
-                        'invoice_id' => $invoice->id,
-                        'fee_id' => $fee->id,
-                        'fee_name' => $fee->name,
-                        'fee_name_mm' => $fee->name_mm,
-                        'amount' => $fee->amount,
-                        'paid_amount' => 0,
-                        'remaining_amount' => $fee->amount,
-                        'supports_payment_period' => $fee->supports_payment_period,
-                        'due_date' => $dueDate, // Use the calculated due date for the target month
-                        'status' => 'unpaid',
-                    ]);
-                }
-
-                $invoicesCreated++;
-
-                Log::info('Monthly invoice created', [
-                    'invoice_id' => $invoice->id,
-                    'student_id' => $student->id,
-                    'month' => $monthString,
-                    'total_amount' => $totalAmount,
-                ]);
             }
-
-            DB::commit();
-
-            Log::info('Monthly invoices generation completed', [
-                'month' => $monthString,
-                'invoices_created' => $invoicesCreated,
-            ]);
-
-            return $invoicesCreated;
-        } catch (\Exception $e) {
-            DB::rollBack();
-            Log::error('Failed to generate monthly invoices', [
-                'error' => $e->getMessage(),
-                'trace' => $e->getTraceAsString(),
-            ]);
-            throw $e;
-        }
-    }
 
     /**
      * Generate a remaining balance invoice from a partial payment.
@@ -254,6 +300,7 @@ class InvoiceService
                 InvoiceFee::create([
                     'invoice_id' => $remainingBalanceInvoice->id,
                     'fee_id' => $originalFee->fee_id,
+                    'fee_type_id' => $originalFee->fee_type_id, // Preserve fee_type_id
                     'fee_name' => $originalFee->fee_name,
                     'fee_name_mm' => $originalFee->fee_name_mm,
                     'amount' => $originalFee->remaining_amount,

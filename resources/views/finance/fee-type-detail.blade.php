@@ -518,7 +518,7 @@
             <div class="fixed inset-0 bg-black/50 backdrop-blur-sm"></div>
             <div class="flex min-h-full items-center justify-center p-4">
                 <div class="relative bg-white dark:bg-gray-800 rounded-xl w-full max-w-2xl shadow-2xl" @click.stop>
-                    <form method="POST" action="{{ route('student-fees.categories.update', $feeType->id) }}">
+                    <form method="POST" action="{{ route('student-fees.categories.update', $feeType->id) }}" x-ref="editForm" @submit.prevent="submitEditForm">
                         @csrf
                         @method('PUT')
                         <div class="flex items-center justify-between p-5 border-b border-gray-200 dark:border-gray-700">
@@ -721,6 +721,57 @@
                 openEditModal() {
                     this.showEditModal = true;
                 },
+                submitEditForm() {
+                    const form = this.$refs.editForm;
+                    const formData = new FormData(form);
+                    
+                    // Convert integer month values to Y-m format if frequency is monthly
+                    if (this.form.frequency === 'monthly') {
+                        const currentYear = new Date().getFullYear();
+                        const startMonth = formData.get('start_month');
+                        const endMonth = formData.get('end_month');
+                        
+                        if (startMonth && !startMonth.includes('-')) {
+                            formData.set('start_month', currentYear + '-' + String(startMonth).padStart(2, '0'));
+                        }
+                        if (endMonth && !endMonth.includes('-')) {
+                            formData.set('end_month', currentYear + '-' + String(endMonth).padStart(2, '0'));
+                        }
+                    } else {
+                        formData.delete('start_month');
+                        formData.delete('end_month');
+                    }
+                    
+                    fetch(form.action, {
+                        method: 'POST',
+                        body: formData,
+                        headers: {
+                            'X-Requested-With': 'XMLHttpRequest',
+                            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+                        }
+                    }).then(response => {
+                        if (response.ok && response.redirected) {
+                            window.location.href = response.url;
+                        } else if (response.ok) {
+                            window.location.reload();
+                        } else {
+                            return response.json().then(data => {
+                                let errorMessage = 'Validation errors:\n';
+                                if (data.errors) {
+                                    Object.keys(data.errors).forEach(key => {
+                                        errorMessage += `${key}: ${data.errors[key].join(', ')}\n`;
+                                    });
+                                } else if (data.message) {
+                                    errorMessage = data.message;
+                                }
+                                showNotification(errorMessage, 'error');
+                            }).catch(() => { window.location.reload(); });
+                        }
+                    }).catch(error => {
+                        console.error('Form submission error:', error);
+                        showNotification('{{ __("finance.An error occurred. Please try again.") }}', 'error');
+                    });
+                },
                 bulkSendInvoices() {
                     bulkSendInvoices();
                 }
@@ -751,44 +802,28 @@
             .then(response => response.json())
             .then(data => {
                 if (data.success) {
-                    // Update button based on new status
-                    if (data.is_active) {
-                        button.className = 'inline-flex items-center px-3 py-1.5 text-xs font-medium rounded-lg border border-red-300 dark:border-red-600 text-red-700 dark:text-red-300 hover:bg-red-50 dark:hover:bg-red-900/30 transition-colors';
-                        button.innerHTML = '<i class="fas fa-times mr-1"></i>{{ __("finance.Deactivate") }}';
-                        button.onclick = function() { toggleStudent(feeTypeId, studentId, false); };
-                        
-                        // Add Send Invoice button if not exists
-                        const actionCell = button.parentElement;
-                        if (!actionCell.querySelector('.send-invoice-btn')) {
-                            const invoiceBtn = document.createElement('button');
-                            invoiceBtn.type = 'button';
-                            invoiceBtn.id = 'invoice-btn-' + studentId;
-                            invoiceBtn.className = 'send-invoice-btn inline-flex items-center px-3 py-1.5 text-xs font-medium rounded-lg border border-blue-300 dark:border-blue-600 text-blue-700 dark:text-blue-300 hover:bg-blue-50 dark:hover:bg-blue-900/30 transition-colors';
-                            invoiceBtn.innerHTML = '<i class="fas fa-paper-plane mr-1"></i>{{ __("finance.Send Invoice") }}';
-                            invoiceBtn.onclick = function() { sendInvoice(feeTypeId, studentId); };
-                            actionCell.appendChild(invoiceBtn);
-                        }
+                    // Show success dialog with reload on OK
+                    if (typeof Alpine !== 'undefined') {
+                        window.dispatchEvent(new CustomEvent('success-show', {
+                            detail: {
+                                title: '{{ __("finance.Success") }}',
+                                message: data.message,
+                                confirmText: '{{ __("finance.OK") }}',
+                                onConfirm: () => {
+                                    window.location.reload();
+                                }
+                            }
+                        }));
                     } else {
-                        button.className = 'inline-flex items-center px-3 py-1.5 text-xs font-medium rounded-lg border border-green-300 dark:border-green-600 text-green-700 dark:text-green-300 hover:bg-green-50 dark:hover:bg-green-900/30 transition-colors';
-                        button.innerHTML = '<i class="fas fa-check mr-1"></i>{{ __("finance.Activate") }}';
-                        button.onclick = function() { toggleStudent(feeTypeId, studentId, true); };
-                        
-                        // Remove Send Invoice button
-                        const actionCell = button.parentElement;
-                        const invoiceBtn = actionCell.querySelector('.send-invoice-btn');
-                        if (invoiceBtn) {
-                            invoiceBtn.remove();
-                        }
+                        alert(data.message);
+                        window.location.reload();
                     }
-                    
-                    // Show success message
-                    showNotification(data.message, 'success');
                 } else {
                     // Restore button
                     button.innerHTML = originalHtml;
+                    button.disabled = false;
                     showNotification(data.message || '{{ __("finance.An error occurred") }}', 'error');
                 }
-                button.disabled = false;
             })
             .catch(error => {
                 console.error('Error:', error);
@@ -922,4 +957,7 @@
             }));
         }
     </script>
+
+    <!-- Success Dialog Component -->
+    <x-success-dialog />
 </x-app-layout>
