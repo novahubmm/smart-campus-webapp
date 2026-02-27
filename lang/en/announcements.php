@@ -61,6 +61,8 @@ return array(
   'Target' => 'Target',
   'Target Departments' => 'Target Departments',
   'Target Grades' => 'Target Grades',
+  'Teacher Grades' => 'Teacher Grades',
+  'Guardian Grades' => 'Guardian Grades',
   'Teachers' => 'Teachers',
   'Guardians' => 'Guardians',
   'Staff' => 'Staff',

@@ -19,17 +19,16 @@ class EventRepository implements EventRepositoryInterface
         $now = now()->toDateString();
         $nowTime = now()->toTimeString();
 
-        // Sort: upcoming first (0), then ongoing/active (1), then completed (2)
-        $query = Event::query()->with('category')
-            ->orderByRaw("
-                CASE
-                    WHEN start_date > ? OR (start_date = ? AND start_time > ?) THEN 0
-                    WHEN COALESCE(end_date, start_date) >= ? THEN 1
-                    ELSE 2
-                END ASC
-            ", [$now, $now, $nowTime, $now])
-            ->orderBy('start_date')
-            ->orderBy('start_time');
+        $query = Event::query()->with('category');
+
+        $driver = \DB::getDriverName();
+        if ($driver === 'sqlite') {
+            $query->orderByRaw('ABS(strftime("%s", start_date) - strftime("%s", "now")) ASC');
+        } else {
+            $query->orderByRaw('ABS(DATEDIFF(start_date, CURDATE())) ASC');
+        }
+
+        $query->orderBy('start_time', 'asc');
 
         if ($filter->category_id) {
             $query->where('event_category_id', $filter->category_id);

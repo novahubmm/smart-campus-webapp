@@ -13,7 +13,14 @@ class AnnouncementRepository implements AnnouncementRepositoryInterface
 {
     public function list(AnnouncementFilterData $filter, int $perPage = 10): \Illuminate\Contracts\Pagination\LengthAwarePaginator
     {
-        $query = Announcement::query()->with(['creator', 'announcementType'])->orderByDesc('created_at')->orderByDesc('publish_date');
+        $query = Announcement::query()->with(['creator', 'announcementType']);
+
+        $driver = \DB::getDriverName();
+        if ($driver === 'sqlite') {
+            $query->orderByRaw('ABS(strftime("%s", publish_date) - strftime("%s", "now")) ASC');
+        } else {
+            $query->orderByRaw('ABS(TIMESTAMPDIFF(SECOND, publish_date, NOW())) ASC');
+        }
 
         if ($filter->priority && $filter->priority !== 'all') {
             $query->where('priority', $filter->priority);

@@ -23,6 +23,8 @@ class StoreAnnouncementRequest extends FormRequest
             'target_roles' => ['nullable', 'array'],
             'target_roles.*' => ['string', Rule::in(['teacher', 'staff', 'guardian'])],
             'target_grades_json' => ['nullable', 'string'],
+            'target_teacher_grades_json' => ['nullable', 'string'],
+            'target_guardian_grades_json' => ['nullable', 'string'],
             'target_departments_json' => ['nullable', 'string'],
             'publish_date' => ['nullable', 'date'],
             'publish_time' => ['nullable', 'date_format:H:i'],

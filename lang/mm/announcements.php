@@ -58,6 +58,8 @@ return array(
     'Target' => 'ရည်ရွယ်ရာ',
     'Target Departments' => 'ရည်ရွယ်ရာဌာနများ',
     'Target Grades' => 'ရည်ရွယ်ရာအတန်းများ',
+    'Teacher Grades' => 'ဆရာ/မများအတွက် အတန်းများ',
+    'Guardian Grades' => 'အုပ်ထိန်းသူများအတွက် အတန်းများ',
     'Teachers' => 'ဆရာ/မများ',
     'Guardians' => 'အုပ်ထိန်းသူများ',
     'Staff' => 'ဝန်ထမ်းများ',
