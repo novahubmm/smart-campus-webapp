@@ -245,15 +245,6 @@
                                         <label class="block text-sm font-semibold text-gray-700 dark:text-gray-200 mb-1">{{ __('announcements.Title') }} <span class="text-red-500">*</span></label>
                                         <input type="text" name="title" class="w-full rounded-lg border-gray-300 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-200 focus:border-amber-500 focus:ring-amber-500" x-model="form.title" required placeholder="{{ __('announcements.Enter announcement title') }}">
                                     </div>
-                                    <div>
-                                        <label class="block text-sm font-semibold text-gray-700 dark:text-gray-200 mb-1">{{ __('announcements.Type') }} <span class="text-red-500">*</span></label>
-                                        <select name="announcement_type_id" class="w-full rounded-lg border-gray-300 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-200 focus:border-amber-500 focus:ring-amber-500" x-model="form.announcement_type_id" required>
-                                            <option value="">{{ __('announcements.Select type') }}</option>
-                                            @foreach($announcementTypes as $type)
-                                                <option value="{{ $type->id }}">{{ $type->name }}</option>
-                                            @endforeach
-                                        </select>
-                                    </div>
                                 </div>
                                 <div class="mt-4">
                                     <label class="block text-sm font-semibold text-gray-700 dark:text-gray-200 mb-1">{{ __('announcements.Message') }} <span class="text-red-500">*</span></label>
@@ -448,7 +439,6 @@
                 form: {
                     title: '',
                     content: '',
-                    announcement_type_id: '',
                     priority: 'medium',
                     location: '',
                     target_roles: [],
@@ -476,7 +466,6 @@
                     this.form = {
                         title: announcement.title || '',
                         content: announcement.content || '',
-                        announcement_type_id: announcement.announcement_type_id || '',
                         priority: announcement.priority || 'medium',
                         location: announcement.location || '',
                         target_roles: announcement.target_roles || [],
@@ -532,7 +521,6 @@
                     return {
                         title: '',
                         content: '',
-                        announcement_type_id: '',
                         priority: 'medium',
                         location: '',
                         target_roles: [],
