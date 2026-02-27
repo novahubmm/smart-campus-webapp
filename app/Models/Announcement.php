@@ -23,6 +23,8 @@ class Announcement extends Model
         'location',
         'target_roles',
         'target_grades',
+        'target_teacher_grades',
+        'target_guardian_grades',
         'target_departments',
         'publish_date',
         'is_published',
@@ -34,6 +36,8 @@ class Announcement extends Model
     protected $casts = [
         'target_roles' => 'array',
         'target_grades' => 'array',
+        'target_teacher_grades' => 'array',
+        'target_guardian_grades' => 'array',
         'target_departments' => 'array',
         'publish_date' => 'datetime',
         'is_published' => 'boolean',

@@ -1,0 +1,29 @@
+
+   INFO  Running migrations.  
+
+  2026_02_07_100003_create_teacher_attendance_table  2.52ms FAIL
+
+   Illuminate\Database\QueryException 
+
+  SQLSTATE[HY000]: General error: 1 table "teacher_attendance" already exists (Connection: sqlite, SQL: create table "teacher_attendance" ("id" varchar not null, "teacher_id" varchar not null, "date" date not null, "day_of_week" varchar, "check_in_time" time, "check_out_time" time, "check_in_timestamp" datetime, "check_out_timestamp" datetime, "working_hours_decimal" numeric, "status" varchar check ("status" in ('present', 'absent', 'leave', 'half_day')) not null default 'present', "leave_type" varchar, "remarks" text, "location_lat" numeric, "location_lng" numeric, "device_info" varchar, "app_version" varchar, "created_at" datetime, "updated_at" datetime, foreign key("teacher_id") references "users"("id") on delete cascade, primary key ("id")))
+
+  at vendor/laravel/framework/src/Illuminate/Database/Connection.php:824
+    820▕                     $this->getName(), $query, $this->prepareBindings($bindings), $e
+    821▕                 );
+    822▕             }
+    823▕ 
+  ➜ 824▕             throw new QueryException(
+    825▕                 $this->getName(), $query, $this->prepareBindings($bindings), $e
+    826▕             );
+    827▕         }
+    828▕     }
+
+      [2m+9 vendor frames [22m
+
+  10  database/migrations/2026_02_07_100003_create_teacher_attendance_table.php:14
+      Illuminate\Support\Facades\Facade::__callStatic("create")
+      [2m+26 vendor frames [22m
+
+  37  artisan:16
+      Illuminate\Foundation\Application::handleCommand(Object(Symfony\Component\Console\Input\ArgvInput))
+

@@ -19,7 +19,14 @@ class EventData
         public readonly ?string $organized_by,
         public readonly ?string $banner_image,
         public readonly string $status,
-    ) {}
+        public readonly array $target_roles = [],
+        public readonly array $target_grades = ['all'],
+        public readonly array $target_teacher_grades = ['all'],
+        public readonly array $target_guardian_grades = ['all'],
+        public readonly array $target_departments = ['all'],
+        public readonly array $schedules = [],
+    ) {
+    }
 
     public static function from(array $payload, ?string $organizedBy = null): self
     {
@@ -36,6 +43,12 @@ class EventData
             organized_by: $payload['organized_by'] ?? $organizedBy,
             banner_image: Arr::get($payload, 'banner_image'),
             status: $payload['status'] ?? 'upcoming',
+            target_roles: $payload['target_roles'] ?? [],
+            target_grades: json_decode($payload['target_grades_json'] ?? '["all"]', true) ?: ['all'],
+            target_teacher_grades: json_decode($payload['target_teacher_grades_json'] ?? '["all"]', true) ?: ['all'],
+            target_guardian_grades: json_decode($payload['target_guardian_grades_json'] ?? '["all"]', true) ?: ['all'],
+            target_departments: json_decode($payload['target_departments_json'] ?? '["all"]', true) ?: ['all'],
+            schedules: json_decode($payload['schedules_json'] ?? '[]', true) ?: [],
         );
     }
 
@@ -54,6 +67,12 @@ class EventData
             'organized_by' => $this->organized_by,
             'banner_image' => $this->banner_image,
             'status' => $this->status,
+            'target_roles' => $this->target_roles,
+            'target_grades' => $this->target_grades,
+            'target_teacher_grades' => $this->target_teacher_grades,
+            'target_guardian_grades' => $this->target_guardian_grades,
+            'target_departments' => $this->target_departments,
+            'schedules' => $this->schedules,
         ];
     }
 }

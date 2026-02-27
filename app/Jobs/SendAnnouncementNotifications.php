@@ -25,16 +25,19 @@ class SendAnnouncementNotifications implements ShouldQueue
     public function __construct(
         public Announcement $announcement,
         public array $targetRoles,
-        public array $targetGrades = ['all'],
+        public array $targetTeacherGrades = ['all'],
+        public array $targetGuardianGrades = ['all'],
         public array $targetDepartments = ['all']
-    ) {}
+    ) {
+    }
 
     public function handle(): void
     {
         Log::info('Processing announcement notifications', [
             'announcement_id' => $this->announcement->id,
             'target_roles' => $this->targetRoles,
-            'target_grades' => $this->targetGrades,
+            'target_teacher_grades' => $this->targetTeacherGrades,
+            'target_guardian_grades' => $this->targetGuardianGrades,
             'target_departments' => $this->targetDepartments,
         ]);
 
@@ -58,10 +61,10 @@ class SendAnnouncementNotifications implements ShouldQueue
     {
         try {
             $query = User::role('teacher')->where('is_active', true);
-            
+
             // Filter by grades if not "all"
-            if (!in_array('all', $this->targetGrades) && !empty($this->targetGrades)) {
-                $gradeIds = $this->targetGrades;
+            if (!in_array('all', $this->targetTeacherGrades) && !empty($this->targetTeacherGrades)) {
+                $gradeIds = $this->targetTeacherGrades;
                 $query->whereHas('teacherProfile', function ($q) use ($gradeIds) {
                     // current_grades is a JSON array of grade IDs
                     $q->where(function ($subQ) use ($gradeIds) {
@@ -90,7 +93,7 @@ class SendAnnouncementNotifications implements ShouldQueue
     {
         try {
             $query = User::role('staff')->where('is_active', true);
-            
+
             // Filter by departments if not "all"
             if (!in_array('all', $this->targetDepartments) && !empty($this->targetDepartments)) {
                 $departmentIds = $this->targetDepartments;
@@ -117,10 +120,10 @@ class SendAnnouncementNotifications implements ShouldQueue
     {
         try {
             $query = User::role('guardian')->where('is_active', true);
-            
+
             // Filter by grades if not "all" (via students)
-            if (!in_array('all', $this->targetGrades) && !empty($this->targetGrades)) {
-                $gradeIds = $this->targetGrades;
+            if (!in_array('all', $this->targetGuardianGrades) && !empty($this->targetGuardianGrades)) {
+                $gradeIds = $this->targetGuardianGrades;
                 $query->whereHas('guardianProfile.students', function ($q) use ($gradeIds) {
                     $q->whereIn('grade_id', $gradeIds);
                 });
@@ -169,7 +172,7 @@ class SendAnnouncementNotifications implements ShouldQueue
                 ->whereIn('platform', $platforms)
                 ->pluck('token')
                 ->toArray();
-            
+
             $fcmTokens = array_merge($fcmTokens, $userTokens);
         }
 
@@ -187,10 +190,10 @@ class SendAnnouncementNotifications implements ShouldQueue
             $firebaseService = new FirebaseService();
             $title = $this->announcement->title;
             $body = Str::limit(strip_tags($this->announcement->content), 100);
-            
+
             $results = $firebaseService->sendToMultipleTokens(
-                $fcmTokens, 
-                $title, 
+                $fcmTokens,
+                $title,
                 $body,
                 [
                     'announcement_id' => (string) $this->announcement->id,

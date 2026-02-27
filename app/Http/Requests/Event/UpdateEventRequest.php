@@ -25,6 +25,12 @@ class UpdateEventRequest extends FormRequest
             'end_time' => ['nullable', 'date_format:H:i'],
             'venue' => ['nullable', 'string', 'max:255'],
             'banner_image' => ['nullable', 'string', 'max:255'],
+            'target_roles' => ['nullable', 'array'],
+            'target_grades_json' => ['nullable', 'string'],
+            'target_teacher_grades_json' => ['nullable', 'string'],
+            'target_guardian_grades_json' => ['nullable', 'string'],
+            'target_departments_json' => ['nullable', 'string'],
+            'schedules_json' => ['nullable', 'string'],
             'status' => ['sometimes', Rule::in(['upcoming', 'ongoing', 'completed', 'result'])],
         ];
     }
@@ -33,14 +39,14 @@ class UpdateEventRequest extends FormRequest
     {
         $validator->after(function ($validator) {
             $eventId = $this->route('id') ?? $this->route('event');
-            
+
             $query = \App\Models\Event::where('title', $this->title)
                 ->where('start_date', $this->start_date);
-            
+
             if ($eventId) {
                 $query->where('id', '!=', $eventId);
             }
-            
+
             if ($query->exists()) {
                 $validator->errors()->add('title', __('academic_management.duplicate_event_error'));
             }

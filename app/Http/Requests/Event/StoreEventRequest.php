@@ -25,6 +25,12 @@ class StoreEventRequest extends FormRequest
             'end_time' => ['nullable', 'date_format:H:i'],
             'venue' => ['nullable', 'string', 'max:255'],
             'banner_image' => ['nullable', 'string', 'max:255'],
+            'target_roles' => ['nullable', 'array'],
+            'target_grades_json' => ['nullable', 'string'],
+            'target_teacher_grades_json' => ['nullable', 'string'],
+            'target_guardian_grades_json' => ['nullable', 'string'],
+            'target_departments_json' => ['nullable', 'string'],
+            'schedules_json' => ['nullable', 'string'],
             'status' => ['sometimes', Rule::in(['upcoming', 'ongoing', 'completed', 'result'])],
         ];
     }

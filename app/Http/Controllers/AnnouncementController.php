@@ -19,7 +19,9 @@ class AnnouncementController extends Controller
 {
     use LogsActivity;
 
-    public function __construct(private readonly AnnouncementService $service) {}
+    public function __construct(private readonly AnnouncementService $service)
+    {
+    }
 
     public function index(Request $request): View
     {
@@ -67,7 +69,7 @@ class AnnouncementController extends Controller
 
         // Get departments for display
         $departments = \App\Models\Department::where('is_active', true)->orderBy('name')->get();
-        
+
         return view('announcements.show', [
             'announcement' => $announcement,
             'grades' => $grades,
@@ -104,13 +106,15 @@ class AnnouncementController extends Controller
             \Log::info('Sending push notifications', ['target_roles' => $request->input('target_roles')]);
 
             // Parse target grades and departments from JSON
-            $targetGrades = json_decode($request->input('target_grades_json', '["all"]'), true) ?: ['all'];
+            $targetTeacherGrades = json_decode($request->input('target_teacher_grades_json', '["all"]'), true) ?: ['all'];
+            $targetGuardianGrades = json_decode($request->input('target_guardian_grades_json', '["all"]'), true) ?: ['all'];
             $targetDepartments = json_decode($request->input('target_departments_json', '["all"]'), true) ?: ['all'];
 
             $this->sendPushNotifications(
-                $announcement, 
+                $announcement,
                 $request->input('target_roles', []),
-                $targetGrades,
+                $targetTeacherGrades,
+                $targetGuardianGrades,
                 $targetDepartments
             );
             \Log::info('Push notifications sent');
@@ -140,9 +144,9 @@ class AnnouncementController extends Controller
     public function update(UpdateAnnouncementRequest $request, Announcement $announcement): RedirectResponse
     {
         $wasPublished = $announcement->is_published;
-        
+
         $data = AnnouncementData::from($request->validated(), $request->user()?->id);
-        
+
         // Handle publish date and time for immediate publishing
         if ($data->is_published && !$data->publish_date) {
             $payload = $request->validated();
@@ -163,13 +167,15 @@ class AnnouncementController extends Controller
         // Send push notifications if just published (was draft, now published)
         if (!$wasPublished && $data->is_published && $request->has('target_roles')) {
             // Parse target grades and departments from JSON
-            $targetGrades = json_decode($request->input('target_grades_json', '["all"]'), true) ?: ['all'];
+            $targetTeacherGrades = json_decode($request->input('target_teacher_grades_json', '["all"]'), true) ?: ['all'];
+            $targetGuardianGrades = json_decode($request->input('target_guardian_grades_json', '["all"]'), true) ?: ['all'];
             $targetDepartments = json_decode($request->input('target_departments_json', '["all"]'), true) ?: ['all'];
-            
+
             $this->sendPushNotifications(
-                $announcement->fresh(), 
+                $announcement->fresh(),
                 $request->input('target_roles', []),
-                $targetGrades,
+                $targetTeacherGrades,
+                $targetGuardianGrades,
                 $targetDepartments
             );
         }
@@ -192,10 +198,10 @@ class AnnouncementController extends Controller
     /**
      * Send push notifications to target roles (dispatched to queue for fast response)
      */
-    private function sendPushNotifications(Announcement $announcement, array $targetRoles, array $targetGrades = ['all'], array $targetDepartments = ['all']): void
+    private function sendPushNotifications(Announcement $announcement, array $targetRoles, array $targetTeacherGrades = ['all'], array $targetGuardianGrades = ['all'], array $targetDepartments = ['all']): void
     {
         // Run synchronously for now (dispatchSync) - change to dispatch() if using queue worker
-        SendAnnouncementNotifications::dispatchSync($announcement, $targetRoles, $targetGrades, $targetDepartments);
+        SendAnnouncementNotifications::dispatchSync($announcement, $targetRoles, $targetTeacherGrades, $targetGuardianGrades, $targetDepartments);
     }
 
 }

@@ -61,25 +61,25 @@ class TeacherAppSeeder extends Seeder
         $this->createAnnouncements();
         $this->createEvents();
         $this->createLeaveRequests();
-        
+
         try {
             $this->createHomework();
         } catch (\Exception $e) {
             $this->command->warn('⚠ Homework creation skipped: ' . class_basename($e));
         }
-        
+
         try {
             $this->createAttendance();
         } catch (\Exception $e) {
             $this->command->warn('⚠ Attendance creation skipped: ' . class_basename($e));
         }
-        
+
         try {
             $this->createPayroll();
         } catch (\Exception $e) {
             $this->command->warn('⚠ Payroll creation skipped: ' . class_basename($e));
         }
-        
+
         $this->createDailyReports();
 
         $this->command->info('Teacher App Seeder completed!');
@@ -236,7 +236,7 @@ class TeacherAppSeeder extends Seeder
 
         // Check if teacher profile exists
         $existingProfile = TeacherProfile::where('user_id', $this->teacherUser->id)->first();
-        
+
         if ($existingProfile) {
             // Update existing profile without changing ID
             $existingProfile->update([
@@ -284,9 +284,21 @@ class TeacherAppSeeder extends Seeder
     private function createStudents(): void
     {
         $studentNames = [
-            'Aung Aung', 'Mya Mya', 'Kyaw Kyaw', 'Thida Win', 'Min Thu',
-            'Su Su', 'Zaw Zaw', 'Hla Hla', 'Ko Ko', 'Aye Chan',
-            'Nyi Nyi', 'Phyu Phyu', 'Tun Tun', 'May May', 'Lin Lin',
+            'Aung Aung',
+            'Mya Mya',
+            'Kyaw Kyaw',
+            'Thida Win',
+            'Min Thu',
+            'Su Su',
+            'Zaw Zaw',
+            'Hla Hla',
+            'Ko Ko',
+            'Aye Chan',
+            'Nyi Nyi',
+            'Phyu Phyu',
+            'Tun Tun',
+            'May May',
+            'Lin Lin',
         ];
 
         $guardianRole = Role::where('name', RoleEnum::GUARDIAN->value)->first();
@@ -356,7 +368,8 @@ class TeacherAppSeeder extends Seeder
         ];
 
         foreach ($teacherClasses as $classKey) {
-            if (!isset($this->classes[$classKey])) continue;
+            if (!isset($this->classes[$classKey]))
+                continue;
 
             $class = $this->classes[$classKey];
 
@@ -513,7 +526,7 @@ class TeacherAppSeeder extends Seeder
                     'end_time' => '17:00',
                     'venue' => 'School Campus',
                     'event_category_id' => $eventCategory->id,
-                    'status' => true,
+                    'status' => 'upcoming',
                 ]
             );
         }
@@ -555,7 +568,8 @@ class TeacherAppSeeder extends Seeder
         $class8AStudents = StudentProfile::where('class_id', $this->classes['8A']->id)->take(3)->get();
 
         foreach ($class8AStudents as $index => $student) {
-            if (!isset($studentLeaves[$index])) continue;
+            if (!isset($studentLeaves[$index]))
+                continue;
 
             $leave = $studentLeaves[$index];
             LeaveRequest::firstOrCreate(
@@ -633,18 +647,22 @@ class TeacherAppSeeder extends Seeder
         // Create attendance for the past 5 days
         for ($dayOffset = 1; $dayOffset <= 5; $dayOffset++) {
             $date = now()->subDays($dayOffset);
-            if ($date->isWeekend()) continue;
+            if ($date->isWeekend())
+                continue;
 
             foreach (['8A', '8B', '9A'] as $classKey) {
-                if (!isset($this->classes[$classKey])) continue;
+                if (!isset($this->classes[$classKey]))
+                    continue;
 
                 $class = $this->classes[$classKey];
                 $students = $class->students;
 
                 foreach ($students as $index => $student) {
                     $status = 'present';
-                    if ($index === 2) $status = 'absent';
-                    if ($index === 5) $status = 'excused';
+                    if ($index === 2)
+                        $status = 'absent';
+                    if ($index === 5)
+                        $status = 'excused';
 
                     StudentAttendance::firstOrCreate(
                         ['student_id' => $student->id, 'date' => $date->format('Y-m-d')],

@@ -6,13 +6,16 @@ use App\DTOs\Event\EventData;
 use App\DTOs\Event\EventFilterData;
 use App\Interfaces\EventRepositoryInterface;
 use App\Models\Event;
+use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Collection;
 
 class EventService
 {
-    public function __construct(private readonly EventRepositoryInterface $repository) {}
+    public function __construct(private readonly EventRepositoryInterface $repository)
+    {
+    }
 
-    public function list(EventFilterData $filter): Collection
+    public function list(EventFilterData $filter): LengthAwarePaginator
     {
         return $this->repository->list([
             'category_id' => $filter->category_id,

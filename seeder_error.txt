@@ -1,0 +1,152 @@
+
+   INFO  Seeding database.  
+
+
+   Illuminate\Database\QueryException 
+
+  SQLSTATE[23000]: Integrity constraint violation: 19 CHECK constraint failed: status (Connection: sqlite, SQL: insert into "events" ("title", "start_date", "description", "event_category_id", "type", "end_date", "start_time", "end_time", "venue", "status", "schedules", "id", "updated_at", "created_at") values (Parent-Teacher Conference, 2026-03-02 16:31:53, Annual parent-teacher meeting to discuss student progress, 019c331a-10c1-734e-84d2-c37e968c6801, meeting, 2026-03-02 16:31:53, 09:00:00, 16:00:00, Main Hall, 1, [{"date":"2026-03-02","start_time":"09:00","end_time":"16:00","label":"Event Day","description":"Annual parent-teacher meeting to discuss student progress"}], 019c943f-778d-7323-96a8-ef0247a85d28, 2026-02-25 16:31:53, 2026-02-25 16:31:53))
+
+  at vendor/laravel/framework/src/Illuminate/Database/Connection.php:824
+    820▕                     $this->getName(), $query, $this->prepareBindings($bindings), $e
+    821▕                 );
+    822▕             }
+    823▕ 
+  ➜ 824▕             throw new QueryException(
+    825▕                 $this->getName(), $query, $this->prepareBindings($bindings), $e
+    826▕             );
+    827▕         }
+    828▕     }
+
+  1   vendor/laravel/framework/src/Illuminate/Database/Connection.php:570
+      PDOException::("SQLSTATE[23000]: Integrity constraint violation: 19 CHECK constraint failed: status")
+
+  2   vendor/laravel/framework/src/Illuminate/Database/Connection.php:570
+      PDOStatement::execute()
+
+  3   vendor/laravel/framework/src/Illuminate/Database/Connection.php:811
+      Illuminate\Database\Connection::{closure:Illuminate\Database\Connection::statement():559}("insert into "events" ("title", "start_date", "description", "event_category_id", "type", "end_date", "start_time", "end_time", "venue", "status", "schedules", "id", "updated_at", "created_at") values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)")
+
+  4   vendor/laravel/framework/src/Illuminate/Database/Connection.php:778
+      Illuminate\Database\Connection::runQueryCallback("insert into "events" ("title", "start_date", "description", "event_category_id", "type", "end_date", "start_time", "end_time", "venue", "status", "schedules", "id", "updated_at", "created_at") values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)", Object(Closure))
+
+  5   vendor/laravel/framework/src/Illuminate/Database/Connection.php:559
+      Illuminate\Database\Connection::run("insert into "events" ("title", "start_date", "description", "event_category_id", "type", "end_date", "start_time", "end_time", "venue", "status", "schedules", "id", "updated_at", "created_at") values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)", Object(Closure))
+
+  6   vendor/laravel/framework/src/Illuminate/Database/Connection.php:523
+      Illuminate\Database\Connection::statement("insert into "events" ("title", "start_date", "description", "event_category_id", "type", "end_date", "start_time", "end_time", "venue", "status", "schedules", "id", "updated_at", "created_at") values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)")
+
+  7   vendor/laravel/framework/src/Illuminate/Database/Query/Builder.php:3804
+      Illuminate\Database\Connection::insert("insert into "events" ("title", "start_date", "description", "event_category_id", "type", "end_date", "start_time", "end_time", "venue", "status", "schedules", "id", "updated_at", "created_at") values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)")
+
+  8   vendor/laravel/framework/src/Illuminate/Database/Eloquent/Builder.php:2235
+      Illuminate\Database\Query\Builder::insert()
+
+  9   vendor/laravel/framework/src/Illuminate/Database/Eloquent/Model.php:1412
+      Illuminate\Database\Eloquent\Builder::__call("insert")
+
+  10  vendor/laravel/framework/src/Illuminate/Database/Eloquent/Model.php:1240
+      Illuminate\Database\Eloquent\Model::performInsert(Object(Illuminate\Database\Eloquent\Builder))
+
+  11  vendor/laravel/framework/src/Illuminate/Database/Eloquent/Builder.php:1219
+      Illuminate\Database\Eloquent\Model::save()
+
+  12  vendor/laravel/framework/src/Illuminate/Support/helpers.php:390
+      Illuminate\Database\Eloquent\Builder::{closure:Illuminate\Database\Eloquent\Builder::create():1218}(Object(App\Models\Event))
+  13  vendor/laravel/framework/src/Illuminate/Database/Eloquent/Builder.php:1218
+
+  14  vendor/laravel/framework/src/Illuminate/Database/Eloquent/Builder.php:725
+      Illuminate\Database\Eloquent\Builder::create()
+
+  15  vendor/laravel/framework/src/Illuminate/Database/Eloquent/Builder.php:1959
+      Illuminate\Database\Eloquent\Builder::{closure:Illuminate\Database\Eloquent\Builder::createOrFirst():725}()
+
+  16  vendor/laravel/framework/src/Illuminate/Database/Eloquent/Builder.php:725
+      Illuminate\Database\Eloquent\Builder::withSavepointIfNeeded(Object(Closure))
+
+  17  vendor/laravel/framework/src/Illuminate/Database/Eloquent/Builder.php:712
+      Illuminate\Database\Eloquent\Builder::createOrFirst(["Parent-Teacher Conference", Object(Illuminate\Support\Carbon)])
+
+  18  vendor/laravel/framework/src/Illuminate/Support/Traits/ForwardsCalls.php:23
+      Illuminate\Database\Eloquent\Builder::firstOrCreate(["Parent-Teacher Conference", Object(Illuminate\Support\Carbon)])
+
+  19  vendor/laravel/framework/src/Illuminate/Database/Eloquent/Model.php:2540
+      Illuminate\Database\Eloquent\Model::forwardCallTo(Object(Illuminate\Database\Eloquent\Builder), "firstOrCreate")
+
+  20  vendor/laravel/framework/src/Illuminate/Database/Eloquent/Model.php:2556
+      Illuminate\Database\Eloquent\Model::__call("firstOrCreate")
+
+  21  database/seeders/EventSeeder.php:113
+      Illuminate\Database\Eloquent\Model::__callStatic("firstOrCreate")
+
+  22  vendor/laravel/framework/src/Illuminate/Container/BoundMethod.php:36
+      Database\Seeders\EventSeeder::run()
+
+  23  vendor/laravel/framework/src/Illuminate/Container/Util.php:43
+      Illuminate\Container\BoundMethod::{closure:Illuminate\Container\BoundMethod::call():35}()
+
+  24  vendor/laravel/framework/src/Illuminate/Container/BoundMethod.php:96
+      Illuminate\Container\Util::unwrapIfClosure(Object(Closure))
+
+  25  vendor/laravel/framework/src/Illuminate/Container/BoundMethod.php:35
+      Illuminate\Container\BoundMethod::callBoundMethod(Object(Illuminate\Foundation\Application), Object(Closure))
+
+  26  vendor/laravel/framework/src/Illuminate/Container/Container.php:836
+      Illuminate\Container\BoundMethod::call(Object(Illuminate\Foundation\Application), [])
+
+  27  vendor/laravel/framework/src/Illuminate/Database/Seeder.php:184
+      Illuminate\Container\Container::call([])
+
+  28  vendor/laravel/framework/src/Illuminate/Database/Seeder.php:193
+      Illuminate\Database\Seeder::{closure:Illuminate\Database\Seeder::__invoke():183}()
+
+  29  vendor/laravel/framework/src/Illuminate/Database/Console/Seeds/SeedCommand.php:71
+      Illuminate\Database\Seeder::__invoke()
+
+  30  vendor/laravel/framework/src/Illuminate/Database/Eloquent/Concerns/GuardsAttributes.php:157
+      Illuminate\Database\Console\Seeds\SeedCommand::{closure:Illuminate\Database\Console\Seeds\SeedCommand::handle():70}()
+
+  31  vendor/laravel/framework/src/Illuminate/Database/Console/Seeds/SeedCommand.php:70
+      Illuminate\Database\Eloquent\Model::unguarded(Object(Closure))
+
+  32  vendor/laravel/framework/src/Illuminate/Container/BoundMethod.php:36
+      Illuminate\Database\Console\Seeds\SeedCommand::handle()
+
+  33  vendor/laravel/framework/src/Illuminate/Container/Util.php:43
+      Illuminate\Container\BoundMethod::{closure:Illuminate\Container\BoundMethod::call():35}()
+
+  34  vendor/laravel/framework/src/Illuminate/Container/BoundMethod.php:96
+      Illuminate\Container\Util::unwrapIfClosure(Object(Closure))
+
+  35  vendor/laravel/framework/src/Illuminate/Container/BoundMethod.php:35
+      Illuminate\Container\BoundMethod::callBoundMethod(Object(Illuminate\Foundation\Application), Object(Closure))
+
+  36  vendor/laravel/framework/src/Illuminate/Container/Container.php:836
+      Illuminate\Container\BoundMethod::call(Object(Illuminate\Foundation\Application), [])
+
+  37  vendor/laravel/framework/src/Illuminate/Console/Command.php:211
+      Illuminate\Container\Container::call()
+
+  38  vendor/symfony/console/Command/Command.php:318
+      Illuminate\Console\Command::execute(Object(Symfony\Component\Console\Input\ArgvInput), Object(Illuminate\Console\OutputStyle))
+
+  39  vendor/laravel/framework/src/Illuminate/Console/Command.php:180
+      Symfony\Component\Console\Command\Command::run(Object(Symfony\Component\Console\Input\ArgvInput), Object(Illuminate\Console\OutputStyle))
+
+  40  vendor/symfony/console/Application.php:1073
+      Illuminate\Console\Command::run(Object(Symfony\Component\Console\Input\ArgvInput), Object(Symfony\Component\Console\Output\ConsoleOutput))
+
+  41  vendor/symfony/console/Application.php:356
+      Symfony\Component\Console\Application::doRunCommand(Object(Illuminate\Database\Console\Seeds\SeedCommand), Object(Symfony\Component\Console\Input\ArgvInput), Object(Symfony\Component\Console\Output\ConsoleOutput))
+
+  42  vendor/symfony/console/Application.php:195
+      Symfony\Component\Console\Application::doRun(Object(Symfony\Component\Console\Input\ArgvInput), Object(Symfony\Component\Console\Output\ConsoleOutput))
+
+  43  vendor/laravel/framework/src/Illuminate/Foundation/Console/Kernel.php:197
+      Symfony\Component\Console\Application::run(Object(Symfony\Component\Console\Input\ArgvInput), Object(Symfony\Component\Console\Output\ConsoleOutput))
+
+  44  vendor/laravel/framework/src/Illuminate/Foundation/Application.php:1235
+      Illuminate\Foundation\Console\Kernel::handle(Object(Symfony\Component\Console\Input\ArgvInput), Object(Symfony\Component\Console\Output\ConsoleOutput))
+
+  45  artisan:16
+      Illuminate\Foundation\Application::handleCommand(Object(Symfony\Component\Console\Input\ArgvInput))
+

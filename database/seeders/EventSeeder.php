@@ -45,7 +45,7 @@ class EventSeeder extends Seeder
                 'start_time' => '09:00:00',
                 'end_time' => '16:00:00',
                 'venue' => 'Main Hall',
-                'status' => true,
+                'status' => 'upcoming',
             ],
             [
                 'title' => 'Cultural Festival',
@@ -57,7 +57,7 @@ class EventSeeder extends Seeder
                 'start_time' => '10:00:00',
                 'end_time' => '18:00:00',
                 'venue' => 'Auditorium',
-                'status' => true,
+                'status' => 'upcoming',
             ],
             [
                 'title' => 'Football Championship',
@@ -69,7 +69,7 @@ class EventSeeder extends Seeder
                 'start_time' => '14:00:00',
                 'end_time' => '17:00:00',
                 'venue' => 'Sports Ground',
-                'status' => true,
+                'status' => 'upcoming',
             ],
             [
                 'title' => 'Science Exhibition',
@@ -81,7 +81,7 @@ class EventSeeder extends Seeder
                 'start_time' => '09:00:00',
                 'end_time' => '15:00:00',
                 'venue' => 'Science Lab',
-                'status' => true,
+                'status' => 'upcoming',
             ],
             [
                 'title' => 'Annual Sports Day',
@@ -93,11 +93,23 @@ class EventSeeder extends Seeder
                 'start_time' => '08:00:00',
                 'end_time' => '17:00:00',
                 'venue' => 'Main Ground',
-                'status' => true,
+                'status' => 'upcoming',
             ],
         ];
 
         foreach ($events as $event) {
+            $schedules = [
+                [
+                    'date' => $event['start_date']->toDateString(),
+                    'start_time' => substr($event['start_time'], 0, 5),
+                    'end_time' => substr($event['end_time'], 0, 5),
+                    'label' => 'Event Day',
+                    'description' => $event['description']
+                ]
+            ];
+
+            $event['schedules'] = $schedules;
+
             Event::firstOrCreate(
                 ['title' => $event['title'], 'start_date' => $event['start_date']],
                 $event

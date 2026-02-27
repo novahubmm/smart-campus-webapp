@@ -43,30 +43,30 @@ class DemoDataSeeder extends Seeder
     public function run(): void
     {
         $this->command->info('Starting Demo Data Seeder...');
-        
+
         // Simulate 3 months of school operation (Oct 1 - Dec 21, 2025)
         $this->startDate = Carbon::create(2025, 10, 1);
         $this->endDate = Carbon::create(2025, 12, 21);
 
         // Update settings to mark setup as complete
         $this->updateSettings();
-        
+
         // Create academic structure
         $this->createBatch();
         $this->createDepartments();
         $this->createGrades();
         $this->createSubjects();
         $this->createClasses();
-        
+
         // Create people
         $this->createTeachers(3);
         $this->createStaff(2);
         $this->createStudents(1);
-        
+
         // Assign teachers to subjects and classes
         $this->assignTeachersToSubjects();
         $this->assignStudentsToClasses();
-        
+
         // Create operational data
         $this->createTimetables();
         $this->createAttendanceRecords();
@@ -144,7 +144,7 @@ class DemoDataSeeder extends Seeder
         // Get or create grade categories
         $primaryCategory = \App\Models\GradeCategory::firstOrCreate(['name' => 'Primary']);
         $middleCategory = \App\Models\GradeCategory::firstOrCreate(['name' => 'Middle School']);
-        
+
         $gradeCategories = [
             1 => $primaryCategory->id,
             2 => $primaryCategory->id,
@@ -206,10 +206,10 @@ class DemoDataSeeder extends Seeder
     private function createClasses(): void
     {
         $sections = ['A', 'B', 'C'];
-        
+
         foreach ($this->grades as $level => $grade) {
             $numSections = $level <= 3 ? 3 : 2; // Lower grades have more sections
-            
+
             for ($i = 0; $i < $numSections; $i++) {
                 // Use proper naming for Kindergarten (Grade 0) - though this seeder only creates grades 1-6
                 if ($level === 0) {
@@ -243,7 +243,7 @@ class DemoDataSeeder extends Seeder
             $lastName = $lastNames[array_rand($lastNames)];
             $name = $gender === 'female' ? "Daw {$firstName} {$lastName}" : "U {$firstName} {$lastName}";
             $email = 'teacher' . $i . '@nova.edu.mm';
-            
+
             $user = User::firstOrCreate(
                 ['email' => $email],
                 [
@@ -252,7 +252,7 @@ class DemoDataSeeder extends Seeder
                     'email_verified_at' => now(),
                 ]
             );
-            
+
             if (!$user->hasRole('teacher')) {
                 $user->assignRole('teacher');
             }
@@ -301,7 +301,7 @@ class DemoDataSeeder extends Seeder
                     'email_verified_at' => now(),
                 ]
             );
-            
+
             if (!$user->hasRole('staff')) {
                 $user->assignRole('staff');
             }
@@ -351,7 +351,7 @@ class DemoDataSeeder extends Seeder
                     'email_verified_at' => now(),
                 ]
             );
-            
+
             if (!$user->hasRole('student')) {
                 $user->assignRole('student');
             }
@@ -359,7 +359,7 @@ class DemoDataSeeder extends Seeder
             // Distribute students across grades (more in lower grades)
             $gradeLevel = $this->getWeightedGradeLevel();
             $grade = $this->grades[$gradeLevel];
-            
+
             // Get a class for this grade
             $gradeClasses = array_filter($this->classes, fn($c) => $c->grade_id === $grade->id);
             $gradeClasses = array_values($gradeClasses);
@@ -399,7 +399,8 @@ class DemoDataSeeder extends Seeder
         $cumulative = 0;
         foreach ($weights as $level => $weight) {
             $cumulative += $weight;
-            if ($rand <= $cumulative) return $level;
+            if ($rand <= $cumulative)
+                return $level;
         }
         return 1;
     }
@@ -407,12 +408,12 @@ class DemoDataSeeder extends Seeder
     private function assignTeachersToSubjects(): void
     {
         $subjectCodes = array_keys($this->subjects);
-        
+
         foreach ($this->teachers as $index => $teacher) {
             // Each teacher teaches 2-3 subjects
             $numSubjects = rand(2, 3);
             $teacherSubjects = array_slice($subjectCodes, $index % count($subjectCodes), $numSubjects);
-            
+
             foreach ($teacherSubjects as $code) {
                 if (isset($this->subjects[$code])) {
                     $teacher->subjects()->syncWithoutDetaching([$this->subjects[$code]->id]);
@@ -460,8 +461,9 @@ class DemoDataSeeder extends Seeder
             foreach ($weekDays as $day) {
                 for ($period = 1; $period <= 8; $period++) {
                     $startMinutes = 480 + (($period - 1) * 45); // 8:00 AM start
-                    if ($period > 4) $startMinutes += 30; // Lunch break after period 4
-                    
+                    if ($period > 4)
+                        $startMinutes += 30; // Lunch break after period 4
+
                     $isBreak = $period === 4; // Period 4 is break
                     $subjectCode = $subjectCodes[($period + array_search($day, $weekDays)) % count($subjectCodes)];
 
@@ -483,7 +485,7 @@ class DemoDataSeeder extends Seeder
     private function createAttendanceRecords(): void
     {
         $this->command->info('Creating attendance records (this may take a moment)...');
-        
+
         $currentDate = $this->startDate->copy();
         $studentStatuses = ['present', 'present', 'present', 'present', 'present', 'present', 'present', 'present', 'absent', 'late'];
         $staffStatuses = ['present', 'present', 'present', 'present', 'present', 'present', 'present', 'present', 'absent', 'leave'];
@@ -506,7 +508,7 @@ class DemoDataSeeder extends Seeder
                     $exists = StudentAttendance::where('student_id', $student->id)
                         ->where('date', $dateStr)
                         ->exists();
-                    
+
                     if (!$exists) {
                         StudentAttendance::create([
                             'student_id' => $student->id,
@@ -525,7 +527,7 @@ class DemoDataSeeder extends Seeder
                         $exists = TeacherAttendance::where('teacher_id', $teacher->id)
                             ->where('date', $dateStr)
                             ->exists();
-                        
+
                         if (!$exists) {
                             TeacherAttendance::create([
                                 'teacher_id' => $teacher->id,
@@ -606,7 +608,7 @@ class DemoDataSeeder extends Seeder
                 'type' => $evt['type'],
                 'event_category_id' => $categories[$evt['type']]->id,
                 'description' => $evt['title'] . ' - School Event',
-                'status' => true,
+                'status' => 'upcoming',
             ]);
         }
         $this->command->info('✓ Events created: ' . count($events));
@@ -628,21 +630,21 @@ class DemoDataSeeder extends Seeder
         foreach ($this->classes as $class) {
             // Get subjects for this class's grade
             $gradeSubjects = $class->grade->subjects ?? collect();
-            
+
             foreach ($gradeSubjects->take(5) as $subject) {
                 $subjectCode = $subject->code ?? 'MATH';
                 $titles = $homeworkTitles[$subjectCode] ?? $homeworkTitles['MATH'];
-                
+
                 // Create 2-3 homework per subject per class
                 $numHomework = rand(2, 3);
-                
+
                 for ($i = 0; $i < $numHomework; $i++) {
                     $assignedDate = Carbon::now()->subDays(rand(1, 30));
                     $dueDate = $assignedDate->copy()->addDays(rand(3, 7));
-                    
+
                     // Get a teacher for this subject
                     $teacher = $this->teachers[array_rand($this->teachers)];
-                    
+
                     Homework::create([
                         'title' => $titles[array_rand($titles)] . ' - Week ' . rand(1, 12),
                         'description' => 'Complete all exercises and submit before the due date.',
@@ -658,7 +660,7 @@ class DemoDataSeeder extends Seeder
                 }
             }
         }
-        
+
         $this->command->info("✓ Homework created: {$homeworkCount}");
     }
 
@@ -700,10 +702,11 @@ class DemoDataSeeder extends Seeder
         $topicCount = 0;
 
         foreach ($this->subjects as $code => $subject) {
-            if (!isset($curriculumData[$code])) continue;
+            if (!isset($curriculumData[$code]))
+                continue;
 
             $chapters = $curriculumData[$code];
-            
+
             foreach ($chapters as $order => $chapterData) {
                 $chapter = CurriculumChapter::firstOrCreate(
                     ['subject_id' => $subject->id, 'title' => $chapterData['title']],

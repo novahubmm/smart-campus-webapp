@@ -185,8 +185,15 @@ Route::middleware(['auth', 'ensure.active'])->group(function () {
         ->name('event-announcement-setup.store');
 
     Route::resource('events', \App\Http\Controllers\EventController::class)
-        ->only(['index', 'store', 'update', 'destroy'])
+        ->only(['index', 'store', 'show', 'update', 'destroy'])
         ->middleware('ensure.setup:events');
+
+    Route::post('events/{event}/respond', [\App\Http\Controllers\EventController::class, 'respond'])->name('events.respond');
+    Route::post('events/{event}/upload', [\App\Http\Controllers\EventController::class, 'upload'])->name('events.upload');
+    Route::post('events/{event}/polls', [\App\Http\Controllers\EventController::class, 'storePoll'])->name('events.polls.store');
+    Route::delete('events/attachments/{attachment}', [\App\Http\Controllers\EventController::class, 'destroyAttachment'])->name('events.attachments.destroy');
+    Route::post('polls/{option}/vote', [\App\Http\Controllers\EventController::class, 'vote'])->name('polls.vote');
+    Route::post('polls/{poll}/toggle', [\App\Http\Controllers\EventController::class, 'togglePoll'])->name('polls.toggle');
 
     Route::prefix('event-categories')->middleware('ensure.setup:events')->name('event-categories.')->group(function () {
         Route::get('/', [\App\Http\Controllers\EventCategoryController::class, 'index'])->name('index');
@@ -199,7 +206,7 @@ Route::middleware(['auth', 'ensure.active'])->group(function () {
     Route::resource('announcements', \App\Http\Controllers\AnnouncementController::class)
         ->only(['index', 'store', 'update', 'destroy'])
         ->middleware(['ensure.setup:events', 'can:manage announcements', 'feature:announcements']);
-    
+
     // Announcement view route (accessible to staff for viewing from notifications)
     Route::get('/announcements/{announcement}', [\App\Http\Controllers\AnnouncementController::class, 'show'])
         ->name('announcements.show')
@@ -410,11 +417,11 @@ Route::middleware(['auth', 'ensure.active'])->group(function () {
     Route::post('/student-fees/payment-system/invoices/{invoice}/process', [\App\Http\Controllers\StudentFeeController::class, 'processPaymentSystem'])
         ->middleware('ensure.setup:finance')
         ->name('student-fees.payment-system.process');
-    
+
     Route::get('/student-fees/payment-receipt/{payment}', [\App\Http\Controllers\StudentFeeController::class, 'showPaymentReceipt'])
         ->middleware('ensure.setup:finance')
         ->name('student-fees.payment-receipt');
-    
+
     // PaymentSystem Payment Proof Routes (Mobile API)
     Route::post('/student-fees/payment-system/payments/{payment}/approve', [\App\Http\Controllers\StudentFeeController::class, 'approvePaymentSystemPayment'])
         ->middleware('ensure.setup:finance')
@@ -425,7 +432,7 @@ Route::middleware(['auth', 'ensure.active'])->group(function () {
     Route::get('/student-fees/payment-system/payments/{payment}/details', [\App\Http\Controllers\StudentFeeController::class, 'getPaymentSystemPaymentDetails'])
         ->middleware('ensure.setup:finance')
         ->name('student-fees.payment-system.payments.details');
-    
+
     // Old PaymentProof Routes (Legacy)
     Route::post('/student-fees/payment-proofs/{paymentProof}/approve', [\App\Http\Controllers\StudentFeeController::class, 'approvePaymentProof'])
         ->middleware('ensure.setup:finance')
@@ -460,12 +467,12 @@ Route::middleware(['auth', 'ensure.active'])->group(function () {
     Route::put('/student-fees/grades/{grade}', [\App\Http\Controllers\StudentFeeController::class, 'updateGradeFee'])
         ->middleware('ensure.setup:finance')
         ->name('student-fees.grades.update');
-    
+
     // Payment Promotions
     Route::put('/student-fees/promotions/{promotion}', [\App\Http\Controllers\StudentFeeController::class, 'updatePromotion'])
         ->middleware('ensure.setup:finance')
         ->name('student-fees.promotions.update');
-    
+
     // Payment Methods CRUD
     Route::post('/payment-methods', [\App\Http\Controllers\StudentFeeController::class, 'storePaymentMethod'])
         ->middleware('ensure.setup:finance')
@@ -545,29 +552,29 @@ Route::middleware(['auth', 'ensure.active'])->group(function () {
         Route::get('/', [\App\Http\Controllers\ReportController::class, 'index'])->name('index');
         Route::post('/', [\App\Http\Controllers\ReportController::class, 'store'])->name('store');
         Route::delete('/{report}', [\App\Http\Controllers\ReportController::class, 'destroy'])->name('destroy');
-        
+
         // Incoming Reports (Daily reports from teachers)
         Route::get('/incoming', [\App\Http\Controllers\ReportController::class, 'incomingReports'])->name('incoming');
         Route::get('/incoming/{report}', [\App\Http\Controllers\ReportController::class, 'showIncomingReport'])->name('incoming.show');
         Route::post('/incoming/{report}/review', [\App\Http\Controllers\ReportController::class, 'reviewReport'])->name('incoming.review');
         Route::post('/incoming/{report}/acknowledge', [\App\Http\Controllers\ReportController::class, 'acknowledgeReport'])->name('incoming.acknowledge');
-        
+
         // Student Reports
         Route::get('/students', [\App\Http\Controllers\ReportController::class, 'studentReports'])->name('students');
         Route::post('/students/generate', [\App\Http\Controllers\ReportController::class, 'generateStudentReport'])->name('students.generate');
-        
+
         // Teacher Reports
         Route::get('/teachers', [\App\Http\Controllers\ReportController::class, 'teacherReports'])->name('teachers');
         Route::post('/teachers/generate', [\App\Http\Controllers\ReportController::class, 'generateTeacherReport'])->name('teachers.generate');
-        
+
         // Staff Reports
         Route::get('/staff', [\App\Http\Controllers\ReportController::class, 'staffReports'])->name('staff');
         Route::post('/staff/generate', [\App\Http\Controllers\ReportController::class, 'generateStaffReport'])->name('staff.generate');
-        
+
         // Attendance Reports
         Route::get('/attendance', [\App\Http\Controllers\ReportController::class, 'attendanceReports'])->name('attendance');
         Route::post('/attendance/generate', [\App\Http\Controllers\ReportController::class, 'generateAttendanceReport'])->name('attendance.generate');
-        
+
         // API endpoints for dynamic selects
         Route::get('/api/classes/{gradeId}', [\App\Http\Controllers\ReportController::class, 'getClassesByGrade']);
         Route::get('/api/students/{classId}', [\App\Http\Controllers\ReportController::class, 'getStudentsByClass']);
@@ -619,7 +626,7 @@ Route::middleware(['auth', 'ensure.active'])->group(function () {
         Route::get('/profile', [TeacherPWAController::class, 'profile'])->name('profile');
         Route::get('/timetable', [TeacherPWAController::class, 'timetable'])->name('timetable');
     });
-    
+
     // Guardian PWA Routes
     Route::prefix('guardian-pwa')->name('guardian-pwa.')->group(function () {
         Route::get('/home', [GuardianPWAController::class, 'home'])->name('home');
@@ -633,9 +640,9 @@ Route::middleware(['auth', 'ensure.active'])->group(function () {
         Route::get('/student/{id}', [GuardianPWAController::class, 'studentDetail'])->name('student-detail');
         Route::get('/announcement/{id}', [GuardianPWAController::class, 'announcementDetail'])->name('announcement-detail');
     });
-    
+
     // Shared PWA Routes
-    Route::get('/pwa/notifications', function() {
+    Route::get('/pwa/notifications', function () {
         return view('pwa.notifications', [
             'headerTitle' => 'Notifications',
             'showBack' => true,
@@ -649,7 +656,7 @@ Route::middleware(['auth', 'ensure.active', 'role:system_admin'])->prefix('syste
     // Feature Flag Management
     Route::get('/features', [\App\Http\Controllers\FeatureFlagController::class, 'index'])->name('features.index');
     Route::post('/features', [\App\Http\Controllers\FeatureFlagController::class, 'update'])->name('features.update');
-    
+
     // Feedback Management
     Route::get('/feedback', [\App\Http\Controllers\FeedbackController::class, 'index'])->name('feedback.index');
     Route::get('/feedback/{feedback}', [\App\Http\Controllers\FeedbackController::class, 'show'])->name('feedback.show');

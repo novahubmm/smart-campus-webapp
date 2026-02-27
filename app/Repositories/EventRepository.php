@@ -7,11 +7,42 @@ use App\DTOs\Event\EventFilterData;
 use App\Interfaces\EventRepositoryInterface;
 use App\Models\Event;
 use Carbon\Carbon;
+use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Collection;
 
 class EventRepository implements EventRepositoryInterface
 {
-    public function list(array $filters = []): Collection
+    public function list(array $filters = []): LengthAwarePaginator
+    {
+        $filter = $filters instanceof EventFilterData ? $filters : EventFilterData::from($filters);
+
+        $now = now()->toDateString();
+        $nowTime = now()->toTimeString();
+
+        // Sort: upcoming first (0), then ongoing/active (1), then completed (2)
+        $query = Event::query()->with('category')
+            ->orderByRaw("
+                CASE
+                    WHEN start_date > ? OR (start_date = ? AND start_time > ?) THEN 0
+                    WHEN COALESCE(end_date, start_date) >= ? THEN 1
+                    ELSE 2
+                END ASC
+            ", [$now, $now, $nowTime, $now])
+            ->orderBy('start_date')
+            ->orderBy('start_time');
+
+        if ($filter->category_id) {
+            $query->where('event_category_id', $filter->category_id);
+        }
+
+        $this->applyStatusFilter($query, $filter->status);
+        $this->applyPeriodFilter($query, $filter->period);
+        $this->applyMonthFilter($query, $filter->month);
+
+        return $query->paginate(15);
+    }
+
+    public function calendar(array $filters = []): Collection
     {
         $filter = $filters instanceof EventFilterData ? $filters : EventFilterData::from($filters);
 
@@ -25,12 +56,7 @@ class EventRepository implements EventRepositoryInterface
         $this->applyPeriodFilter($query, $filter->period);
         $this->applyMonthFilter($query, $filter->month);
 
-        return $query->get();
-    }
-
-    public function calendar(array $filters = []): Collection
-    {
-        return $this->list($filters)->map(function (Event $event) {
+        return $query->get()->map(function (Event $event) {
             return [
                 'id' => $event->id,
                 'title' => $event->title,
@@ -69,22 +95,13 @@ class EventRepository implements EventRepositoryInterface
             return;
         }
 
-        if ($status === 'active') {
-            $query->where('status', true);
-        } elseif ($status === 'inactive') {
-            $query->where('status', false);
-        } elseif ($status === 'upcoming') {
-            $today = Carbon::today();
-            $query->whereDate('start_date', '>=', $today);
-        } elseif ($status === 'completed') {
-            $today = Carbon::today();
-            $query->where(function ($q) use ($today) {
-                $q->whereDate('end_date', '<', $today)
-                    ->orWhere(function ($sub) use ($today) {
-                        $sub->whereNull('end_date')->whereDate('start_date', '<', $today);
-                    });
-            });
-        }
+        match ($status) {
+            'upcoming' => $query->upcoming(),
+            'active' => $query->ongoing(),
+            'completed' => $query->completed(),
+            'inactive' => $query->completed(),
+            default => null,
+        };
     }
 
     private function applyPeriodFilter($query, ?string $period): void

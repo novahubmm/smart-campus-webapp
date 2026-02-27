@@ -63,6 +63,41 @@ class DemoEventSeeder extends DemoBaseSeeder
         ];
 
         foreach ($events as $eventData) {
+            $isMultiDay = $eventData['title'] === 'Annual Sports Day';
+            $schedules = [];
+
+            if ($isMultiDay) {
+                // Annual Sports Day - 2 Days
+                $schedules = [
+                    [
+                        'date' => $eventData['date']->toDateString(),
+                        'start_time' => '08:00',
+                        'end_time' => '17:00',
+                        'label' => 'Day 1: Track & Field',
+                        'description' => 'Morning track events and afternoon field competitions.'
+                    ],
+                    [
+                        'date' => $eventData['date']->copy()->addDay()->toDateString(),
+                        'start_time' => '09:00',
+                        'end_time' => '14:00',
+                        'label' => 'Day 2: Finals & Ceremony',
+                        'description' => 'Final matches and award distribution.'
+                    ]
+                ];
+                $endDate = $eventData['date']->copy()->addDay();
+            } else {
+                $schedules = [
+                    [
+                        'date' => $eventData['date']->toDateString(),
+                        'start_time' => '09:00',
+                        'end_time' => '16:00',
+                        'label' => 'Event Day',
+                        'description' => ''
+                    ]
+                ];
+                $endDate = $eventData['date'];
+            }
+
             Event::firstOrCreate(
                 ['title' => $eventData['title']],
                 [
@@ -70,12 +105,13 @@ class DemoEventSeeder extends DemoBaseSeeder
                     'event_category_id' => $categories[$eventData['type']]->id,
                     'type' => $eventData['type'],
                     'start_date' => $eventData['date'],
-                    'end_date' => $eventData['date'],
-                    'start_time' => '09:00',
-                    'end_time' => '16:00',
+                    'end_date' => $endDate,
+                    'start_time' => $schedules[0]['start_time'],
+                    'end_time' => $schedules[count($schedules) - 1]['end_time'],
                     'venue' => $eventData['venue'],
                     'organized_by' => $adminUser->id,
-                    'status' => true,
+                    'schedules' => $schedules,
+                    'status' => 'upcoming',
                 ]
             );
         }

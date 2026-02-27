@@ -17,13 +17,18 @@ class AnnouncementData
         /** @var array<int, string> */
         public readonly array $target_grades,
         /** @var array<int, string> */
+        public readonly array $target_teacher_grades,
+        /** @var array<int, string> */
+        public readonly array $target_guardian_grades,
+        /** @var array<int, string> */
         public readonly array $target_departments,
         public readonly ?string $publish_date,
         public readonly bool $is_published,
         public readonly ?string $attachment,
         public readonly bool $status,
         public readonly ?string $created_by,
-    ) {}
+    ) {
+    }
 
     public static function from(array $payload, ?string $createdBy = null): self
     {
@@ -36,6 +41,18 @@ class AnnouncementData
         $targetGrades = $payload['target_grades'] ?? ['all'];
         if (isset($payload['target_grades_json'])) {
             $targetGrades = json_decode($payload['target_grades_json'], true) ?: ['all'];
+        }
+
+        // Parse target_teacher_grades from JSON if provided
+        $targetTeacherGrades = $payload['target_teacher_grades'] ?? ['all'];
+        if (isset($payload['target_teacher_grades_json'])) {
+            $targetTeacherGrades = json_decode($payload['target_teacher_grades_json'], true) ?: ['all'];
+        }
+
+        // Parse target_guardian_grades from JSON if provided
+        $targetGuardianGrades = $payload['target_guardian_grades'] ?? ['all'];
+        if (isset($payload['target_guardian_grades_json'])) {
+            $targetGuardianGrades = json_decode($payload['target_guardian_grades_json'], true) ?: ['all'];
         }
 
         // Parse target_departments from JSON if provided
@@ -52,6 +69,8 @@ class AnnouncementData
             location: Arr::get($payload, 'location'),
             target_roles: $roles,
             target_grades: $targetGrades,
+            target_teacher_grades: $targetTeacherGrades,
+            target_guardian_grades: $targetGuardianGrades,
             target_departments: $targetDepartments,
             publish_date: Arr::get($payload, 'publish_date'),
             is_published: (bool) ($payload['is_published'] ?? false),
@@ -71,6 +90,8 @@ class AnnouncementData
             'location' => $this->location,
             'target_roles' => $this->target_roles,
             'target_grades' => $this->target_grades,
+            'target_teacher_grades' => $this->target_teacher_grades,
+            'target_guardian_grades' => $this->target_guardian_grades,
             'target_departments' => $this->target_departments,
             'publish_date' => $this->publish_date,
             'is_published' => $this->is_published,

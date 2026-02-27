@@ -59,7 +59,7 @@ class ExamSeeder extends Seeder
                 'start_date' => now()->addDays(7),
                 'end_date' => now()->addDays(14),
                 'description' => 'Mid-term examination for Grade 10',
-                'status' => true,
+                'status' => 'upcoming',
             ],
             [
                 'name' => 'Science Tutorial',
@@ -69,7 +69,7 @@ class ExamSeeder extends Seeder
                 'start_date' => now()->addDays(10),
                 'end_date' => now()->addDays(10),
                 'description' => 'Science tutorial test for Grade 9',
-                'status' => true,
+                'status' => 'upcoming',
             ],
             [
                 'name' => 'Mathematics Tutorial 1',
@@ -79,7 +79,7 @@ class ExamSeeder extends Seeder
                 'start_date' => now()->addDays(5),
                 'end_date' => now()->addDays(5),
                 'description' => 'Mathematics tutorial test for Grade 9-A',
-                'status' => true,
+                'status' => 'upcoming',
             ],
             [
                 'name' => 'Final Examination',
@@ -89,7 +89,7 @@ class ExamSeeder extends Seeder
                 'start_date' => now()->addDays(20),
                 'end_date' => now()->addDays(30),
                 'description' => 'Final examination for Grade 11',
-                'status' => true,
+                'status' => 'upcoming',
             ],
             [
                 'name' => 'Physics Practical',
@@ -99,7 +99,7 @@ class ExamSeeder extends Seeder
                 'start_date' => now()->addDays(12),
                 'end_date' => now()->addDays(12),
                 'description' => 'Physics practical examination',
-                'status' => true,
+                'status' => 'upcoming',
             ],
         ];
 
