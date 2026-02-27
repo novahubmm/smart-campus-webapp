@@ -167,6 +167,7 @@
                                     <tr>
                                         <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 dark:text-gray-300">{{ __('academic_management.Grade') }}</th>
                                         <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 dark:text-gray-300">{{ __('academic_management.Category') }}</th>
+                                        <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 dark:text-gray-300">{{ __('academic_management.Status') }}</th>
                                         <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 dark:text-gray-300">{{ __('academic_management.Classes') }}</th>
                                         <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 dark:text-gray-300">{{ __('academic_management.Students') }}</th>
                                         <th class="px-4 py-3 text-right text-xs font-semibold text-gray-600 dark:text-gray-300">{{ __('academic_management.Actions') }}</th>
@@ -177,6 +178,16 @@
                                         <tr>
                                             <td class="px-4 py-3">
                                                 <a href="{{ route('academic-management.grades.show', $grade->id) }}" class="text-sm font-semibold text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300">@gradeName($grade->level)</a>
+                                                @if($grade->start_date || $grade->end_date)
+                                                    <div class="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                                                        @if($grade->start_date)
+                                                            <i class="fas fa-calendar-start"></i> {{ $grade->start_date->format('M d, Y') }}
+                                                        @endif
+                                                        @if($grade->end_date)
+                                                            - {{ $grade->end_date->format('M d, Y') }}
+                                                        @endif
+                                                    </div>
+                                                @endif
                                             </td>
                                             <td class="px-4 py-3">
                                                 @if($grade->gradeCategory)
@@ -187,6 +198,17 @@
                                                     </span>
                                                 @else
                                                     <span class="text-gray-400">—</span>
+                                                @endif
+                                            </td>
+                                            <td class="px-4 py-3">
+                                                @if($grade->isActive())
+                                                    <span class="inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-semibold bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400">
+                                                        <i class="fas fa-check-circle"></i> {{ __('academic_management.Active') }}
+                                                    </span>
+                                                @else
+                                                    <span class="inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-semibold bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-400">
+                                                        <i class="fas fa-times-circle"></i> {{ __('academic_management.Inactive') }}
+                                                    </span>
                                                 @endif
                                             </td>
                                             <td class="px-4 py-3 text-sm text-gray-700 dark:text-gray-300">{{ $grade->classes_count ?? 0 }}</td>
@@ -217,7 +239,7 @@
                                         </tr>
                                     @empty
                                         <tr>
-                                            <td colspan="5" class="px-4 py-8 text-center text-sm text-gray-500 dark:text-gray-400">{{ __('academic_management.No grades found') }}</td>
+                                            <td colspan="6" class="px-4 py-8 text-center text-sm text-gray-500 dark:text-gray-400">{{ __('academic_management.No grades found') }}</td>
                                         </tr>
                                     @endforelse
                                 </tbody>
@@ -433,8 +455,8 @@
                                                 @endif
                                             </td>
                                             <td class="px-4 py-3 text-sm text-gray-700 dark:text-gray-300">
-                                                @if($subject->grades->isNotEmpty())
-                                                    {{ $subject->grades->map(fn($g) => __('grades.grade_' . $g->level))->implode(', ') }}
+                                                @if($subject->grades && $subject->grades->isNotEmpty())
+                                                    {{ $subject->grades->map(fn($grade) => \App\Helpers\GradeHelper::getLocalizedName($grade->level))->join(', ') }}
                                                 @else
                                                     —
                                                 @endif
@@ -446,7 +468,7 @@
                                                         <i class="fas fa-eye text-xs"></i>
                                                     </a>
                                                     <a href="#" 
-                                                       @click.prevent="$dispatch('confirm-show', {
+                                                       @@click.prevent="$dispatch('confirm-show', {
                                                            title: '{{ __('academic_management.Delete Subject') }}',
                                                            message: '{{ __('academic_management.confirm_delete') }}',
                                                            confirmText: '{{ __('academic_management.Delete') }}',

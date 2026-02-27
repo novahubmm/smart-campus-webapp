@@ -1009,6 +1009,28 @@
             />
 
             <x-data-table
+                :title="__('academic_management.Teachers in Class')"
+                :columns="[
+                    [
+                        'label' => __('academic_management.Teacher ID'),
+                        'render' => fn($row) => e($row['teacher_id'] ?? '—')
+                    ],
+                    [
+                        'label' => __('academic_management.Teacher Name'),
+                        'render' => fn($row) => e($row['name'] ?? '—')
+                    ],
+                    [
+                        'label' => __('academic_management.Subject'),
+                        'render' => fn($row) => e($row['subject'] ?? '—')
+                    ],
+                ]"
+                :data="$teachersPaginated"
+                :actions="[]"
+                :show-filters="false"
+                table-class="basic-table"
+            />
+
+            <x-data-table
                 :title="__('academic_management.Students in Class')"
                 :addButtonText="__('academic_management.Add Student')"
                 addButtonAction="openAddStudentModal()"

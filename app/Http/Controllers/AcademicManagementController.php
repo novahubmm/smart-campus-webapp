@@ -61,8 +61,8 @@ class AcademicManagementController extends Controller
         $facilities = $this->academicRepository->getFacilities();
         $subjectTypes = $this->academicRepository->getSubjectTypes();
         
-        // Get all grades for dropdowns (without pagination)
-        $allGrades = $this->academicRepository->getGradesWithDetails();
+        // Get all grades for dropdowns (without pagination) - only active grades
+        $allGrades = $this->academicRepository->getGradesWithDetails(activeOnly: true);
 
         return view('academic.academic-management', compact(
             'batchesCount',
@@ -283,22 +283,6 @@ class AcademicManagementController extends Controller
             ->values();
         $totalStudents = $students->count();
 
-        $teacherRows = collect();
-        $subjects = $class->grade?->subjects ?? collect();
-        foreach ($subjects as $subject) {
-            foreach ($subject->teachers as $teacher) {
-                $teacherRows->push([
-                    'teacher_id' => $teacher->employee_id ?? ($teacher->id ?? '—'),
-                    'name' => $teacher->user?->name ?? '—',
-                    'subject' => $subject->name ?? '—',
-                    'department' => $teacher->department?->name ?? '—',
-                    'teacher' => $teacher,
-                ]);
-            }
-        }
-        $uniqueTeachers = $teacherRows->unique(fn($row) => ($row['teacher_id'] ?? '') . '|' . ($row['subject'] ?? ''))->values();
-        $totalTeachers = $uniqueTeachers->unique('teacher_id')->count();
-
         $settings = \App\Models\Setting::first();
         
         // Get the active timetable for this class
@@ -314,6 +298,25 @@ class AcademicManagementController extends Controller
                 ->orderByDesc('created_at')
                 ->first();
         }
+
+        // Get teachers from timetable periods
+        $teacherRows = collect();
+        if ($timetable && $timetable->periods) {
+            foreach ($timetable->periods as $period) {
+                if ($period->teacher && $period->subject && !$period->is_break) {
+                    $teacherRows->push([
+                        'teacher_id' => $period->teacher->employee_id ?? ($period->teacher->id ?? '—'),
+                        'name' => $period->teacher->user?->name ?? '—',
+                        'subject' => $period->subject->name ?? '—',
+                        'teacher' => $period->teacher,
+                    ]);
+                }
+            }
+        }
+        
+        // Remove duplicates based on teacher_id and subject combination
+        $uniqueTeachers = $teacherRows->unique(fn($row) => ($row['teacher_id'] ?? '') . '|' . ($row['subject'] ?? ''))->values();
+        $totalTeachers = $uniqueTeachers->unique('teacher_id')->count();
 
         $timetableWeekDays = collect($timetable?->week_days ?? $settings?->week_days ?? ['monday', 'tuesday', 'wednesday', 'thursday', 'friday'])
             ->map(function ($day) {
