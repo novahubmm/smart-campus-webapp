@@ -1,6 +1,6 @@
 @php
     $profile = $user->staffProfile;
-    $title = isset($showAsAdmin) && $showAsAdmin ? __('Admin Details') : __('Staff Profile');
+    $title = isset($showAsAdmin) && $showAsAdmin ? __('staff_profile.Admin Details') : __('staff_profile.Staff Profile');
 @endphp
 
 <div class="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl shadow-sm p-6 space-y-4">

@@ -14,7 +14,10 @@ class StaffAttendanceRepository implements StaffAttendanceRepositoryInterface
 
     public function getDailyRegister(Carbon $date): Collection
     {
-        $staff = StaffProfile::with(['user', 'department'])->orderBy('employee_id')->get();
+        $staff = StaffProfile::with(['user', 'department'])
+            ->where('status', 'active')
+            ->orderBy('employee_id')
+            ->get();
 
         $attendance = StaffAttendance::whereDate('date', $date)->get()->keyBy('staff_id');
 
@@ -43,7 +46,10 @@ class StaffAttendanceRepository implements StaffAttendanceRepositoryInterface
 
     public function getRangeSummary(Carbon $start, Carbon $end): Collection
     {
-        $staff = StaffProfile::with(['user', 'department'])->orderBy('employee_id')->get();
+        $staff = StaffProfile::with(['user', 'department'])
+            ->where('status', 'active')
+            ->orderBy('employee_id')
+            ->get();
 
         $attendance = StaffAttendance::select('staff_id', 'status')
             ->whereBetween('date', [$start->toDateString(), $end->toDateString()])

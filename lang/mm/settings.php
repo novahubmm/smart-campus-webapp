@@ -41,7 +41,7 @@ return array(
     'About Us (Myanmar)' => 'ကျောင်းအကြောင်း (မြန်မာ)',
     'School Code' => 'ကျောင်းကုဒ်',
     'School Name (Myanmar)' => 'ကျောင်းအမည် (မြန်မာ)',
-    'Established Year' => 'တည်ထောင်သည့်နှစ်',
+    'Established' => 'တည်ထောင်သည့်ရက်',
     'Motto' => 'ကျောင်းဆောင်ပုဒ်',
     'Motto (Myanmar)' => 'ကျောင်းဆောင်ပုဒ် (မြန်မာ)',
     'Vision' => 'ရည်မှန်းချက်',

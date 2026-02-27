@@ -116,6 +116,12 @@ return array(
     'Father\'s Ph no.' => 'Father\'s Ph no.',
     'Mother\'s Ph no.' => 'Mother\'s Ph no.',
     'Partner\'s Ph no.' => 'Partner\'s Ph no.',
+    'Activate' => 'Activate',
+    'Deactivate' => 'Deactivate',
+    'Are you sure you want to activate this teacher?' => 'Are you sure you want to activate this teacher?',
+    'Are you sure you want to deactivate this teacher?' => 'Are you sure you want to deactivate this teacher?',
+    'Teacher activated successfully.' => 'Teacher activated successfully.',
+    'Teacher deactivated successfully.' => 'Teacher deactivated successfully.',
     
     // Activities page translations
     'Free Period Activities' => 'Free Period Activities',

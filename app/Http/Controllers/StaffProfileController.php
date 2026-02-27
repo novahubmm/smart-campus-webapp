@@ -95,4 +95,21 @@ class StaffProfileController extends Controller
 
         return redirect()->route('staff-profiles.index')->with('success', __('Staff profile updated successfully.'));
     }
+    
+    public function toggleStatus(StaffProfile $staffProfile): RedirectResponse
+    {
+        $this->authorize(PermissionEnum::MANAGE_STAFF_PROFILES->value);
+
+        $newStatus = $staffProfile->status === 'active' ? 'inactive' : 'active';
+        $staffProfile->status = $newStatus;
+        $staffProfile->save();
+
+        $this->logUpdate('StaffProfile', $staffProfile->id, "Status changed to {$newStatus}: {$staffProfile->employee_id}");
+
+        $message = $newStatus === 'active'
+            ? __('staff_profiles.Staff member activated successfully.') 
+            : __('staff_profiles.Staff member deactivated successfully.');
+
+        return redirect()->route('staff-profiles.index')->with('success', $message);
+    }
 }

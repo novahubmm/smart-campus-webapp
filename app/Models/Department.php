@@ -36,7 +36,7 @@ class Department extends Model
 
     public function allMembers()
     {
-        $staff = $this->staffProfiles()->with('user')->get()->map(function ($profile) {
+        $staff = $this->staffProfiles()->where('status', 'active')->with('user')->get()->map(function ($profile) {
             return [
                 'id' => $profile->id,
                 'type' => 'staff',
@@ -48,7 +48,7 @@ class Department extends Model
             ];
         });
 
-        $teachers = $this->teacherProfiles()->with('user')->get()->map(function ($profile) {
+        $teachers = $this->teacherProfiles()->where('status', 'active')->with('user')->get()->map(function ($profile) {
             return [
                 'id' => $profile->id,
                 'type' => 'teacher',
@@ -73,11 +73,11 @@ class Department extends Model
         }
 
         $staffTotal = $this->relationLoaded('staffProfiles')
-            ? $this->staffProfiles->count()
-            : $this->staffProfiles()->count();
+            ? $this->staffProfiles->where('status', 'active')->count()
+            : $this->staffProfiles()->where('status', 'active')->count();
         $teacherTotal = $this->relationLoaded('teacherProfiles')
-            ? $this->teacherProfiles->count()
-            : $this->teacherProfiles()->count();
+            ? $this->teacherProfiles->where('status', 'active')->count()
+            : $this->teacherProfiles()->where('status', 'active')->count();
 
         return $staffTotal + $teacherTotal;
     }
@@ -90,8 +90,8 @@ class Department extends Model
     public function allMembersPaginated($perPage = 10)
     {
         // Get staff with pagination
-        $staffQuery = $this->staffProfiles()->with('user');
-        $teacherQuery = $this->teacherProfiles()->with('user');
+        $staffQuery = $this->staffProfiles()->where('status', 'active')->with('user');
+        $teacherQuery = $this->teacherProfiles()->where('status', 'active')->with('user');
         
         // For simplicity, we'll combine and paginate manually
         // In a real-world scenario, you might want to use a more sophisticated approach

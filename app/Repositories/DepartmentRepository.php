@@ -13,7 +13,10 @@ class DepartmentRepository implements DepartmentRepositoryInterface
     public function paginate(array $filters): LengthAwarePaginator
     {
         $query = Department::query()
-            ->withCount(['staffProfiles', 'teacherProfiles']);
+            ->withCount([
+                'staffProfiles' => fn($q) => $q->where('status', 'active'),
+                'teacherProfiles' => fn($q) => $q->where('status', 'active')
+            ]);
 
         if (!empty($filters['search'])) {
             $search = $filters['search'];

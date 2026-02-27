@@ -244,6 +244,14 @@ class AuthController extends Controller
             $students = $this->guardianAuthRepository->getGuardianStudents($request->user());
 
             $formattedStudents = $students->map(function ($student) {
+                // Check if student is a class leader (single leader, male leader, or female leader)
+                $isClassLeader = false;
+                if ($student->classModel) {
+                    $isClassLeader = $student->classModel->class_leader_id === $student->id 
+                                  || $student->classModel->male_class_leader_id === $student->id 
+                                  || $student->classModel->female_class_leader_id === $student->id;
+                }
+
                 return [
                     'id' => $student->id,
                     'name' => $student->user?->name ?? 'N/A',
@@ -253,6 +261,7 @@ class AuthController extends Controller
                     'profile_image' => $student->photo_path ? asset($student->photo_path) : null,
                     'relationship' => $student->pivot->relationship ?? null,
                     'is_primary' => $student->pivot->is_primary ?? false,
+                    'is_class_leader' => $isClassLeader ? 1 : 0,
                 ];
             });
 

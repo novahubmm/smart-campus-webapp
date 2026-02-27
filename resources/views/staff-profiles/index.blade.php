@@ -132,6 +132,14 @@
                         'icon' => 'fas fa-pen',
                         'title' => __('staff_profiles.Edit'),
                     ];
+                    
+                    $tableActions[] = [
+                        'type' => 'button',
+                        'onclick' => fn($profile) => "toggleStatus('{$profile->id}', '" . ($profile->status === 'active' ? 'inactive' : 'active') . "')",
+                        'icon' => fn($profile) => $profile->status === 'active' ? 'fas fa-toggle-on' : 'fas fa-toggle-off',
+                        'title' => fn($profile) => $profile->status === 'active' ? __('staff_profiles.Deactivate') : __('staff_profiles.Activate'),
+                        'color' => fn($profile) => $profile->status === 'active' ? 'text-green-600 hover:text-green-700' : 'text-gray-400 hover:text-gray-500',
+                    ];
                 }
             @endphp
 
@@ -178,6 +186,20 @@
                     form.submit();
                 }
             }
+        }
+        
+        function toggleStatus(profileId, newStatus) {
+            const action = newStatus === 'active' ? '{{ __('staff_profiles.Activate') }}' : '{{ __('staff_profiles.Deactivate') }}';
+            const message = newStatus === 'active'
+                ? '{{ __('staff_profiles.Are you sure you want to activate this staff member?') }}'
+                : '{{ __('staff_profiles.Are you sure you want to deactivate this staff member?') }}';
+            
+            confirmAction(
+                `/staff-profiles/${profileId}/toggle-status`,
+                action,
+                message,
+                action
+            );
         }
     </script>
 </x-app-layout>

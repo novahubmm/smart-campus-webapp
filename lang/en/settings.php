@@ -41,7 +41,7 @@ return array(
     'About Us (Myanmar)' => 'About Us (Myanmar)',
     'School Code' => 'School Code',
     'School Name (Myanmar)' => 'School Name (Myanmar)',
-    'Established Year' => 'Established Year',
+    'Established' => 'Established',
     'Motto' => 'Motto',
     'Motto (Myanmar)' => 'Motto (Myanmar)',
     'Vision' => 'Vision',

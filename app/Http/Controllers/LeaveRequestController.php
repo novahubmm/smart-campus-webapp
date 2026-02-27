@@ -197,9 +197,13 @@ class LeaveRequestController extends Controller
         $query = User::query()->with(['teacherProfile', 'staffProfile', 'studentProfile']);
 
         if ($validated['role'] === 'teacher') {
-            $query->whereHas('teacherProfile');
+            $query->whereHas('teacherProfile', function ($q) {
+                $q->where('status', 'active');
+            });
         } elseif ($validated['role'] === 'staff') {
-            $query->whereHas('staffProfile');
+            $query->whereHas('staffProfile', function ($q) {
+                $q->where('status', 'active');
+            });
         } else {
             $query->whereHas('studentProfile');
         }
@@ -211,11 +215,13 @@ class LeaveRequestController extends Controller
 
             if ($validated['role'] === 'teacher') {
                 $q->orWhereHas('teacherProfile', function ($profile) use ($search) {
-                    $profile->where('employee_id', 'like', "%{$search}%");
+                    $profile->where('status', 'active')
+                        ->where('employee_id', 'like', "%{$search}%");
                 });
             } elseif ($validated['role'] === 'staff') {
                 $q->orWhereHas('staffProfile', function ($profile) use ($search) {
-                    $profile->where('employee_id', 'like', "%{$search}%");
+                    $profile->where('status', 'active')
+                        ->where('employee_id', 'like', "%{$search}%");
                 });
             } else {
                 $q->orWhereHas('studentProfile', function ($profile) use ($search) {
