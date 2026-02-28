@@ -117,19 +117,27 @@ class DepartmentController extends Controller
 
         // Search staff profiles
         $staffQuery = StaffProfile::with('user')
-            ->whereHas('user', function ($query) use ($search) {
-                $query->where('name', 'LIKE', "%{$search}%")
+            ->where('status', 'active')
+            ->whereHas('user', fn($q) => $q->where('is_active', true))
+            ->where(function ($query) use ($search) {
+                $query->whereHas('user', function ($q) use ($search) {
+                    $q->where('name', 'LIKE', "%{$search}%")
                       ->orWhere('email', 'LIKE', "%{$search}%");
-            })
-            ->orWhere('employee_id', 'LIKE', "%{$search}%");
+                })
+                ->orWhere('employee_id', 'LIKE', "%{$search}%");
+            });
 
         // Search teacher profiles
         $teacherQuery = TeacherProfile::with('user')
-            ->whereHas('user', function ($query) use ($search) {
-                $query->where('name', 'LIKE', "%{$search}%")
+            ->where('status', 'active')
+            ->whereHas('user', fn($q) => $q->where('is_active', true))
+            ->where(function ($query) use ($search) {
+                $query->whereHas('user', function ($q) use ($search) {
+                    $q->where('name', 'LIKE', "%{$search}%")
                       ->orWhere('email', 'LIKE', "%{$search}%");
-            })
-            ->orWhere('employee_id', 'LIKE', "%{$search}%");
+                })
+                ->orWhere('employee_id', 'LIKE', "%{$search}%");
+            });
 
         // If department_id is provided, exclude members already in that department
         if ($departmentId) {

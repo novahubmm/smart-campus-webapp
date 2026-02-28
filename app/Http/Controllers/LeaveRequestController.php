@@ -197,15 +197,19 @@ class LeaveRequestController extends Controller
         $query = User::query()->with(['teacherProfile', 'staffProfile', 'studentProfile']);
 
         if ($validated['role'] === 'teacher') {
-            $query->whereHas('teacherProfile', function ($q) {
-                $q->where('status', 'active');
-            });
+            $query->where('is_active', true)
+                  ->whereHas('teacherProfile', function ($q) {
+                      $q->where('status', 'active');
+                  });
         } elseif ($validated['role'] === 'staff') {
-            $query->whereHas('staffProfile', function ($q) {
+            $query->where('is_active', true)
+                  ->whereHas('staffProfile', function ($q) {
+                      $q->where('status', 'active');
+                  });
+        } else {
+            $query->whereHas('studentProfile', function ($q) {
                 $q->where('status', 'active');
             });
-        } else {
-            $query->whereHas('studentProfile');
         }
 
         $query->where(function ($q) use ($search, $validated) {
@@ -225,8 +229,11 @@ class LeaveRequestController extends Controller
                 });
             } else {
                 $q->orWhereHas('studentProfile', function ($profile) use ($search) {
-                    $profile->where('student_id', 'like', "%{$search}%")
-                        ->orWhere('student_identifier', 'like', "%{$search}%");
+                    $profile->where('status', 'active')
+                        ->where(function ($sq) use ($search) {
+                            $sq->where('student_id', 'like', "%{$search}%")
+                                ->orWhere('student_identifier', 'like', "%{$search}%");
+                        });
                 });
             }
         });

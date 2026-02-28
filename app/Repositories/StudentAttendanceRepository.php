@@ -46,6 +46,7 @@ class StudentAttendanceRepository implements StudentAttendanceRepositoryInterfac
 
         $studentsCounts = StudentProfile::selectRaw('class_id, count(*) as total')
             ->whereIn('class_id', $classIds)
+            ->where('status', 'active')
             ->groupBy('class_id')
             ->pluck('total', 'class_id');
 
@@ -269,6 +270,7 @@ class StudentAttendanceRepository implements StudentAttendanceRepositoryInterfac
 
         $students = StudentProfile::with('user')
             ->where('class_id', $classId)
+            ->where('status', 'active')
             ->orderBy('student_identifier')
             ->get();
 

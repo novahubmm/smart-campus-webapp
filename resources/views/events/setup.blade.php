@@ -61,6 +61,7 @@
                                                     'meeting' => 'Meeting',
                                                     'holiday' => 'Holiday',
                                                     'ceremony' => 'Ceremony',
+                                                    'others' => 'Others',
                                                 ];
                                                 $existingCategories = old('event_categories', $eventCategories ?? []);
                                             @endphp

@@ -156,8 +156,8 @@ class ExamController extends Controller
                     ->where('subject_id', $schedule->subject_id)
                     ->get();
                 $studentsCount = $targetClassId 
-                    ? \App\Models\StudentProfile::where('class_id', $targetClassId)->count()
-                    : \App\Models\StudentProfile::where('grade_id', $exam->grade_id)->count();
+                    ? \App\Models\StudentProfile::where('class_id', $targetClassId)->where('status', 'active')->count()
+                    : \App\Models\StudentProfile::where('grade_id', $exam->grade_id)->where('status', 'active')->count();
                 
                 if ($results->count() > 0 && $results->count() >= $studentsCount) {
                     $gradingStatus = 'graded';
@@ -257,11 +257,13 @@ class ExamController extends Controller
             // Get students from specific class
             $classStudents = \App\Models\StudentProfile::with(['user'])
                 ->where('class_id', $exam->schoolClass->id)
+                ->where('status', 'active')
                 ->get();
         } else {
             // Get students from grade
             $classStudents = \App\Models\StudentProfile::with(['user'])
                 ->where('grade_id', $exam->grade_id)
+                ->where('status', 'active')
                 ->get();
         }
 
@@ -465,6 +467,7 @@ class ExamController extends Controller
                 $query->where('exam_id', $id)->with('enteredBy');
             }])
             ->where('class_id', $classId)
+            ->where('status', 'active')
             ->orderBy('student_identifier')
             ->get();
 

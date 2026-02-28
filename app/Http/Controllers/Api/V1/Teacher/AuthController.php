@@ -51,6 +51,7 @@ class AuthController extends Controller
                 'token' => $token,
                 'token_type' => 'Bearer',
                 'expires_at' => $expiresAt->toISOString(),
+                'requires_password_change' => $user->requiresPasswordChange(),
             ], 'Login successful');
         } catch (\Exception $e) {
             return ApiResponse::error('Login failed: ' . $e->getMessage(), 500);
@@ -103,6 +104,7 @@ class AuthController extends Controller
 
         $user->update([
             'password' => Hash::make($request->input('new_password')),
+            'password_changed_at' => now(),
         ]);
 
         return ApiResponse::success(null, 'Password updated successfully');

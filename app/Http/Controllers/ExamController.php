@@ -49,8 +49,14 @@ class ExamController extends Controller
             ->get();
         $subjects = Subject::with('grades')->orderBy('name')->get();
         $rooms = Room::orderBy('name')->get();
-        $students = StudentProfile::with('user', 'grade', 'classModel')->orderBy('student_identifier')->get();
-        $teachers = TeacherProfile::with('user')->get();
+        $students = StudentProfile::with('user', 'grade', 'classModel')
+            ->where('status', 'active')
+            ->orderBy('student_identifier')
+            ->get();
+        $teachers = TeacherProfile::with('user')
+            ->where('status', 'active')
+            ->whereHas('user', fn($q) => $q->where('is_active', true))
+            ->get();
 
         $examsForFront = $exams->getCollection()->map(function (Exam $exam) {
             $statusState = $this->resolveStatus($exam);
@@ -125,7 +131,10 @@ class ExamController extends Controller
             ->get();
         $subjects = Subject::orderBy('name')->get();
         $rooms = Room::orderBy('name')->get();
-        $teachers = TeacherProfile::with('user')->get();
+        $teachers = TeacherProfile::with('user')
+            ->where('status', 'active')
+            ->whereHas('user', fn($q) => $q->where('is_active', true))
+            ->get();
 
         return view('exams.show', compact('exam', 'statusState', 'examTypes', 'grades', 'classes', 'subjects', 'rooms', 'teachers'));
     }

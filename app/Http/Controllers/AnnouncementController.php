@@ -44,8 +44,17 @@ class AnnouncementController extends Controller
         $stats = [
             'total' => Announcement::count(),
             'published' => Announcement::where('is_published', true)->count(),
-            'draft' => Announcement::where('is_published', false)->count(),
-            'urgent' => Announcement::whereHas('announcementType', fn($q) => $q->where('slug', 'urgent'))->count(),
+            'scheduled' => Announcement::where('is_published', false)
+                ->whereNotNull('publish_date')
+                ->where('publish_date', '>', now())
+                ->count(),
+            'draft' => Announcement::where('is_published', false)
+                ->where(function ($q) {
+                    $q->whereNull('publish_date')
+                        ->orWhere('publish_date', '<=', now());
+                })
+                ->count(),
+            'urgent' => Announcement::where('priority', 'urgent')->count(),
         ];
 
         return view('announcements.index', [

@@ -14,7 +14,7 @@ return new class extends Migration {
             $table->id();
             $table->foreignUuid('event_id')->constrained()->cascadeOnDelete();
             $table->foreignId('user_id')->constrained()->cascadeOnDelete();
-            $table->string('status'); // 'going', 'not_going'
+            $table->string('status'); // 'going', 'not_going', 'maybe'
             $table->timestamps();
 
             $table->unique(['event_id', 'user_id']); // One response per user per event

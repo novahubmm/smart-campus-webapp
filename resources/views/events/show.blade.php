@@ -33,28 +33,116 @@
         addOption() { this.pollOptions.push(''); },
         removeOption(index) { this.pollOptions.splice(index, 1); },
         uploading: false,
+        imageModal: { show: false, url: '', name: '', id: '', canDelete: false },
         uploadFiles(ev) {
             const files = Array.from(ev.target.files);
             if (!files.length) return;
             const currentCount = {{ $event->attachments->count() }};
             const maxFiles = 30;
+            
+            // Check total file limit
             if (currentCount + files.length > maxFiles) {
-                alert('Maximum ' + maxFiles + ' files allowed. You can add ' + (maxFiles - currentCount) + ' more.');
+                showToast('{{ __('events.Maximum 30 files allowed') }}. {{ __('events.You can add') }} ' + (maxFiles - currentCount) + ' {{ __('events.more') }}.', 'error');
                 return;
             }
+            
+            // Smart batch limit based on file sizes
+            const maxSize3MB = 3 * 1024 * 1024; // 3MB
+            const maxSize6MB = 6 * 1024 * 1024; // 6MB
+            let hasLargeFiles = false;
+            
+            // Validate file types and size
             for (const file of files) {
-                if (file.size > 10 * 1024 * 1024) { alert(file.name + ': {{ __('events.File exceeds 10MB limit') }}'); return; }
+                if (!['image/png', 'image/jpeg', 'image/jpg'].includes(file.type)) {
+                    showToast(file.name + ': {{ __('events.Only PNG and JPG images are allowed') }}', 'error');
+                    return;
+                }
+                if (file.size > maxSize6MB) {
+                    showToast(file.name + ': {{ __('events.File exceeds 6MB limit') }}', 'error');
+                    return;
+                }
+                if (file.size > maxSize3MB) {
+                    hasLargeFiles = true;
+                }
             }
+            
+            // Dynamic batch limit: 3 files if any file > 3MB, otherwise 5 files
+            const maxFilesPerBatch = hasLargeFiles ? 3 : 5;
+            
+            if (files.length > maxFilesPerBatch) {
+                if (hasLargeFiles) {
+                    showToast('{{ __('events.For files over 3MB, maximum 3 files per upload') }}', 'error');
+                } else {
+                    showToast('{{ __('events.Maximum 5 files per upload') }}. {{ __('events.You can upload multiple times to reach 30 total') }}.', 'error');
+                }
+                return;
+            }
+            
             this.uploading = true;
             const uploadNext = async (i) => {
                 if (i >= files.length) { window.location.reload(); return; }
                 const formData = new FormData();
                 formData.append('file', files[i]);
                 formData.append('_token', '{{ csrf_token() }}');
-                await fetch('{{ route('events.upload', $event) }}', { method: 'POST', body: formData, headers: { 'Accept': 'application/json' } });
-                uploadNext(i + 1);
+                
+                try {
+                    const response = await fetch('{{ route('events.upload', $event) }}', { 
+                        method: 'POST', 
+                        body: formData, 
+                        headers: { 'Accept': 'application/json' } 
+                    });
+                    
+                    if (!response.ok) {
+                        const data = await response.json();
+                        showToast(data.message || '{{ __('events.Upload failed') }}', 'error');
+                        this.uploading = false;
+                        return;
+                    }
+                    
+                    uploadNext(i + 1);
+                } catch (error) {
+                    showToast('{{ __('events.Upload failed') }}', 'error');
+                    this.uploading = false;
+                }
             };
             uploadNext(0);
+        },
+        deleteAttachment(attachmentId, fileName) {
+            // Use the same confirm dialog as logout
+            this.$dispatch('confirm-show', {
+                title: '{{ __('events.Delete Image') }}',
+                message: '{{ __('events.Are you sure you want to delete this image?') }}',
+                confirmText: '{{ __('events.Delete') }}',
+                cancelText: '{{ __('events.Cancel') }}',
+                onConfirm: () => {
+                    fetch(`/events/attachments/${attachmentId}`, {
+                        method: 'DELETE',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                            'Accept': 'application/json'
+                        }
+                    })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.success) {
+                            showToast('{{ __('events.Image deleted successfully') }}', 'success');
+                            setTimeout(() => window.location.reload(), 1000);
+                        } else {
+                            showToast(data.message || '{{ __('events.Failed to delete image') }}', 'error');
+                        }
+                    })
+                    .catch(error => {
+                        showToast('{{ __('events.Failed to delete image') }}', 'error');
+                    });
+                }
+            });
+        },
+        showImageModal(url, name) {
+            this.imageModal = { show: true, url: url, name: name };
+        },
+        closeImageModal() {
+            this.imageModal = { show: false, url: '', name: '', id: '', canDelete: false };
         },
         vote(optionId) {
             fetch('/polls/' + optionId + '/vote', { method: 'POST', headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': '{{ csrf_token() }}', 'Accept': 'application/json' } }).then(r => r.ok ? window.location.reload() : r.json().then(d => alert(d.message)));
@@ -316,135 +404,125 @@
                 </div>
             @endif
 
-            <!-- Polls & Surveys Section (Always Visible) -->
-            <div class="p-6 md:p-8 border-t border-gray-100 dark:border-gray-700">
-                <div class="flex items-center justify-between mb-6">
-                    <h4 class="text-sm font-bold text-indigo-600 dark:text-indigo-400 uppercase tracking-widest">
-                        {{ __('events.Polls & Surveys') }}
+            <!-- RSVP Section -->
+            @if(auth()->user()->hasRole('admin'))
+                <!-- Admin View: Show Response Statistics -->
+                <div class="border-t border-gray-200 dark:border-gray-700 p-6 md:p-8">
+                    <h4 class="text-xs font-bold text-gray-400 uppercase tracking-widest mb-4">
+                        {{ __('events.Response Statistics') }}
                     </h4>
-                    @if(($event->calculated_status === 'upcoming') && (auth()->id() === $event->organized_by || auth()->user()->hasRole('admin')))
-                        <button @click="modals.poll = true"
-                            class="inline-flex items-center gap-2 px-3 py-1.5 bg-indigo-600 rounded-lg font-bold text-xs text-white hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition-all shadow-sm">
-                            <i class="fas fa-plus text-[10px]"></i> {{ __('events.Create Poll') }}
-                        </button>
-                    @endif
-                </div>
-
-                @if($event->polls->count() > 0)
-                    @php
-                        $isOrganizer = auth()->id() === $event->organized_by;
-                        $isAdmin = auth()->user()->hasRole('admin');
-                    @endphp
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        @foreach($event->polls as $poll)
-                            <div
-                                class="bg-gray-50 dark:bg-gray-900/40 rounded-xl p-5 border border-gray-200 dark:border-gray-700">
-                                <div class="flex items-start justify-between mb-4">
-                                    <div class="flex items-center gap-2">
-                                        <h4 class="font-semibold text-gray-900 dark:text-white">{{ $poll->question }}</h4>
-                                        @if(!$poll->is_currently_active)
-                                            <span
-                                                class="text-[10px] font-bold text-red-500 bg-red-100 dark:bg-red-900/30 px-2 py-0.5 rounded uppercase">
-                                                {{ $poll->expires_at?->isPast() ? __('events.Expired') : __('events.Closed') }}
-                                            </span>
-                                        @endif
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <!-- Going -->
+                        <div class="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg p-4">
+                            <div class="flex items-center justify-between">
+                                <div>
+                                    <div class="flex items-center gap-2 text-green-700 dark:text-green-400 mb-1">
+                                        <i class="fas fa-check-circle text-lg"></i>
+                                        <span class="text-sm font-bold">{{ __('events.Going') }}</span>
                                     </div>
-                                    @if(($isOrganizer || $isAdmin) && $poll->is_active)
-                                        <button @click="togglePoll('{{ $poll->id }}')"
-                                            class="text-[10px] font-bold uppercase tracking-wider px-2 py-1 rounded transition-colors text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20">
-                                            {{ __('events.End Poll') }}
-                                        </button>
-                                    @endif
+                                    <div class="text-3xl font-bold text-green-600 dark:text-green-400">
+                                        {{ $event->responses->where('status', 'going')->count() }}
+                                    </div>
                                 </div>
-
-                                <div class="space-y-3">
-                                    @foreach($poll->options as $option)
-                                        @php
-                                            $totalVotes = $poll->options->sum(fn($o) => $o->votes->count());
-                                            $optionVotes = $option->votes->count();
-                                            $percentage = $totalVotes > 0 ? ($optionVotes / $totalVotes) * 100 : 0;
-                                            $hasVoted = $option->votes->contains('user_id', auth()->id());
-                                            $pollHasVoted = $poll->options->flatMap->votes->contains('user_id', auth()->id());
-                                            $showResults = $pollHasVoted || !$poll->is_currently_active || $isAdmin || $isOrganizer;
-                                        @endphp
-                                        <div class="relative">
-                                            <button type="button"
-                                                class="w-full relative flex items-center justify-between p-3 rounded-lg border text-sm transition-all overflow-hidden
-                                                                                                    {{ $showResults ? 'cursor-default' : 'hover:border-indigo-400 cursor-pointer' }}
-                                                                                                    {{ $hasVoted ? 'border-indigo-500 ring-1 ring-indigo-500 bg-indigo-50/50 dark:bg-indigo-900/20' : 'border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800' }}"
-                                                @disabled($showResults || !$poll->is_currently_active)
-                                                @click="vote('{{ $option->id }}')">
-
-                                                <div class="absolute left-0 top-0 bottom-0 bg-indigo-500/10 transition-all duration-1000"
-                                                    style="width: {{ $showResults ? $percentage : 0 }}%"></div>
-
-                                                <div class="relative flex items-center gap-3 z-10 w-full">
-                                                    <div
-                                                        class="w-4 h-4 rounded-full border flex items-center justify-center shrink-0 {{ $hasVoted ? 'border-indigo-600 bg-indigo-600 text-white' : 'border-gray-300 dark:border-gray-600 text-transparent' }}">
-                                                        <i class="fas fa-check text-[8px]"></i>
-                                                    </div>
-                                                    <span
-                                                        class="font-medium text-gray-900 dark:text-white flex-1 text-left">{{ $option->option_text }}</span>
-                                                    @if($showResults)
-                                                        <span class="text-xs font-bold text-gray-500">{{ round($percentage) }}%</span>
-                                                    @endif
-                                                </div>
-                                            </button>
-                                        </div>
-                                    @endforeach
-                                </div>
-                                <div class="mt-4 flex items-center justify-between text-[10px] text-gray-500 font-medium">
-                                    <span>{{ $totalVotes }} {{ __('events.Votes') }}</span>
-                                    <span>{{ $poll->created_at->diffForHumans() }}</span>
+                                <div class="w-12 h-12 rounded-full bg-green-100 dark:bg-green-900/40 flex items-center justify-center">
+                                    <i class="fas fa-user-check text-green-600 dark:text-green-400 text-xl"></i>
                                 </div>
                             </div>
-                        @endforeach
-                    </div>
-                @else
-                    <div class="flex flex-col items-center justify-center py-10 text-center">
-                        <div
-                            class="w-14 h-14 rounded-2xl bg-gray-100 dark:bg-gray-800 flex items-center justify-center mb-4">
-                            <i class="fas fa-poll text-xl text-gray-300 dark:text-gray-600"></i>
                         </div>
-                        <p class="text-sm font-medium text-gray-400 dark:text-gray-500">{{ __('events.No polls yet') }}</p>
-                        <p class="text-xs text-gray-300 dark:text-gray-600 mt-1">
-                            {{ __('events.Polls will appear here once created') }}
-                        </p>
-                    </div>
-                @endif
-            </div>
 
-            <!-- RSVP Section -->
-            @if(!auth()->user()->hasRole('admin'))
+                        <!-- Not Sure -->
+                        <div class="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg p-4">
+                            <div class="flex items-center justify-between">
+                                <div>
+                                    <div class="flex items-center gap-2 text-amber-700 dark:text-amber-400 mb-1">
+                                        <i class="fas fa-question-circle text-lg"></i>
+                                        <span class="text-sm font-bold">{{ __('events.Not Sure') }}</span>
+                                    </div>
+                                    <div class="text-3xl font-bold text-amber-600 dark:text-amber-400">
+                                        {{ $event->responses->where('status', 'maybe')->count() }}
+                                    </div>
+                                </div>
+                                <div class="w-12 h-12 rounded-full bg-amber-100 dark:bg-amber-900/40 flex items-center justify-center">
+                                    <i class="fas fa-user-clock text-amber-600 dark:text-amber-400 text-xl"></i>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Not Going -->
+                        <div class="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-4">
+                            <div class="flex items-center justify-between">
+                                <div>
+                                    <div class="flex items-center gap-2 text-red-700 dark:text-red-400 mb-1">
+                                        <i class="fas fa-times-circle text-lg"></i>
+                                        <span class="text-sm font-bold">{{ __('events.Not Going') }}</span>
+                                    </div>
+                                    <div class="text-3xl font-bold text-red-600 dark:text-red-400">
+                                        {{ $event->responses->where('status', 'not_going')->count() }}
+                                    </div>
+                                </div>
+                                <div class="w-12 h-12 rounded-full bg-red-100 dark:bg-red-900/40 flex items-center justify-center">
+                                    <i class="fas fa-user-times text-red-600 dark:text-red-400 text-xl"></i>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Total Responses -->
+                    <div class="mt-4 pt-4 border-t border-gray-200 dark:border-gray-700">
+                        <div class="flex items-center justify-between text-sm">
+                            <span class="text-gray-600 dark:text-gray-400 font-semibold">{{ __('events.Total Responses') }}</span>
+                            <span class="text-gray-900 dark:text-white font-bold text-lg">{{ $event->responses->count() }}</span>
+                        </div>
+                    </div>
+                </div>
+            @else
+                <!-- User View: Response Buttons -->
                 <div class="border-t border-gray-200 dark:border-gray-700 p-6 md:p-8">
                     <h4 class="text-xs font-bold text-gray-400 uppercase tracking-widest mb-4">
                         {{ __('events.Your Response') }}
                     </h4>
-                    <div class="flex items-center gap-3 max-w-md">
+                    <div class="flex items-center gap-3">
                         <form action="{{ route('events.respond', $event) }}" method="POST" class="flex-1">
                             @csrf
                             <input type="hidden" name="status" value="going">
                             <button type="submit"
-                                class="w-full flex items-center justify-center gap-2 py-2 px-3 rounded-lg border font-bold text-sm transition-all {{ $event->auth_response === 'going' ? 'bg-green-600 border-green-600 text-white shadow-md' : 'bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 text-gray-500 hover:bg-green-50' }}">
+                                class="w-full flex items-center justify-center gap-2 py-2 px-3 rounded-lg border font-bold text-sm transition-all {{ $event->auth_response === 'going' ? 'bg-green-600 border-green-600 text-white shadow-md' : 'bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 text-gray-500 hover:bg-green-50 dark:hover:bg-green-900/20' }}">
                                 <i class="fas fa-check-circle"></i>
                                 {{ __('events.Going') }}
                             </button>
                         </form>
                         <form action="{{ route('events.respond', $event) }}" method="POST" class="flex-1">
                             @csrf
+                            <input type="hidden" name="status" value="maybe">
+                            <button type="submit"
+                                class="w-full flex items-center justify-center gap-2 py-2 px-3 rounded-lg border font-bold text-sm transition-all {{ $event->auth_response === 'maybe' ? 'bg-amber-600 border-amber-600 text-white shadow-md' : 'bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 text-gray-500 hover:bg-amber-50 dark:hover:bg-amber-900/20' }}">
+                                <i class="fas fa-question-circle"></i>
+                                {{ __('events.Not Sure') }}
+                            </button>
+                        </form>
+                        <form action="{{ route('events.respond', $event) }}" method="POST" class="flex-1">
+                            @csrf
                             <input type="hidden" name="status" value="not_going">
                             <button type="submit"
-                                class="w-full flex items-center justify-center gap-2 py-2 px-3 rounded-lg border font-bold text-sm transition-all {{ $event->auth_response === 'not_going' ? 'bg-red-600 border-red-600 text-white shadow-md' : 'bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 text-gray-500 hover:bg-red-50' }}">
+                                class="w-full flex items-center justify-center gap-2 py-2 px-3 rounded-lg border font-bold text-sm transition-all {{ $event->auth_response === 'not_going' ? 'bg-red-600 border-red-600 text-white shadow-md' : 'bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 text-gray-500 hover:bg-red-50 dark:hover:bg-red-900/20' }}">
                                 <i class="fas fa-times-circle"></i>
                                 {{ __('events.Not Going') }}
                             </button>
                         </form>
                     </div>
-                    <div class="mt-3 flex items-center gap-4 text-xs font-bold text-gray-500">
-                        <span class="flex items-center gap-1"><span class="w-2 h-2 rounded-full bg-green-500"></span>
-                            {{ $event->responses->where('status', 'going')->count() }}</span>
-                        <span class="flex items-center gap-1"><span class="w-2 h-2 rounded-full bg-red-500"></span>
-                            {{ $event->responses->where('status', 'not_going')->count() }}</span>
+                    <div class="mt-3 flex items-center gap-4 text-xs font-bold text-gray-500 dark:text-gray-400">
+                        <span class="flex items-center gap-1">
+                            <span class="w-2 h-2 rounded-full bg-green-500"></span>
+                            {{ $event->responses->where('status', 'going')->count() }}
+                        </span>
+                        <span class="flex items-center gap-1">
+                            <span class="w-2 h-2 rounded-full bg-amber-500"></span>
+                            {{ $event->responses->where('status', 'maybe')->count() }}
+                        </span>
+                        <span class="flex items-center gap-1">
+                            <span class="w-2 h-2 rounded-full bg-red-500"></span>
+                            {{ $event->responses->where('status', 'not_going')->count() }}
+                        </span>
                     </div>
                 </div>
             @endif
@@ -468,7 +546,7 @@
                                 <i class="fas fa-cloud-upload-alt text-indigo-500"></i>
                                 <span
                                     class="text-sm font-bold text-gray-700 dark:text-gray-200">{{ __('events.Choose Files') }}</span>
-                                <input type="file" class="hidden" multiple @change="uploadFiles($event)" accept="*/*">
+                                <input type="file" class="hidden" multiple @change="uploadFiles($event)" accept="image/png,image/jpeg,image/jpg" max="30">
                             </label>
                         @endif
                     @endif
@@ -491,31 +569,39 @@
                     </div>
                 </div>
 
-                <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
+                <div class="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 gap-3">
                     @forelse($event->attachments as $attachment)
-                        <div
-                            class="flex items-center gap-3 p-3 rounded-xl bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700 transition-all hover:shadow-md hover:border-gray-300 dark:hover:border-gray-500 group">
-                            <div
-                                class="shrink-0 w-10 h-10 rounded-lg bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-800 dark:to-gray-900 flex items-center justify-center text-gray-500 dark:text-gray-400 text-[10px] font-bold uppercase border border-gray-200 dark:border-gray-700">
-                                {{ pathinfo($attachment->file_name, PATHINFO_EXTENSION) }}
+                        <div class="relative group rounded-xl overflow-hidden bg-gray-100 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 hover:shadow-lg transition-all cursor-pointer"
+                             @click="imageModal = { 
+                                 show: true, 
+                                 url: '{{ Storage::url($attachment->file_path) }}', 
+                                 name: '{{ $attachment->file_name }}',
+                                 id: '{{ $attachment->id }}',
+                                 canDelete: {{ (auth()->id() === $attachment->uploaded_by || auth()->user()->hasRole('admin')) ? 'true' : 'false' }}
+                             }">
+                            {{-- Image Preview --}}
+                            <div class="block aspect-square">
+                                <img src="{{ Storage::url($attachment->file_path) }}" 
+                                     alt="{{ $attachment->file_name }}"
+                                     class="w-full h-full object-cover">
                             </div>
-                            <a href="{{ Storage::url($attachment->file_path) }}" download class="flex-1 min-w-0">
-                                <p class="text-xs font-bold text-gray-900 dark:text-white truncate">
+                            
+                            {{-- File Info Overlay --}}
+                            <div class="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent p-2">
+                                <p class="text-xs font-bold text-white truncate">
                                     {{ $attachment->file_name }}
                                 </p>
-                                <p class="text-[10px] text-gray-500">
+                                <p class="text-[10px] text-gray-300">
                                     {{ number_format($attachment->file_size / 1024, 0) }} KB
                                 </p>
-                            </a>
+                            </div>
+                            
+                            {{-- Delete Button --}}
                             @if(auth()->id() === $attachment->uploaded_by || auth()->user()->hasRole('admin'))
-                                <form action="{{ route('events.attachments.destroy', $attachment) }}" method="POST"
-                                    onsubmit="return confirm('{{ __('events.Are you sure?') }}')"
-                                    class="opacity-0 group-hover:opacity-100 transition-all">
-                                    @csrf @method('DELETE')
-                                    <button type="submit" class="text-red-400 hover:text-red-600 p-1">
-                                        <i class="fas fa-trash-alt text-xs"></i>
-                                    </button>
-                                </form>
+                                <button @click.stop="deleteAttachment('{{ $attachment->id }}', '{{ $attachment->file_name }}')"
+                                    class="absolute top-2 right-2 w-8 h-8 rounded-full bg-red-500 hover:bg-red-600 text-white shadow-lg opacity-0 group-hover:opacity-100 transition-all flex items-center justify-center z-10">
+                                    <i class="fas fa-trash-alt text-xs"></i>
+                                </button>
                             @endif
                         </div>
                     @empty
@@ -532,74 +618,51 @@
                 </div>
             </div>
 
-            <!-- Create Poll Modal -->
-            <template x-if="true">
-                <div x-show="modals.poll" x-cloak class="fixed inset-0 z-50 overflow-y-auto"
-                    aria-labelledby="modal-title" role="dialog" aria-modal="true">
-                    <div class="flex items-end justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
-                        <div x-show="modals.poll" x-transition:enter="ease-out duration-300"
-                            x-transition:enter-start="opacity-0" x-transition:enter-end="opacity-100"
-                            x-transition:leave="ease-in duration-200" x-transition:leave-start="opacity-100"
-                            x-transition:leave-end="opacity-0" class="fixed inset-0 bg-gray-500/75 transition-opacity"
-                            @click="modals.poll = false"></div>
-                        <span class="hidden sm:inline-block sm:align-middle sm:h-screen"
-                            aria-hidden="true">&#8203;</span>
-                        <div x-show="modals.poll" x-transition:enter="ease-out duration-300"
-                            x-transition:enter-start="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"
-                            x-transition:enter-end="opacity-100 translate-y-0 sm:scale-100"
-                            x-transition:leave="ease-in duration-200"
-                            x-transition:leave-start="opacity-100 translate-y-0 sm:scale-100"
-                            x-transition:leave-end="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"
-                            class="relative inline-block align-bottom bg-white dark:bg-gray-800 rounded-2xl text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg w-full">
-                            <form action="{{ route('events.polls.store', $event) }}" method="POST">
-                                @csrf
-                                <div class="bg-white dark:bg-gray-800 px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
-                                    <h3 class="text-lg font-bold text-gray-900 dark:text-white mb-4">
-                                        {{ __('events.Create New Poll') }}
-                                    </h3>
-                                    <div class="space-y-4">
-                                        <div>
-                                            <label
-                                                class="block text-xs font-bold text-gray-500 uppercase mb-1">{{ __('events.Question') }}</label>
-                                            <input type="text" name="question"
-                                                class="w-full rounded-lg border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-sm"
-                                                required>
-                                        </div>
-                                        <div>
-                                            <label
-                                                class="block text-xs font-bold text-gray-500 uppercase mb-1">{{ __('events.Options') }}</label>
-                                            <div class="space-y-2">
-                                                <template x-for="(opt, index) in pollOptions" :key="index">
-                                                    <div class="flex gap-2">
-                                                        <input type="text" name="options[]"
-                                                            class="flex-1 rounded-lg border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-sm"
-                                                            :placeholder="'Option ' + (index + 1)" required>
-                                                        <button type="button" x-show="pollOptions.length > 2"
-                                                            @click="removeOption(index)"
-                                                            class="text-gray-400 hover:text-red-500"><i
-                                                                class="fas fa-trash-alt"></i></button>
-                                                    </div>
-                                                </template>
-                                            </div>
-                                            <button type="button" @click="addOption()"
-                                                class="mt-3 text-xs font-bold text-indigo-600 hover:text-indigo-500"><i
-                                                    class="fas fa-plus"></i>
-                                                {{ __('events.Add Another Option') }}</button>
-                                        </div>
-                                    </div>
-                                </div>
-                                <div
-                                    class="bg-gray-50 dark:bg-gray-900/50 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse gap-2">
-                                    <button type="submit"
-                                        class="w-full sm:w-auto inline-flex justify-center rounded-lg px-4 py-2 bg-indigo-600 text-white font-bold text-sm shadow-sm hover:bg-indigo-700 transition-all">{{ __('events.Create Poll') }}</button>
-                                    <button type="button" @click="modals.poll = false"
-                                        class="mt-3 sm:mt-0 w-full sm:w-auto inline-flex justify-center rounded-lg px-4 py-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-200 font-bold text-sm shadow-sm hover:bg-gray-50">{{ __('events.Cancel') }}</button>
-                                </div>
-                            </form>
-                        </div>
-                    </div>
+            <!-- Image Modal -->
+            <div x-show="imageModal.show" 
+                 x-cloak
+                 @click="closeImageModal()"
+                 @keydown.escape.window="closeImageModal()"
+                 class="fixed inset-0 z-50 bg-black/95 flex items-center justify-center"
+                 x-transition:enter="ease-out duration-300"
+                 x-transition:enter-start="opacity-0"
+                 x-transition:enter-end="opacity-100"
+                 x-transition:leave="ease-in duration-200"
+                 x-transition:leave-start="opacity-100"
+                 x-transition:leave-end="opacity-0">
+                
+                <!-- Top Bar with Delete and Close (Fixed Position) -->
+                <div class="fixed top-0 left-0 right-0 flex items-center justify-between p-4 bg-gradient-to-b from-black/50 to-transparent z-20">
+                    <!-- Delete Button (Left) -->
+                    <button x-show="imageModal.canDelete"
+                            @click.stop="deleteAttachment(imageModal.id, imageModal.name); closeImageModal();" 
+                            class="w-12 h-12 rounded-full bg-red-500 hover:bg-red-600 text-white flex items-center justify-center transition-all shadow-lg">
+                        <i class="fas fa-trash-alt text-lg"></i>
+                    </button>
+                    <div x-show="!imageModal.canDelete"></div>
+                    
+                    <!-- Close Button (Right) -->
+                    <button @click="closeImageModal()" 
+                            class="w-12 h-12 rounded-full bg-white/20 hover:bg-white/30 text-white flex items-center justify-center transition-all backdrop-blur-sm">
+                        <i class="fas fa-times text-2xl"></i>
+                    </button>
                 </div>
-            </template>
+
+                <!-- Image Container (Full Screen) -->
+                <div @click.stop class="w-full h-full flex items-center justify-center p-4">
+                    <img :src="imageModal.url" 
+                         :alt="imageModal.name"
+                         class="max-w-full max-h-full object-contain"
+                         x-transition:enter="ease-out duration-300"
+                         x-transition:enter-start="opacity-0 scale-95"
+                         x-transition:enter-end="opacity-100 scale-100">
+                </div>
+                
+                <!-- Bottom Bar with Filename (Fixed Position) -->
+                <div class="fixed bottom-0 left-0 right-0 p-4 bg-gradient-to-t from-black/50 to-transparent z-20">
+                    <p class="text-white font-medium text-center text-sm" x-text="imageModal.name"></p>
+                </div>
+            </div>
 
         </div>
 

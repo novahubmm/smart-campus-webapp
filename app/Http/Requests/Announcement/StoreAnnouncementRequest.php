@@ -26,11 +26,20 @@ class StoreAnnouncementRequest extends FormRequest
             'target_teacher_grades_json' => ['nullable', 'string'],
             'target_guardian_grades_json' => ['nullable', 'string'],
             'target_departments_json' => ['nullable', 'string'],
-            'publish_date' => ['nullable', 'date'],
-            'publish_time' => ['nullable', 'date_format:H:i'],
+            'publish_mode' => ['nullable', 'string', Rule::in(['now', 'schedule'])],
+            'publish_date' => ['nullable', 'date', 'required_if:publish_mode,schedule'],
+            'publish_time' => ['nullable', 'date_format:H:i', 'required_if:publish_mode,schedule'],
             'is_published' => ['sometimes', 'boolean'],
             'attachment' => ['nullable', 'string', 'max:255'],
             'status' => ['sometimes', 'boolean'],
+        ];
+    }
+
+    public function messages(): array
+    {
+        return [
+            'publish_date.required_if' => 'Publish date is required when scheduling an announcement.',
+            'publish_time.required_if' => 'Publish time is required when scheduling an announcement.',
         ];
     }
 }

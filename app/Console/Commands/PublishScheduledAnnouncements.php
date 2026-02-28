@@ -28,7 +28,7 @@ class PublishScheduledAnnouncements extends Command
         
         // Find announcements that should be published
         $scheduledAnnouncements = Announcement::where('is_published', false)
-            ->where('status', 'active')
+            ->where('status', true)
             ->where('publish_date', '<=', now())
             ->whereNotNull('publish_date')
             ->get();

@@ -140,6 +140,14 @@
                         'icon' => 'fas fa-pen',
                         'title' => __('student_profiles.Edit'),
                     ];
+                    
+                    $tableActions[] = [
+                        'type' => 'button',
+                        'onclick' => fn($student) => "toggleStatus('{$student->id}', '" . ($student->status === 'active' ? 'inactive' : 'active') . "')",
+                        'icon' => fn($student) => $student->status === 'active' ? 'fas fa-toggle-on' : 'fas fa-toggle-off',
+                        'title' => fn($student) => $student->status === 'active' ? __('student_profiles.Deactivate') : __('student_profiles.Activate'),
+                        'color' => fn($student) => $student->status === 'active' ? 'text-green-600 hover:text-green-700' : 'text-gray-400 hover:text-gray-500',
+                    ];
                 }
             @endphp
 
@@ -156,4 +164,55 @@
             />
         </div>
     </div>
+
+    <script>
+        function toggleStatus(studentId, newStatus) {
+            const action = newStatus === 'active' ? '{{ __('student_profiles.Activate') }}' : '{{ __('student_profiles.Deactivate') }}';
+            const message = newStatus === 'active'
+                ? '{{ __('student_profiles.Are you sure you want to activate this student?') }}'
+                : '{{ __('student_profiles.Are you sure you want to deactivate this student?') }}';
+            
+            // Get current URL parameters to preserve pagination and filters
+            const urlParams = new URLSearchParams(window.location.search);
+            const queryString = urlParams.toString();
+            const url = `/student-profiles/${studentId}/toggle-status${queryString ? '?' + queryString : ''}`;
+            
+            confirmAction(
+                url,
+                action,
+                message,
+                action
+            );
+        }
+        
+        function confirmAction(url, title, message, confirmText) {
+            if (typeof Alpine !== 'undefined') {
+                window.dispatchEvent(new CustomEvent('confirm-show', {
+                    detail: {
+                        title: title,
+                        message: message,
+                        confirmText: confirmText,
+                        cancelText: '{{ __('student_profiles.Cancel') }}',
+                        onConfirm: () => {
+                            const form = document.createElement('form');
+                            form.method = 'POST';
+                            form.action = url;
+                            form.innerHTML = '@csrf';
+                            document.body.appendChild(form);
+                            form.submit();
+                        }
+                    }
+                }));
+            } else {
+                if (confirm(message)) {
+                    const form = document.createElement('form');
+                    form.method = 'POST';
+                    form.action = url;
+                    form.innerHTML = '@csrf';
+                    document.body.appendChild(form);
+                    form.submit();
+                }
+            }
+        }
+    </script>
 </x-app-layout>

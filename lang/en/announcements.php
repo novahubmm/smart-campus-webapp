@@ -50,6 +50,7 @@ return array(
   'Publishing Options' => 'Publishing Options',
   'Save Draft' => 'Save Draft',
   'Schedule' => 'Schedule',
+  'Scheduled' => 'Scheduled',
   'Schedule & Publish' => 'Schedule & Publish',
   'Scheduled announcements will be saved as drafts until the publish time.' => 'Scheduled announcements will be saved as drafts until the publish time.',
   'Select Departments' => 'Select Departments',
@@ -106,5 +107,7 @@ return array(
   'Linked Event' => 'Linked Event',
   'Last Updated' => 'Last Updated',
   'No announcements found' => 'No announcements found',
+  'Waiting to publish' => 'Waiting to publish',
+  'Cannot edit published announcement' => 'Cannot edit published announcement',
   'All' => 'All'
 );

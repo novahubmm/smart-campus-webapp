@@ -95,7 +95,7 @@ class AcademicManagementController extends Controller
         
         // Calculate total students count from all grades using direct grade_id relationship
         $batch->students_count = $batch->grades->sum(function($grade) {
-            return StudentProfile::where('grade_id', $grade->id)->count();
+            return StudentProfile::where('grade_id', $grade->id)->where('status', 'active')->count();
         });
 
         return view('academic.batch-detail', compact('batch'));
@@ -268,8 +268,12 @@ class AcademicManagementController extends Controller
 
         // Load additional relationships for detail view
         $class->load([
-            'students.user',
-            'enrolledStudents.user',
+            'students' => function($query) {
+                $query->where('student_profiles.status', 'active')->with('user');
+            },
+            'enrolledStudents' => function($query) {
+                $query->where('student_profiles.status', 'active')->with('user');
+            },
             'grade.subjects.teachers.department',
             'grade.subjects.teachers.user',
             'room',
@@ -484,6 +488,7 @@ class AcademicManagementController extends Controller
         }
 
         $students = StudentProfile::with('user')
+            ->where('status', 'active')
             ->whereNull('class_id')
             ->where(function ($query) use ($search) {
                 $query->where('student_identifier', 'like', "%{$search}%")

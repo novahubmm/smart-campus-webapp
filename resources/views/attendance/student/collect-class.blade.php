@@ -311,9 +311,11 @@
                                 this.periodStatus[this.selectedPeriod] = true;
                             }
                             
-                            // Set attendance status - default to 'present' if no existing status
+                            // Set attendance status - only set if there's existing attendance
                             this.students.forEach(s => {
-                                this.attendance[s.id] = s.status || 'present';
+                                if (s.status) {
+                                    this.attendance[s.id] = s.status;
+                                }
                             });
                         })
                         .catch(() => {
@@ -326,7 +328,7 @@
                 },
 
                 getStatus(studentId) {
-                    return this.attendance[studentId] || 'present';
+                    return this.attendance[studentId] || null;
                 },
 
                 toggleStatus(studentId, status) {

@@ -176,7 +176,10 @@ class OngoingClassController extends Controller
         // Data for edit modal
         $grades = Grade::orderBy('level')->get();
         $rooms = Room::orderBy('name')->get();
-        $teachers = TeacherProfile::with('user')->get();
+        $teachers = TeacherProfile::with('user')
+            ->where('status', 'active')
+            ->whereHas('user', fn($q) => $q->where('is_active', true))
+            ->get();
         
         // Students
         $students = $class->enrolledStudents;

@@ -108,7 +108,7 @@ class TeacherProfileController extends Controller
         return redirect()->route('teacher-profiles.index')->with('success', __('Teacher profile updated successfully.'));
     }
     
-    public function toggleStatus(TeacherProfile $teacherProfile): RedirectResponse
+    public function toggleStatus(Request $request, TeacherProfile $teacherProfile): RedirectResponse
     {
         $this->authorize(PermissionEnum::MANAGE_TEACHER_PROFILES->value);
 
@@ -122,7 +122,10 @@ class TeacherProfileController extends Controller
             ? __('teacher_profiles.Teacher activated successfully.') 
             : __('teacher_profiles.Teacher deactivated successfully.');
 
-        return redirect()->route('teacher-profiles.index')->with('success', $message);
+        // Preserve pagination and filters
+        $queryParams = $request->only(['page', 'search', 'department_id', 'status']);
+        
+        return redirect()->route('teacher-profiles.index', $queryParams)->with('success', $message);
     }
 
     public function activities(Request $request, TeacherProfile $teacherProfile): View

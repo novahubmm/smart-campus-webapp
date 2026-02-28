@@ -360,6 +360,7 @@ Route::prefix('v1')->group(function () {
             // Calendar Events
             Route::get('/calendar/events', [TeacherAnnouncementController::class, 'calendarEvents']);
             Route::get('/calendar/events/{id}', [TeacherAnnouncementController::class, 'eventDetail']);
+            Route::post('/calendar/events/{event_id}/attendance', [TeacherAnnouncementController::class, 'recordAttendance']);
 
             // Teacher's Leave Requests
             Route::get('/my-leave-requests', [TeacherLeaveRequestController::class, 'myRequests']);

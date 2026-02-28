@@ -44,7 +44,10 @@ class HomeworkController extends Controller
         $grades = Grade::orderBy('level')->get();
         $classes = SchoolClass::with('grade')->orderBy('name')->get();
         $subjects = Subject::orderBy('name')->get();
-        $teachers = TeacherProfile::with('user')->get();
+        $teachers = TeacherProfile::with('user')
+            ->where('status', 'active')
+            ->whereHas('user', fn($q) => $q->where('is_active', true))
+            ->get();
 
         // Stats
         $totalHomework = Homework::count();

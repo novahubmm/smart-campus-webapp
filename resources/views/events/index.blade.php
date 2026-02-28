@@ -36,7 +36,7 @@
                 <x-stat-card icon="fas fa-calendar-alt" :title="__('events.Total Events')" :number="$stats['total'] ?? 0" :subtitle="__('events.All events')" />
                 <x-stat-card icon="fas fa-clock" :title="__('events.Upcoming')" :number="$stats['upcoming'] ?? 0"
                     :subtitle="__('events.Scheduled')" />
-                <x-stat-card icon="fas fa-bolt" :title="__('events.Active')" :number="$stats['active'] ?? 0"
+                <x-stat-card icon="fas fa-bolt" :title="__('events.Active')" :number="$stats['ongoing'] ?? 0"
                     :subtitle="__('events.In progress')" />
                 <x-stat-card icon="fas fa-check-circle" :title="__('events.Completed')" :number="$stats['completed'] ?? 0" :subtitle="__('events.Finished')" />
             </div>
@@ -87,7 +87,7 @@
                                 <option value="upcoming" @selected($filter->status === 'upcoming')>
                                     {{ __('events.Upcoming') }}
                                 </option>
-                                <option value="active" @selected($filter->status === 'active')>
+                                <option value="ongoing" @selected($filter->status === 'ongoing')>
                                     {{ __('events.Active') }}
                                 </option>
                                 <option value="completed" @selected($filter->status === 'completed')>
@@ -161,9 +161,10 @@
                                         @php
                                             $status = $event->calculated_status;
                                             $statusColors = [
-                                                'upcoming' => 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300',
+                                                'upcoming' => 'bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-300',
+                                                'ongoing' => 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300',
                                                 'active' => 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300',
-                                                'completed' => 'bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-300',
+                                                'completed' => 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300',
                                             ];
                                         @endphp
                                         <span class="inline-flex px-2 py-0.5 rounded text-xs font-medium {{ $statusColors[$status] ?? $statusColors['completed'] }}">
@@ -459,85 +460,45 @@
                                     <input type="hidden" name="start_time" x-model="eventForm.start_time">
                                     <input type="hidden" name="end_date" x-model="eventForm.end_date">
                                     <input type="hidden" name="end_time" x-model="eventForm.end_time">
+                                    
+                                    <!-- Location -->
                                     <div>
                                         <label
                                             class="block text-sm font-semibold text-gray-700 dark:text-gray-200 mb-1">{{ __('events.Location') }}</label>
                                         <input type="text" name="venue"
                                             class="w-full rounded-lg border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200 focus:border-indigo-500 focus:ring-indigo-500"
-                                            x-model="eventForm.venue"
-                                            placeholder="{{ __('events.e.g., Main Hall, Room 101') }}">
+                                            placeholder="{{ __('events.e.g., Main Hall, Room 101') }}"
+                                            x-model="eventForm.venue">
                                     </div>
 
-                                    <!-- Event Schedule (Unified) -->
-                                    <div class="pt-4 border-t border-gray-200 dark:border-gray-700">
-                                        <div class="flex items-center justify-between mb-4">
+                                    <!-- Event Schedule (Single Day) -->
+                                    <div>
+                                        <label
+                                            class="block text-sm font-bold text-gray-900 dark:text-white uppercase tracking-wider mb-2">{{ __('events.Event Schedule') }}</label>
+
+                                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                                             <div>
-                                                <h4
-                                                    class="text-sm font-bold text-gray-900 dark:text-white uppercase tracking-wider leading-none">
-                                                    {{ __('events.Event Schedule') }}
-                                                </h4>
-                                                <p class="text-[10px] text-gray-500 mt-1 leading-none">
-                                                    {{ __('events.Add specific dates and times for this event') }}
-                                                </p>
+                                                <label
+                                                    class="block text-sm font-semibold text-gray-700 dark:text-gray-200 mb-1">{{ __('events.Date') }} <span class="text-red-500">*</span></label>
+                                                <input type="date" name="start_date" x-model="eventForm.start_date" required
+                                                    class="w-full rounded-lg border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200 focus:border-indigo-500 focus:ring-indigo-500">
                                             </div>
-                                            <button type="button" @click="addSchedule()"
-                                                class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-indigo-600 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-900/30 rounded-lg hover:bg-indigo-100 transition-colors">
-                                                <i class="fas fa-plus"></i>
-                                                {{ __('events.Add Event Day') }}
-                                            </button>
-                                        </div>
-
-                                        <div class="space-y-3">
-                                            <template x-for="(item, index) in eventForm.schedules" :key="index">
-                                                <div
-                                                    class="p-4 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 shadow-sm relative group overflow-hidden">
-                                                    <div class="absolute left-0 top-0 bottom-0 w-1"
-                                                        :class="index === 0 ? 'bg-indigo-500' : 'bg-amber-500'"></div>
-                                                    <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
-                                                        <div class="md:col-span-1">
-                                                            <label
-                                                                class="block text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">{{ __('events.Day Label') }}</label>
-                                                            <input type="text" x-model="item.label"
-                                                                class="w-full text-sm rounded-lg border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200 focus:border-indigo-500 focus:ring-indigo-500 py-1.5">
-                                                        </div>
-                                                        <div class="md:col-span-1">
-                                                            <label
-                                                                class="block text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">{{ __('events.Date') }}</label>
-                                                            <input type="date" x-model="item.date" required
-                                                                class="w-full text-sm rounded-lg border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200 focus:border-indigo-500 focus:ring-indigo-500 py-1.5">
-                                                        </div>
-                                                        <div class="md:col-span-1">
-                                                            <label
-                                                                class="block text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">{{ __('events.Time Range') }}</label>
-                                                            <div class="flex items-center gap-1">
-                                                                <input type="time" x-model="item.start_time"
-                                                                    class="w-full text-sm rounded-lg border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200 py-1.5 px-2">
-                                                                <span class="text-gray-400">-</span>
-                                                                <input type="time" x-model="item.end_time"
-                                                                    class="w-full text-sm rounded-lg border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200 py-1.5 px-2">
-                                                            </div>
-                                                        </div>
-                                                        <div class="md:col-span-1 flex items-end justify-end">
-                                                            <button type="button" @click="removeSchedule(index)"
-                                                                x-show="index > 0"
-                                                                class="p-2 text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors">
-                                                                <i class="fas fa-trash-alt"></i>
-                                                            </button>
-                                                        </div>
-                                                    </div>
-                                                    <div class="mt-3">
-                                                        <label
-                                                            class="block text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">{{ __('events.Session Description') }}</label>
-                                                        <input type="text" x-model="item.description"
-                                                            placeholder="{{ __('events.e.g., Morning Session, Paper I') }}"
-                                                            class="w-full text-sm rounded-lg border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200 focus:border-indigo-500 focus:ring-indigo-500 py-1.5">
-                                                    </div>
+                                            <div>
+                                                <label
+                                                    class="block text-sm font-semibold text-gray-700 dark:text-gray-200 mb-1">{{ __('events.Time Range') }}</label>
+                                                <div class="flex items-center gap-2">
+                                                    <input type="time" name="start_time" x-model="eventForm.start_time"
+                                                        class="w-full rounded-lg border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200 focus:border-indigo-500 focus:ring-indigo-500">
+                                                    <span class="text-gray-400">-</span>
+                                                    <input type="time" name="end_time" x-model="eventForm.end_time"
+                                                        class="w-full rounded-lg border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200 focus:border-indigo-500 focus:ring-indigo-500">
                                                 </div>
-                                            </template>
+                                            </div>
                                         </div>
 
-                                        <input type="hidden" name="schedules_json"
-                                            :value="JSON.stringify(eventForm.schedules)">
+                                        <!-- Hidden fields -->
+                                        <input type="hidden" name="end_date" :value="eventForm.start_date">
+                                        <input type="hidden" name="status" value="upcoming">
                                     </div>
                                     <div>
                                         <label
@@ -546,19 +507,6 @@
                                             class="w-full rounded-lg border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200 focus:border-indigo-500 focus:ring-indigo-500"
                                             x-model="eventForm.description"></textarea>
                                     </div>
-
-                                    <div>
-                                        <label
-                                            class="block text-sm font-semibold text-gray-700 dark:text-gray-200 mb-1">{{ __('events.Status') }}</label>
-                                        <select name="status"
-                                            class="w-full rounded-lg border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200 focus:border-indigo-500 focus:ring-indigo-500"
-                                            x-model="eventForm.status">
-                                            <option value="upcoming">{{ __('events.Upcoming') }}</option>
-                                            <option value="active">{{ __('events.Active') }}</option>
-                                            <option value="completed">{{ __('events.Completed') }}</option>
-                                        </select>
-                                    </div>
-
 
                                     <!-- Target Audience Selection -->
                                     <div class="pt-4 border-t border-gray-200 dark:border-gray-700">
@@ -787,20 +735,16 @@
                         title: '',
                         event_category_id: '',
                         start_date: '',
-                        start_time: '',
+                        start_time: '09:00',
                         end_date: '',
-                        end_time: '',
+                        end_time: '17:00',
                         venue: '',
                         description: '',
                         target_roles: [],
                         target_grades: ['all'],
                         target_teacher_grades: ['all'],
                         target_guardian_grades: ['all'],
-                        target_departments: ['all'],
-                        schedules: [
-                            { date: '', label: 'Day 1', start_time: '09:00', end_time: '17:00' }
-                        ],
-                        status: 'upcoming'
+                        target_departments: ['all']
                     };
                 },
                 openEditModal(event) {
@@ -818,63 +762,21 @@
                         return val.map(v => String(v));
                     };
 
-                    const parseSchedules = (val) => {
-                        if (!val) return [];
-                        if (typeof val === 'string') {
-                            try { return JSON.parse(val); } catch (e) { return []; }
-                        }
-                        return Array.isArray(val) ? val : [];
-                    };
-
                     this.eventForm = {
                         title: event.title || '',
                         event_category_id: event.event_category_id || '',
                         start_date: event.start_date ? event.start_date.split('T')[0] : '',
-                        start_time: event.start_time || '',
+                        start_time: event.start_time || '09:00',
                         end_date: event.end_date ? event.end_date.split('T')[0] : '',
-                        end_time: event.end_time || '',
+                        end_time: event.end_time || '17:00',
                         venue: event.venue || '',
                         description: event.description || '',
                         target_roles: parseArray(event.target_roles, []),
                         target_grades: parseArray(event.target_grades, ['all']),
                         target_teacher_grades: parseArray(event.target_teacher_grades, ['all']),
                         target_guardian_grades: parseArray(event.target_guardian_grades, ['all']),
-                        target_departments: parseArray(event.target_departments, ['all']),
-                        schedules: parseSchedules(event.schedules),
-                        status: event.status || 'upcoming'
+                        target_departments: parseArray(event.target_departments, ['all'])
                     };
-
-                    if (this.eventForm.schedules.length === 0) {
-                        this.eventForm.schedules = [{
-                            date: this.eventForm.start_date,
-                            label: 'Day 1',
-                            start_time: this.eventForm.start_time || '09:00',
-                            end_time: this.eventForm.end_time || '17:00'
-                        }];
-                    }
-
-                    // Merge student and guardian grades if needed
-                    if (this.eventForm.target_roles.includes('guardian') || this.eventForm.target_roles.includes('student')) {
-                        // If one has 'all' and other has specific, 'all' wins? Or just merge.
-                        // For simplicity, if they aren't 'all', merge them.
-                        // But user said they are same, so they should probably be synced anyway.
-                    }
-                },
-                addSchedule() {
-                    let lastDate = '';
-                    if (this.eventForm.schedules.length > 0) {
-                        lastDate = this.eventForm.schedules[this.eventForm.schedules.length - 1].date;
-                    }
-                    const nextDate = lastDate || new Date().toISOString().split('T')[0];
-                    this.eventForm.schedules.push({
-                        date: nextDate,
-                        label: 'Day ' + (this.eventForm.schedules.length + 1),
-                        start_time: this.eventForm.schedules.length > 0 ? this.eventForm.schedules[0].start_time : '09:00',
-                        end_time: this.eventForm.schedules.length > 0 ? this.eventForm.schedules[0].end_time : '17:00'
-                    });
-                },
-                removeSchedule(index) {
-                    this.eventForm.schedules.splice(index, 1);
                 },
                 closeEventModal() { this.modals.event = false; },
                 submitDelete(id) {
@@ -897,14 +799,6 @@
                 },
                 init() {
                     Alpine.store('eventManager', this);
-                    this.$watch('eventForm.schedules', (val) => {
-                        if (val && val.length > 0) {
-                            this.eventForm.start_date = val[0].date;
-                            this.eventForm.start_time = val[0].start_time;
-                            this.eventForm.end_date = val[val.length - 1].date;
-                            this.eventForm.end_time = val[val.length - 1].end_time;
-                        }
-                    }, { deep: true });
                 }
             };
         }

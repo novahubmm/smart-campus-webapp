@@ -39,7 +39,10 @@ class TimetableController extends Controller
             ->orderBy('classes.name')
             ->select('classes.*')
             ->get();
-        $teachers = TeacherProfile::with('user:id,name')->get();
+        $teachers = TeacherProfile::with('user:id,name')
+            ->where('status', 'active')
+            ->whereHas('user', fn($q) => $q->where('is_active', true))
+            ->get();
 
         // Get timetable counts per class
         $timetableCounts = Timetable::select('class_id', DB::raw('count(*) as total'))
@@ -231,7 +234,10 @@ class TimetableController extends Controller
             ->orderBy('classes.name')
             ->select('classes.*')
             ->get();
-        $teachers = TeacherProfile::with('user:id,name')->get();
+        $teachers = TeacherProfile::with('user:id,name')
+            ->where('status', 'active')
+            ->whereHas('user', fn($q) => $q->where('is_active', true))
+            ->get();
         
         // Convert full day names to short names for JavaScript compatibility
         $weekDays = $setting?->week_days ?? ['monday', 'tuesday', 'wednesday', 'thursday', 'friday'];

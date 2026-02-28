@@ -249,7 +249,8 @@ class AcademicRepository implements AcademicRepositoryInterface
                         ->where(function ($where) {
                             $where->whereColumn('student_profiles.class_id', 'classes.id')
                                 ->orWhereNotNull('student_class.class_id');
-                        });
+                        })
+                        ->where('student_profiles.status', 'active');
                 }, 'students_count')
                 ->join('grades', 'classes.grade_id', '=', 'grades.id')
                 ->orderBy('grades.level')
@@ -278,7 +279,8 @@ class AcademicRepository implements AcademicRepositoryInterface
                     ->selectRaw('count(*)')
                     ->join('grades', 'grades.id', '=', 'student_profiles.grade_id')
                     ->whereColumn('grades.batch_id', 'batches.id')
-                    ->whereNull('student_profiles.deleted_at');
+                    ->whereNull('student_profiles.deleted_at')
+                    ->where('student_profiles.status', 'active');
             }, 'students_count')
             ->orderBy('start_date', 'desc')
             ->paginate(10, ['*'], 'batches_page')
@@ -293,7 +295,8 @@ class AcademicRepository implements AcademicRepositoryInterface
                 $query->from('student_profiles')
                     ->selectRaw('count(*)')
                     ->whereColumn('student_profiles.grade_id', 'grades.id')
-                    ->whereNull('student_profiles.deleted_at');
+                    ->whereNull('student_profiles.deleted_at')
+                    ->where('student_profiles.status', 'active');
             }, 'students_count')
             ->with(['batch', 'gradeCategory'])
             ->whereNotNull('batch_id') // Exclude orphaned grades
@@ -408,6 +411,8 @@ class AcademicRepository implements AcademicRepositoryInterface
     public function getTeachers()
     {
         return TeacherProfile::with('user')
+            ->where('status', 'active')
+            ->whereHas('user', fn($q) => $q->where('is_active', true))
             ->get()
             ->sortBy(function ($teacher) {
                 return $teacher->user->name ?? '';

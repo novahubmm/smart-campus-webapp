@@ -39,7 +39,7 @@ class EventController extends Controller
         $stats = [
             'total' => Event::count(),
             'upcoming' => Event::upcoming()->count(),
-            'active' => Event::ongoing()->count(),
+            'ongoing' => Event::ongoing()->count(),
             'completed' => Event::completed()->count(),
         ];
         $today = now()->toDateString();
@@ -159,21 +159,97 @@ class EventController extends Controller
     public function upload(Request $request, Event $event)
     {
         $request->validate([
-            'file' => 'required|file|max:10240',
+            'file' => 'required|file|mimes:png,jpg,jpeg|max:6144', // Only PNG/JPG, max 6MB per file
         ]);
 
+        // Check total attachment count
+        if ($event->attachments()->count() >= 30) {
+            return response()->json([
+                'success' => false,
+                'message' => __('events.Maximum 30 files allowed')
+            ], 422);
+        }
+
         $file = $request->file('file');
-        $path = $file->store('events/attachments', 'public');
+        
+        // Optimize image to reduce memory usage
+        $optimizedPath = $this->optimizeAndStoreImage($file);
 
         $event->attachments()->create([
-            'file_path' => $path,
+            'file_path' => $optimizedPath,
             'file_name' => $file->getClientOriginalName(),
             'file_type' => $file->getMimeType(),
-            'file_size' => $file->getSize(),
+            'file_size' => \Storage::disk('public')->size($optimizedPath),
             'uploaded_by' => auth()->id(),
         ]);
 
+        // Force garbage collection to free memory
+        gc_collect_cycles();
+
         return response()->json(['success' => true]);
+    }
+
+    private function optimizeAndStoreImage($file): string
+    {
+        $extension = $file->getClientOriginalExtension();
+        $filename = uniqid() . '_' . time() . '.' . $extension;
+        $storagePath = storage_path('app/public/events/attachments');
+        
+        if (!file_exists($storagePath)) {
+            mkdir($storagePath, 0755, true);
+        }
+
+        $fullPath = $storagePath . '/' . $filename;
+
+        // Load image based on type
+        $image = match(strtolower($extension)) {
+            'jpg', 'jpeg' => imagecreatefromjpeg($file->getRealPath()),
+            'png' => imagecreatefrompng($file->getRealPath()),
+            default => throw new \Exception('Unsupported image type')
+        };
+
+        if (!$image) {
+            throw new \Exception('Failed to load image');
+        }
+
+        // Get original dimensions
+        $originalWidth = imagesx($image);
+        $originalHeight = imagesy($image);
+
+        // Resize if larger than 1920px on longest side (for 2GB RAM server)
+        $maxDimension = 1920;
+        if ($originalWidth > $maxDimension || $originalHeight > $maxDimension) {
+            if ($originalWidth > $originalHeight) {
+                $newWidth = $maxDimension;
+                $newHeight = (int)(($maxDimension / $originalWidth) * $originalHeight);
+            } else {
+                $newHeight = $maxDimension;
+                $newWidth = (int)(($maxDimension / $originalHeight) * $originalWidth);
+            }
+
+            $resized = imagecreatetruecolor($newWidth, $newHeight);
+            
+            // Preserve transparency for PNG
+            if (strtolower($extension) === 'png') {
+                imagealphablending($resized, false);
+                imagesavealpha($resized, true);
+            }
+
+            imagecopyresampled($resized, $image, 0, 0, 0, 0, $newWidth, $newHeight, $originalWidth, $originalHeight);
+            imagedestroy($image);
+            $image = $resized;
+        }
+
+        // Save optimized image
+        if (strtolower($extension) === 'png') {
+            imagepng($image, $fullPath, 6); // Compression level 6 (balance between size and quality)
+        } else {
+            imagejpeg($image, $fullPath, 80); // 80% quality for JPG
+        }
+
+        imagedestroy($image);
+
+        return 'events/attachments/' . $filename;
     }
 
     public function storePoll(Request $request, Event $event): RedirectResponse
@@ -202,12 +278,26 @@ class EventController extends Controller
         return back()->with('status', __('Poll created.'));
     }
 
-    public function destroyAttachment(EventAttachment $attachment): RedirectResponse
+    public function destroyAttachment(EventAttachment $attachment)
     {
+        // Check permission
+        if (auth()->id() !== $attachment->uploaded_by && !auth()->user()->hasRole('admin')) {
+            return response()->json([
+                'success' => false,
+                'message' => __('events.Unauthorized')
+            ], 403);
+        }
+
+        // Delete file from storage
         \Storage::disk('public')->delete($attachment->file_path);
+        
+        // Delete database record
         $attachment->delete();
 
-        return back()->with('status', __('Attachment removed.'));
+        return response()->json([
+            'success' => true,
+            'message' => __('events.Image deleted successfully')
+        ]);
     }
 
     public function vote(EventPollOption $option)

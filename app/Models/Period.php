@@ -44,7 +44,8 @@ class Period extends Model
 
     public function teacher(): BelongsTo
     {
-        return $this->belongsTo(TeacherProfile::class, 'teacher_profile_id');
+        return $this->belongsTo(TeacherProfile::class, 'teacher_profile_id')
+            ->whereHas('user', fn($q) => $q->where('is_active', true));
     }
 
     public function room(): BelongsTo

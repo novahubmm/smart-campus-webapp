@@ -199,6 +199,7 @@ class GuardianAuthRepository implements GuardianAuthRepositoryInterface
 
         $user->update([
             'password' => Hash::make($password),
+            'password_changed_at' => now(),
         ]);
 
         // Delete the reset token

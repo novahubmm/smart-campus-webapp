@@ -144,8 +144,13 @@
                 ? '{{ __('teacher_profiles.Are you sure you want to activate this teacher?') }}'
                 : '{{ __('teacher_profiles.Are you sure you want to deactivate this teacher?') }}';
             
+            // Get current URL parameters to preserve pagination and filters
+            const urlParams = new URLSearchParams(window.location.search);
+            const queryString = urlParams.toString();
+            const url = `/teacher-profiles/${profileId}/toggle-status${queryString ? '?' + queryString : ''}`;
+            
             confirmAction(
-                `/teacher-profiles/${profileId}/toggle-status`,
+                url,
                 action,
                 message,
                 action

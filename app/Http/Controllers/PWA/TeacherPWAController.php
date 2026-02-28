@@ -61,7 +61,9 @@ class TeacherPWAController extends Controller
             $totalStudents = \App\Models\StudentProfile::whereHas('classModel.timetables.periods', function($query) use ($user) {
                 $query->where('teacher_profile_id', $user->teacherProfile->id)
                       ->where('is_break', false);
-            })->distinct()->count();
+            })
+            ->where('status', 'active')
+            ->distinct()->count();
             
             $pendingHomework = \App\Models\Homework::where('teacher_id', $user->teacherProfile->id)
                 ->where('due_date', '>=', now())
@@ -206,6 +208,7 @@ class TeacherPWAController extends Controller
             $query->where('teacher_profile_id', $user->teacherProfile->id)
                   ->where('is_break', false);
         })
+        ->where('status', 'active')
         ->with(['user', 'classModel', 'grade'])
         ->distinct()
         ->get()

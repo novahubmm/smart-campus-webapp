@@ -350,7 +350,7 @@
                         <select name="to_teacher_id" id="requestTeacherSelect" required class="w-full rounded-lg border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white focus:ring-blue-500 focus:border-blue-500" onchange="updateTeacherSubjects()">
                             <option value="">-- {{ __('time_table.Select Teacher') }} --</option>
                             @foreach($teachers as $teacher)
-                                <option value="{{ $teacher->id }}" data-subjects="{{ json_encode($teacher->subjects->pluck('id')) }}">{{ $teacher->user?->name ?? 'Unknown' }}</option>
+                                <option value="{{ $teacher->id }}" data-subjects="{{ json_encode($teacher->subjects->pluck('id')) }}">{{ $teacher->display_name }}</option>
                             @endforeach
                         </select>
                     </div>

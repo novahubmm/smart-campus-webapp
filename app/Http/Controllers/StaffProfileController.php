@@ -96,7 +96,7 @@ class StaffProfileController extends Controller
         return redirect()->route('staff-profiles.index')->with('success', __('Staff profile updated successfully.'));
     }
     
-    public function toggleStatus(StaffProfile $staffProfile): RedirectResponse
+    public function toggleStatus(Request $request, StaffProfile $staffProfile): RedirectResponse
     {
         $this->authorize(PermissionEnum::MANAGE_STAFF_PROFILES->value);
 
@@ -110,6 +110,9 @@ class StaffProfileController extends Controller
             ? __('staff_profiles.Staff member activated successfully.') 
             : __('staff_profiles.Staff member deactivated successfully.');
 
-        return redirect()->route('staff-profiles.index')->with('success', $message);
+        // Preserve pagination and filters
+        $queryParams = $request->only(['page', 'search', 'department_id', 'status']);
+        
+        return redirect()->route('staff-profiles.index', $queryParams)->with('success', $message);
     }
 }

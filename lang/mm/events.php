@@ -3,7 +3,7 @@
 return [
     'Academic' => 'ပညာရေး',
     'Actions' => 'လုပ်ဆောင်ချက်များ',
-    'Active' => 'အသုံးပြုနေဆဲ',
+    'Active' => 'လက်ရှိ',
     'Add additional event categories if needed' => 'လိုအပ်ပါက ပွဲအမျိုးအစားများထပ်ထည့်ပါ',
     'Add Announcement' => 'ကြေညာချက်ထည့်ရန်',
     'Add Category' => 'အမျိုးအစားထည့်ရန်',
@@ -137,8 +137,14 @@ return [
     'File exceeds 10MB limit' => 'ဖိုင်ဆိုဒ် 10MB ထက်ကျော်နေပါသည်',
     'Going' => 'တက်ရောက်မည်',
     'Not Going' => 'မတက်ရောက်ပါ',
+    'Not Sure' => 'သေချာမှုမရှိ',
     'Venue' => 'တည်နေရာ',
     'Attachments' => 'ပူးတွဲဖိုင်များ',
     'Are you sure?' => 'သေချာပါသလား?',
     'Event Day' => 'ပွဲရက်',
+    'Event Schedule' => 'ပွဲအချိန်ဇယား',
+    'Time Range' => 'အချိန်ကာလ',
+    'Response Statistics' => 'တုံ့ပြန်မှုစာရင်းအင်း',
+    'Total Responses' => 'စုစုပေါင်းတုံ့ပြန်မှု',
+
 ];

@@ -38,7 +38,9 @@ class Subject extends Model
 
     public function teachers()
     {
-        return $this->belongsToMany(TeacherProfile::class, 'subject_teacher')->withTimestamps();
+        return $this->belongsToMany(TeacherProfile::class, 'subject_teacher')
+            ->whereHas('user', fn($q) => $q->where('is_active', true))
+            ->withTimestamps();
     }
 
     public function curriculumChapters()

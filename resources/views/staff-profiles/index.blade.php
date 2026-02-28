@@ -194,8 +194,13 @@
                 ? '{{ __('staff_profiles.Are you sure you want to activate this staff member?') }}'
                 : '{{ __('staff_profiles.Are you sure you want to deactivate this staff member?') }}';
             
+            // Get current URL parameters to preserve pagination and filters
+            const urlParams = new URLSearchParams(window.location.search);
+            const queryString = urlParams.toString();
+            const url = `/staff-profiles/${profileId}/toggle-status${queryString ? '?' + queryString : ''}`;
+            
             confirmAction(
-                `/staff-profiles/${profileId}/toggle-status`,
+                url,
                 action,
                 message,
                 action

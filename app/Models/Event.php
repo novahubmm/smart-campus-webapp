@@ -37,8 +37,6 @@ class Event extends Model
     ];
 
     protected $casts = [
-        'start_date' => 'date',
-        'end_date' => 'date',
         'target_roles' => 'array',
         'target_grades' => 'array',
         'target_teacher_grades' => 'array',
@@ -46,6 +44,25 @@ class Event extends Model
         'target_departments' => 'array',
         'schedules' => 'array',
     ];
+
+    protected function casts(): array
+    {
+        return [
+            'start_date' => 'date:Y-m-d',
+            'end_date' => 'date:Y-m-d',
+        ];
+    }
+
+    // Ensure dates are stored without timezone conversion
+    protected function setStartDateAttribute($value)
+    {
+        $this->attributes['start_date'] = $value;
+    }
+
+    protected function setEndDateAttribute($value)
+    {
+        $this->attributes['end_date'] = $value;
+    }
 
     public function category()
     {
@@ -100,7 +117,7 @@ class Event extends Model
             return 'upcoming';
         if ($now->gt($end))
             return 'completed';
-        return 'active';
+        return 'ongoing';
     }
 
     public function scopeUpcoming($query)

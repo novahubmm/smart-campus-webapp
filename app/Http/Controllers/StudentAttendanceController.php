@@ -234,7 +234,9 @@ class StudentAttendanceController extends Controller
                     ->where('day_of_week', $dayOfWeek)
                     ->where('is_break', false)
                     ->whereHas('timetable', fn($q) => $q->where('is_active', true))
-                    ->with(['timetable.schoolClass.grade', 'timetable.schoolClass.students', 'subject'])
+                    ->with(['timetable.schoolClass.grade', 'timetable.schoolClass.students' => function($query) {
+                        $query->where('student_profiles.status', 'active');
+                    }, 'subject'])
                     ->orderBy('period_number')
                     ->get()
                     ->map(function ($period) use ($selectedDate) {
@@ -268,7 +270,15 @@ class StudentAttendanceController extends Controller
 
                 // Get class IDs for stats
                 $classIds = $teacherPeriods->pluck('class_id')->unique()->filter();
-                $classes = SchoolClass::with(['grade', 'students'])
+                $classes = SchoolClass::with(['grade', 'students' => function($query) use ($selectedDate) {
+                        // Show active students OR inactive students who have attendance for this date
+                        $query->where(function($q) use ($selectedDate) {
+                            $q->where('student_profiles.status', 'active')
+                              ->orWhereHas('attendances', function($att) use ($selectedDate) {
+                                  $att->whereDate('date', $selectedDate);
+                              });
+                        });
+                    }])
                     ->whereIn('id', $classIds)
                     ->orderBy('name')
                     ->get();
@@ -277,7 +287,17 @@ class StudentAttendanceController extends Controller
             }
         } else {
             // For admin/staff, show all classes
-            $classes = SchoolClass::with(['grade', 'students'])->orderBy('name')->get();
+            $classes = SchoolClass::with(['grade', 'students' => function($query) use ($selectedDate) {
+                    // Show active students OR inactive students who have attendance for this date
+                    $query->where(function($q) use ($selectedDate) {
+                        $q->where('student_profiles.status', 'active')
+                          ->orWhereHas('attendances', function($att) use ($selectedDate) {
+                              $att->whereDate('date', $selectedDate);
+                          });
+                    });
+                }])
+                ->orderBy('name')
+                ->get();
         }
         
         // Group classes by grade
@@ -290,11 +310,19 @@ class StudentAttendanceController extends Controller
         
         // If teacher, filter stats to only their classes
         if ($isTeacher && $classes->isNotEmpty()) {
-            $classStudentIds = StudentProfile::whereIn('class_id', $classes->pluck('id'))->pluck('id');
+            $classStudentIds = StudentProfile::whereIn('class_id', $classes->pluck('id'))
+                ->where(function($q) use ($selectedDate) {
+                    $q->where('status', 'active')
+                      ->orWhereHas('attendances', function($att) use ($selectedDate) {
+                          $att->whereDate('date', $selectedDate);
+                      });
+                })
+                ->pluck('id');
             $dateAttendance = $dateAttendance->whereIn('student_id', $classStudentIds);
             $totalStudents = $classStudentIds->count();
         } else {
-            $totalStudents = $isTeacher ? 0 : StudentProfile::count();
+            // For admin, count students from the loaded classes (already filtered by active status or has attendance)
+            $totalStudents = $isTeacher ? 0 : $classes->sum(fn($class) => $class->students->count());
         }
         
         $stats = [
@@ -375,7 +403,9 @@ class StudentAttendanceController extends Controller
         }
         
         // Get which periods already have attendance for selected date
-        $studentIds = StudentProfile::where('class_id', $class->id)->pluck('id');
+        $studentIds = StudentProfile::where('class_id', $class->id)
+            ->where('status', 'active')
+            ->pluck('id');
         $periodsWithAttendance = [];
         
         if ($studentIds->isNotEmpty()) {
@@ -411,6 +441,7 @@ class StudentAttendanceController extends Controller
         // Get students for this class
         $students = StudentProfile::with('user')
             ->where('class_id', $class->id)
+            ->where('status', 'active')
             ->orderBy('student_identifier')
             ->get();
 
@@ -447,7 +478,9 @@ class StudentAttendanceController extends Controller
         ]);
 
         $date = $validated['date'];
-        $studentIds = StudentProfile::where('class_id', $class->id)->pluck('id');
+        $studentIds = StudentProfile::where('class_id', $class->id)
+            ->where('status', 'active')
+            ->pluck('id');
         
         $periodsWithAttendance = [];
         if ($studentIds->isNotEmpty()) {
@@ -593,6 +626,7 @@ class StudentAttendanceController extends Controller
             // Get students for this class
             $students = StudentProfile::with('user')
                 ->where('class_id', $classId)
+                ->where('status', 'active')
                 ->orderBy('student_identifier')
                 ->get();
 

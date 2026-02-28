@@ -589,5 +589,6 @@ return [
     'Choose Frequency' => 'Choose Frequency',
     'Invoice already exists for this fee type' => 'Invoice already exists for this fee type',
     'Select payment period to get discount' => 'Select payment period to get discount',
+    'Daily breakdown for selected month' => 'Daily breakdown for selected month',
 ];
 

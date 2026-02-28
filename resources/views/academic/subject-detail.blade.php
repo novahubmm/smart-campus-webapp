@@ -122,7 +122,7 @@
                     <select id="subjectTeacher" name="teacher_id" class="w-full rounded-lg border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200" required>
                         <option value="">{{ __('academic_management.Select Teacher') }}</option>
                         @foreach($teachers as $teacher)
-                            <option value="{{ $teacher->id }}">{{ $teacher->name ?? $teacher->user->name ?? '—' }}</option>
+                            <option value="{{ $teacher->id }}">{{ $teacher->display_name }}</option>
                         @endforeach
                     </select>
                 </div>

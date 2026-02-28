@@ -499,7 +499,7 @@
                                                         <select class="w-full text-sm rounded-lg border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200 focus:border-blue-500 focus:ring-blue-500" :name="`schedules[${idx}][teacher_id]`" x-model="schedule.teacher_id">
                                                             <option value="">{{ __('Select') }}</option>
                                                             @foreach($teachers as $teacher)
-                                                                <option value="{{ $teacher->id }}">{{ $teacher->user?->name ?? __('Teacher') }}</option>
+                                                                <option value="{{ $teacher->id }}">{{ $teacher->display_name }}</option>
                                                             @endforeach
                                                         </select>
                                                     </div>

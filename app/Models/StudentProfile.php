@@ -123,6 +123,14 @@ class StudentProfile extends Model
         return $this->hasMany(\App\Models\ExamMark::class, 'student_id');
     }
 
+    /**
+     * Get the attendance records for this student
+     */
+    public function attendances()
+    {
+        return $this->hasMany(\App\Models\StudentAttendance::class, 'student_id');
+    }
+
 
 
     /**

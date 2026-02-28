@@ -90,6 +90,7 @@ class UnifiedAuthController extends Controller
             'token' => $token,
             'token_type' => 'Bearer',
             'expires_at' => $expiresAt->toISOString(),
+            'requires_password_change' => $user->requiresPasswordChange(),
             'permissions' => $user->getAllPermissions()->pluck('name'),
             'roles' => $user->getRoleNames(),
         ], 'Login successful');
@@ -114,6 +115,7 @@ class UnifiedAuthController extends Controller
             'token' => $token,
             'token_type' => 'Bearer',
             'expires_at' => $expiresAt->toISOString(),
+            'requires_password_change' => $user->requiresPasswordChange(),
             'permissions' => $user->getAllPermissions()->pluck('name'),
             'roles' => $user->getRoleNames(),
         ], 'Login successful');
@@ -161,6 +163,7 @@ class UnifiedAuthController extends Controller
             'token' => $tokens[$defaultRole], // Default token for backward compatibility
             'token_type' => 'Bearer',
             'expires_at' => $expiresAt->toISOString(),
+            'requires_password_change' => $user->requiresPasswordChange(),
             'permissions' => $user->getAllPermissions()->pluck('name'),
             'roles' => $user->getRoleNames(),
         ], 'Login successful');
@@ -232,7 +235,8 @@ class UnifiedAuthController extends Controller
             }
 
             $user->update([
-                'password' => Hash::make($request->new_password)
+                'password' => Hash::make($request->new_password),
+                'password_changed_at' => now(),
             ]);
 
             return ApiResponse::success(null, 'Password changed successfully');

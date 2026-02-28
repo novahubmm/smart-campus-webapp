@@ -72,7 +72,8 @@ class SchoolClass extends Model
      */
     public function teacher(): BelongsTo
     {
-        return $this->belongsTo(TeacherProfile::class);
+        return $this->belongsTo(TeacherProfile::class)
+            ->whereHas('user', fn($q) => $q->where('is_active', true));
     }
 
     /**

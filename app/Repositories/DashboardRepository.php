@@ -18,9 +18,9 @@ class DashboardRepository implements DashboardRepositoryInterface
     public function getCounts(): array
     {
         return [
-            'students' => StudentProfile::count(),
-            'staff' => StaffProfile::count(),
-            'teachers' => TeacherProfile::count(),
+            'students' => StudentProfile::where('status', 'active')->count(),
+            'staff' => StaffProfile::where('status', 'active')->count(),
+            'teachers' => TeacherProfile::where('status', 'active')->count(),
         ];
     }
 
@@ -29,14 +29,43 @@ class DashboardRepository implements DashboardRepositoryInterface
         $today = Date::now()->toDateString();
 
         return [
-            'students' => $this->getAttendancePercent('student_attendance', $today, StudentProfile::count()),
-            'staff' => $this->getAttendancePercent('staff_attendance', $today, StaffProfile::count()),
-            'teachers' => $this->getAttendancePercent('teacher_attendance', $today, TeacherProfile::count()),
+            'students' => $this->getAttendancePercent('student_attendance', $today, StudentProfile::where('status', 'active')->count()),
+            'staff' => $this->getAttendancePercent('staff_attendance', $today, StaffProfile::where('status', 'active')->count()),
+            'teachers' => $this->getAttendancePercent('teacher_attendance', $today, TeacherProfile::where('status', 'active')->count()),
         ];
     }
 
     public function getFeeCollectionPercent(): float
     {
+        // Check for new payment system table first
+        if (Schema::hasTable('invoices_payment_system')) {
+            $currentMonth = Date::now()->format('Y-m');
+
+            // Get total amount due for this month
+            // Check both due_date and created_at to be more flexible
+            $totalDue = DB::table('invoices_payment_system')
+                ->where(function($q) use ($currentMonth) {
+                    $q->whereRaw("strftime('%Y-%m', due_date) = ?", [$currentMonth])
+                      ->orWhereRaw("strftime('%Y-%m', created_at) = ?", [$currentMonth]);
+                })
+                ->sum('total_amount');
+
+            // Get total amount paid for this month
+            $totalPaid = DB::table('invoices_payment_system')
+                ->where(function($q) use ($currentMonth) {
+                    $q->whereRaw("strftime('%Y-%m', due_date) = ?", [$currentMonth])
+                      ->orWhereRaw("strftime('%Y-%m', created_at) = ?", [$currentMonth]);
+                })
+                ->sum('paid_amount');
+
+            if ($totalDue <= 0) {
+                return 0.0;
+            }
+
+            return round(min(100, ($totalPaid / $totalDue) * 100), 1);
+        }
+
+        // Fallback to old invoices table
         if (!Schema::hasTable('invoices')) {
             return 0.0;
         }
@@ -69,14 +98,24 @@ class DashboardRepository implements DashboardRepositoryInterface
             return collect();
         }
 
-        return DB::table('events')
-            ->select('id', 'title', 'start_date', 'venue', 'type')
+        $today = Date::now()->toDateString();
+
+        // Get all active events that are upcoming or ongoing
+        $events = DB::table('events')
+            ->select('id', 'title', 'start_date', 'end_date', 'venue', 'type')
             ->whereNull('deleted_at')
-            ->where('status', true)
-            ->whereDate('start_date', '>=', Date::now()->toDateString())
-            ->orderBy('start_date')
-            ->limit($limit)
             ->get();
+        // Filter in PHP to handle date logic more reliably
+        return $events->filter(function($event) use ($today) {
+            $startDate = $event->start_date;
+            $endDate = $event->end_date ?? $event->start_date;
+            
+            // Include if event hasn't ended yet (end_date >= today)
+            return $endDate >= $today;
+        })
+        ->sortBy('start_date')
+        ->take($limit)
+        ->values();
     }
 
     public function getUpcomingExams(int $limit = 5): Collection

@@ -27,6 +27,7 @@ class StudentRepository
     public function getByClassId(string $classId): Collection
     {
         return StudentProfile::where('class_id', $classId)
+            ->where('status', 'active')
             ->with('user')
             ->get();
     }

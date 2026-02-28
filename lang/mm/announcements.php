@@ -47,6 +47,7 @@ return array(
     'Publishing Options' => 'ထုတ်ဝေခြင်းရွေးချယ်စရာများ',
     'Save Draft' => 'မူကြမ်းသိမ်းဆည်းရန်',
     'Schedule' => 'အချိန်နှင့်ထုတ်လွှင့်ရန်',
+    'Scheduled' => 'အချိန်ဇယားသတ်မှတ်ပြီး',
     'Schedule & Publish' => 'အချိန်ဇယားနှင့်ထုတ်လွှင့်ရန်',
     'Scheduled announcements will be saved as drafts until the publish time.' => 'အချိန်ဇယားသတ်မှတ်ထားသော ကြေညာချက်များကို ထုတ်ဝေချိန်အထိ မူကြမ်းအဖြစ် သိမ်းဆည်းထားပါမည်။',
     'Select Departments' => 'ဌာနများရွေးချယ်ရန်',
@@ -103,5 +104,7 @@ return array(
     'Linked Event' => 'ပွဲနှင့်ချိတ်ဆက်ထားသည်',
     'Last Updated' => 'နောက်ဆုံးတင်ပြချက်',
     'No announcements found' => 'ကြေညာချက်များ မတွေ့ပါ',
+    'Waiting to publish' => 'ထုတ်လွှင့်ရန်စောင့်ဆိုင်းနေသည်',
+    'Cannot edit published announcement' => 'ထုတ်လွှင့်ပြီးကြေညာချက်ကို ပြင်ဆင်၍မရပါ',
     'All' => 'အားလုံး',
 );

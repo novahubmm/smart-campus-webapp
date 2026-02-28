@@ -694,8 +694,10 @@ class TeacherClassRepository implements TeacherClassRepositoryInterface
 
         // Get all teachers except current and busy ones
         $availableTeachers = \App\Models\TeacherProfile::with(['user', 'subjects'])
+            ->where('status', 'active')
             ->whereNotIn('id', $busyTeacherIds)
             ->where('id', '!=', $teacherProfile->id)
+            ->whereHas('user', fn($q) => $q->where('is_active', true))
             ->get();
 
         $teachersData = $availableTeachers->map(function ($tp) {
@@ -1043,8 +1045,12 @@ class TeacherClassRepository implements TeacherClassRepositoryInterface
             return null;
         }
 
-        $classStudentIds = StudentProfile::where('class_id', $student->class_id)->pluck('id');
-        $gradeStudentIds = StudentProfile::where('grade_id', $student->grade_id)->pluck('id');
+        $classStudentIds = StudentProfile::where('class_id', $student->class_id)
+            ->where('status', 'active')
+            ->pluck('id');
+        $gradeStudentIds = StudentProfile::where('grade_id', $student->grade_id)
+            ->where('status', 'active')
+            ->pluck('id');
 
         // Get latest exam marks for ranking
         $latestExam = Exam::where('grade_id', $student->grade_id)->orderBy('created_at', 'desc')->first();
@@ -1129,8 +1135,12 @@ class TeacherClassRepository implements TeacherClassRepositoryInterface
             return null;
         }
 
-        $classStudentIds = StudentProfile::where('class_id', $student->class_id)->pluck('id');
-        $gradeStudentIds = StudentProfile::where('grade_id', $student->grade_id)->pluck('id');
+        $classStudentIds = StudentProfile::where('class_id', $student->class_id)
+            ->where('status', 'active')
+            ->pluck('id');
+        $gradeStudentIds = StudentProfile::where('grade_id', $student->grade_id)
+            ->where('status', 'active')
+            ->pluck('id');
 
         // Get student's marks for this exam
         $studentMarks = ExamMark::where('exam_id', $examId)
@@ -1320,7 +1330,9 @@ class TeacherClassRepository implements TeacherClassRepositoryInterface
         }
 
         // Get all students in the class
-        $classStudentIds = StudentProfile::where('class_id', $classId)->pluck('id');
+        $classStudentIds = StudentProfile::where('class_id', $classId)
+            ->where('status', 'active')
+            ->pluck('id');
 
         // Get all exam marks for this student for this exam (marks are stored per subject)
         $studentMarks = ExamMark::where('exam_id', $examId)

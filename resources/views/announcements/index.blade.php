@@ -55,16 +55,16 @@
                     :subtitle="__('announcements.Live now')"
                 />
                 <x-stat-card 
+                    icon="fas fa-clock"
+                    :title="__('announcements.Scheduled')"
+                    :number="$stats['scheduled'] ?? 0"
+                    :subtitle="__('announcements.Waiting to publish')"
+                />
+                <x-stat-card 
                     icon="fas fa-file-alt"
                     :title="__('announcements.Drafts')"
                     :number="$stats['draft'] ?? 0"
                     :subtitle="__('announcements.Pending')"
-                />
-                <x-stat-card 
-                    icon="fas fa-exclamation-triangle"
-                    :title="__('announcements.Urgent')"
-                    :number="$stats['urgent'] ?? 0"
-                    :subtitle="__('announcements.High priority')"
                 />
             </div>
 
@@ -79,21 +79,12 @@
 
                 <!-- Filter Bar -->
                 <form method="GET" action="{{ route('announcements.index') }}" class="p-4 bg-gray-50 dark:bg-gray-900/50 border-b border-gray-200 dark:border-gray-700">
-                    <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
+                    <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
                         <div class="flex flex-col gap-1">
                             <label class="text-xs font-semibold text-gray-600 dark:text-gray-400">{{ __('announcements.Month') }}</label>
                             <input type="month" name="month"
                                 class="rounded-lg border-gray-300 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-200 text-sm focus:border-amber-500 focus:ring-amber-500"
                                 value="{{ $filter->month ?? now()->format('Y-m') }}">
-                        </div>
-                        <div class="flex flex-col gap-1">
-                            <label class="text-xs font-semibold text-gray-600 dark:text-gray-400">{{ __('announcements.Type') }}</label>
-                            <select name="type" class="rounded-lg border-gray-300 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-200 text-sm focus:border-amber-500 focus:ring-amber-500">
-                                <option value="">{{ __('announcements.All Types') }}</option>
-                                @foreach($announcementTypes as $type)
-                                    <option value="{{ $type->id }}" @selected(request('type') === $type->id)>{{ $type->name }}</option>
-                                @endforeach
-                            </select>
                         </div>
                         <div class="flex flex-col gap-1">
                             <label class="text-xs font-semibold text-gray-600 dark:text-gray-400">{{ __('announcements.Priority') }}</label>
@@ -109,6 +100,7 @@
                             <select name="status" class="rounded-lg border-gray-300 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-200 text-sm focus:border-amber-500 focus:ring-amber-500">
                                 <option value="">{{ __('announcements.All') }}</option>
                                 <option value="published" @selected(request('status') === 'published')>{{ __('announcements.Published') }}</option>
+                                <option value="scheduled" @selected(request('status') === 'scheduled')>{{ __('announcements.Scheduled') }}</option>
                                 <option value="draft" @selected(request('status') === 'draft')>{{ __('announcements.Draft') }}</option>
                             </select>
                         </div>
@@ -124,7 +116,6 @@
                     <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
                         <thead class="bg-gray-50 dark:bg-gray-700">
                             <tr>
-                                <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 dark:text-gray-300 whitespace-nowrap">{{ __('announcements.Type') }}</th>
                                 <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 dark:text-gray-300 whitespace-nowrap">{{ __('announcements.Title') }}</th>
                                 <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 dark:text-gray-300 whitespace-nowrap">{{ __('announcements.Priority') }}</th>
                                 <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 dark:text-gray-300 whitespace-nowrap">{{ __('announcements.Date') }}</th>
@@ -145,16 +136,6 @@
                                 @endphp
                                 <tr>
                                     <td class="px-4 py-3">
-                                        @if($typeData)
-                                            <span class="inline-flex items-center gap-1.5 px-2 py-1 rounded-full text-xs font-semibold" style="background-color: {{ $typeData->color }}20; color: {{ $typeData->color }}">
-                                                <span class="w-4 h-4 flex-shrink-0">{!! $typeData->icon !!}</span>
-                                                {{ $typeData->name }}
-                                            </span>
-                                        @else
-                                            <span class="text-gray-400 text-sm">—</span>
-                                        @endif
-                                    </td>
-                                    <td class="px-4 py-3">
                                         <p class="text-sm font-semibold text-gray-900 dark:text-white">{{ $announcement->title }}</p>
                                         <p class="text-xs text-gray-500 dark:text-gray-400 truncate max-w-xs">{{ Str::limit($announcement->content, 50) }}</p>
                                     </td>
@@ -171,6 +152,11 @@
                                             <span class="inline-flex px-2 py-0.5 rounded text-xs font-medium bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300">
                                                 {{ __('announcements.Published') }}
                                             </span>
+                                        @elseif($announcement->publish_date && $announcement->publish_date->isFuture())
+                                            <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-medium bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300">
+                                                <i class="fas fa-clock text-[10px]"></i>
+                                                {{ __('announcements.Scheduled') }}
+                                            </span>
                                         @else
                                             <span class="inline-flex px-2 py-0.5 rounded text-xs font-medium bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-300">
                                                 {{ __('announcements.Draft') }}
@@ -182,9 +168,15 @@
                                             <a href="{{ route('announcements.show', $announcement) }}" class="w-8 h-8 rounded-md border border-gray-300 dark:border-gray-600 text-gray-500 flex items-center justify-center hover:border-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700" title="{{ __('announcements.View Details') }}">
                                                 <i class="fas fa-eye text-xs"></i>
                                             </a>
-                                            <button type="button" class="w-8 h-8 rounded-md border border-gray-300 dark:border-gray-600 text-blue-500 flex items-center justify-center hover:border-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/30" title="{{ __('announcements.Edit') }}" @click="openEditModal(@js($announcement))">
-                                                <i class="fas fa-pen text-xs"></i>
-                                            </button>
+                                            @if(!$announcement->is_published)
+                                                <button type="button" class="w-8 h-8 rounded-md border border-gray-300 dark:border-gray-600 text-blue-500 flex items-center justify-center hover:border-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/30" title="{{ __('announcements.Edit') }}" @click="openEditModal(@js($announcement))">
+                                                    <i class="fas fa-pen text-xs"></i>
+                                                </button>
+                                            @else
+                                                <button type="button" class="w-8 h-8 rounded-md border border-gray-300 dark:border-gray-600 text-gray-400 flex items-center justify-center cursor-not-allowed opacity-50" title="{{ __('announcements.Cannot edit published announcement') }}" disabled>
+                                                    <i class="fas fa-pen text-xs"></i>
+                                                </button>
+                                            @endif
                                             <button type="button" class="w-8 h-8 rounded-md border border-gray-300 dark:border-gray-600 text-red-500 flex items-center justify-center hover:border-red-400 hover:bg-red-50 dark:hover:bg-red-900/30" title="{{ __('announcements.Delete') }}" @click="submitDelete('{{ $announcement->id }}')">
                                                 <i class="fas fa-trash text-xs"></i>
                                             </button>
@@ -461,8 +453,27 @@
                     this.showModal = true;
                     this.formMethod = 'PUT';
                     this.formAction = options.endpoints.base + '/' + announcement.id;
-                    this.publishMode = announcement.is_published ? 'now' : 'schedule';
+                    
+                    // Determine publish mode based on status
+                    if (announcement.is_published) {
+                        this.publishMode = 'now';
+                    } else if (announcement.publish_date) {
+                        this.publishMode = 'schedule';
+                    } else {
+                        this.publishMode = 'now';
+                    }
+                    
                     this.isSubmitting = false;
+                    
+                    // Parse date and time from publish_date
+                    let publishDate = '';
+                    let publishTime = '';
+                    if (announcement.publish_date) {
+                        const parts = announcement.publish_date.split(' ');
+                        publishDate = parts[0] || '';
+                        publishTime = parts[1] ? parts[1].substring(0, 5) : '';
+                    }
+                    
                     this.form = {
                         title: announcement.title || '',
                         content: announcement.content || '',
@@ -473,8 +484,8 @@
                         target_teacher_grades: announcement.target_teacher_grades || ['all'],
                         target_guardian_grades: announcement.target_guardian_grades || ['all'],
                         target_departments: announcement.target_departments || ['all'],
-                        publish_date: announcement.publish_date ? announcement.publish_date.split(' ')[0] : '',
-                        publish_time: announcement.publish_date ? announcement.publish_date.split(' ')[1]?.substring(0, 5) : ''
+                        publish_date: publishDate,
+                        publish_time: publishTime
                     };
                 },
                 closeModal() {

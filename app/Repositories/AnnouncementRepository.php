@@ -94,7 +94,15 @@ class AnnouncementRepository implements AnnouncementRepositoryInterface
         if ($status === 'published') {
             $query->where('is_published', true)->where('status', true);
         } elseif ($status === 'draft') {
-            $query->where('is_published', false);
+            $query->where('is_published', false)
+                ->where(function ($q) {
+                    $q->whereNull('publish_date')
+                        ->orWhere('publish_date', '<=', now());
+                });
+        } elseif ($status === 'scheduled') {
+            $query->where('is_published', false)
+                ->whereNotNull('publish_date')
+                ->where('publish_date', '>', now());
         } elseif ($status === 'active') {
             $today = Carbon::today();
             $query->where('status', true)

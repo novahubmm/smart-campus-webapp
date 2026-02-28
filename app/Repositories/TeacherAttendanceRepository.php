@@ -16,6 +16,7 @@ class TeacherAttendanceRepository implements TeacherAttendanceRepositoryInterfac
     {
         $teachers = TeacherProfile::with(['user', 'department'])
             ->where('status', 'active')
+            ->whereHas('user', fn($q) => $q->where('is_active', true))
             ->orderBy('employee_id')
             ->get();
 
@@ -48,6 +49,7 @@ class TeacherAttendanceRepository implements TeacherAttendanceRepositoryInterfac
     {
         $teachers = TeacherProfile::with(['user', 'department'])
             ->where('status', 'active')
+            ->whereHas('user', fn($q) => $q->where('is_active', true))
             ->orderBy('employee_id')
             ->get();
 

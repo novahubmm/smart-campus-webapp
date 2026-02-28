@@ -105,12 +105,19 @@ class AnnouncementController extends Controller
      */
     public function calendarEvents(Request $request): JsonResponse
     {
-        $month = $request->query('month', now()->month);
-        $year = $request->query('year', now()->year);
+        $month = $request->query('month');
+        $year = $request->query('year');
 
-        $events = \App\Models\Event::whereMonth('start_date', $month)
-            ->whereYear('start_date', $year)
-            ->orderBy('start_date')
+        $query = \App\Models\Event::query();
+
+        // Optional filtering by month and year
+        if ($month && $year) {
+            $query->whereMonth('start_date', $month)
+                  ->whereYear('start_date', $year);
+        }
+
+        $events = $query->orderBy('start_date', 'desc')
+            ->orderBy('start_time', 'desc')
             ->get();
 
         $data = $events->map(function ($event) {
@@ -125,14 +132,16 @@ class AnnouncementController extends Controller
                 'venue' => $event->venue,
                 'category' => $event->category?->name,
                 'is_all_day' => $event->is_all_day ?? false,
+                'status' => $event->calculated_status,
             ];
         });
 
         return response()->json([
             'success' => true,
             'data' => [
-                'month' => (int) $month,
-                'year' => (int) $year,
+                'month' => $month ? (int) $month : null,
+                'year' => $year ? (int) $year : null,
+                'total' => $events->count(),
                 'events' => $data,
             ],
         ]);
@@ -143,7 +152,7 @@ class AnnouncementController extends Controller
      */
     public function eventDetail(Request $request, string $id): JsonResponse
     {
-        $event = \App\Models\Event::with('category')->find($id);
+        $event = \App\Models\Event::with(['category', 'attachments', 'responses'])->find($id);
 
         if (!$event) {
             return response()->json([
@@ -151,6 +160,34 @@ class AnnouncementController extends Controller
                 'message' => 'Event not found',
             ], 404);
         }
+
+        // Check if teacher has responded to this event and get their response
+        $userResponse = \App\Models\EventResponse::where('event_id', $event->id)
+            ->where('user_id', auth()->id())
+            ->first();
+
+        // Map status to response format
+        $statusToResponse = [
+            'going' => 'yes',
+            'not_going' => 'no',
+            'maybe' => 'maybe',
+        ];
+
+        // Get response counts
+        $responseCounts = [
+            'yes' => $event->responses->where('status', 'going')->count(),
+            'maybe' => $event->responses->where('status', 'maybe')->count(),
+            'no' => $event->responses->where('status', 'not_going')->count(),
+        ];
+
+        // Format images
+        $images = $event->attachments->map(function ($attachment) {
+            return [
+                'id' => $attachment->id,
+                'url' => url('storage/' . $attachment->file_path),
+                'thumbnail_url' => url('storage/' . $attachment->file_path),
+            ];
+        })->values()->toArray();
 
         return response()->json([
             'success' => true,
@@ -168,8 +205,55 @@ class AnnouncementController extends Controller
                     'name' => $event->category->name,
                 ] : null,
                 'is_all_day' => $event->is_all_day ?? false,
-                'created_at' => $event->created_at?->format('Y-m-d H:i:s'),
+                'created_at' => $event->created_at?->format('Y-m-d\TH:i:s\Z'),
+                'status' => $event->calculated_status,
+                'has_attendance' => true,
+                'user_response' => $userResponse ? ($statusToResponse[$userResponse->status] ?? null) : null,
+                'response_counts' => $responseCounts,
+                'images' => $images,
             ],
+        ]);
+    }
+
+    /**
+     * Record event attendance response
+     */
+    public function recordAttendance(Request $request, string $eventId): JsonResponse
+    {
+        $request->validate([
+            'attending' => 'required|in:yes,no,maybe',
+        ]);
+
+        $event = \App\Models\Event::find($eventId);
+
+        if (!$event) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Event not found',
+            ], 404);
+        }
+
+        // Map attending values to status
+        $statusMap = [
+            'yes' => 'going',
+            'no' => 'not_going',
+            'maybe' => 'maybe',
+        ];
+
+        // Create or update attendance response
+        \App\Models\EventResponse::updateOrCreate(
+            [
+                'event_id' => $eventId,
+                'user_id' => auth()->id(),
+            ],
+            [
+                'status' => $statusMap[$request->attending],
+            ]
+        );
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Response recorded',
         ]);
     }
 }

@@ -35,6 +35,7 @@ class User extends Authenticatable
         'password_otp_code',
         'password_otp_expires_at',
         'password',
+        'password_changed_at',
         'is_active',
         'preferred_locale',
         'fcm_token',
@@ -61,6 +62,7 @@ class User extends Authenticatable
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
             'password_otp_expires_at' => 'datetime',
+            'password_changed_at' => 'datetime',
             'is_active' => 'boolean',
         ];
     }
@@ -83,5 +85,13 @@ class User extends Authenticatable
     public function guardianProfile()
     {
         return $this->hasOne(GuardianProfile::class);
+    }
+
+    /**
+     * Check if user needs to change password (first-time login)
+     */
+    public function requiresPasswordChange(): bool
+    {
+        return is_null($this->password_changed_at);
     }
 }

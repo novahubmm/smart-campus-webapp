@@ -523,7 +523,9 @@ class GuardianStudentRepository implements GuardianStudentRepositoryInterface
                         return $item->student_id === $student->id;
                     }) + 1;
 
-                $totalStudents = \App\Models\StudentProfile::where('class_id', $student->class_id)->count();
+                $totalStudents = \App\Models\StudentProfile::where('class_id', $student->class_id)
+                    ->where('status', 'active')
+                    ->count();
 
                 $subjectData[] = [
                     'id' => $subject->id,
@@ -765,8 +767,12 @@ class GuardianStudentRepository implements GuardianStudentRepositoryInterface
         
         $currentClassRank = 0;
         $currentGradeRank = 0;
-        $totalStudentsInClass = \App\Models\StudentProfile::where('class_id', $student->class_id)->count();
-        $totalStudentsInGrade = \App\Models\StudentProfile::where('grade_id', $student->grade_id)->count();
+        $totalStudentsInClass = \App\Models\StudentProfile::where('class_id', $student->class_id)
+            ->where('status', 'active')
+            ->count();
+        $totalStudentsInGrade = \App\Models\StudentProfile::where('grade_id', $student->grade_id)
+            ->where('status', 'active')
+            ->count();
 
         if ($latestExam) {
             // Calculate class rank

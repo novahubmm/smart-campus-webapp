@@ -27,9 +27,11 @@ class SalaryPayrollService
 
         $staff = StaffProfile::with(['department', 'user:id,name'])
             ->where('status', 'active')
+            ->whereHas('user', fn($q) => $q->where('is_active', true))
             ->get();
         $teachers = TeacherProfile::with(['department', 'user:id,name'])
             ->where('status', 'active')
+            ->whereHas('user', fn($q) => $q->where('is_active', true))
             ->get();
 
         $entries = collect();

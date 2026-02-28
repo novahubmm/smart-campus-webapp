@@ -361,6 +361,8 @@ Route::middleware(['auth', 'ensure.active'])->group(function () {
         ->name('teacher-profiles.activities');
 
     Route::resource('student-profiles', \App\Http\Controllers\StudentProfileController::class)->except(['destroy']);
+    Route::post('student-profiles/{student_profile}/toggle-status', [\App\Http\Controllers\StudentProfileController::class, 'toggleStatus'])
+        ->name('student-profiles.toggle-status');
 
     Route::resource('staff-profiles', \App\Http\Controllers\StaffProfileController::class)->except(['destroy']);
     Route::post('staff-profiles/{staffProfile}/toggle-status', [\App\Http\Controllers\StaffProfileController::class, 'toggleStatus'])

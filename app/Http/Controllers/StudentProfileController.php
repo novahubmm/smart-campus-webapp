@@ -243,4 +243,24 @@ class StudentProfileController extends Controller
         return redirect()->route('student-profiles.index')
             ->with('success', 'Student profile updated successfully.');
     }
+
+    public function toggleStatus(Request $request, StudentProfile $studentProfile): RedirectResponse
+    {
+        $this->authorize('manage student profiles');
+
+        $newStatus = $studentProfile->status === 'active' ? 'inactive' : 'active';
+        $studentProfile->status = $newStatus;
+        $studentProfile->save();
+
+        $this->logUpdate('StudentProfile', $studentProfile->id, "Status changed to {$newStatus}: {$studentProfile->student_identifier}");
+
+        $message = $newStatus === 'active'
+            ? __('student_profiles.Student activated successfully.') 
+            : __('student_profiles.Student deactivated successfully.');
+
+        // Preserve pagination and filters
+        $queryParams = $request->only(['page', 'search', 'grade', 'class', 'status']);
+        
+        return redirect()->route('student-profiles.index', $queryParams)->with('success', $message);
+    }
 }

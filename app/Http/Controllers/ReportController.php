@@ -295,7 +295,10 @@ class ReportController extends Controller
      */
     public function teacherReports()
     {
-        $teachers = TeacherProfile::with(['user', 'department'])->get();
+        $teachers = TeacherProfile::with(['user', 'department'])
+            ->where('status', 'active')
+            ->whereHas('user', fn($q) => $q->where('is_active', true))
+            ->get();
 
         return view('reports.teachers', compact('teachers'));
     }
@@ -413,6 +416,7 @@ class ReportController extends Controller
     public function getStudentsByClass(string $classId)
     {
         $students = StudentProfile::where('class_id', $classId)
+            ->where('status', 'active')
             ->with('user:id,name')
             ->get()
             ->map(fn($s) => ['id' => $s->id, 'name' => $s->user->name ?? $s->name ?? 'Unknown']);
