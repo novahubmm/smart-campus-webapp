@@ -111,5 +111,13 @@ return array(
     'In-school Relative name' => 'In-school Relative name',
     'Relationship' => 'Relationship',
     'Height (cm)' => 'Height (cm)',
-    'Phone Number' => 'Phone Number' 
+    'Phone Number' => 'Phone Number',
+    'JPG, PNG or GIF (MAX. 2MB)' => 'JPG, PNG or GIF (MAX. 2MB)',
+    'No camera found on this device.' => 'No camera found on this device.',
+    'Could not access camera. Please try again or upload a file.' => 'Could not access camera. Please try again or upload a file.',
+    'Physical & Medical Information' => 'Physical & Medical Information',
+    'Family Information' => 'Family Information',
+    'Marital Status & In-School Relative' => 'Marital Status & In-School Relative',
+    'Review details and submit to create the staff profile and portal access.' => 'Review details and submit to create the staff profile and portal access.',
+    'Create Staff' => 'Create Staff'
 );

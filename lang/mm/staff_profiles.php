@@ -109,4 +109,7 @@ return array(
     'View Details' => 'အသေးစိတ်ကြည့်ရှု',
     'Weight' => 'အလေးချိန်',
     'Widowed' => 'မုဆိုးမ/မုဆိုးဖို',
+    'JPG, PNG or GIF (MAX. 2MB)' => 'JPG, PNG သို့မဟုတ် GIF (အများဆုံး 2MB)',
+    'No camera found on this device.' => 'ဤစက်ပစ္စည်းတွင် ကင်မရာမတွေ့ပါ။',
+    'Could not access camera. Please try again or upload a file.' => 'ကင်မရာကို ဖွင့်၍မရပါ။ ထပ်မံကြိုးစားပါ သို့မဟုတ် ဖိုင်တင်ပါ။',
 );

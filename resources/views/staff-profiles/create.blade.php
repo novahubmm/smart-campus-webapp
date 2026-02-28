@@ -114,6 +114,7 @@
                                 showCamera: false,
                                 stream: null,
                                 error: null,
+                                showPermissionModal: false,
                                 
                                 async startCamera() {
                                     this.error = null;
@@ -123,8 +124,16 @@
                                         this.$refs.video.srcObject = this.stream;
                                     } catch (err) {
                                         console.error('Error accessing camera:', err);
-                                        this.error = 'Could not access camera. Please ensure permissions are granted.';
-                                        this.stopCamera();
+                                        this.showCamera = false;
+                                        
+                                        // Show permission modal for permission denied errors
+                                        if (err.name === 'NotAllowedError' || err.name === 'PermissionDeniedError') {
+                                            this.showPermissionModal = true;
+                                        } else if (err.name === 'NotFoundError') {
+                                            this.error = '{{ __('staff_profiles.No camera found on this device.') }}';
+                                        } else {
+                                            this.error = '{{ __('staff_profiles.Could not access camera. Please try again or upload a file.') }}';
+                                        }
                                     }
                                 },
                                 
@@ -215,6 +224,56 @@
                                             <button type="button" @click="takePhoto()" class="flex-1 py-2 px-4 bg-amber-600 hover:bg-amber-700 text-white text-sm font-medium rounded-lg transition-colors shadow-sm">
                                                 <i class="fas fa-camera mr-2"></i> {{ __('Capture') }}
                                             </button>
+                                        </div>
+                                    </div>
+                                    
+                                    <!-- Camera Permission Modal -->
+                                    <div x-show="showPermissionModal" x-cloak class="fixed inset-0 z-50 overflow-y-auto" @click.self="showPermissionModal = false">
+                                        <div class="fixed inset-0 bg-black/50 backdrop-blur-sm"></div>
+                                        <div class="flex min-h-full items-center justify-center p-4">
+                                            <div class="relative bg-white dark:bg-gray-800 rounded-xl w-full max-w-md shadow-2xl" @click.stop>
+                                                <!-- Modal Header -->
+                                                <div class="flex items-center justify-between p-5 border-b border-gray-200 dark:border-gray-700">
+                                                    <div class="flex items-center gap-3">
+                                                        <div class="w-10 h-10 rounded-full bg-amber-100 dark:bg-amber-900/30 flex items-center justify-center">
+                                                            <i class="fas fa-camera text-amber-600 dark:text-amber-400"></i>
+                                                        </div>
+                                                        <h3 class="text-lg font-semibold text-gray-900 dark:text-white">Camera Permission Required</h3>
+                                                    </div>
+                                                    <button type="button" @click="showPermissionModal = false" class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300">
+                                                        <i class="fas fa-times"></i>
+                                                    </button>
+                                                </div>
+                                                
+                                                <!-- Modal Body -->
+                                                <div class="p-6 space-y-4">
+                                                    <p class="text-gray-700 dark:text-gray-300">To take a photo, you need to allow camera access in your browser.</p>
+                                                    
+                                                    <div class="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg p-4">
+                                                        <p class="text-sm font-semibold text-amber-900 dark:text-amber-200 mb-2"><i class="fas fa-camera mr-1"></i>How to enable camera:</p>
+                                                        <ol class="text-sm text-amber-800 dark:text-amber-300 space-y-2 list-decimal list-inside">
+                                                            <li>Look for the camera icon <i class="fas fa-video text-xs"></i> or lock icon <i class="fas fa-lock text-xs"></i> in your browser's address bar</li>
+                                                            <li>Click on it and select "Allow" for camera permissions</li>
+                                                            <li>Click "Try Again" button below</li>
+                                                        </ol>
+                                                    </div>
+                                                    
+                                                    <div class="flex items-start gap-2 text-sm text-gray-600 dark:text-gray-400 bg-gray-50 dark:bg-gray-900/50 rounded-lg p-3">
+                                                        <i class="fas fa-info-circle text-blue-500 mt-0.5"></i>
+                                                        <p>Alternatively, you can upload a photo file using the "Upload File" button.</p>
+                                                    </div>
+                                                </div>
+                                                
+                                                <!-- Modal Footer -->
+                                                <div class="flex items-center justify-end gap-3 p-5 border-t border-gray-200 dark:border-gray-700">
+                                                    <button type="button" @click="showPermissionModal = false" class="px-4 py-2 text-sm font-semibold rounded-lg border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700">
+                                                        Close
+                                                    </button>
+                                                    <button type="button" @click="showPermissionModal = false; startCamera()" class="px-4 py-2 text-sm font-semibold rounded-lg text-white bg-amber-600 hover:bg-amber-700">
+                                                        <i class="fas fa-camera mr-2"></i>Try Again
+                                                    </button>
+                                                </div>
+                                            </div>
                                         </div>
                                     </div>
                                 </div>
