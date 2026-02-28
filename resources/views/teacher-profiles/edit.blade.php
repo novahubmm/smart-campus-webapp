@@ -1,20 +1,27 @@
 <x-app-layout>
     <x-slot name="header">
         <div class="flex items-center gap-3">
-            <a href="{{ route('teacher-profiles.index') }}" class="inline-flex items-center justify-center w-10 h-10 rounded-xl bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors">
+            <a href="{{ route('teacher-profiles.index') }}"
+                class="inline-flex items-center justify-center w-10 h-10 rounded-xl bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors">
                 <i class="fas fa-arrow-left"></i>
             </a>
-            <span class="inline-flex items-center justify-center w-10 h-10 rounded-xl bg-gradient-to-br from-emerald-500 to-green-600 text-white shadow-lg">
+            <span
+                class="inline-flex items-center justify-center w-10 h-10 rounded-xl bg-gradient-to-br from-emerald-500 to-green-600 text-white shadow-lg">
                 <i class="fas fa-user-edit"></i>
             </span>
             <div>
                 <p class="text-xs text-gray-500 dark:text-gray-400">{{ __('teacher_profiles.Profiles') }}</p>
-                <h2 class="font-semibold text-xl text-gray-800 dark:text-gray-200 leading-tight">{{ __('teacher_profiles.Edit Teacher') }}</h2>
+                <h2 class="font-semibold text-xl text-gray-800 dark:text-gray-200 leading-tight">
+                    {{ __('teacher_profiles.Edit Teacher') }}</h2>
             </div>
         </div>
     </x-slot>
 
-    <style>[x-cloak]{display:none;}</style>
+    <style>
+        [x-cloak] {
+            display: none;
+        }
+    </style>
     <script src="{{ asset('js/form-validation.js') }}"></script>
 
     <div class="py-6 sm:py-10" x-data="{
@@ -50,23 +57,27 @@
         }
     }">
         <div class="max-w-7xl mx-auto py-6 px-4 sm:px-6 lg:px-8 space-y-4">
-            <div class="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl shadow-sm p-4 sm:p-5">
+            <div
+                class="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl shadow-sm p-4 sm:p-5">
                 <div class="flex items-center justify-between gap-3">
                     <div class="flex items-center gap-2 text-sm font-semibold text-gray-700 dark:text-gray-200">
                         <i class="fas fa-user-edit text-emerald-500"></i>
                         <span>{{ __('teacher_profiles.Update Teacher') }}</span>
                     </div>
-                    <span class="text-xs text-gray-500 dark:text-gray-400">{{ __('teacher_profiles.Step') }} <span x-text="step"></span> / <span x-text="total"></span></span>
+                    <span class="text-xs text-gray-500 dark:text-gray-400">{{ __('teacher_profiles.Step') }} <span
+                            x-text="step"></span> / <span x-text="total"></span></span>
                 </div>
                 <div class="mt-3 grid grid-cols-7 gap-1">
                     <template x-for="index in total" :key="index">
-                        <div class="h-2 rounded-full" :class="index <= step ? 'bg-emerald-600' : 'bg-gray-200 dark:bg-gray-700'"></div>
+                        <div class="h-2 rounded-full"
+                            :class="index <= step ? 'bg-emerald-600' : 'bg-gray-200 dark:bg-gray-700'"></div>
                     </template>
                 </div>
             </div>
 
             <div class="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl shadow-sm">
-                <form method="POST" action="{{ route('teacher-profiles.update', $profile) }}" class="p-6 sm:p-8 space-y-6" enctype="multipart/form-data">
+                <form method="POST" action="{{ route('teacher-profiles.update', $profile) }}"
+                    class="p-6 sm:p-8 space-y-6" enctype="multipart/form-data">
                     @csrf
                     @method('PUT')
 
@@ -78,34 +89,48 @@
                         </div>
                         <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                             <div>
-                                <label class="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1">{{ __('teacher_profiles.Photo') }}</label>
+                                <label
+                                    class="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1">{{ __('teacher_profiles.Photo') }}</label>
                                 @if($profile->photo_path)
                                     <div class="mb-2">
-                                        <img src="{{ avatar_url($profile->photo_path, 'teacher') }}" alt="{{ $profile->user->name }}" class="w-24 h-24 rounded-lg object-cover border border-gray-200 dark:border-gray-700">
+                                        <img src="{{ avatar_url($profile->photo_path, 'teacher') }}"
+                                            alt="{{ $profile->user->name }}"
+                                            class="w-24 h-24 rounded-lg object-cover border border-gray-200 dark:border-gray-700">
                                     </div>
                                 @endif
-                                <input type="file" name="photo" accept="image/*" class="w-full text-sm text-gray-700 dark:text-gray-200">
-                                <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">{{ __('teacher_profiles.Leave blank to keep current photo.') }}</p>
-                                @error('photo')<p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>@enderror
+                                <input type="file" name="photo" accept="image/*"
+                                    class="w-full text-sm text-gray-700 dark:text-gray-200">
+                                <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                                    {{ __('teacher_profiles.Leave blank to keep current photo.') }}</p>
+                                @error('photo')<p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>
+                                @enderror
                             </div>
                             <div>
-                                <label class="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1">{{ __('teacher_profiles.Name') }} <span class="text-red-500">*</span></label>
-                                <input type="text" name="name" x-model="form.name" required autocomplete="name" 
-                                       class="w-full rounded-lg border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-200 focus:border-emerald-500 focus:ring-emerald-500"
-                                       :class="errors.name ? 'border-red-500 focus:border-red-500 focus:ring-red-500' : ''">
-                                @error('name')<p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>@enderror
-                                <p x-show="errors.name" x-text="errors.name" class="mt-1 text-sm text-red-600 dark:text-red-400"></p>
+                                <label
+                                    class="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1">{{ __('teacher_profiles.Name') }}
+                                    <span class="text-red-500">*</span></label>
+                                <input type="text" name="name" x-model="form.name" required autocomplete="name"
+                                    class="w-full rounded-lg border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-200 focus:border-emerald-500 focus:ring-emerald-500"
+                                    :class="errors.name ? 'border-red-500 focus:border-red-500 focus:ring-red-500' : ''">
+                                @error('name')<p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>
+                                @enderror
+                                <p x-show="errors.name" x-text="errors.name"
+                                    class="mt-1 text-sm text-red-600 dark:text-red-400"></p>
                             </div>
                         </div>
 
                         <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                             <div>
-                                <label class="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1">{{ __('teacher_profiles.Position') }}</label>
-                                <input type="text" name="position" x-model="form.position" class="w-full rounded-lg border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-200 focus:border-emerald-500 focus:ring-emerald-500">
+                                <label
+                                    class="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1">{{ __('teacher_profiles.Position') }}</label>
+                                <input type="text" name="position" x-model="form.position"
+                                    class="w-full rounded-lg border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-200 focus:border-emerald-500 focus:ring-emerald-500">
                             </div>
                             <div>
-                                <label class="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1">{{ __('teacher_profiles.Department') }}</label>
-                                <select name="department_id" x-model="form.department_id" class="w-full rounded-lg border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-200 focus:border-emerald-500 focus:ring-emerald-500">
+                                <label
+                                    class="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1">{{ __('teacher_profiles.Department') }}</label>
+                                <select name="department_id" x-model="form.department_id"
+                                    class="w-full rounded-lg border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-200 focus:border-emerald-500 focus:ring-emerald-500">
                                     <option value="">{{ __('teacher_profiles.Select department') }}</option>
                                     @foreach($departments as $department)
                                         <option value="{{ $department->id }}">{{ $department->name }}</option>
@@ -116,36 +141,28 @@
 
                         <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
                             <div>
-                                <label class="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1">{{ __('teacher_profiles.Employee ID') }}</label>
-                                <input type="text" name="employee_id" x-model="form.employee_id" class="w-full rounded-lg border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-200 focus:border-emerald-500 focus:ring-emerald-500" placeholder="EMP-XXXX (auto if blank)">
+                                <label
+                                    class="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1">{{ __('teacher_profiles.Employee ID') }}</label>
+                                <input type="text" name="employee_id" x-model="form.employee_id"
+                                    class="w-full rounded-lg border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-200 focus:border-emerald-500 focus:ring-emerald-500"
+                                    placeholder="EMP-XXXX (auto if blank)">
                             </div>
                             <div>
-                                <label class="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1">{{ __('teacher_profiles.Date of Joining') }}</label>
-                                <input type="date" name="hire_date" x-model="form.hire_date" class="w-full rounded-lg border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-200 focus:border-emerald-500 focus:ring-emerald-500">
+                                <label
+                                    class="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1">{{ __('teacher_profiles.Date of Joining') }}</label>
+                                <input type="date" name="hire_date" x-model="form.hire_date"
+                                    class="w-full rounded-lg border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-200 focus:border-emerald-500 focus:ring-emerald-500">
                             </div>
                             <div>
-                                <label class="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1">{{ __('teacher_profiles.Monthly Salary') }}</label>
-                                <input type="number" step="0.01" name="basic_salary" x-model="form.basic_salary" class="w-full rounded-lg border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-200 focus:border-emerald-500 focus:ring-emerald-500">
+                                <label
+                                    class="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1">{{ __('teacher_profiles.Monthly Salary') }}</label>
+                                <input type="number" step="0.01" name="basic_salary" x-model="form.basic_salary"
+                                    class="w-full rounded-lg border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-200 focus:border-emerald-500 focus:ring-emerald-500">
                             </div>
                         </div>
 
-                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                            <div>
-                                <label class="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1">{{ __('teacher_profiles.Ph. no.') }}</label>
-                                <input type="text" name="phone_no" x-model="form.phone_no" class="w-full rounded-lg border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-200 focus:border-emerald-500 focus:ring-emerald-500">
-                                @error('phone_no')<p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>@enderror
-                            </div>
-                            <div>
-                                <label class="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1">{{ __('teacher_profiles.Address') }}</label>
-                                <input type="text" name="address" x-model="form.address" class="w-full rounded-lg border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-200 focus:border-emerald-500 focus:ring-emerald-500">
-                            </div>
-                        </div>
-
-                        <div>
-                            <label class="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1">{{ __('teacher_profiles.Email address') }}</label>
-                            <input type="email" x-model="form.email" class="w-full rounded-lg border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-200 focus:border-emerald-500 focus:ring-emerald-500" placeholder="{{ __('teacher_profiles.Use portal email if same') }}">
-                        </div>
                     </div>
+
 
                     <!-- Step 2: Personal Details -->
                     <div x-show="step === 2" x-cloak class="space-y-4">
@@ -155,51 +172,76 @@
                         </div>
                         <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
                             <div>
-                                <label class="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1">{{ __('teacher_profiles.Gender') }}</label>
-                                <select name="gender" class="w-full rounded-lg border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-200 focus:border-emerald-500 focus:ring-emerald-500">
+                                <label
+                                    class="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1">{{ __('teacher_profiles.Gender') }}</label>
+                                <select name="gender"
+                                    class="w-full rounded-lg border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-200 focus:border-emerald-500 focus:ring-emerald-500">
                                     <option value="">{{ __('teacher_profiles.Select') }}</option>
-                                    <option value="male" @selected(old('gender', $profile->gender) === 'male')>{{ __('teacher_profiles.Male') }}</option>
-                                    <option value="female" @selected(old('gender', $profile->gender) === 'female')>{{ __('teacher_profiles.Female') }}</option>
-                                    <option value="other" @selected(old('gender', $profile->gender) === 'other')>{{ __('teacher_profiles.Other') }}</option>
+                                    <option value="male" @selected(old('gender', $profile->gender) === 'male')>
+                                        {{ __('teacher_profiles.Male') }}</option>
+                                    <option value="female" @selected(old('gender', $profile->gender) === 'female')>
+                                        {{ __('teacher_profiles.Female') }}</option>
+                                    <option value="other" @selected(old('gender', $profile->gender) === 'other')>
+                                        {{ __('teacher_profiles.Other') }}</option>
                                 </select>
                             </div>
                             <div>
-                                <label class="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1">{{ __('teacher_profiles.Ethnicity') }}</label>
-                                <input type="text" name="ethnicity" value="{{ old('ethnicity', $profile->ethnicity) }}" class="w-full rounded-lg border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-200 focus:border-emerald-500 focus:ring-emerald-500">
+                                <label
+                                    class="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1">{{ __('teacher_profiles.Ethnicity') }}</label>
+                                <input type="text" name="ethnicity" value="{{ old('ethnicity', $profile->ethnicity) }}"
+                                    class="w-full rounded-lg border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-200 focus:border-emerald-500 focus:ring-emerald-500">
                             </div>
                             <div>
-                                <label class="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1">{{ __('teacher_profiles.Religious') }}</label>
-                                <input type="text" name="religious" value="{{ old('religious', $profile->religious) }}" class="w-full rounded-lg border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-200 focus:border-emerald-500 focus:ring-emerald-500">
+                                <label
+                                    class="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1">{{ __('teacher_profiles.Religious') }}</label>
+                                <input type="text" name="religious" value="{{ old('religious', $profile->religious) }}"
+                                    class="w-full rounded-lg border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-200 focus:border-emerald-500 focus:ring-emerald-500">
                             </div>
                         </div>
 
                         <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
                             <div>
-                                <label class="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1">{{ __('teacher_profiles.NRC') }} <span class="text-red-500">*</span></label>
+                                <label
+                                    class="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1">{{ __('teacher_profiles.NRC') }}
+                                    <span class="text-red-500">*</span></label>
                                 <input type="text" name="nrc" x-model="form.nrc" required autocomplete="off"
-                                       class="w-full rounded-lg border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-200 focus:border-emerald-500 focus:ring-emerald-500"
-                                       :class="errors.nrc ? 'border-red-500 focus:border-red-500 focus:ring-red-500' : ''">
-                                @error('nrc')<p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>@enderror
-                                <p x-show="errors.nrc" x-text="errors.nrc" class="mt-1 text-sm text-red-600 dark:text-red-400"></p>
+                                    class="w-full rounded-lg border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-200 focus:border-emerald-500 focus:ring-emerald-500"
+                                    :class="errors.nrc ? 'border-red-500 focus:border-red-500 focus:ring-red-500' : ''">
+                                @error('nrc')<p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>
+                                @enderror
+                                <p x-show="errors.nrc" x-text="errors.nrc"
+                                    class="mt-1 text-sm text-red-600 dark:text-red-400"></p>
                             </div>
                             <div>
-                                <label class="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1">{{ __('teacher_profiles.D.O.B') }}</label>
-                                <input type="date" name="dob" value="{{ old('dob', optional($profile->dob)->format('Y-m-d')) }}" class="w-full rounded-lg border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-200 focus:border-emerald-500 focus:ring-emerald-500">
+                                <label
+                                    class="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1">{{ __('teacher_profiles.D.O.B') }}</label>
+                                <input type="date" name="dob"
+                                    value="{{ old('dob', optional($profile->dob)->format('Y-m-d')) }}"
+                                    class="w-full rounded-lg border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-200 focus:border-emerald-500 focus:ring-emerald-500">
                             </div>
                             <div>
-                                <label class="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1">{{ __('teacher_profiles.Education') }}</label>
-                                <input type="text" name="qualification" value="{{ old('qualification', $profile->qualification) }}" class="w-full rounded-lg border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-200 focus:border-emerald-500 focus:ring-emerald-500">
+                                <label
+                                    class="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1">{{ __('teacher_profiles.Education') }}</label>
+                                <input type="text" name="qualification"
+                                    value="{{ old('qualification', $profile->qualification) }}"
+                                    class="w-full rounded-lg border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-200 focus:border-emerald-500 focus:ring-emerald-500">
                             </div>
                         </div>
 
                         <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                             <div>
-                                <label class="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1">{{ __('teacher_profiles.Green card') }}</label>
-                                <input type="text" name="green_card" value="{{ old('green_card', $profile->green_card) }}" class="w-full rounded-lg border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-200 focus:border-emerald-500 focus:ring-emerald-500">
+                                <label
+                                    class="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1">{{ __('teacher_profiles.Green card') }}</label>
+                                <input type="text" name="green_card"
+                                    value="{{ old('green_card', $profile->green_card) }}"
+                                    class="w-full rounded-lg border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-200 focus:border-emerald-500 focus:ring-emerald-500">
                             </div>
                             <div>
-                                <label class="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1">{{ __('teacher_profiles.Email address') }}</label>
-                                <input type="email" x-model="form.email" class="w-full rounded-lg border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-200 focus:border-emerald-500 focus:ring-emerald-500" placeholder="{{ __('teacher_profiles.Portal email if same') }}">
+                                <label
+                                    class="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1">{{ __('teacher_profiles.Email address') }}</label>
+                                <input type="email" x-model="form.email"
+                                    class="w-full rounded-lg border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-200 focus:border-emerald-500 focus:ring-emerald-500"
+                                    placeholder="{{ __('teacher_profiles.Portal email if same') }}">
                             </div>
                         </div>
                     </div>
@@ -211,17 +253,26 @@
                             <span>{{ __('teacher_profiles.Academic Information') }}</span>
                         </div>
                         <div>
-                            <label class="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1">{{ __('teacher_profiles.Previous School') }}</label>
-                            <input type="text" name="previous_school" value="{{ old('previous_school', $profile->previous_school) }}" class="w-full rounded-lg border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-200 focus:border-emerald-500 focus:ring-emerald-500">
+                            <label
+                                class="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1">{{ __('teacher_profiles.Previous School') }}</label>
+                            <input type="text" name="previous_school"
+                                value="{{ old('previous_school', $profile->previous_school) }}"
+                                class="w-full rounded-lg border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-200 focus:border-emerald-500 focus:ring-emerald-500">
                         </div>
                         <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                             <div>
-                                <label class="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1">{{ __('teacher_profiles.Qualification') }}</label>
-                                <input type="text" name="qualification" value="{{ old('qualification', $profile->qualification) }}" class="w-full rounded-lg border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-200 focus:border-emerald-500 focus:ring-emerald-500">
+                                <label
+                                    class="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1">{{ __('teacher_profiles.Qualification') }}</label>
+                                <input type="text" name="qualification"
+                                    value="{{ old('qualification', $profile->qualification) }}"
+                                    class="w-full rounded-lg border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-200 focus:border-emerald-500 focus:ring-emerald-500">
                             </div>
                             <div>
-                                <label class="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1">{{ __('teacher_profiles.Experience years') }}</label>
-                                <input type="number" name="previous_experience_years" value="{{ old('previous_experience_years', $profile->previous_experience_years) }}" class="w-full rounded-lg border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-200 focus:border-emerald-500 focus:ring-emerald-500">
+                                <label
+                                    class="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1">{{ __('teacher_profiles.Experience years') }}</label>
+                                <input type="number" name="previous_experience_years"
+                                    value="{{ old('previous_experience_years', $profile->previous_experience_years) }}"
+                                    class="w-full rounded-lg border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-200 focus:border-emerald-500 focus:ring-emerald-500">
                             </div>
                         </div>
                     </div>
@@ -234,27 +285,42 @@
                         </div>
                         <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                             <div>
-                                <label class="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1">{{ __('teacher_profiles.Father name') }}</label>
-                                <input type="text" name="father_name" value="{{ old('father_name', $profile->father_name) }}" class="w-full rounded-lg border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-200 focus:border-emerald-500 focus:ring-emerald-500">
+                                <label
+                                    class="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1">{{ __('teacher_profiles.Father name') }}</label>
+                                <input type="text" name="father_name"
+                                    value="{{ old('father_name', $profile->father_name) }}"
+                                    class="w-full rounded-lg border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-200 focus:border-emerald-500 focus:ring-emerald-500">
                             </div>
                             <div>
-                                <label class="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1">{{ __('teacher_profiles.Father\'s Ph no.') }}</label>
-                                <input type="text" name="father_phone" value="{{ old('father_phone', $profile->father_phone) }}" class="w-full rounded-lg border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-200 focus:border-emerald-500 focus:ring-emerald-500">
+                                <label
+                                    class="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1">{{ __('teacher_profiles.Father\'s Ph no.') }}</label>
+                                <input type="text" name="father_phone"
+                                    value="{{ old('father_phone', $profile->father_phone) }}"
+                                    class="w-full rounded-lg border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-200 focus:border-emerald-500 focus:ring-emerald-500">
                             </div>
                         </div>
                         <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                             <div>
-                                <label class="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1">{{ __('teacher_profiles.Mother name') }}</label>
-                                <input type="text" name="mother_name" value="{{ old('mother_name', $profile->mother_name) }}" class="w-full rounded-lg border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-200 focus:border-emerald-500 focus:ring-emerald-500">
+                                <label
+                                    class="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1">{{ __('teacher_profiles.Mother name') }}</label>
+                                <input type="text" name="mother_name"
+                                    value="{{ old('mother_name', $profile->mother_name) }}"
+                                    class="w-full rounded-lg border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-200 focus:border-emerald-500 focus:ring-emerald-500">
                             </div>
                             <div>
-                                <label class="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1">{{ __('teacher_profiles.Mother\'s Ph no.') }}</label>
-                                <input type="text" name="mother_phone" value="{{ old('mother_phone', $profile->mother_phone) }}" class="w-full rounded-lg border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-200 focus:border-emerald-500 focus:ring-emerald-500">
+                                <label
+                                    class="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1">{{ __('teacher_profiles.Mother\'s Ph no.') }}</label>
+                                <input type="text" name="mother_phone"
+                                    value="{{ old('mother_phone', $profile->mother_phone) }}"
+                                    class="w-full rounded-lg border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-200 focus:border-emerald-500 focus:ring-emerald-500">
                             </div>
                         </div>
                         <div>
-                            <label class="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1">{{ __('teacher_profiles.Emergency contact ph no.') }}</label>
-                            <input type="text" name="emergency_contact" value="{{ old('emergency_contact', $profile->emergency_contact) }}" class="w-full rounded-lg border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-200 focus:border-emerald-500 focus:ring-emerald-500">
+                            <label
+                                class="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1">{{ __('teacher_profiles.Emergency contact ph no.') }}</label>
+                            <input type="text" name="emergency_contact"
+                                value="{{ old('emergency_contact', $profile->emergency_contact) }}"
+                                class="w-full rounded-lg border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-200 focus:border-emerald-500 focus:ring-emerald-500">
                         </div>
                     </div>
 
@@ -266,33 +332,51 @@
                         </div>
                         <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                             <div>
-                                <label class="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1">{{ __('teacher_profiles.Marital Status') }}</label>
-                                <select name="marital_status" class="w-full rounded-lg border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-200 focus:border-emerald-500 focus:ring-emerald-500">
+                                <label
+                                    class="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1">{{ __('teacher_profiles.Marital Status') }}</label>
+                                <select name="marital_status"
+                                    class="w-full rounded-lg border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-200 focus:border-emerald-500 focus:ring-emerald-500">
                                     <option value="">{{ __('teacher_profiles.Select') }}</option>
-                                    <option value="single" @selected(old('marital_status', $profile->marital_status) === 'single')>{{ __('teacher_profiles.Single') }}</option>
-                                    <option value="married" @selected(old('marital_status', $profile->marital_status) === 'married')>{{ __('teacher_profiles.Married') }}</option>
-                                    <option value="divorced" @selected(old('marital_status', $profile->marital_status) === 'divorced')>{{ __('teacher_profiles.Divorced') }}</option>
-                                    <option value="widowed" @selected(old('marital_status', $profile->marital_status) === 'widowed')>{{ __('teacher_profiles.Widowed') }}</option>
+                                    <option value="single" @selected(old('marital_status', $profile->marital_status) === 'single')>{{ __('teacher_profiles.Single') }}
+                                    </option>
+                                    <option value="married" @selected(old('marital_status', $profile->marital_status) === 'married')>{{ __('teacher_profiles.Married') }}
+                                    </option>
+                                    <option value="divorced" @selected(old('marital_status', $profile->marital_status) === 'divorced')>{{ __('teacher_profiles.Divorced') }}
+                                    </option>
+                                    <option value="widowed" @selected(old('marital_status', $profile->marital_status) === 'widowed')>{{ __('teacher_profiles.Widowed') }}
+                                    </option>
                                 </select>
                             </div>
                             <div>
-                                <label class="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1">{{ __('teacher_profiles.Partner Name') }}</label>
-                                <input type="text" name="partner_name" value="{{ old('partner_name', $profile->partner_name) }}" class="w-full rounded-lg border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-200 focus:border-emerald-500 focus:ring-emerald-500">
+                                <label
+                                    class="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1">{{ __('teacher_profiles.Partner Name') }}</label>
+                                <input type="text" name="partner_name"
+                                    value="{{ old('partner_name', $profile->partner_name) }}"
+                                    class="w-full rounded-lg border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-200 focus:border-emerald-500 focus:ring-emerald-500">
                             </div>
                         </div>
                         <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                             <div>
-                                <label class="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1">{{ __('teacher_profiles.Partner\'s Ph no.') }}</label>
-                                <input type="text" name="partner_phone" value="{{ old('partner_phone', $profile->partner_phone) }}" class="w-full rounded-lg border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-200 focus:border-emerald-500 focus:ring-emerald-500">
+                                <label
+                                    class="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1">{{ __('teacher_profiles.Partner\'s Ph no.') }}</label>
+                                <input type="text" name="partner_phone"
+                                    value="{{ old('partner_phone', $profile->partner_phone) }}"
+                                    class="w-full rounded-lg border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-200 focus:border-emerald-500 focus:ring-emerald-500">
                             </div>
                             <div>
-                                <label class="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1">{{ __('teacher_profiles.In-school Relative Name') }}</label>
-                                <input type="text" name="in_school_relative_name" value="{{ old('in_school_relative_name', $profile->in_school_relative_name) }}" class="w-full rounded-lg border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-200 focus:border-emerald-500 focus:ring-emerald-500">
+                                <label
+                                    class="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1">{{ __('teacher_profiles.In-school Relative Name') }}</label>
+                                <input type="text" name="in_school_relative_name"
+                                    value="{{ old('in_school_relative_name', $profile->in_school_relative_name) }}"
+                                    class="w-full rounded-lg border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-200 focus:border-emerald-500 focus:ring-emerald-500">
                             </div>
                         </div>
                         <div>
-                            <label class="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1">{{ __('teacher_profiles.Relationship') }}</label>
-                            <input type="text" name="in_school_relative_relationship" value="{{ old('in_school_relative_relationship', $profile->in_school_relative_relationship) }}" class="w-full rounded-lg border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-200 focus:border-emerald-500 focus:ring-emerald-500">
+                            <label
+                                class="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1">{{ __('teacher_profiles.Relationship') }}</label>
+                            <input type="text" name="in_school_relative_relationship"
+                                value="{{ old('in_school_relative_relationship', $profile->in_school_relative_relationship) }}"
+                                class="w-full rounded-lg border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-200 focus:border-emerald-500 focus:ring-emerald-500">
                         </div>
                     </div>
 
@@ -304,21 +388,32 @@
                         </div>
                         <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
                             <div>
-                                <label class="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1">{{ __('teacher_profiles.Height (cm)') }}</label>
-                                <input type="number" step="0.01" name="height" value="{{ old('height', $profile->height) }}" class="w-full rounded-lg border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-200 focus:border-emerald-500 focus:ring-emerald-500">
+                                <label
+                                    class="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1">{{ __('teacher_profiles.Height (cm)') }}</label>
+                                <input type="number" step="0.01" name="height"
+                                    value="{{ old('height', $profile->height) }}"
+                                    class="w-full rounded-lg border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-200 focus:border-emerald-500 focus:ring-emerald-500">
                             </div>
                             <div>
-                                <label class="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1">{{ __('teacher_profiles.Medicine allergy') }}</label>
-                                <input type="text" name="medicine_allergy" value="{{ old('medicine_allergy', $profile->medicine_allergy) }}" class="w-full rounded-lg border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-200 focus:border-emerald-500 focus:ring-emerald-500">
+                                <label
+                                    class="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1">{{ __('teacher_profiles.Medicine allergy') }}</label>
+                                <input type="text" name="medicine_allergy"
+                                    value="{{ old('medicine_allergy', $profile->medicine_allergy) }}"
+                                    class="w-full rounded-lg border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-200 focus:border-emerald-500 focus:ring-emerald-500">
                             </div>
                             <div>
-                                <label class="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1">{{ __('teacher_profiles.Food allergy') }}</label>
-                                <input type="text" name="food_allergy" value="{{ old('food_allergy', $profile->food_allergy) }}" class="w-full rounded-lg border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-200 focus:border-emerald-500 focus:ring-emerald-500">
+                                <label
+                                    class="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1">{{ __('teacher_profiles.Food allergy') }}</label>
+                                <input type="text" name="food_allergy"
+                                    value="{{ old('food_allergy', $profile->food_allergy) }}"
+                                    class="w-full rounded-lg border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-200 focus:border-emerald-500 focus:ring-emerald-500">
                             </div>
                         </div>
                         <div>
-                            <label class="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1">{{ __('teacher_profiles.Medical Directory') }}</label>
-                            <textarea name="medical_directory" rows="3" class="w-full rounded-lg border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-200 focus:border-emerald-500 focus:ring-emerald-500">{{ old('medical_directory', $profile->medical_directory) }}</textarea>
+                            <label
+                                class="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1">{{ __('teacher_profiles.Medical Directory') }}</label>
+                            <textarea name="medical_directory" rows="3"
+                                class="w-full rounded-lg border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-200 focus:border-emerald-500 focus:ring-emerald-500">{{ old('medical_directory', $profile->medical_directory) }}</textarea>
                         </div>
                     </div>
 
@@ -330,57 +425,79 @@
                         </div>
                         <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                             <div>
-                                <label class="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1">{{ __('teacher_profiles.Portal Email') }} <span class="text-red-500">*</span></label>
+                                <label
+                                    class="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1">{{ __('teacher_profiles.Portal Email') }}
+                                    <span class="text-red-500">*</span></label>
                                 <input type="email" name="email" x-model="form.email" required autocomplete="email"
-                                       class="w-full rounded-lg border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-200 focus:border-emerald-500 focus:ring-emerald-500"
-                                       :class="errors.email ? 'border-red-500 focus:border-red-500 focus:ring-red-500' : ''">
-                                @error('email')<p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>@enderror
-                                <p x-show="errors.email" x-text="errors.email" class="mt-1 text-sm text-red-600 dark:text-red-400"></p>
+                                    class="w-full rounded-lg border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-200 focus:border-emerald-500 focus:ring-emerald-500"
+                                    :class="errors.email ? 'border-red-500 focus:border-red-500 focus:ring-red-500' : ''">
+                                @error('email')<p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>
+                                @enderror
+                                <p x-show="errors.email" x-text="errors.email"
+                                    class="mt-1 text-sm text-red-600 dark:text-red-400"></p>
                             </div>
                             <div>
-                                <label class="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1">{{ __('teacher_profiles.Portal Password (leave blank to keep)') }}</label>
-                                <input type="password" name="password" autocomplete="current-password" class="w-full rounded-lg border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-200 focus:border-emerald-500 focus:ring-emerald-500" placeholder="********">
-                                @error('password')<p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>@enderror
+                                <label
+                                    class="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1">{{ __('teacher_profiles.Portal Password (leave blank to keep)') }}</label>
+                                <input type="password" name="password" autocomplete="current-password"
+                                    class="w-full rounded-lg border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-200 focus:border-emerald-500 focus:ring-emerald-500"
+                                    placeholder="********">
+                                @error('password')<p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}
+                                </p>@enderror
                             </div>
                         </div>
                         <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                             <div>
-                                <label class="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1">{{ __('teacher_profiles.Phone Number') }} <span class="text-red-500">*</span></label>
+                                <label
+                                    class="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1">{{ __('teacher_profiles.Phone Number') }}
+                                    <span class="text-red-500">*</span></label>
                                 <input type="text" name="phone" x-model="form.phone" required autocomplete="tel"
-                                       class="w-full rounded-lg border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-200 focus:border-emerald-500 focus:ring-emerald-500"
-                                       :class="errors.phone ? 'border-red-500 focus:border-red-500 focus:ring-red-500' : ''">
-                                @error('phone')<p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>@enderror
-                                <p x-show="errors.phone" x-text="errors.phone" class="mt-1 text-sm text-red-600 dark:text-red-400"></p>
+                                    class="w-full rounded-lg border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-200 focus:border-emerald-500 focus:ring-emerald-500"
+                                    :class="errors.phone ? 'border-red-500 focus:border-red-500 focus:ring-red-500' : ''">
+                                @error('phone')<p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>
+                                @enderror
+                                <p x-show="errors.phone" x-text="errors.phone"
+                                    class="mt-1 text-sm text-red-600 dark:text-red-400"></p>
                             </div>
                             <div>
-                                <label class="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1">{{ __('teacher_profiles.Profile status') }}</label>
-                                <select name="status" x-model="form.status" class="w-full rounded-lg border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-200 focus:border-emerald-500 focus:ring-emerald-500">
+                                <label
+                                    class="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1">{{ __('teacher_profiles.Profile status') }}</label>
+                                <select name="status" x-model="form.status"
+                                    class="w-full rounded-lg border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-200 focus:border-emerald-500 focus:ring-emerald-500">
                                     <option value="active">{{ __('teacher_profiles.Active') }}</option>
                                     <option value="inactive">{{ __('teacher_profiles.Inactive') }}</option>
                                 </select>
                             </div>
                         </div>
                         <div class="flex items-center gap-3">
-                            <label class="inline-flex items-center text-sm font-semibold text-gray-700 dark:text-gray-300">
-                                <input type="checkbox" name="is_active" x-model="form.is_active" :checked="form.is_active" value="1" class="rounded border-gray-300 dark:border-gray-700 text-emerald-600 shadow-sm focus:ring-emerald-500 dark:bg-gray-900 dark:text-gray-300">
+                            <label
+                                class="inline-flex items-center text-sm font-semibold text-gray-700 dark:text-gray-300">
+                                <input type="checkbox" name="is_active" x-model="form.is_active"
+                                    :checked="form.is_active" value="1"
+                                    class="rounded border-gray-300 dark:border-gray-700 text-emerald-600 shadow-sm focus:ring-emerald-500 dark:bg-gray-900 dark:text-gray-300">
                                 <span class="ml-2">{{ __('teacher_profiles.Allow portal login') }}</span>
                             </label>
                         </div>
-                        <div class="rounded-lg border border-dashed border-gray-300 dark:border-gray-700 bg-gray-50 dark:bg-gray-900 p-4 text-sm text-gray-600 dark:text-gray-300">
+                        <div
+                            class="rounded-lg border border-dashed border-gray-300 dark:border-gray-700 bg-gray-50 dark:bg-gray-900 p-4 text-sm text-gray-600 dark:text-gray-300">
                             {{ __('teacher_profiles.Review the details and submit to update the teacher profile and portal access.') }}
                         </div>
                     </div>
 
                     <div class="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 pt-2">
-                        <a href="{{ route('teacher-profiles.index') }}" class="w-full sm:w-auto px-4 py-2 bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-100 rounded-lg font-semibold text-center hover:bg-gray-200 dark:hover:bg-gray-600">{{ __('teacher_profiles.Cancel') }}</a>
+                        <a href="{{ route('teacher-profiles.index') }}"
+                            class="w-full sm:w-auto px-4 py-2 bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-100 rounded-lg font-semibold text-center hover:bg-gray-200 dark:hover:bg-gray-600">{{ __('teacher_profiles.Cancel') }}</a>
                         <div class="flex items-center gap-3 w-full sm:w-auto">
-                            <button type="button" @click="step = Math.max(1, step - 1)" :disabled="step === 1" class="flex-1 sm:flex-none px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-200 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700 disabled:opacity-50">
+                            <button type="button" @click="step = Math.max(1, step - 1)" :disabled="step === 1"
+                                class="flex-1 sm:flex-none px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-200 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700 disabled:opacity-50">
                                 <i class="fas fa-chevron-left mr-2"></i>{{ __('teacher_profiles.Back') }}
                             </button>
-                            <button type="button" x-show="step < total" @click="nextStep()" class="flex-1 sm:flex-none px-4 py-2 bg-emerald-600 hover:bg-indigo-700 text-white font-semibold rounded-lg shadow-sm">
+                            <button type="button" x-show="step < total" @click="nextStep()"
+                                class="flex-1 sm:flex-none px-4 py-2 bg-emerald-600 hover:bg-indigo-700 text-white font-semibold rounded-lg shadow-sm">
                                 {{ __('teacher_profiles.Next step') }} <i class="fas fa-chevron-right ml-2"></i>
                             </button>
-                            <button type="submit" x-show="step === total" class="flex-1 sm:flex-none px-4 py-2 bg-emerald-600 hover:bg-indigo-700 text-white font-semibold rounded-lg shadow-sm">
+                            <button type="submit" x-show="step === total"
+                                class="flex-1 sm:flex-none px-4 py-2 bg-emerald-600 hover:bg-indigo-700 text-white font-semibold rounded-lg shadow-sm">
                                 {{ __('teacher_profiles.Update Teacher') }}
                             </button>
                         </div>

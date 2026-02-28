@@ -164,7 +164,7 @@ class OneGradeDemoReadySeeder extends DemoBaseSeeder
             $teachers[$definition['section']] = TeacherProfile::updateOrCreate(
                 ['user_id' => $user->id],
                 [
-                    'employee_id' => sprintf('OG-TCH-%03d', $index + 1),
+                    'employee_id' => sprintf('TER%04d', $index + 1),
                     'position' => 'Teacher',
                     'department_id' => $teacherDepartment->id,
                     'hire_date' => $this->getSchoolOpenDate()->copy()->subMonths($index + 1)->toDateString(),
@@ -203,7 +203,7 @@ class OneGradeDemoReadySeeder extends DemoBaseSeeder
             StaffProfile::updateOrCreate(
                 ['user_id' => $user->id],
                 [
-                    'employee_id' => sprintf('OG-STF-%03d', $index + 1),
+                    'employee_id' => sprintf('STF%04d', $index + 1),
                     'position' => $definition['position'],
                     'department_id' => $departments[$definition['department']]->id,
                     'hire_date' => $this->getSchoolOpenDate()->copy()->subMonths($index + 2)->toDateString(),
@@ -284,7 +284,7 @@ class OneGradeDemoReadySeeder extends DemoBaseSeeder
             1 => ['starts_at' => '08:00:00', 'ends_at' => '08:45:00', 'is_break' => false, 'subject_index' => 0],
             2 => ['starts_at' => '08:45:00', 'ends_at' => '09:30:00', 'is_break' => false, 'subject_index' => 1],
             3 => ['starts_at' => '09:30:00', 'ends_at' => '10:15:00', 'is_break' => false, 'subject_index' => 2],
-            4 => ['starts_at' => '10:15:00', 'ends_at' => '11:00:00', 'is_break' => true,  'subject_index' => null],
+            4 => ['starts_at' => '10:15:00', 'ends_at' => '11:00:00', 'is_break' => true, 'subject_index' => null],
             5 => ['starts_at' => '11:15:00', 'ends_at' => '12:00:00', 'is_break' => false, 'subject_index' => 3],
             6 => ['starts_at' => '12:00:00', 'ends_at' => '12:45:00', 'is_break' => false, 'subject_index' => 4],
             7 => ['starts_at' => '12:45:00', 'ends_at' => '13:30:00', 'is_break' => false, 'subject_index' => 5],
@@ -362,8 +362,8 @@ class OneGradeDemoReadySeeder extends DemoBaseSeeder
                 $user->assignRole(RoleEnum::STUDENT->value);
 
                 $studentProfile = StudentProfile::firstOrNew(['user_id' => $user->id]);
-                $studentProfile->student_id = sprintf('OGD-STU-%03d', $studentCounter);
-                $studentProfile->student_identifier = sprintf('KG-%s-%03d', $section, $i);
+                $studentProfile->student_id = sprintf('STD%04d', $studentCounter);
+                $studentProfile->student_identifier = sprintf('STD%04d', $studentCounter);
                 $studentProfile->grade_id = $grade->id;
                 $studentProfile->class_id = $class->id;
                 $studentProfile->date_of_joining = $this->getSchoolOpenDate()->toDateString();

@@ -106,15 +106,122 @@
                             <i class="fas fa-id-badge text-amber-500"></i>
                             <span>{{ __('staff_profiles.Basic Information') }}</span>
                         </div>
-                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                            <div>
-                                <label
-                                    class="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1">{{ __('staff_profiles.Photo') }}</label>
-                                <input type="file" name="photo" accept="image/*"
-                                    class="w-full text-sm text-gray-700 dark:text-gray-200">
-                                @error('photo')<p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>
-                                @enderror
+                        <!-- Staff Photo Upload -->
+                        <div class="flex flex-col items-center gap-4 p-6 bg-gray-50 dark:bg-gray-900/50 rounded-lg border-2 border-dashed border-gray-300 dark:border-gray-700 mb-4">
+                            <div x-data="{ 
+                                photoPreview: null, 
+                                photoName: '',
+                                showCamera: false,
+                                stream: null,
+                                error: null,
+                                
+                                async startCamera() {
+                                    this.error = null;
+                                    this.showCamera = true;
+                                    try {
+                                        this.stream = await navigator.mediaDevices.getUserMedia({ video: true });
+                                        this.$refs.video.srcObject = this.stream;
+                                    } catch (err) {
+                                        console.error('Error accessing camera:', err);
+                                        this.error = 'Could not access camera. Please ensure permissions are granted.';
+                                        this.stopCamera();
+                                    }
+                                },
+                                
+                                stopCamera() {
+                                    if (this.stream) {
+                                        this.stream.getTracks().forEach(track => track.stop());
+                                        this.stream = null;
+                                    }
+                                    this.showCamera = false;
+                                },
+                                
+                                takePhoto() {
+                                    const video = this.$refs.video;
+                                    if (!video.videoWidth) return;
+                                    
+                                    const canvas = document.createElement('canvas');
+                                    canvas.width = video.videoWidth;
+                                    canvas.height = video.videoHeight;
+                                    canvas.getContext('2d').drawImage(video, 0, 0);
+                                    
+                                    // Get blob and create file
+                                    canvas.toBlob((blob) => {
+                                        const file = new File([blob], 'webcam_photo.jpg', { type: 'image/jpeg' });
+                                        
+                                        // Create a DataTransfer object to assign to the file input
+                                        const dataTransfer = new DataTransfer();
+                                        dataTransfer.items.add(file);
+                                        document.getElementById('photo').files = dataTransfer.files;
+                                        
+                                        this.photoName = 'webcam_photo.jpg';
+                                        this.photoPreview = canvas.toDataURL('image/jpeg');
+                                        this.stopCamera();
+                                    }, 'image/jpeg', 0.9);
+                                }
+                            }" class="w-full">
+                                <div class="flex flex-col items-center gap-3 w-full">
+                                    <!-- Normal Photo Preview / Upload -->
+                                    <div x-show="!showCamera" class="flex flex-col items-center gap-3">
+                                        <div class="relative">
+                                            <div class="w-32 h-32 rounded-full overflow-hidden bg-gray-200 dark:bg-gray-700 flex items-center justify-center border-4 border-white dark:border-gray-800 shadow-sm">
+                                                <template x-if="!photoPreview">
+                                                    <i class="fas fa-user text-4xl text-gray-400 dark:text-gray-500"></i>
+                                                </template>
+                                                <template x-if="photoPreview">
+                                                    <img :src="photoPreview" alt="Staff Photo" class="w-full h-full object-cover">
+                                                </template>
+                                            </div>
+                                        </div>
+                                        
+                                        <div class="flex flex-wrap justify-center gap-2 mt-2">
+                                            <label for="photo" class="cursor-pointer inline-flex items-center px-4 py-2 bg-amber-600 hover:bg-amber-700 text-white text-sm font-medium rounded-lg transition-colors shadow-sm">
+                                                <i class="fas fa-upload mr-2"></i>
+                                                <span x-text="photoName ? 'Change File' : 'Upload File'"></span>
+                                            </label>
+                                            <button type="button" @click="startCamera()" class="inline-flex items-center px-4 py-2 border border-gray-300 dark:border-gray-600 hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-200 bg-white dark:bg-gray-800 text-sm font-medium rounded-lg transition-colors shadow-sm">
+                                                <i class="fas fa-camera mr-2"></i> {{ __('Take Picture') }}
+                                            </button>
+                                            <input type="file" id="photo" name="photo" accept="image/*" class="hidden"
+                                                   @change="
+                                                       const file = $event.target.files[0];
+                                                       if (file) {
+                                                           photoName = file.name;
+                                                           const reader = new FileReader();
+                                                           reader.onload = (e) => { photoPreview = e.target.result; };
+                                                           reader.readAsDataURL(file);
+                                                       }
+                                                   ">
+                                        </div>
+                                        <p x-show="error" x-text="error" class="text-sm text-red-600 dark:text-red-400 mt-1"></p>
+                                        <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">{{ __('staff_profiles.JPG, PNG or GIF (MAX. 2MB)') }}</p>
+                                        <p x-show="photoName" x-text="photoName" class="text-xs text-amber-600 dark:text-amber-400 mt-1 font-medium"></p>
+                                        @error('photo')<p class="text-sm text-red-600 dark:text-red-400">{{ $message }}</p>@enderror
+                                    </div>
+                                    
+                                    <!-- Camera Interface -->
+                                    <div x-show="showCamera" x-cloak class="w-full sm:max-w-sm flex flex-col items-center">
+                                        <div class="relative w-full aspect-[4/3] rounded-lg overflow-hidden bg-black mb-3 border-2 border-amber-500 shadow-md">
+                                            <video x-ref="video" class="w-full h-full object-cover" autoplay playsinline></video>
+                                            <!-- Oval Guide -->
+                                            <div class="absolute inset-0 pointer-events-none flex items-center justify-center p-4">
+                                                <div class="w-3/4 h-[80%] border-2 border-white/50 rounded-full"></div>
+                                            </div>
+                                        </div>
+                                        <div class="flex justify-center gap-3 w-full">
+                                            <button type="button" @click="stopCamera()" class="flex-1 py-2 px-4 bg-gray-200 hover:bg-gray-300 dark:bg-gray-700 dark:hover:bg-gray-600 text-gray-800 dark:text-gray-200 text-sm font-medium rounded-lg transition-colors">
+                                                {{ __('staff_profiles.Cancel') }}
+                                            </button>
+                                            <button type="button" @click="takePhoto()" class="flex-1 py-2 px-4 bg-amber-600 hover:bg-amber-700 text-white text-sm font-medium rounded-lg transition-colors shadow-sm">
+                                                <i class="fas fa-camera mr-2"></i> {{ __('Capture') }}
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
                             </div>
+                        </div>
+
+                        <div class="grid grid-cols-1 gap-4">
                             <div>
                                 <label
                                     class="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1">{{ __('staff_profiles.Name') }}

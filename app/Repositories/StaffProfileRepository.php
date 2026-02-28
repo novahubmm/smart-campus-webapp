@@ -142,6 +142,6 @@ class StaffProfileRepository implements StaffProfileRepositoryInterface
     private function generateEmployeeId(): string
     {
         $number = StaffProfile::count() + 1;
-        return 'STF-' . Str::padLeft((string) $number, 4, '0');
+        return 'STF' . Str::padLeft((string) $number, 4, '0');
     }
 }

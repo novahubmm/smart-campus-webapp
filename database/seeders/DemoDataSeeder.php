@@ -263,7 +263,7 @@ class DemoDataSeeder extends Seeder
             $teacher = TeacherProfile::firstOrCreate(
                 ['user_id' => $user->id],
                 [
-                    'employee_id' => 'T' . str_pad($i, 4, '0', STR_PAD_LEFT),
+                    'employee_id' => 'TER' . str_pad($i, 4, '0', STR_PAD_LEFT),
                     'position' => $positions[array_rand($positions)],
                     'department_id' => $this->departments[$deptCode]->id,
                     'hire_date' => $hireDate,
@@ -311,7 +311,7 @@ class DemoDataSeeder extends Seeder
             $staffMember = StaffProfile::firstOrCreate(
                 ['user_id' => $user->id],
                 [
-                    'employee_id' => 'S' . str_pad($i, 4, '0', STR_PAD_LEFT),
+                    'employee_id' => 'STF' . str_pad($i, 4, '0', STR_PAD_LEFT),
                     'position' => $positions[($i - 1) % count($positions)],
                     'department_id' => $this->departments['ADMIN']->id,
                     'hire_date' => $hireDate,
@@ -371,8 +371,8 @@ class DemoDataSeeder extends Seeder
             $student = StudentProfile::firstOrCreate(
                 ['user_id' => $user->id],
                 [
-                    'student_identifier' => 'STU' . date('Y') . str_pad($i, 4, '0', STR_PAD_LEFT),
-                    'student_id' => 'STU' . date('Y') . str_pad($i, 4, '0', STR_PAD_LEFT),
+                    'student_identifier' => 'STD' . str_pad($i, 4, '0', STR_PAD_LEFT),
+                    'student_id' => 'STD' . str_pad($i, 4, '0', STR_PAD_LEFT),
                     'grade_id' => $grade->id,
                     'class_id' => $class->id,
                     'date_of_joining' => $this->startDate->copy()->subMonths(rand(0, 12)),

@@ -72,14 +72,14 @@ Route::get('/vapid-key', [FirebaseConfigController::class, 'getVapidKey']);
 // FCM test endpoint (for development/testing)
 Route::post('/test-fcm-notification', function (\Illuminate\Http\Request $request) {
     $token = $request->input('token');
-    
+
     if (!$token) {
         return response()->json(['message' => 'Token is required'], 400);
     }
-    
+
     $firebaseService = new \App\Services\FirebaseService();
     $success = $firebaseService->sendMobileTestNotification($token);
-    
+
     if ($success) {
         return response()->json(['message' => 'FCM test notification sent successfully']);
     } else {
@@ -92,13 +92,13 @@ Route::post('/save-fcm-token', function (\Illuminate\Http\Request $request) {
     $request->validate([
         'token' => 'required|string'
     ]);
-    
+
     // For testing, we'll save to the current user if authenticated, or just return success
     if (auth()->check()) {
         auth()->user()->update(['fcm_token' => $request->token]);
         return response()->json(['success' => true, 'message' => 'Token saved to user account']);
     }
-    
+
     // For testing without authentication, just return success
     return response()->json(['success' => true, 'message' => 'Token received (test mode)']);
 });
@@ -110,7 +110,7 @@ Route::post('/backend-fcm-test', function (\Illuminate\Http\Request $request) {
         'title' => 'required|string',
         'body' => 'required|string'
     ]);
-    
+
     $firebaseService = new \App\Services\FirebaseService();
     $success = $firebaseService->sendToToken(
         $request->token,
@@ -121,7 +121,7 @@ Route::post('/backend-fcm-test', function (\Illuminate\Http\Request $request) {
             'id' => '123'
         ]
     );
-    
+
     if ($success) {
         return response()->json(['message' => 'FCM notification sent successfully! Check the mobile device.']);
     } else {
@@ -192,22 +192,22 @@ Route::prefix('v1')->group(function () {
         // Public routes (no auth required for payment options)
         Route::get('/payment-options', [PaymentOptionController::class, 'index']);
         Route::get('/payment-methods', [PaymentMethodController::class, 'index']);
-        
+
         // Protected routes (require authentication)
         Route::middleware('auth:sanctum')->group(function () {
             // Invoice endpoints
             Route::get('/students/{studentId}/invoices', [InvoiceController::class, 'index']);
-            
+
             // Payment endpoints
             Route::post('/students/{studentId}/payments/submit', [PaymentSystemPaymentController::class, 'store']);
             Route::get('/students/{studentId}/payments/history', [PaymentSystemPaymentController::class, 'history']);
-            
+
             // Admin payment verification routes
             Route::prefix('admin/payments')->group(function () {
                 Route::post('/{paymentId}/verify', [PaymentVerificationController::class, 'verify']);
                 Route::post('/{paymentId}/reject', [PaymentVerificationController::class, 'reject']);
             });
-            
+
             // Admin fee management
             Route::post('/fees', [FeeController::class, 'store']);
         });
@@ -216,7 +216,7 @@ Route::prefix('v1')->group(function () {
     // Shorter URL aliases (without payment-system prefix)
     Route::get('/payment-options', [PaymentOptionController::class, 'index']);
     Route::get('/payment-methods', [PaymentMethodController::class, 'index']);
-    
+
     Route::middleware('auth:sanctum')->group(function () {
         Route::get('/students/{studentId}/invoices', [InvoiceController::class, 'index']);
         Route::post('/students/{studentId}/payments/submit', [PaymentSystemPaymentController::class, 'store']);
@@ -435,7 +435,7 @@ Route::prefix('v1')->group(function () {
     Route::prefix('guardian')->group(function () {
         // Public School Info endpoint (no authentication required)
         Route::get('/school-info', [GuardianSettingsController::class, 'schoolInfo']);
-        
+
         Route::get('/school/info', [SchoolController::class, 'info']);
         Route::get('/rules', [RulesController::class, 'index']);
         Route::get('/rules/{ruleCategory}', [RulesController::class, 'show']);
@@ -469,12 +469,12 @@ Route::prefix('v1')->group(function () {
             // NEW: RESTful Student-Specific Routes
             // ============================================
             Route::prefix('students/{student_id}')->group(function () {
-                
+
                 // Dashboard
                 Route::get('/dashboard', [GuardianDashboardController::class, 'dashboard']);
                 Route::get('/dashboard/current-class', [GuardianDashboardController::class, 'currentClass']);
                 Route::get('/fee-reminder', [GuardianDashboardController::class, 'feeReminder']);
-                
+
                 // Attendance
                 Route::get('/attendance', [GuardianAttendanceController::class, 'index']);
                 Route::get('/attendance/summary', [GuardianAttendanceController::class, 'summary']);
@@ -545,14 +545,14 @@ Route::prefix('v1')->group(function () {
                     // OLD receipt routes - commented out, using PaymentController instead
                     // Route::get('/receipts/{payment_id}', [GuardianFeeController::class, 'receipt']);
                     // Route::get('/receipts/{payment_id}/download', [GuardianFeeController::class, 'downloadReceipt']);
-                    
+
                     // NEW: Payment Screen APIs (MUST be before /{fee_id} to avoid route conflict)
                     Route::get('/structure', [\App\Http\Controllers\Api\V1\Guardian\PaymentController::class, 'feeStructure']);
                     Route::post('/payments', [\App\Http\Controllers\Api\V1\Guardian\PaymentController::class, 'submitPayment']);
-                    
+
                     // NEW: Payment Proof Receipt Detail (MUST be before /{fee_id})
                     Route::get('/receipts/{payment_proof_id}', [\App\Http\Controllers\Api\V1\Guardian\PaymentController::class, 'paymentProofDetail']);
-                    
+
                     // Catch-all routes MUST be last
                     Route::get('/{fee_id}', [GuardianFeeController::class, 'show']);
                     Route::post('/{fee_id}/payment', [GuardianFeeController::class, 'initiatePayment']);
@@ -624,14 +624,14 @@ Route::prefix('v1')->group(function () {
             // OLD: Backward Compatibility Routes (Deprecated)
             // Will be removed after mobile team migrates
             // ============================================
-            
+
             // OLD: Student-Specific Routes with /students/{student_id}/ prefix
             Route::prefix('students/{student_id}')->group(function () {
                 Route::get('/today-schedule', [GuardianDashboardController::class, 'todaySchedule']);
                 Route::get('/dashboard', [GuardianDashboardController::class, 'dashboard']);
                 Route::get('/current-class', [GuardianDashboardController::class, 'currentClass']);
             });
-            
+
             // Dashboard (Old)
             Route::get('/home/dashboard', [GuardianDashboardController::class, 'dashboard']);
             Route::get('/dashboard/current-class', [GuardianDashboardController::class, 'currentClass']);
@@ -753,7 +753,7 @@ Route::prefix('v1')->group(function () {
             // ============================================
             // Parent-Level Routes (No student_id needed)
             // ============================================
-            
+
             // Settings
             Route::get('/settings', [GuardianSettingsController::class, 'index']);
             Route::put('/settings', [GuardianSettingsController::class, 'update']);
@@ -778,7 +778,15 @@ Route::prefix('v1')->group(function () {
 
             // Leave Types (Reference data)
             Route::get('/leave-types', [GuardianLeaveRequestController::class, 'leaveTypes']);
-            
+
+            // Inbox
+            Route::prefix('inbox')->group(function () {
+                Route::get('/', [\App\Http\Controllers\Api\V1\Guardian\InboxController::class, 'index']);
+                Route::get('/{id}', [\App\Http\Controllers\Api\V1\Guardian\InboxController::class, 'show']);
+                Route::post('/', [\App\Http\Controllers\Api\V1\Guardian\InboxController::class, 'store']);
+                Route::post('/{id}/reply', [\App\Http\Controllers\Api\V1\Guardian\InboxController::class, 'reply']);
+            });
+
             // NEW: Payment Methods & Options (Parent-level, no student_id needed)
             Route::get('/payment-methods', [\App\Http\Controllers\Api\V1\Guardian\PaymentController::class, 'paymentMethods']);
             Route::get('/payment-options', [\App\Http\Controllers\Api\V1\Guardian\PaymentController::class, 'paymentOptions']);

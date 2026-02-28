@@ -103,6 +103,7 @@ class StudentProfileRepository implements StudentProfileRepositoryInterface
 
     private function generateStudentIdentifier(): string
     {
-        return 'STD-' . Str::upper(Str::random(6));
+        $number = StudentProfile::count() + 1;
+        return 'STD' . Str::padLeft((string) $number, 4, '0');
     }
 }

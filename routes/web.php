@@ -212,6 +212,15 @@ Route::middleware(['auth', 'ensure.active'])->group(function () {
         ->name('announcements.show')
         ->middleware(['ensure.setup:events', 'feature:announcements']);
 
+    // Admin Inbox Routes
+    Route::prefix('inbox')->name('inbox.')->group(function () {
+        Route::get('/', [\App\Http\Controllers\InboxController::class, 'index'])->name('index');
+        Route::get('/{inbox}', [\App\Http\Controllers\InboxController::class, 'show'])->name('show');
+        Route::post('/{inbox}/reply', [\App\Http\Controllers\InboxController::class, 'reply'])->name('reply');
+        Route::post('/{inbox}/assign', [\App\Http\Controllers\InboxController::class, 'assign'])->name('assign');
+        Route::post('/{inbox}/update-status', [\App\Http\Controllers\InboxController::class, 'updateStatus'])->name('update-status');
+    });
+
     Route::get('/time-table-attendance-setup', [\App\Http\Controllers\TimeTableAttendanceSetupController::class, 'index'])
         ->middleware('setup.locked')
         ->name('time-table-attendance-setup.index');
@@ -447,7 +456,7 @@ Route::middleware(['auth', 'ensure.active'])->group(function () {
     Route::get('/student-fees/payment-proofs/{paymentProof}/details', [\App\Http\Controllers\StudentFeeController::class, 'getPaymentProofDetails'])
         ->middleware('ensure.setup:finance')
         ->name('student-fees.payment-proofs.details');
-    
+
     // PaymentSystem routes (new payment system from mobile)
     Route::get('/student-fees/payment-system/{payment}/details', [\App\Http\Controllers\StudentFeeController::class, 'getPaymentSystemDetails'])
         ->middleware('ensure.setup:finance')
@@ -458,7 +467,7 @@ Route::middleware(['auth', 'ensure.active'])->group(function () {
     Route::post('/student-fees/payment-system/{payment}/reject', [\App\Http\Controllers\StudentFeeController::class, 'rejectPaymentSystemPayment'])
         ->middleware('ensure.setup:finance')
         ->name('student-fees.payment-system.reject');
-    
+
     Route::get('/student-fees/invoices/{invoice}/history', [\App\Http\Controllers\StudentFeeController::class, 'getInvoiceHistory'])
         ->middleware('ensure.setup:finance')
         ->name('student-fees.invoices.history');

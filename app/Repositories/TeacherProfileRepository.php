@@ -158,7 +158,8 @@ class TeacherProfileRepository implements TeacherProfileRepositoryInterface
 
     private function generateEmployeeId(): string
     {
-        return 'EMP-' . Str::upper(Str::random(6));
+        $number = TeacherProfile::count() + 1;
+        return 'TER' . Str::padLeft((string) $number, 4, '0');
     }
 
     /**
