@@ -212,10 +212,12 @@
                     <h3 class="text-base font-semibold text-gray-900 dark:text-white">
                         {{ __('events.Event Categories') }}
                     </h3>
-                    <a href="{{ route('event-categories.index') }}"
-                        class="text-sm font-medium text-indigo-600 dark:text-indigo-400 hover:text-indigo-700 dark:hover:text-indigo-300">
-                        {{ __('events.View All') }} <i class="fas fa-arrow-right ml-1"></i>
-                    </a>
+                    @if(auth()->user()->hasRole('system_admin'))
+                        <a href="{{ route('event-categories.index') }}"
+                            class="text-sm font-medium text-indigo-600 dark:text-indigo-400 hover:text-indigo-700 dark:hover:text-indigo-300">
+                            {{ __('events.View All') }} <i class="fas fa-arrow-right ml-1"></i>
+                        </a>
+                    @endif
                 </div>
                 <div class="flex flex-wrap gap-2">
                     @forelse($categories as $category)
@@ -232,9 +234,11 @@
                                 x-show="activeCategories.includes('{{ $category->id }}')"></i>
                         </button>
                     @empty
-                        <p class="text-sm text-gray-500 dark:text-gray-400">{{ __('events.No categories found.') }} <a
-                                href="{{ route('event-categories.index') }}"
-                                class="text-indigo-600 hover:underline">{{ __('events.Add one') }}</a></p>
+                        <p class="text-sm text-gray-500 dark:text-gray-400">{{ __('events.No categories found.') }}
+                            @if(auth()->user()->hasRole('system_admin'))
+                                <a href="{{ route('event-categories.index') }}" class="text-indigo-600 hover:underline">{{ __('events.Add one') }}</a>
+                            @endif
+                        </p>
                     @endforelse
                 </div>
             </div>
